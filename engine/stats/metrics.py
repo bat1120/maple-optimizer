@@ -22,3 +22,13 @@ def boss_index(pred, job: JobProfile, weapon_part: str, boss: BossProfile) -> fl
     crit = 1.35 + pred.cd / 100
     armor = max(0.0, 1 - boss.defense / 100 * (1 - pred.ied / 100))
     return sa * damage * crit * armor
+
+
+def equivalent_main_stat(pred, job: JobProfile, ratio: float) -> float:
+    """환산 주스탯 상승량: 실딜이 ratio배가 될 때 같은 효과를 내는 최종 주스탯 증가량 (스펙 §5.3).
+
+    스탯공격력 ∝ (주스탯×4 + 부스탯) 이므로 ΔM = (ratio − 1) × (4×Σ주스탯 + Σ부스탯) / 4.
+    주스탯이 여럿(제논)이면 주스탯 합 기준. 사이트마다 정의가 다르므로 화면에 이 정의를 적는다.
+    """
+    base = 4 * sum(pred.stats[m] for m in job.mains) + sum(pred.stats[s] for s in job.subs)
+    return (ratio - 1) * base / 4

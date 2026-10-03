@@ -183,3 +183,12 @@ def test_optimize_respects_budget(tmp_path, clock):
     body = {"budget": 2_000_000_000, "candidates": [{**RING, "price": 3_000_000_000}]}
     r = make(tmp_path, clock).post("/api/character/내신부레테/optimize", json=body).json()
     assert r["actions"] == [] and r["spent"] == 0
+
+
+def test_listing_and_settings_report_equivalent_main_stat(tmp_path, clock):
+    c = make(tmp_path, clock)
+    stronger = {**RING, "total": {"INT": 90, "LUK": 59, "MATK": 30}}  # 현재 보스 반지보다 센 매물
+    lst = c.post("/api/character/내신부레테/listings", json={"listings": [{**stronger, "price": 3_000_000_000}]}).json()
+    assert lst["ranking"][0]["main_stat_gain"] > 0 and "main_stat_gain_per_100m" in lst["ranking"][0]
+    st = c.get("/api/character/내신부레테/settings").json()["ranking"][0]
+    assert st["main_stat_vs_active"] > 0

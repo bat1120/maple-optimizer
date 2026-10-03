@@ -14,6 +14,13 @@ def _index(snap: CharacterSnapshot, setting: Setting, items: dict[str, Item], bo
     return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss)
 
 
+def predict_setting(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
+                    items: dict[str, Item] | None = None):
+    """세팅(과 선택적 아이템 교체)의 예측 최종 스탯."""
+    items = preset_items(snap, setting.equipment) if items is None else items
+    return predict(calibrate(snap, catalog), sources_for(snap, setting, catalog, items))
+
+
 def evaluate_setting(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog) -> float:
     return _index(snap, setting, preset_items(snap, setting.equipment), boss, catalog)
 

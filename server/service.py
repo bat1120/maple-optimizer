@@ -37,11 +37,16 @@ def summary(snap: CharacterSnapshot) -> dict:
 
 
 def settings(snap: CharacterSnapshot, defense: float) -> dict:
+    from engine.stats.evaluate import predict_setting
+    from engine.stats.metrics import equivalent_main_stat
     b = boss(defense)
     ranked = rank_settings(snap, b, CATALOG)
     active = evaluate_setting(snap, snap.active_setting, b, CATALOG)
+    base = predict_setting(snap, snap.active_setting, CATALOG)
+    job = job_profile(snap.character_class)
     return {"boss": asdict(b),
-            "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None}
+            "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None,
+                         "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None}
                         for s, v in ranked]}
 
 
@@ -54,6 +59,7 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
     return {"setting": asdict(chosen), "boss": asdict(b),
             "ranking": [{"slot": e.listing.slot, "name": e.listing.item.name, "price": e.listing.price,
                          "resale": e.listing.resale, "delta_pct": e.delta_pct, "per_100m": e.per_100m,
+                         "main_stat_gain": e.main_stat_gain, "main_stat_gain_per_100m": e.main_stat_gain_per_100m,
                          "excluded": e.listing.item.excluded} for e in ranked]}
 
 

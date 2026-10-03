@@ -2,8 +2,9 @@
 from dataclasses import dataclass
 
 from engine.options import StatLine, parse_option
-from engine.stats.evaluate import evaluate_setting, swap_item
-from engine.stats.metrics import BossProfile
+from engine.stats.evaluate import evaluate_setting, predict_setting, swap_item
+from engine.stats.jobs import job_profile
+from engine.stats.metrics import BossProfile, equivalent_main_stat
 from engine.stats.model import StatBlock
 from engine.stats.sets import SetCatalog
 from engine.stats.snapshot import CharacterSnapshot, Item, Setting
@@ -36,6 +37,8 @@ class ListingEval:
     new: float        # 교체 후 실딜 지수
     delta_pct: float  # (new/base − 1) × 100
     per_100m: float   # delta_pct ÷ ((가격 − 판매가)/1억)
+    main_stat_gain: float = 0.0           # 환산 주스탯 상승량 (metrics.equivalent_main_stat)
+    main_stat_gain_per_100m: float = 0.0  # 억당 환산 주스탯
 
 
 def item_from_input(slot: str, part: str, name: str, total: dict[str, float], potentials: list[str],
@@ -76,7 +79,9 @@ def evaluate_listing(snap: CharacterSnapshot, setting: Setting, listing: Listing
         raise NoDamage(f"{boss.name}: 방어율 무시가 부족해 현재 데미지가 0입니다 (방무 {snap.final.ied:.2f}%)")
     new = swap_item(snap, setting, listing.slot, listing.item, boss, catalog)
     delta = (new / base - 1) * 100
-    return ListingEval(listing, base, new, delta, delta / (cost / HUNDRED_MILLION))
+    gain = equivalent_main_stat(predict_setting(snap, setting, catalog), job_profile(snap.character_class), new / base)
+    eok = cost / HUNDRED_MILLION
+    return ListingEval(listing, base, new, delta, delta / eok, gain, gain / eok)
 
 
 def rank_listings(snap: CharacterSnapshot, setting: Setting, listings: list[Listing], boss: BossProfile,

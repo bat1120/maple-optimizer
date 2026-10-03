@@ -28,6 +28,11 @@ export function formatRelative(ratio) {
   return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
+export function formatStat(n) {
+  const r = Math.round(n);
+  return `${r >= 0 ? "+" : "-"}${Math.abs(r).toLocaleString("en-US")}`;
+}
+
 export function parsePotentials(text) {
   return String(text ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
 }

@@ -73,3 +73,15 @@ def test_union_preset_changes_prediction():
     boss_union = evaluate_setting(snap, Setting(2, 3, 2, 3), BOSS, CAT)
     assert boss_union > hunt_union * 1.2   # 보공 40%·방무 40% 차이
     assert evaluate_setting(snap, Setting(2, 3, 2), BOSS, CAT) == hunt_union  # union 생략 = 현재 적용 프리셋
+
+
+def test_equivalent_main_stat_gain():
+    from engine.stats.metrics import equivalent_main_stat
+    from engine.stats.residual import Predicted
+    pred = Predicted(stats={"STR": 3540, "DEX": 3397, "INT": 56012, "LUK": 6768}, atk=0, matk=5008, dmg=91, boss=438,
+                     fd=186.7, cd=79, cr=93, ied=95.15)
+    lete = job_profile("레테")
+    assert equivalent_main_stat(pred, lete, 1.01) == pytest.approx(0.01 * (4 * 56012 + 6768) / 4)
+    assert equivalent_main_stat(pred, lete, 1.0) == 0
+    xenon = job_profile("제논")  # 주스탯 3개, 부스탯 없음 → 주스탯 합 기준
+    assert equivalent_main_stat(pred, xenon, 1.02) == pytest.approx(0.02 * (3540 + 3397 + 6768))

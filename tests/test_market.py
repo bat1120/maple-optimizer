@@ -47,3 +47,12 @@ def test_zero_damage_baseline_is_explicit_error():
     it = snap.equipment_presets[snap.active_equipment_preset]["반지1"]
     with pytest.raises(NoDamage):
         evaluate_listing(snap, snap.active_setting, Listing("반지1", it, price=10**9), BOSS, CAT)
+
+
+def test_listing_reports_equivalent_main_stat():
+    from engine.market.listing import evaluate_listing
+    snap = snapshot(bundle("레테"))
+    ring = snap.equipment_presets[2]["반지4"]
+    ev = evaluate_listing(snap, Setting(1, 1, 1), Listing("반지4", ring, price=3_000_000_000), BOSS, CAT)
+    assert ev.main_stat_gain > 0
+    assert ev.main_stat_gain_per_100m == pytest.approx(ev.main_stat_gain / 30)

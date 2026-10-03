@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getCharacter, getSettings, postListings } from "./api.js";
-import { formatMeso, formatPct, formatRelative, parsePotentials, parsePrice, settingLabel } from "./format.js";
+import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, parsePrice, settingLabel } from "./format.js";
 import { loadListings, saveListings } from "./storage.js";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
@@ -31,12 +31,13 @@ function SettingsTable({ ranking }) {
     <section>
       <h3>보스 세팅 순위 (프리셋 조합)</h3>
       <table>
-        <thead><tr><th>#</th><th>조합</th><th>현재 대비</th></tr></thead>
+        <thead><tr><th>#</th><th>조합</th><th>현재 대비</th><th>환산 주스탯</th></tr></thead>
         <tbody>
           {ranking.slice(0, 5).map((r, i) => (
             <tr key={settingLabel(r.setting)}>
               <td>{i + 1}</td><td>{settingLabel(r.setting)}</td>
               <td>{r.relative_to_active == null ? "—" : formatRelative(r.relative_to_active)}</td>
+              <td>{r.main_stat_vs_active == null ? "—" : formatStat(r.main_stat_vs_active)}</td>
             </tr>
           ))}
         </tbody>
@@ -100,13 +101,15 @@ function ListingResults({ result }) {
   return (
     <section>
       <h3>억당 효율 ({settingLabel(result.setting)} 기준, {result.boss.name})</h3>
+      <p className="muted">환산 주스탯: 같은 실딜 상승을 내는 최종 주스탯 증가량 = (상승률) × (주스탯×4 + 부스탯) / 4</p>
       <table>
-        <thead><tr><th>부위</th><th>아이템</th><th>가격</th><th>실딜 상승</th><th>억당</th><th>계산 제외</th></tr></thead>
+        <thead><tr><th>부위</th><th>아이템</th><th>가격</th><th>실딜 상승</th><th>환산</th><th>억당</th><th>억당 환산</th><th>계산 제외</th></tr></thead>
         <tbody>
           {result.ranking.map((r, i) => (
             <tr key={i}>
               <td>{r.slot}</td><td>{r.name}</td><td>{formatMeso(r.price)}</td>
-              <td>{formatPct(r.delta_pct)}</td><td>{formatPct(r.per_100m)}</td><td>{r.excluded.join(", ")}</td>
+              <td>{formatPct(r.delta_pct)}</td><td>{formatStat(r.main_stat_gain)}</td>
+              <td>{formatPct(r.per_100m)}</td><td>{formatStat(r.main_stat_gain_per_100m)}</td><td>{r.excluded.join(", ")}</td>
             </tr>
           ))}
         </tbody>

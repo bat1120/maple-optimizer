@@ -40,3 +40,12 @@ describe("settingLabel", () => {
     expect(settingLabel({ equipment: 1, hyper: 1, ability: 1 })).toBe("장비 1 · 하이퍼 1 · 어빌 1");
   });
 });
+
+describe("formatStat", () => {
+  it("환산 주스탯은 정수, 부호와 천 단위 구분", async () => {
+    const { formatStat } = await import("./format.js");
+    expect(formatStat(577.04)).toBe("+577");
+    expect(formatStat(12345.6)).toBe("+12,346");
+    expect(formatStat(-30.2)).toBe("-30");
+  });
+});
