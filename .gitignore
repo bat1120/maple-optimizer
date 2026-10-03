@@ -7,3 +7,4 @@ dist/
 *.sqlite3
 .raw/
 .raw-pairs/
+.superpowers/

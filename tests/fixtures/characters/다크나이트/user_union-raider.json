@@ -1,0 +1,134 @@
+{
+ "date": null,
+ "union_raider_stat": [
+  "버프 지속시간 25% 증가",
+  "STR 100 증가",
+  "보스 몬스터 공격 시 데미지 6% 증가",
+  "최대 HP 6% 증가",
+  "크리티컬 데미지 6% 증가",
+  "DEX 100 증가",
+  "공격 시 20%의 확률로 데미지 20% 증가",
+  "최대 HP 2500 증가",
+  "DEX 100 증가",
+  "적 공격마다 70%의 확률로 순수 MP의 10% 회복",
+  "STR 100 증가",
+  "ALLSTAT 50, 최대 HP 2500 증가",
+  "이동속도, 최대 이동속도 10 증가. 최대 이동속도 170 이상 시 초과분의 20% 적용, 렌 공격대원 효과로 증가하는 최대 이동속도는 190 초과 불가",
+  "LUK 100 증가",
+  "적 공격마다 70%의 확률로 순수 HP의 10% 회복",
+  "STR 100 증가",
+  "STR 100 증가",
+  "DEX 100 증가",
+  "INT 100 증가",
+  "INT 100 증가",
+  "상태 이상 내성 5 증가",
+  "INT 100 증가",
+  "INT 100 증가",
+  "크리티컬 확률 5% 증가",
+  "STR 100 증가",
+  "메소 획득량 5% 증가",
+  "INT 80 증가",
+  "STR 100 증가",
+  "LUK 100 증가",
+  "경험치 획득량 12% 증가",
+  "DEX 100 증가",
+  "크리티컬 확률 5% 증가",
+  "LUK 80 증가",
+  "STR 100 증가",
+  "DEX 100 증가",
+  "최대 MP 6% 증가",
+  "최대 HP 2500 증가",
+  "LUK 100 증가",
+  "스킬 재사용 대기시간 6% 감소",
+  "STR, DEX, LUK 50 증가",
+  "STR 100 증가",
+  "소환수 지속시간 12% 증가",
+  "방어율 무시 6% 증가",
+  "INT 80 증가",
+  "LUK 80 증가",
+  "INT 80 증가",
+  "LUK 80 증가",
+  "INT 80 증가",
+  "공격력/마력 25 증가"
+ ],
+ "union_occupied_stat": [],
+ "union_block": [],
+ "union_inner_stat": [],
+ "use_preset_no": 1,
+ "union_raider_preset_1": null,
+ "union_raider_preset_2": null,
+ "union_raider_preset_3": null,
+ "union_raider_preset_4": null,
+ "union_raider_preset_5": null,
+ "union_state_stat": [
+  "STR 75 증가",
+  "크리티컬 데미지 20.00% 증가",
+  "공격력 15 증가",
+  "보스 몬스터 공격 시 데미지 40% 증가",
+  "크리티컬 확률 10% 증가",
+  "일반 몬스터 공격 시 데미지 40% 증가",
+  "버프 지속시간 40% 증가",
+  "방어율 무시 10% 증가"
+ ],
+ "union_state_stat_preset": [
+  {
+   "preset_no": 1,
+   "union_state_stat": [
+    "STR 75 증가",
+    "크리티컬 데미지 20.00% 증가",
+    "공격력 15 증가",
+    "보스 몬스터 공격 시 데미지 40% 증가",
+    "크리티컬 확률 10% 증가",
+    "일반 몬스터 공격 시 데미지 40% 증가",
+    "버프 지속시간 40% 증가",
+    "방어율 무시 10% 증가"
+   ]
+  },
+  {
+   "preset_no": 2,
+   "union_state_stat": [
+    "크리티컬 데미지 20.00% 증가",
+    "STR 75 증가",
+    "보스 몬스터 공격 시 데미지 40% 증가",
+    "공격력 15 증가",
+    "상태 이상 내성 15 증가",
+    "크리티컬 확률 5% 증가",
+    "버프 지속시간 40% 증가",
+    "방어율 무시 40% 증가"
+   ]
+  },
+  {
+   "preset_no": 3,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 4,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 5,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 6,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 7,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 8,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 9,
+   "union_state_stat": []
+  },
+  {
+   "preset_no": 10,
+   "union_state_stat": []
+  }
+ ],
+ "union_max_point": 210
+}

@@ -1,0 +1,327 @@
+{
+ "date": null,
+ "set_effect": [
+  {
+   "set_name": "광휘의 보스 세트",
+   "total_set_count": 1,
+   "set_effect_info": [],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +15%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 몬스터 방어율 무시 +15%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 5,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +15%"
+    },
+    {
+     "set_count": 6,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 크리티컬 데미지 +7.5%"
+    }
+   ]
+  },
+  {
+   "set_name": "여명의 보스 세트",
+   "total_set_count": 2,
+   "set_effect_info": [
+    {
+     "set_count": 2,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 보스 몬스터 데미지 +10%"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10"
+    },
+    {
+     "set_count": 4,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 방어력  +100, 몬스터 방어율 무시 +10%"
+    }
+   ]
+  },
+  {
+   "set_name": "루타비스 세트(도적)",
+   "total_set_count": 4,
+   "set_effect_info": [
+    {
+     "set_count": 2,
+     "set_option": "DEX  +20, LUK  +20, 최대 HP  +1000, 최대 MP  +1000"
+    },
+    {
+     "set_count": 3,
+     "set_option": "최대 HP  +10%, 최대 MP  +10%, 공격력  +50"
+    },
+    {
+     "set_count": 4,
+     "set_option": "보스 몬스터 데미지 +30%"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "DEX  +20, LUK  +20, 최대 HP  +1000, 최대 MP  +1000"
+    },
+    {
+     "set_count": 3,
+     "set_option": "최대 HP  +10%, 최대 MP  +10%, 공격력  +50"
+    },
+    {
+     "set_count": 4,
+     "set_option": "보스 몬스터 데미지 +30%"
+    }
+   ]
+  },
+  {
+   "set_name": "마이스터 세트",
+   "total_set_count": 1,
+   "set_effect_info": [],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "최대 HP  +10%, 최대 MP  +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "공격력  +40, 마력  +40"
+    },
+    {
+     "set_count": 4,
+     "set_option": "보스 몬스터 데미지 +20%"
+    }
+   ]
+  },
+  {
+   "set_name": "앱솔랩스 세트(도적)",
+   "total_set_count": 4,
+   "set_effect_info": [
+    {
+     "set_count": 2,
+     "set_option": "최대 HP  +1500, 최대 MP  +1500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +30, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "공격력  +25, 마력  +25, 방어력  +200, 몬스터 방어율 무시 +10%"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "최대 HP  +1500, 최대 MP  +1500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +30, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "공격력  +25, 마력  +25, 방어력  +200, 몬스터 방어율 무시 +10%"
+    },
+    {
+     "set_count": 5,
+     "set_option": "공격력  +30, 마력  +30, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 6,
+     "set_option": "최대 HP  +20%, 최대 MP  +20%, 공격력  +20, 마력  +20"
+    },
+    {
+     "set_count": 7,
+     "set_option": "공격력  +20, 마력  +20, 몬스터 방어율 무시 +10%"
+    }
+   ]
+  },
+  {
+   "set_name": "쁘띠 스노우 세트",
+   "total_set_count": 3,
+   "set_effect_info": [
+    {
+     "set_count": 1,
+     "set_option": "[아이스 스노우 Lv.1] 스킬 사용 가능"
+    },
+    {
+     "set_count": 2,
+     "set_option": "[아이스 스노우 Lv.2] 스킬 사용 가능"
+    },
+    {
+     "set_count": 3,
+     "set_option": "[아이스 스노우 Lv.3] 스킬 사용 가능"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 1,
+     "set_option": "[아이스 스노우 Lv.1] 스킬 사용 가능"
+    },
+    {
+     "set_count": 2,
+     "set_option": "[아이스 스노우 Lv.2] 스킬 사용 가능"
+    },
+    {
+     "set_count": 3,
+     "set_option": "[아이스 스노우 Lv.3] 스킬 사용 가능"
+    }
+   ]
+  },
+  {
+   "set_name": "마스터 수호령 세트",
+   "total_set_count": 5,
+   "set_effect_info": [
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +5, 최대 HP  +250, 최대 MP  +250, 공격력  +3, 마력  +3"
+    },
+    {
+     "set_count": 5,
+     "set_option": "올스탯  +10, 최대 HP  +500, 최대 MP  +500, 공격력  +7, 마력  +7, [수호령 라이딩] 스킬 사용 가능"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +5, 최대 HP  +250, 최대 MP  +250, 공격력  +3, 마력  +3"
+    },
+    {
+     "set_count": 5,
+     "set_option": "올스탯  +10, 최대 HP  +500, 최대 MP  +500, 공격력  +7, 마력  +7, [수호령 라이딩] 스킬 사용 가능"
+    }
+   ]
+  },
+  {
+   "set_name": "에테르넬 세트(도적)",
+   "total_set_count": 2,
+   "set_effect_info": [
+    {
+     "set_count": 2,
+     "set_option": "최대 HP  +2500, 최대 MP  +2500, 공격력  +40, 마력  +40, 보스 몬스터 데미지 +10%"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "최대 HP  +2500, 최대 MP  +2500, 공격력  +40, 마력  +40, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +50, 공격력  +40, 마력  +40, 방어력  +600, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "최대 HP  +15%, 최대 MP  +15%, 공격력  +40, 마력  +40, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 5,
+     "set_option": "공격력  +40, 마력  +40, 몬스터 방어율 무시 +20%"
+    },
+    {
+     "set_count": 6,
+     "set_option": "공격력  +40, 마력  +40, 보스 몬스터 데미지 +15%"
+    },
+    {
+     "set_count": 7,
+     "set_option": "올스탯  +50, 최대 HP  +2500, 최대 MP  +2500, 공격력  +40, 마력  +40, 보스 몬스터 데미지 +15%"
+    },
+    {
+     "set_count": 8,
+     "set_option": "공격력  +40, 마력  +40, 보스 몬스터 데미지 +15%"
+    }
+   ]
+  },
+  {
+   "set_name": "칠흑의 보스 세트",
+   "total_set_count": 10,
+   "set_effect_info": [
+    {
+     "set_count": 2,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 방어력  +250, 몬스터 방어율 무시 +10%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 5,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 6,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 몬스터 방어율 무시 +10%"
+    },
+    {
+     "set_count": 7,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 8,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 9,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 10,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    }
+   ],
+   "set_option_full": [
+    {
+     "set_count": 2,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 3,
+     "set_option": "올스탯  +10, 최대 HP  +250, 공격력  +10, 마력  +10, 방어력  +250, 몬스터 방어율 무시 +10%"
+    },
+    {
+     "set_count": 4,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 5,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 6,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 몬스터 방어율 무시 +10%"
+    },
+    {
+     "set_count": 7,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 8,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 보스 몬스터 데미지 +10%"
+    },
+    {
+     "set_count": 9,
+     "set_option": "올스탯  +15, 최대 HP  +375, 공격력  +15, 마력  +15, 크리티컬 데미지 +5%"
+    },
+    {
+     "set_count": 10,
+     "set_option": "올스탯  +20, 최대 HP  +500, 공격력  +20, 마력  +20, 보스 몬스터 데미지 +10%"
+    }
+   ]
+  }
+ ]
+}
