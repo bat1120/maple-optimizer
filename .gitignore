@@ -12,3 +12,4 @@ dist/
 web/node_modules/
 web/dist/
 .raw-history/
+.raw-weapons/

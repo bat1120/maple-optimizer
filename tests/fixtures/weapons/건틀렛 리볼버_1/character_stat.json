@@ -1,0 +1,183 @@
+{
+ "date": null,
+ "character_class": "블래스터",
+ "final_stat": [
+  {
+   "stat_name": "최소 스탯공격력",
+   "stat_value": "244198665"
+  },
+  {
+   "stat_name": "최대 스탯공격력",
+   "stat_value": "268350179"
+  },
+  {
+   "stat_name": "데미지",
+   "stat_value": "97.00"
+  },
+  {
+   "stat_name": "보스 몬스터 데미지",
+   "stat_value": "408.00"
+  },
+  {
+   "stat_name": "최종 데미지",
+   "stat_value": "120.61"
+  },
+  {
+   "stat_name": "방어율 무시",
+   "stat_value": "93.77"
+  },
+  {
+   "stat_name": "크리티컬 확률",
+   "stat_value": "115"
+  },
+  {
+   "stat_name": "크리티컬 데미지",
+   "stat_value": "104.80"
+  },
+  {
+   "stat_name": "상태이상 내성",
+   "stat_value": "103"
+  },
+  {
+   "stat_name": "스탠스",
+   "stat_value": "100"
+  },
+  {
+   "stat_name": "방어력",
+   "stat_value": "99999"
+  },
+  {
+   "stat_name": "이동속도",
+   "stat_value": "170"
+  },
+  {
+   "stat_name": "점프력",
+   "stat_value": "123"
+  },
+  {
+   "stat_name": "스타포스",
+   "stat_value": "327"
+  },
+  {
+   "stat_name": "아케인포스",
+   "stat_value": "1350"
+  },
+  {
+   "stat_name": "어센틱포스",
+   "stat_value": "880"
+  },
+  {
+   "stat_name": "STR",
+   "stat_value": "78155"
+  },
+  {
+   "stat_name": "DEX",
+   "stat_value": "11479"
+  },
+  {
+   "stat_name": "INT",
+   "stat_value": "8023"
+  },
+  {
+   "stat_name": "LUK",
+   "stat_value": "7514"
+  },
+  {
+   "stat_name": "HP",
+   "stat_value": "143660"
+  },
+  {
+   "stat_name": "MP",
+   "stat_value": "58901"
+  },
+  {
+   "stat_name": "AP 배분 STR",
+   "stat_value": "1518"
+  },
+  {
+   "stat_name": "AP 배분 DEX",
+   "stat_value": "4"
+  },
+  {
+   "stat_name": "AP 배분 INT",
+   "stat_value": "4"
+  },
+  {
+   "stat_name": "AP 배분 LUK",
+   "stat_value": "4"
+  },
+  {
+   "stat_name": "AP 배분 HP",
+   "stat_value": "-453"
+  },
+  {
+   "stat_name": "AP 배분 MP",
+   "stat_value": "-220"
+  },
+  {
+   "stat_name": "아이템 드롭률",
+   "stat_value": "286"
+  },
+  {
+   "stat_name": "메소 획득량",
+   "stat_value": "162"
+  },
+  {
+   "stat_name": "버프 지속시간",
+   "stat_value": "55"
+  },
+  {
+   "stat_name": "공격 속도",
+   "stat_value": "7"
+  },
+  {
+   "stat_name": "일반 몬스터 데미지",
+   "stat_value": "111.00"
+  },
+  {
+   "stat_name": "재사용 대기시간 감소 (초)",
+   "stat_value": "2"
+  },
+  {
+   "stat_name": "재사용 대기시간 감소 (%)",
+   "stat_value": "6"
+  },
+  {
+   "stat_name": "재사용 대기시간 미적용",
+   "stat_value": "7"
+  },
+  {
+   "stat_name": "속성 내성 무시",
+   "stat_value": "5.00"
+  },
+  {
+   "stat_name": "상태이상 추가 데미지",
+   "stat_value": "0.00"
+  },
+  {
+   "stat_name": "무기 숙련도",
+   "stat_value": "91"
+  },
+  {
+   "stat_name": "추가 경험치 획득",
+   "stat_value": "354.00"
+  },
+  {
+   "stat_name": "공격력",
+   "stat_value": "11207"
+  },
+  {
+   "stat_name": "마력",
+   "stat_value": "2420"
+  },
+  {
+   "stat_name": "전투력",
+   "stat_value": "404417880"
+  },
+  {
+   "stat_name": "소환수 지속시간 증가",
+   "stat_value": "12"
+  }
+ ],
+ "remain_ap": 0
+}

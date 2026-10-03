@@ -61,3 +61,10 @@
 - BASELINE: verify G8 → E2E 엔드포인트·README 없음(exit 1)
 - BUILD: 서버 엔드포인트 추가 POST /api/enhance/starforce, /api/enhance/cube, /api/craft/compare, /api/character/{name}/optimize (+ 단위 테스트 5), scripts/run-local.ps1(-Check), README(로컬 실행·시크릿 소재지·데이터 한계)
 - VERIFY exit 0: ① E2E 체인(조회→세팅→매물→스타포스→큐브→직작 비교→최적화) 통과 ② run-local health 200, / 200 ③ README 필수 항목
+
+## 2026-10-03 후속: 무기 상수 4종, 재설정 가격 확인
+- 사용자 지시: 해당 무기 사용자를 찾아 상수 실측, 레전드리 200제 재설정 가격 4,500만(인게임 확인)
+- 직업 랭킹(블래스터·미하일·팔라딘·데몬슬레이어)에서 무기별 2명씩 8명 수집(API 163회) → 익명화 tests/fixtures/weapons
+- 역산 상수: 한손검 1.24000(미하일 ×2), 한손도끼 1.20002/1.20001(데몬슬레이어), 두손둔기 1.33998(팔라딘 ×2), 건틀렛 리볼버 1.69998/1.70002(블래스터)
+- 회귀 테스트 8개 RED(UnknownWeapon) → 상수 추가 후 GREEN. validate 254 passed, G5·G6·G8 VERIFY 유지
+- cube_black.json `_verified.meso_cost`: 레전드리 200~249 = 45,000,000 확인값으로 표기

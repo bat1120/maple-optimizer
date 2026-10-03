@@ -4,6 +4,7 @@ import pathlib
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "characters"
 PAIRS = pathlib.Path(__file__).parent / "fixtures" / "pairs"
+WEAPONS = pathlib.Path(__file__).parent / "fixtures" / "weapons"
 ENDPOINTS = (
     "character/basic",
     "character/stat",
@@ -32,3 +33,12 @@ def bundle(cls: str) -> dict[str, dict]:
 def pair_bundle(name: str) -> dict[str, dict]:
     """같은 캐릭터의 다른 세팅·시점 스냅샷 (예: "레테_boss")."""
     return {ep: json.loads((PAIRS / name / (ep.replace("/", "_") + ".json")).read_text(encoding="utf-8")) for ep in ENDPOINTS}
+
+
+def weapon_samples() -> list[str]:
+    """무기 상수 표본 디렉터리 이름 (예: "한손검_1")."""
+    return sorted(p.name for p in WEAPONS.iterdir() if p.is_dir()) if WEAPONS.exists() else []
+
+
+def weapon_bundle(name: str) -> dict[str, dict]:
+    return {ep: json.loads((WEAPONS / name / (ep.replace("/", "_") + ".json")).read_text(encoding="utf-8")) for ep in ENDPOINTS}

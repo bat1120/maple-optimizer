@@ -12,6 +12,8 @@ RAW = ROOT / ".raw"
 OUT = ROOT / "tests" / "fixtures" / "characters"
 RAW_PAIRS = ROOT / ".raw-pairs"
 OUT_PAIRS = ROOT / "tests" / "fixtures" / "pairs"
+RAW_WEAPONS = ROOT / ".raw-weapons"
+OUT_WEAPONS = ROOT / "tests" / "fixtures" / "weapons"
 DROP_KEYS = {"character_name", "character_guild_name", "character_image", "item_description"}
 
 
@@ -46,6 +48,20 @@ def main() -> None:
             data = scrub(json.loads(f.read_text(encoding="utf-8")))
             (dst / f.name).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         print("pair", d.name)
+    # 무기 상수 표본: 직업이 겹쳐도 되므로 "<무기 종류>_<번호>" 이름으로 둔다.
+    if OUT_WEAPONS.exists():
+        shutil.rmtree(OUT_WEAPONS)
+    seen: dict[str, int] = {}
+    for d in sorted(p for p in RAW_WEAPONS.iterdir() if p.is_dir()) if RAW_WEAPONS.exists() else []:
+        eq = json.loads((d / "character_item-equipment.json").read_text(encoding="utf-8"))
+        part = next(i["item_equipment_part"] for i in eq["item_equipment"] if i["item_equipment_slot"] == "무기")
+        seen[part] = seen.get(part, 0) + 1
+        dst = OUT_WEAPONS / f"{part}_{seen[part]}"
+        dst.mkdir(parents=True)
+        for f in sorted(d.glob("*.json")):
+            data = scrub(json.loads(f.read_text(encoding="utf-8")))
+            (dst / f.name).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("weapon", dst.name)
 
 
 if __name__ == "__main__":

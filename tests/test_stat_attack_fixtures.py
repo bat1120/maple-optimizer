@@ -4,7 +4,7 @@ import pytest
 
 from engine.stats.formula import stat_attack_max
 from engine.stats.jobs import UnsupportedJob, job_profile
-from helpers import classes, load
+from helpers import classes, load, weapon_bundle, weapon_samples
 from nexon.convert import final_stats, num, weapon_part
 
 SUPPORTED = [c for c in classes() if c != "데몬어벤져"]
@@ -50,3 +50,16 @@ def test_final_stats_missing_required_stat_raises(missing):
     data["final_stat"] = [x for x in data["final_stat"] if x["stat_name"] != missing]
     with pytest.raises(ValueError, match=missing):
         final_stats(data)
+
+
+def test_weapon_samples_cover_four_more_weapons():
+    parts = {name.rsplit("_", 1)[0] for name in weapon_samples()}
+    assert {"한손검", "한손도끼", "두손둔기", "건틀렛 리볼버"} <= parts
+
+
+@pytest.mark.parametrize("name", weapon_samples())
+def test_weapon_sample_stat_attack_equals_api(name):
+    b = weapon_bundle(name)
+    f = final_stats(b["character/stat"])
+    got = stat_attack_max(f, job_profile(b["character/stat"]["character_class"]), weapon_part(b["character/item-equipment"]))
+    assert got == pytest.approx(f.stat_attack_max, rel=1e-4), name
