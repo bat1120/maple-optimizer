@@ -1,0 +1,1851 @@
+[
+ {
+  "date_create": "2026-10-02T22:58:08.97+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "INT +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "STR +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "최대 MP +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-02T22:58:07.521+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "INT +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "최대 HP +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "HP 회복 아이템 및 회복 스킬 효율 +30%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-02T22:57:30.237+09:00",
+  "cube_type": "카르마 블랙 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +40%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +6%",
+    "grade": "유니크"
+   },
+   {
+    "value": "올스탯 +6%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-02T22:57:22.401+09:00",
+  "cube_type": "카르마 블랙 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +40%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "몬스터 방어율 무시 +40%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-02T00:14:28.705+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "STR +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 DEX +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 MP 회복",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:26.307+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "몬스터 방어율 무시 +4%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:24.042+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "크리티컬 확률 +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "보스 몬스터 데미지 +12%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:21.631+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 DEX +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 HP +8%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:19.265+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "크리티컬 확률 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +1",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:15.032+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 HP 회복",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:15.032+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "최대 HP +8%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:15.032+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "크리티컬 확률 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "최대 HP +8%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:12.06+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 DEX +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격력 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:12.06+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 HP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +12%",
+    "grade": "유니크"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:12.06+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "몬스터 방어율 무시 +4%",
+    "grade": "유니크"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +1",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:08.635+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "크리티컬 확률 +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +1",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:08.635+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 MP 회복",
+    "grade": "유니크"
+   },
+   {
+    "value": "올스탯 +6%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:08.635+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 HP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +1",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:05.605+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격력 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:05.605+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "공격력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 HP +8%",
+    "grade": "유니크"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:05.605+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격력 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:02.905+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "DEX +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:02.905+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 HP 회복",
+    "grade": "유니크"
+   },
+   {
+    "value": "마력 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:02.905+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:00.755+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:00.755+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "공격력 +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "크리티컬 확률 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:14:00.755+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "크리티컬 확률 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-02T00:00:12.562+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 MP 회복",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:59.772+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "STR +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 STR +1",
+    "grade": "유니크"
+   },
+   {
+    "value": "공격 시 15% 확률로 95의 MP 회복",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:59.772+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "최대 MP +11%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:59.772+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "DEX +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 HP +8%",
+    "grade": "유니크"
+   },
+   {
+    "value": "최대 MP +8%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:57.206+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +2",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "캐릭터 기준 9레벨 당 LUK +1",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:57.206+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "공격력 +32",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:57.206+09:00",
+  "cube_type": "카르마 화이트 에디셔널 큐브",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [],
+  "before_additional_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "데미지 +12%",
+    "grade": "레전드리"
+   }
+  ],
+  "after_potential_option": [],
+  "after_additional_potential_option": [
+   {
+    "value": "DEX +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "마력 +9%",
+    "grade": "유니크"
+   }
+  ]
+ },
+ {
+  "date_create": "2026-10-01T23:59:23.924+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "INT +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-01T23:59:22.022+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-01T23:59:19.412+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "메소 획득량 +20%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 HP +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "최대 HP +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-01T23:59:11.369+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "INT +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +6%",
+    "grade": "유니크"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-10-01T23:59:08.015+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "STR +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 HP +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-09-28T22:45:04.444+09:00",
+  "cube_type": "펄스 인핸서",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "반지",
+  "item_level": 130,
+  "target_item": "어센던트 펄스 링",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레어",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "LUK +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "올스탯 +9%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "INT +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "최대 HP +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "최대 MP +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-09-28T22:06:20.433+09:00",
+  "cube_type": "메멘토 골드 큐브 (200제)",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +40%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "공격력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-09-28T22:06:20.433+09:00",
+  "cube_type": "메멘토 골드 큐브 (200제)",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +40%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "크리티컬 확률 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "크리티컬 확률 +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ },
+ {
+  "date_create": "2026-09-28T22:06:20.433+09:00",
+  "cube_type": "메멘토 골드 큐브 (200제)",
+  "item_upgrade_result": "실패",
+  "miracle_time_flag": "이벤트 적용되지 않음",
+  "item_equipment_part": "무기",
+  "item_level": 200,
+  "target_item": "제네시스 카르타",
+  "potential_option_grade": "레전드리",
+  "additional_potential_option_grade": "레전드리",
+  "upgrade_guarantee": false,
+  "upgrade_guarantee_count": 0,
+  "before_potential_option": [
+   {
+    "value": "마력 +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "보스 몬스터 데미지 +40%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "DEX +9%",
+    "grade": "유니크"
+   }
+  ],
+  "before_additional_potential_option": [],
+  "after_potential_option": [
+   {
+    "value": "INT +12%",
+    "grade": "레전드리"
+   },
+   {
+    "value": "STR +9%",
+    "grade": "유니크"
+   },
+   {
+    "value": "LUK +9%",
+    "grade": "유니크"
+   }
+  ],
+  "after_additional_potential_option": []
+ }
+]

@@ -209,3 +209,19 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         symbols=_symbol_block(bundle.get("character/symbol-equipment")),
         union=union,
     )
+
+
+def cube_attempts(potential_rows: list[dict], cube_rows: list[dict]) -> list:
+    """확률 정보 조회(history/potential, history/cube) 기록 → CubeAttempt 목록 (시간순)."""
+    from engine.enhance.history import CubeAttempt
+
+    out = []
+    for r in potential_rows:
+        out.append(CubeAttempt(r["potential_type"], r["target_item"], r["item_equipment_part"], int(num(r["item_level"])),
+                               r["potential_option_grade"], [x["value"] for x in r.get("after_potential_option") or []],
+                               r["date_create"]))
+    for r in cube_rows:
+        out.append(CubeAttempt(r["cube_type"], r["target_item"], r["item_equipment_part"], int(num(r["item_level"])),
+                               r["potential_option_grade"], [x["value"] for x in r.get("after_potential_option") or []],
+                               r["date_create"]))
+    return sorted(out, key=lambda a: a.date)

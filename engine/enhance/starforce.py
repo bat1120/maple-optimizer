@@ -110,6 +110,11 @@ def expected_cost(level: int, start: int, target: int, destroy_cost: float, cond
 
 def simulate(level: int, start: int, target: int, destroy_cost: float, cond: StarforceConditions,
              trials: int, seed: int) -> Distribution:
+    return Distribution.from_samples(simulate_samples(level, start, target, destroy_cost, cond, trials, seed))
+
+
+def simulate_samples(level: int, start: int, target: int, destroy_cost: float, cond: StarforceConditions,
+                     trials: int, seed: int) -> list[float]:
     _check(level, start, target)
     rng = random.Random(seed)
     trans = {s: transition(s, cond) for s in range(target)}
@@ -128,4 +133,4 @@ def simulate(level: int, start: int, target: int, destroy_cost: float, cond: Sta
                 total += destroy_cost
                 star = back[star]
         out.append(total)
-    return Distribution.from_samples(out)
+    return out

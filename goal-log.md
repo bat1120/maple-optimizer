@@ -43,3 +43,9 @@
 - VERIFY exit 0 (goals/results/G5.json), 200레벨 0→22성, 파괴 처리비 30억:
   - 기본 정확 178.87억 / MC 178.93억 (0.034%), 30%할인+방지 158.76억 (0.024%), 파괴감소+5·10·15 152.01억 (0.135%), 기본 복구 548.40억 (0.437%, p90 1225.9억)
   - 큐브 보공2줄 2.765% (0.015pp), 마력%합≥21 0.710% (0.028pp), 방무1+보공1 4.429% (0.053pp)
+
+## 2026-10-03 G6 VERIFIED
+- BASELINE: verify G6 → engine.market.craft 없음(exit 1)
+- 데이터: 넥슨 확률 정보 조회(사용자 계정) history/potential 114건(제네시스 카르타 레전드리 재설정), history/cube 43건 → 익명화 tests/fixtures/history. history/starforce는 조회 3일 0건
+- BUILD: engine/market/craft.py(직작 비용 분포·백분위·매물 비교), engine/enhance/history.py(지출·운), nexon.convert.cube_attempts, starforce.simulate_samples. 계획 docs/superpowers/plans/2026-10-03-g6-craft-vs-listing-luck.md
+- VERIFY exit 0 (goals/results/G6.json): ① 백분위 반해석↔결합 MC 최대 0.277pp ② 재설정 114회 지출 51.3억 = 수작업, 캐시 큐브 43건 미집계
