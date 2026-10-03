@@ -1,0 +1,11 @@
+{
+ "criterion1_err_fixture_pair": 0.0399044386977101,
+ "criterion1_err_same_buff_pair_reference": 0.0059022578233340894,
+ "criterion2_worst_abs_delta": 0.0,
+ "criterion3_best_setting": {
+  "equipment": 2,
+  "hyper": 3,
+  "ability": 2
+ },
+ "criterion3_best_over_actual_boss_setting": 1.0
+}

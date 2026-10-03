@@ -6,6 +6,7 @@ dependencies = ["httpx>=0.27"]
 
 [dependency-groups]
 dev = ["pytest>=8"]
+analysis = ["scipy>=1.13", "numpy>=2"]
 
 [build-system]
 requires = ["hatchling"]

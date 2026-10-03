@@ -4,6 +4,14 @@ from dataclasses import dataclass, field
 from engine.stats.model import FinalStats, StatBlock
 
 
+@dataclass(frozen=True)
+class Setting:
+    """장비·하이퍼스탯·어빌리티 프리셋 번호 조합."""
+    equipment: int
+    hyper: int
+    ability: int
+
+
 @dataclass
 class Item:
     slot: str
@@ -27,3 +35,10 @@ class CharacterSnapshot:
     ability_presets: dict[int, StatBlock]
     active_ability_preset: int
     excluded: list[str] = field(default_factory=list)
+    titles: dict[int, StatBlock] = field(default_factory=dict)  # 장비 프리셋 번호 → 칭호
+    symbols: StatBlock = field(default_factory=StatBlock)        # 아케인·어센틱 심볼 (%미적용)
+    union: StatBlock = field(default_factory=StatBlock)          # 유니온 공격대원 효과 (스탯은 %미적용)
+
+    @property
+    def active_setting(self) -> Setting:
+        return Setting(self.active_equipment_preset, self.active_hyper_preset, self.active_ability_preset)

@@ -12,6 +12,7 @@ class JobProfile:
     mains: tuple[str, ...]
     subs: tuple[str, ...]
     attack: str  # "ATK" | "MATK"
+    branches: tuple[str, ...] = ()  # 직업군: 전사 마법사 궁수 도적 해적 (세트 이름 접미어)
 
 
 _GROUPS = [
@@ -25,7 +26,20 @@ _GROUPS = [
     (("LUK",), ("DEX", "STR"), "ATK", "섀도어 듀얼블레이더 카데나"),
     (("STR", "DEX", "LUK"), (), "ATK", "제논"),
 ]
-_TABLE = {name: JobProfile(name, mains, subs, atk) for mains, subs, atk, names in _GROUPS for name in names.split()}
+_BRANCH_GROUPS = {
+    "전사": "히어로 팔라딘 다크나이트 소울마스터 미하일 블래스터 데몬슬레이어 데몬어벤져 아란 카이저 아델 제로 렌",
+    "마법사": "아크메이지(불,독) 아크메이지(썬,콜) 비숍 플레임위자드 배틀메이지 에반 루미너스 일리움 라라 키네시스 레테",
+    "궁수": "보우마스터 신궁 패스파인더 윈드브레이커 와일드헌터 메르세데스 카인",
+    "도적": "나이트로드 섀도어 듀얼블레이더 나이트워커 팬텀 카데나 칼리 호영 제논",
+    "해적": "바이퍼 캡틴 캐논마스터 스트라이커 메카닉 은월 엔젤릭버스터 아크 제논",
+}
+_BRANCHES: dict[str, tuple[str, ...]] = {}
+for _b, _names in _BRANCH_GROUPS.items():
+    for _n in _names.split():
+        _BRANCHES[_n] = _BRANCHES.get(_n, ()) + (_b,)
+
+_TABLE = {name: JobProfile(name, mains, subs, atk, _BRANCHES[name])
+          for mains, subs, atk, names in _GROUPS for name in names.split()}
 _UNSUPPORTED = {"데몬어벤져": "API가 HP를 표시 상한(500,000)으로만 줘서 순수/추가 HP를 나눌 수 없음"}
 
 

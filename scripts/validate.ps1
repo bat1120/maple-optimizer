@@ -1,8 +1,8 @@
-﻿# VALIDATE 게이트: 전체 회귀 스위트. 종료코드 0이 아니면 다음 단계로 가지 않는다.
+﻿# VALIDATE 게이트: 회귀 스위트(tests/, 목표 판정 tests/goals 제외 — 판정은 verify.ps1). 종료코드 0이 아니면 다음 단계로 가지 않는다.
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-$out = & uv run pytest -q -rs -p no:cacheprovider 2>&1 | Out-String
+$out = & uv run pytest -q -rs -p no:cacheprovider --ignore=tests/goals 2>&1 | Out-String
 $code = $LASTEXITCODE
 $summary = ($out -split "`n" | Where-Object { $_ -match "passed|failed|error|no tests ran" } | Select-Object -Last 1)
 Write-Output "pytest: $summary"

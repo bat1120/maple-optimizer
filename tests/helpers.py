@@ -3,6 +3,7 @@ import json
 import pathlib
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "characters"
+PAIRS = pathlib.Path(__file__).parent / "fixtures" / "pairs"
 ENDPOINTS = (
     "character/basic",
     "character/stat",
@@ -26,3 +27,8 @@ def load(cls: str, endpoint: str) -> dict:
 
 def bundle(cls: str) -> dict[str, dict]:
     return {ep: load(cls, ep) for ep in ENDPOINTS}
+
+
+def pair_bundle(name: str) -> dict[str, dict]:
+    """같은 캐릭터의 다른 세팅·시점 스냅샷 (예: "레테_boss")."""
+    return {ep: json.loads((PAIRS / name / (ep.replace("/", "_") + ".json")).read_text(encoding="utf-8")) for ep in ENDPOINTS}

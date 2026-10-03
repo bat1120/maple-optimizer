@@ -1,4 +1,6 @@
 """넥슨 응답 JSON → 엔진 타입. 넥슨 키 이름은 이 파일 밖으로 나가지 않는다."""
+import re
+
 from engine.options import StatLine, parse_option
 from engine.stats.model import FinalStats, StatBlock
 from engine.stats.snapshot import CharacterSnapshot, Item
@@ -111,6 +113,44 @@ def item(item_json: dict, level: int) -> Item:
     )
 
 
+_PLUS_NUMBER = re.compile(r"[+-]\s*\d")
+
+
+def _title_block(title: dict | None, level: int, excluded: list[str]) -> StatBlock:
+    """칭호 설명문에서 "올스탯 +10", "공격력/마력+10" 같은 줄만 읽는다. 숫자 없는 줄은 설명문이다."""
+    b = StatBlock()
+    for raw in ((title or {}).get("title_description") or "").splitlines():
+        line = raw.strip().lstrip("-").strip().replace("최대 HP/최대 MP", "최대 HP").replace("최대 HP/MP", "최대 HP")
+        if not line or not _PLUS_NUMBER.search(line) or line.startswith("옵션 적용 기간"):
+            continue
+        _add_texts(b, [line], level, excluded)
+    return b
+
+
+_UNION_MULTI = re.compile(r"^((?:STR|DEX|INT|LUK)(?:, (?:STR|DEX|INT|LUK))+) (\d+) 증가$")
+
+
+def _union_texts(text: str) -> list[str]:
+    """유니온 공격대 문자열 정규화: "ALLSTAT 50, 최대 HP 2500 증가", "STR, DEX, LUK 40 증가"."""
+    t = text.replace("ALLSTAT", "올스탯")
+    m = _UNION_MULTI.match(t)
+    if m:
+        return [f"{s} {m[2]} 증가" for s in m[1].split(", ")]
+    if "," in t and t.endswith("증가") and not t.startswith("이동속도"):
+        return [p if p.endswith("증가") else f"{p} 증가" for p in (x.strip() for x in t.split(","))]
+    return [t]
+
+
+def _symbol_block(symbol_json: dict | None) -> StatBlock:
+    b = StatBlock()
+    for s in (symbol_json or {}).get("symbol") or []:
+        for k, key in (("symbol_str", "STR"), ("symbol_dex", "DEX"), ("symbol_int", "INT"),
+                       ("symbol_luk", "LUK"), ("symbol_hp", "HP")):
+            if num(s.get(k)):
+                b.add(StatLine(key, num(s[k]), False))
+    return b
+
+
 def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
     basic = bundle["character/basic"]
     level = int(num(basic["character_level"]))
@@ -146,6 +186,13 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         _add_texts(b, [a.get("ability_value") for a in info], level, excluded)
         ability[n] = b
 
+    titles = {n: _title_block(eq.get(f"title_preset{n}"), level, excluded) for n in (1, 2, 3)}
+    if not titles[active_eq].flat and eq.get("title"):
+        titles[active_eq] = _title_block(eq.get("title"), level, excluded)
+    union = StatBlock()
+    for text in (bundle.get("user/union-raider") or {}).get("union_raider_stat") or []:
+        _add_texts(union, _union_texts(text), level, excluded)
+
     return CharacterSnapshot(
         character_class=basic["character_class"],
         level=level,
@@ -158,4 +205,7 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         ability_presets=ability,
         active_ability_preset=int(num(ab.get("preset_no"))) or 1,
         excluded=excluded,
+        titles=titles,
+        symbols=_symbol_block(bundle.get("character/symbol-equipment")),
+        union=union,
     )

@@ -64,3 +64,40 @@ def test_soul_option_and_soul_potential_are_counted():
     w = s.equipment_presets[s.active_equipment_preset]["무기"]
     assert w.stats.pct["ATK"] == 46 + 3 + 4 + 3   # 잠재·에디 46 + 소울 3 + 소울 잠재 4·3
     assert w.stats.flat["LUK"] == 100 + 16
+
+
+def test_lete_titles_per_preset():
+    s = snapshot(bundle("레테"))
+    t1, t2 = s.titles[1], s.titles[2]
+    assert t1.flat["INT"] == 10 and t1.flat["MATK"] == 5      # 쑥쑥 새싹: 올스탯 10, 공마 5
+    assert t2.flat["INT"] == 20 and t2.flat["MATK"] == 10 and t2.boss == 10   # 마스테리아의 소환사
+    assert s.titles[3].flat == {}
+
+
+def test_lete_symbols_are_flat_int():
+    s = snapshot(bundle("레테"))
+    assert s.symbols.flat["INT"] == 24000 and s.symbols.flat.get("LUK", 0) == 0
+
+
+def test_lete_union_raider_stats():
+    b = bundle("레테")
+    raw = b["user/union-raider"]["union_raider_stat"]
+    s = snapshot(b)
+    # 독립 계산: "X 80 증가"류 + "STR, DEX, LUK 40 증가" + "ALLSTAT 50"
+    def flat(stat):
+        total = 0
+        for t in raw:
+            if t.startswith("ALLSTAT "):
+                total += int(t.split()[1].rstrip(","))
+            elif t == f"{stat} 80 증가":
+                total += 80
+            elif t == f"{stat} 100 증가":
+                total += 100
+            elif t.endswith(" 40 증가") and stat in t.split(" 40")[0].split(", "):
+                total += 40
+        return total
+    for stat in ("STR", "DEX", "INT", "LUK"):
+        assert s.union.flat.get(stat, 0) == flat(stat), stat
+    assert s.union.boss == 6 and s.union.cd == 5 and s.union.ied == [5]
+    assert s.union.flat["MATK"] == 20
+    assert not [t for t in s.excluded if "이동속도" in t or "재사용" in t]

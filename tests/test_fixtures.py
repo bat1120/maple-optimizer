@@ -1,6 +1,6 @@
 import json
 
-from helpers import ENDPOINTS, FIXTURES, classes, load
+from helpers import ENDPOINTS, FIXTURES, classes, load, pair_bundle
 
 FORBIDDEN = {"character_name", "character_guild_name", "character_image", "item_description"}
 
@@ -35,3 +35,10 @@ def test_fixtures_are_anonymized():
 def test_directory_name_matches_character_class():
     for c in classes():
         assert load(c, "character/basic")["character_class"] == c
+
+
+def test_lete_boss_pair_is_boss_setting():
+    b = pair_bundle("레테_boss")
+    assert b["character/basic"]["character_class"] == "레테"
+    assert b["character/item-equipment"]["preset_no"] == 2
+    assert "character_name" not in b["character/basic"]
