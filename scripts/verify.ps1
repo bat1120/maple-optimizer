@@ -15,6 +15,7 @@ if ($out -match "skipped") { Write-Output "VERIFY FAIL: skip 발생 (skip은 통
 if ($out -notmatch "\d+ passed") { Write-Output "VERIFY FAIL: 실행된 테스트 없음"; exit 1 }
 
 if ($id -eq "g4") {
+    $env:NO_COLOR = "1"; $env:FORCE_COLOR = "0"
     & npm --prefix web run build 2>&1 | Out-String | Write-Output
     if ($LASTEXITCODE -ne 0) { Write-Output "VERIFY FAIL: web build"; exit 1 }
     $web = & npm --prefix web test 2>&1 | Out-String

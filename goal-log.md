@@ -29,3 +29,9 @@
 - 엔드포인트: /api/health, /api/character/{name}, /settings(27조합), POST /listings(기본 세팅 = 최적 조합)
 - 중간 실패 1건: test_no_damage_is_422 — 테스트가 기본(최적) 세팅을 써서 방무가 충분했음. 테스트를 활성 세팅 명시로 수정(제품 코드 변경 없음)
 - VERIFY exit 0. after (goals/results/G3.json): ① 서버 테스트 18 passed, skip 0 ② 2회 조회 넥슨 호출 1회 ③ 404/503/502/500 ④ 200,200,200,429
+
+## 2026-10-03 G4 VERIFIED
+- BASELINE: verify G4 → web/dist 없음(exit 1)
+- BUILD: web/ (React 18 + Vite 6 + vitest 2, JSX): 조회·보스 세팅 순위·매물 폼(총 옵션+잠재 텍스트, "45억 3000만" 가격)·억당 효율 표, localStorage 매물 보관. server.create_app(static_dir) 정적 서빙. 계획 docs/superpowers/plans/2026-10-03-g4-web.md
+- 게이트 수정: verify.ps1 vitest 결과 파싱이 ANSI 색 코드에 막힘 → NO_COLOR/FORCE_COLOR=0
+- VERIFY exit 0: ① build exit 0 ② vitest 12 passed ③ GET / 200 + root div

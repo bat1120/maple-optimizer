@@ -1,0 +1,14 @@
+:root { font-family: system-ui, "Malgun Gothic", sans-serif; color: #1d1d1f; background: #f7f7f8; }
+main { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 1.5rem; }
+form, section { background: #fff; border: 1px solid #e3e3e6; border-radius: 8px; padding: 16px; margin: 12px 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; margin: 6px 0; }
+input, select, textarea { font: inherit; padding: 6px 8px; border: 1px solid #c9c9ce; border-radius: 6px; }
+.search { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+fieldset { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; border: 1px solid #e3e3e6; border-radius: 6px; }
+button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #3b5bdb; background: #3b5bdb; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
+.error { color: #c92a2a; }
+.muted { color: #6b6b73; font-size: 0.9rem; }

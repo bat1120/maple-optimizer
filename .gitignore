@@ -9,3 +9,5 @@ dist/
 .raw-pairs/
 .superpowers/
 .cache/
+web/node_modules/
+web/dist/

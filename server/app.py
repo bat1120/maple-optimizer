@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from engine.market.listing import InvalidPrice, NoDamage
 from engine.stats.jobs import UnsupportedJob
@@ -41,7 +42,7 @@ def _err(e: ApiError) -> JSONResponse:
 
 
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
-               window: float = 60.0, clock: Callable[[], float] = time.time) -> FastAPI:
+               window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     cache = BundleCache(db_path, clock)
     limiter = SlidingWindow(rate_limit, window, clock)
@@ -112,6 +113,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         except ValueError as e:
             raise ApiError(422, "INVALID_INPUT", str(e)) from None
 
+    if static_dir and pathlib.Path(static_dir, "index.html").exists():
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")  # API 라우트 뒤에 둔다
     return app
 
 
@@ -119,4 +122,4 @@ def default_app() -> FastAPI:
     """실서버용: .env의 넥슨 키, 저장소의 .cache/ SQLite."""
     from nexon.client import NexonClient, load_api_key
     client = NexonClient(load_api_key(ROOT))
-    return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"))
+    return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"))
