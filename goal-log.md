@@ -35,3 +35,11 @@
 - BUILD: web/ (React 18 + Vite 6 + vitest 2, JSX): 조회·보스 세팅 순위·매물 폼(총 옵션+잠재 텍스트, "45억 3000만" 가격)·억당 효율 표, localStorage 매물 보관. server.create_app(static_dir) 정적 서빙. 계획 docs/superpowers/plans/2026-10-03-g4-web.md
 - 게이트 수정: verify.ps1 vitest 결과 파싱이 ANSI 색 코드에 막힘 → NO_COLOR/FORCE_COLOR=0
 - VERIFY exit 0: ① build exit 0 ② vitest 12 passed ③ GET / 200 + root div
+
+## 2026-10-03 G5 VERIFIED
+- BASELINE: verify G5 → engine.enhance 없음(exit 1)
+- 조사: 공식 패치노트 Update/767(2025-03-20 개편), Update/799(2026-03-19 스타캐치 상시·흔적 성 유지), 공식 큐브 확률 페이지(블랙/재설정, 레전드리·무기·200). 비공식(나무위키): 현재 확률표(공식 기본×1.05와 일치), 비용 공식, 재설정 메소 가격 → 데이터에 verified:false
+- BUILD: engine/data/{starforce,cube_black}.json, engine/enhance/{stats,starforce,cube}.py. 계획 docs/superpowers/plans/2026-10-03-g5-enhance.md
+- VERIFY exit 0 (goals/results/G5.json), 200레벨 0→22성, 파괴 처리비 30억:
+  - 기본 정확 178.87억 / MC 178.93억 (0.034%), 30%할인+방지 158.76억 (0.024%), 파괴감소+5·10·15 152.01억 (0.135%), 기본 복구 548.40억 (0.437%, p90 1225.9억)
+  - 큐브 보공2줄 2.765% (0.015pp), 마력%합≥21 0.710% (0.028pp), 방무1+보공1 4.429% (0.053pp)
