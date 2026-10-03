@@ -49,3 +49,10 @@
 - 데이터: 넥슨 확률 정보 조회(사용자 계정) history/potential 114건(제네시스 카르타 레전드리 재설정), history/cube 43건 → 익명화 tests/fixtures/history. history/starforce는 조회 3일 0건
 - BUILD: engine/market/craft.py(직작 비용 분포·백분위·매물 비교), engine/enhance/history.py(지출·운), nexon.convert.cube_attempts, starforce.simulate_samples. 계획 docs/superpowers/plans/2026-10-03-g6-craft-vs-listing-luck.md
 - VERIFY exit 0 (goals/results/G6.json): ① 백분위 반해석↔결합 MC 최대 0.277pp ② 재설정 114회 지출 51.3억 = 수작업, 캐시 큐브 43건 미집계
+
+## 2026-10-03 G7 VERIFIED
+- BASELINE: verify G7 → engine.optimize 없음(exit 1)
+- BUILD: engine/stats/evaluate.Evaluator(보정 1회 재사용), engine/optimize/budget.py(greedy, brute_force). 계획 docs/superpowers/plans/2026-10-03-g7-optimize.md
+- VERIFY 1차 exit 1: 순수 효율 탐욕법 평균 0.954 / 최소 0.543 (싼 후보가 부위를 먼저 차지해 센 후보를 막음)
+- 수정: 출발점 다중화(후보별 "먼저 사기" 고정) + 1:1 교체 개선. 재현 테스트 test_greedy_does_not_let_a_cheap_efficient_item_block_a_much_stronger_one RED→GREEN
+- VERIFY 2차 exit 0 (goals/results/G7.json): 30개 인스턴스 평균·최소 비율 1.0(상승분 기준), 부위 위반 0, 예산 초과 0

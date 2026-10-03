@@ -31,3 +31,19 @@ def rank_settings(snap: CharacterSnapshot, boss: BossProfile, catalog: SetCatalo
     out = [(s, evaluate_setting(snap, s, boss, catalog))
            for s in (Setting(e, h, a) for e, h, a in itertools.product(equips, (1, 2, 3), (1, 2, 3)))]
     return sorted(out, key=lambda x: x[1], reverse=True)
+
+
+class Evaluator:
+    """한 스냅샷·세팅·보스에 대해 보정을 한 번만 하고 여러 아이템 조합을 평가한다 (최적화용)."""
+
+    def __init__(self, snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog):
+        self.snap, self.setting, self.boss, self.catalog = snap, setting, boss, catalog
+        self._cal = calibrate(snap, catalog)
+        self._job = job_profile(snap.character_class)
+
+    def base_items(self) -> dict[str, Item]:
+        return preset_items(self.snap, self.setting.equipment)
+
+    def index(self, items: dict[str, Item]) -> float:
+        pred = predict(self._cal, sources_for(self.snap, self.setting, self.catalog, items))
+        return boss_index(pred, self._job, items["무기"].part, self.boss)
