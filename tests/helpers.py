@@ -26,13 +26,24 @@ def load(cls: str, endpoint: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+OPTIONAL = ("character/link-skill",)  # 2026-10-04 이후 수집분에만 있다
+
+
+def _with_optional(base: pathlib.Path, out: dict) -> dict:
+    for ep in OPTIONAL:
+        f = base / (ep.replace("/", "_") + ".json")
+        if f.exists():
+            out[ep] = json.loads(f.read_text(encoding="utf-8"))
+    return out
+
+
 def bundle(cls: str) -> dict[str, dict]:
-    return {ep: load(cls, ep) for ep in ENDPOINTS}
+    return _with_optional(FIXTURES / cls, {ep: load(cls, ep) for ep in ENDPOINTS})
 
 
 def pair_bundle(name: str) -> dict[str, dict]:
     """같은 캐릭터의 다른 세팅·시점 스냅샷 (예: "레테_boss")."""
-    return {ep: json.loads((PAIRS / name / (ep.replace("/", "_") + ".json")).read_text(encoding="utf-8")) for ep in ENDPOINTS}
+    return _with_optional(PAIRS / name, {ep: json.loads((PAIRS / name / (ep.replace("/", "_") + ".json")).read_text(encoding="utf-8")) for ep in ENDPOINTS})
 
 
 def weapon_samples() -> list[str]:

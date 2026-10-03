@@ -112,3 +112,20 @@ def test_union_state_presets_are_parsed():
     u3 = s.union_states[3]
     assert u3.flat["INT"] == 75 and u3.flat["MATK"] == 14 and u3.boss == 40 and u3.ied == [40] and u3.cd == 20
     assert snapshot(pair_bundle("레테_boss")).active_union_preset == 3
+
+
+def test_link_skill_presets_are_parsed():
+    """링크 스킬 프리셋: 조건 없는 효과만 반영 (조건부 '10초 동안', '전투 상태 돌입 시' 등은 제외)."""
+    from helpers import pair_bundle
+    s = snapshot(bundle("레테"))
+    assert s.active_link_preset == 1
+    l1, l2 = s.link_presets[1], s.link_presets[2]
+    assert l1.dmg == 15 and l1.cr == 10 and l1.cd == 4 and l1.ied == [10] and l1.boss == 0   # 와일드 10 + 자연의 벗 5
+    assert l2.dmg == 10 and l2.boss == 15 and l2.ied == [15] and l2.cr == 0 and l2.cd == 4
+    assert l1.pct["INT"] == 10 and l2.pct["INT"] == 10                                  # 하이브리드 로직
+    assert snapshot(pair_bundle("레테_boss")).active_link_preset == 2
+
+
+def test_snapshot_without_link_data_still_works():
+    s = snapshot(bundle("히어로"))
+    assert s.link_presets == {} and s.active_link_preset == 0

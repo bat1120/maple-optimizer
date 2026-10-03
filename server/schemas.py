@@ -7,6 +7,7 @@ class SettingIn(BaseModel):
     hyper: int = Field(ge=1, le=3)
     ability: int = Field(ge=1, le=3)
     union: int | None = Field(None, ge=1, le=10)
+    link: int | None = Field(None, ge=0, le=3)
 
 
 class ListingIn(BaseModel):

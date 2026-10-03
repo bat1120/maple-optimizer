@@ -34,5 +34,6 @@ export function parsePotentials(text) {
 
 export function settingLabel(s) {
   const base = `장비 ${s.equipment} · 하이퍼 ${s.hyper} · 어빌 ${s.ability}`;
-  return s.union ? `${base} · 유니온 ${s.union}` : base;
+  const withUnion = s.union ? `${base} · 유니온 ${s.union}` : base;
+  return s.link ? `${withUnion} · 링크 ${s.link}` : withUnion;
 }

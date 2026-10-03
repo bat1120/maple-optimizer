@@ -41,7 +41,7 @@ def test_health(tmp_path, clock):
 def test_character_summary(tmp_path, clock):
     r = make(tmp_path, clock).get("/api/character/내신부레테").json()
     assert r["character_class"] == "레테" and r["level"] == 287
-    assert r["active_setting"] == {"equipment": 1, "hyper": 1, "ability": 1, "union": 2}
+    assert r["active_setting"] == {"equipment": 1, "hyper": 1, "ability": 1, "union": 2, "link": 1}
     assert r["stat_attack"]["engine"] == pytest.approx(r["stat_attack"]["api"], rel=1e-4)
     assert r["combat_power_reference"] == 72267618
 
@@ -55,8 +55,8 @@ def test_character_summary_lists_presets(tmp_path, clock):
 
 def test_settings_ranking(tmp_path, clock):
     r = make(tmp_path, clock).get("/api/character/내신부레테/settings?boss_defense=300").json()
-    assert len(r["ranking"]) == 81
-    assert r["ranking"][0]["setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3}
+    assert len(r["ranking"]) == 162
+    assert r["ranking"][0]["setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3, "link": 2}
     assert r["ranking"][0]["relative_to_active"] > 1
 
 
@@ -89,7 +89,7 @@ def test_listing_unknown_total_key_is_422(tmp_path, clock):
 def test_listing_defaults_to_best_boss_setting(tmp_path, clock):
     body = {"listings": [{**RING, "price": 10**9}]}
     r = make(tmp_path, clock).post("/api/character/내신부레테/listings", json=body).json()
-    assert r["setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3}
+    assert r["setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3, "link": 2}
 
 
 def test_unsupported_job_is_422(tmp_path, clock):
@@ -153,7 +153,7 @@ def test_character_not_found_is_404(tmp_path, clock):
 
 def test_pair_snapshot_summary_is_boss_setting(tmp_path, clock):
     r = make(tmp_path, clock, source=lambda _: pair_bundle("레테_boss")).get("/api/character/x").json()
-    assert r["active_setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3}
+    assert r["active_setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3, "link": 2}
 
 
 def test_starforce_endpoint_exact_and_distribution(tmp_path, clock):

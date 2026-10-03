@@ -20,6 +20,7 @@ ENDPOINTS = (
     "character/ability",
     "character/symbol-equipment",
     "user/union-raider",
+    "character/link-skill",
 )
 
 

@@ -1,12 +1,13 @@
 {
- "criterion1_err_fixture_pair": 0.04085339695048584,
- "criterion1_err_same_buff_pair_reference": 0.006812206516477515,
+ "criterion1_err_fixture_pair": 0.014301014375218468,
+ "criterion1_err_same_buff_pair_reference": 0.018871778343636514,
  "criterion2_worst_abs_delta": 0.0,
  "criterion3_best_setting": {
   "equipment": 2,
   "hyper": 3,
   "ability": 2,
-  "union": 3
+  "union": 3,
+  "link": 2
  },
  "criterion3_best_over_actual_boss_setting": 1.0
 }

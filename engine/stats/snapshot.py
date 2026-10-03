@@ -11,6 +11,7 @@ class Setting:
     hyper: int
     ability: int
     union: int | None = None
+    link: int | None = None  # 링크 스킬 프리셋. None이면 스냅샷에 적용 중인 프리셋
 
 
 @dataclass
@@ -41,8 +42,10 @@ class CharacterSnapshot:
     union: StatBlock = field(default_factory=StatBlock)          # 유니온 공격대원 효과 (스탯은 %미적용)
     union_states: dict[int, StatBlock] = field(default_factory=dict)  # 유니온 프리셋별 효과 (union_state_stat_preset)
     active_union_preset: int = 0
+    link_presets: dict[int, StatBlock] = field(default_factory=dict)  # 링크 스킬 프리셋 (조건 없는 효과만)
+    active_link_preset: int = 0
 
     @property
     def active_setting(self) -> Setting:
         return Setting(self.active_equipment_preset, self.active_hyper_preset, self.active_ability_preset,
-                       self.active_union_preset or None)
+                       self.active_union_preset or None, self.active_link_preset or None)

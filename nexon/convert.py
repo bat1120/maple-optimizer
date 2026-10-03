@@ -151,6 +151,42 @@ def _symbol_block(symbol_json: dict | None) -> StatBlock:
     return b
 
 
+# 조건부 효과를 나타내는 표현. 이런 줄은 스탯창 상시 수치가 아니다 (예: "중첩 당 데미지 3%, 방어율 무시 3% 증가").
+_LINK_CONDITIONAL = ("중첩", "동안", "발동", "처치", "돌입", "적용시키면")
+
+
+def _link_block(skills: list[dict] | None, level: int) -> StatBlock:
+    """링크 스킬 효과 중 조건 없는 것만. "10초 동안", "전투 상태 돌입 시" 같은 조건부 문장은 해석되지 않아 빠진다."""
+    b = StatBlock()
+    for sk in skills or []:
+        for line in (sk.get("skill_effect") or "").splitlines():
+            if any(m in line for m in _LINK_CONDITIONAL):
+                continue
+            for part in line.split(","):
+                part = part.strip().strip("[]")
+                if not part:
+                    continue
+                for stat in parse_option(part, level) or []:
+                    b.add(stat)
+    return b
+
+
+def _link_presets(link_json: dict | None, level: int) -> tuple[dict[int, StatBlock], int]:
+    if not link_json:
+        return {}, 0
+    presets, names = {}, {}
+    for n in (1, 2, 3):
+        skills = link_json.get(f"character_link_skill_preset_{n}") or []
+        if skills:
+            presets[n] = _link_block(skills, level)
+            names[n] = sorted(s["skill_name"] for s in skills)
+    current = sorted(s["skill_name"] for s in link_json.get("character_link_skill") or [])
+    active = next((n for n, v in names.items() if v == current), 0)
+    if not active and current:  # 프리셋과 맞는 게 없으면 현재 목록을 0번으로
+        presets[0] = _link_block(link_json.get("character_link_skill"), level)
+    return presets, active
+
+
 def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
     basic = bundle["character/basic"]
     level = int(num(basic["character_level"]))
@@ -208,6 +244,8 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
             _add_texts(b, _union_texts(text), level, excluded)
         union_states[active_union] = b
 
+    link_presets, active_link = _link_presets(bundle.get("character/link-skill"), level)
+
     return CharacterSnapshot(
         character_class=basic["character_class"],
         level=level,
@@ -225,6 +263,8 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         union=union,
         union_states=union_states,
         active_union_preset=active_union if union_states else 0,
+        link_presets=link_presets,
+        active_link_preset=active_link,
     )
 
 

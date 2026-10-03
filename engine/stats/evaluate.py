@@ -26,11 +26,13 @@ def swap_item(snap: CharacterSnapshot, setting: Setting, slot: str, new_item: It
 
 
 def rank_settings(snap: CharacterSnapshot, boss: BossProfile, catalog: SetCatalog) -> list[tuple[Setting, float]]:
-    """장비 × 하이퍼 × 어빌리티 × 유니온 프리셋 조합 전부(비어 있는 장비·유니온 프리셋은 제외)를 실딜 지수 내림차순으로."""
+    """장비 × 하이퍼 × 어빌리티 × 유니온 × 링크 프리셋 조합 전부(비어 있는 장비·유니온 프리셋은 제외)를 실딜 지수 내림차순으로."""
     equips = [n for n in (1, 2, 3) if snap.equipment_presets.get(n)]
     unions = sorted(snap.union_states) or [None]
+    links = sorted(n for n in snap.link_presets if n) or [None]
     out = [(s, evaluate_setting(snap, s, boss, catalog))
-           for s in (Setting(e, h, a, u) for e, h, a, u in itertools.product(equips, (1, 2, 3), (1, 2, 3), unions))]
+           for s in (Setting(e, h, a, u, l) for e, h, a, u, l in
+                     itertools.product(equips, (1, 2, 3), (1, 2, 3), unions, links))]
     return sorted(out, key=lambda x: x[1], reverse=True)
 
 

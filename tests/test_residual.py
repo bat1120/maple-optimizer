@@ -54,7 +54,7 @@ def test_ied_and_boss_move_index_in_right_direction():
 def test_rank_settings_covers_all_presets_sorted():
     snap = snapshot(bundle("레테"))
     ranked = rank_settings(snap, BOSS, CAT)
-    assert len(ranked) == 81  # 장비 3 × 하이퍼 3 × 어빌 3 × 유니온 3
+    assert len(ranked) == 162  # 장비 3 × 하이퍼 3 × 어빌 3 × 유니온 3 × 링크 2
     assert [v for _, v in ranked] == sorted((v for _, v in ranked), reverse=True)
     assert all(isinstance(s, Setting) for s, _ in ranked)
 

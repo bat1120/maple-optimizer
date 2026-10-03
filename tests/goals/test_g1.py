@@ -14,7 +14,7 @@ from nexon.convert import final_stats, snapshot
 
 RESULTS = pathlib.Path(__file__).resolve().parents[2] / "goals" / "results" / "G1.json"
 BOSS = BossProfile("기준 보스(방어율 300%)", 300.0)
-BOSS_SETTING = Setting(equipment=2, hyper=3, ability=2, union=3)
+BOSS_SETTING = Setting(equipment=2, hyper=3, ability=2, union=3, link=2)
 CAT = SetCatalog.load()
 _measured: dict = {}
 
@@ -65,7 +65,7 @@ def test_criterion2_self_swap_delta_is_zero_for_45_classes():
 def test_criterion3_best_of_all_presets_is_at_least_actual_boss_setting():
     snap = snapshot(bundle("레테"))
     ranked = rank_settings(snap, BOSS, CAT)
-    assert len(ranked) == 81  # 장비·하이퍼·어빌 각 3 × 유니온 프리셋 3 (2026-10-04 유니온 추가)
+    assert len(ranked) == 162  # 장비·하이퍼·어빌 각 3 × 유니온 3 × 링크 2 (2026-10-04 유니온·링크 추가)
     actual = evaluate_setting(snap, BOSS_SETTING, BOSS, CAT)
     best_setting, best = ranked[0]
     _record("criterion3_best_setting", dataclasses.asdict(best_setting))

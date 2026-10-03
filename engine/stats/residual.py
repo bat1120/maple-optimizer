@@ -1,7 +1,7 @@
 """잔차 보정: 보이지 않는 출처(패시브 스킬, 버프, 펫·캐시, 링크 등)를 한 스냅샷에서 역산해 고정한다.
 
 출처 분류 (스펙 §5.4, G1 계획의 실측 근거):
-- pct(%적용) 블록: 장비 아이템, 세트 효과, 칭호
+- pct(%적용) 블록: 장비 아이템, 세트 효과, 칭호, 링크 스킬(조건 없는 효과)
 - nopct(%미적용) 블록: 하이퍼스탯, 어빌리티, 아케인·어센틱 심볼, 유니온 공격대원 효과, 유니온 프리셋 효과
 
 주·부스탯   최종 = ⌊(AP + pct 고정) × (1 + (pct% + 잔차%)/100)⌋ + nopct 고정      잔차 = %
@@ -73,7 +73,8 @@ def sources_for(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
         pct = pct + it.stats
     counts = count_sets(worn, job_profile(snap.character_class).branches, catalog)
     sets, excluded = set_block(counts, snap.level, catalog)
-    pct = pct + sets + snap.titles.get(setting.equipment, StatBlock())
+    link = setting.link if setting.link is not None else snap.active_link_preset
+    pct = pct + sets + snap.titles.get(setting.equipment, StatBlock()) + snap.link_presets.get(link, StatBlock())
     nopct = (snap.hyper_presets.get(setting.hyper, StatBlock()) + snap.ability_presets.get(setting.ability, StatBlock())
              + snap.symbols + snap.union
              + snap.union_states.get(setting.union or snap.active_union_preset, StatBlock()))
