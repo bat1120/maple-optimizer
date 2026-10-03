@@ -22,3 +22,10 @@
 - BUILD: engine/market/listing.py (Listing, item_from_input, evaluate_listing, rank_listings, InvalidPrice, NoDamage). 계획 docs/superpowers/plans/2026-10-03-g2-market-engine.md
 - VERIFY 1차 exit 1: 방어율 300% 보스에서 방무 66.7% 미만 캐릭터의 실딜 지수 0 → ZeroDivisionError. 제품 수정: NoDamage 명시 오류(test_zero_damage_baseline_is_explicit_error RED→GREEN). Ruling: ①은 기준에 보스 지정이 없어 45명 전원이 데미지를 넣는 방어율 100% 보스로 측정
 - VERIFY 2차 exit 0. after (goals/results/G2.json): ① 최대 |Δ| 0 ② 레테 보스 반지4 매물 Δ +1.0486% = 교체 계산 ③ 억당 0.04194%/억 = 수작업
+
+## 2026-10-03 G3 VERIFIED
+- BASELINE: validate OK, verify G3 → server 모듈 없음(exit 1)
+- BUILD: server/{app,cache,ratelimit,schemas,service}.py, FastAPI·uvicorn 의존성. 계획 docs/superpowers/plans/2026-10-03-g3-server.md
+- 엔드포인트: /api/health, /api/character/{name}, /settings(27조합), POST /listings(기본 세팅 = 최적 조합)
+- 중간 실패 1건: test_no_damage_is_422 — 테스트가 기본(최적) 세팅을 써서 방무가 충분했음. 테스트를 활성 세팅 명시로 수정(제품 코드 변경 없음)
+- VERIFY exit 0. after (goals/results/G3.json): ① 서버 테스트 18 passed, skip 0 ② 2회 조회 넥슨 호출 1회 ③ 404/503/502/500 ④ 200,200,200,429

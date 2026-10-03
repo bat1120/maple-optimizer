@@ -1,0 +1,16 @@
+{
+ "criterion1_server_tests_passed": 18,
+ "criterion2_nexon_calls_for_two_lookups": 1,
+ "criterion3_status_map": {
+  "CharacterNotFound": 404,
+  "RateLimited": 503,
+  "Unavailable": 502,
+  "InvalidKey": 500
+ },
+ "criterion4_codes": [
+  200,
+  200,
+  200,
+  429
+ ]
+}

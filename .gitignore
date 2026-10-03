@@ -8,3 +8,4 @@ dist/
 .raw/
 .raw-pairs/
 .superpowers/
+.cache/
