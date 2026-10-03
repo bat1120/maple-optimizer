@@ -56,3 +56,8 @@
 - VERIFY 1차 exit 1: 순수 효율 탐욕법 평균 0.954 / 최소 0.543 (싼 후보가 부위를 먼저 차지해 센 후보를 막음)
 - 수정: 출발점 다중화(후보별 "먼저 사기" 고정) + 1:1 교체 개선. 재현 테스트 test_greedy_does_not_let_a_cheap_efficient_item_block_a_much_stronger_one RED→GREEN
 - VERIFY 2차 exit 0 (goals/results/G7.json): 30개 인스턴스 평균·최소 비율 1.0(상승분 기준), 부위 위반 0, 예산 초과 0
+
+## 2026-10-03 G8 VERIFIED
+- BASELINE: verify G8 → E2E 엔드포인트·README 없음(exit 1)
+- BUILD: 서버 엔드포인트 추가 POST /api/enhance/starforce, /api/enhance/cube, /api/craft/compare, /api/character/{name}/optimize (+ 단위 테스트 5), scripts/run-local.ps1(-Check), README(로컬 실행·시크릿 소재지·데이터 한계)
+- VERIFY exit 0: ① E2E 체인(조회→세팅→매물→스타포스→큐브→직작 비교→최적화) 통과 ② run-local health 200, / 200 ③ README 필수 항목

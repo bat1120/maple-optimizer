@@ -154,3 +154,32 @@ def test_character_not_found_is_404(tmp_path, clock):
 def test_pair_snapshot_summary_is_boss_setting(tmp_path, clock):
     r = make(tmp_path, clock, source=lambda _: pair_bundle("레테_boss")).get("/api/character/x").json()
     assert r["active_setting"] == {"equipment": 2, "hyper": 3, "ability": 2}
+
+
+def test_starforce_endpoint_exact_and_distribution(tmp_path, clock):
+    r = make(tmp_path, clock).post("/api/enhance/starforce", json={
+        "level": 200, "start": 20, "target": 21, "destroy_cost": 0, "trials": 2000, "conditions": {"discount30": True}})
+    body = r.json()
+    assert r.status_code == 200 and body["exact_mean"] > 0 and body["conditions"]["discount30"] is True
+
+
+def test_starforce_target_above_cap_is_422(tmp_path, clock):
+    r = make(tmp_path, clock).post("/api/enhance/starforce", json={"level": 130, "start": 0, "target": 22, "destroy_cost": 0})
+    assert r.status_code == 422 and r.json()["code"] == "INVALID_INPUT"
+
+
+def test_cube_unknown_table_is_404(tmp_path, clock):
+    r = make(tmp_path, clock).post("/api/enhance/cube", json={"table": "없는표", "level": 200, "grade": "레전드리",
+                                                               "lines_at_least": {"BOSS": 1}})
+    assert r.status_code == 404 and r.json()["code"] == "NO_TABLE"
+
+
+def test_cube_without_target_is_422(tmp_path, clock):
+    r = make(tmp_path, clock).post("/api/enhance/cube", json={"table": "레전드리/무기/200", "level": 200, "grade": "레전드리"})
+    assert r.status_code == 422
+
+
+def test_optimize_respects_budget(tmp_path, clock):
+    body = {"budget": 2_000_000_000, "candidates": [{**RING, "price": 3_000_000_000}]}
+    r = make(tmp_path, clock).post("/api/character/내신부레테/optimize", json=body).json()
+    assert r["actions"] == [] and r["spent"] == 0

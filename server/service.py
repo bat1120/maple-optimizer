@@ -55,3 +55,61 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
             "ranking": [{"slot": e.listing.slot, "name": e.listing.item.name, "price": e.listing.price,
                          "resale": e.listing.resale, "delta_pct": e.delta_pct, "per_100m": e.per_100m,
                          "excluded": e.listing.item.excluded} for e in ranked]}
+
+
+def _conditions(c):
+    from engine.enhance.starforce import StarforceConditions
+    return StarforceConditions(**c.model_dump())
+
+
+def _dist(d) -> dict:
+    return {"mean": d.mean, "median": d.median, "p75": d.p75, "p90": d.p90}
+
+
+def starforce(body) -> dict:
+    from engine.enhance.starforce import expected_cost, simulate
+    cond = _conditions(body.conditions)
+    exact = expected_cost(body.level, body.start, body.target, body.destroy_cost, cond)
+    mc = simulate(body.level, body.start, body.target, body.destroy_cost, cond, body.trials, seed=20261003)
+    return {"exact_mean": exact, "distribution": _dist(mc), "conditions": body.conditions.model_dump(),
+            "note": "확률은 2026-03 기준(스타캐치 상시 적용), 비용 공식은 비공식(나무위키)"}
+
+
+def cube(body) -> dict:
+    from engine.enhance.cube import CubeTable, cubes_needed, lines_at_least, reset_cost, stat_sum_at_least, \
+        success_probability
+    preds = [lines_at_least(k, n) for k, n in body.lines_at_least.items()]
+    preds += [stat_sum_at_least(t.key, t.percent, t.value) for t in body.sum_at_least]
+    if not preds:
+        raise ValueError("목표 조건(lines_at_least 또는 sum_at_least)을 하나 이상 넣어 주세요")
+    table = CubeTable.load(body.table)
+    p = success_probability(table, lambda opts: all(f(opts) for f in preds))
+    cost = reset_cost(body.level, body.grade)
+    out = {"probability": p, "cost_per_reset": cost}
+    if p > 0:
+        d = cubes_needed(p)
+        out["cubes"] = _dist(d)
+        out["meso"] = {k: v * cost for k, v in _dist(d).items()}
+    return out
+
+
+def craft_compare(body) -> dict:
+    from engine.market.craft import CraftPlan, compare_listing
+    plan = CraftPlan(body.base_price, body.level, body.start_star, body.target_star, body.destroy_cost,
+                     _conditions(body.conditions), body.cube_p, body.cube_cost)
+    c = compare_listing(plan, body.price)
+    return {"price": c.price, "craft_mean": c.craft_mean, "distribution": _dist(c.distribution),
+            "ratio_to_mean": c.ratio_to_mean, "prob_craft_costs_more": c.prob_craft_costs_more,
+            "note": "추옵(환불) 비용 미포함"}
+
+
+def optimize(snap: CharacterSnapshot, setting: Setting | None, defense: float, budget: float, candidates: list) -> dict:
+    from engine.optimize.budget import Action, greedy
+    from engine.stats.evaluate import Evaluator
+    b = boss(defense)
+    chosen = setting or rank_settings(snap, b, CATALOG)[0][0]
+    actions = [Action(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
+                      x.price - x.resale, x.name) for x in candidates]
+    plan = greedy(Evaluator(snap, chosen, b, CATALOG), actions, budget)
+    return {"setting": asdict(chosen), "budget": budget, "spent": plan.spent, "gain_pct": plan.gain_pct,
+            "actions": [{"slot": a.slot, "name": a.item.name, "cost": a.cost} for a in plan.actions]}

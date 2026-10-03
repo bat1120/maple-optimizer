@@ -17,7 +17,7 @@ from nexon.convert import snapshot
 from server import service
 from server.cache import BundleCache
 from server.ratelimit import SlidingWindow
-from server.schemas import ListingsIn
+from server.schemas import CraftIn, CubeIn, ListingsIn, OptimizeIn, StarforceIn
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -110,6 +110,38 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(400, "INVALID_PRICE", str(e)) from None
         except NoDamage as e:
             raise ApiError(422, "NO_DAMAGE", str(e)) from None
+        except ValueError as e:
+            raise ApiError(422, "INVALID_INPUT", str(e)) from None
+
+    @app.post("/api/enhance/starforce")
+    def enhance_starforce(body: StarforceIn):
+        try:
+            return service.starforce(body)
+        except ValueError as e:
+            raise ApiError(422, "INVALID_INPUT", str(e)) from None
+
+    @app.post("/api/enhance/cube")
+    def enhance_cube(body: CubeIn):
+        try:
+            return service.cube(body)
+        except KeyError:
+            raise ApiError(404, "NO_TABLE", f"확률표가 없습니다: {body.table}") from None
+        except ValueError as e:
+            raise ApiError(422, "INVALID_INPUT", str(e)) from None
+
+    @app.post("/api/craft/compare")
+    def craft_compare(body: CraftIn):
+        try:
+            return service.craft_compare(body)
+        except ValueError as e:
+            raise ApiError(422, "INVALID_INPUT", str(e)) from None
+
+    @app.post("/api/character/{name}/optimize")
+    def optimize(name: str, body: OptimizeIn, date: str | None = None):
+        snap = load(name, date)
+        setting = Setting(**body.setting.model_dump()) if body.setting else None
+        try:
+            return service.optimize(snap, setting, body.boss_defense, body.budget, body.candidates)
         except ValueError as e:
             raise ApiError(422, "INVALID_INPUT", str(e)) from None
 
