@@ -1,5 +1,7 @@
 """넥슨 응답 JSON → 엔진 타입. 넥슨 키 이름은 이 파일 밖으로 나가지 않는다."""
-from engine.stats.model import FinalStats
+from engine.options import StatLine, parse_option
+from engine.stats.model import FinalStats, StatBlock
+from engine.stats.snapshot import CharacterSnapshot, Item
 
 _FOUR = ("STR", "DEX", "INT", "LUK")
 
@@ -43,3 +45,104 @@ def weapon_part(equipment_json: dict, preset: int | None = None) -> str:
         if item["item_equipment_slot"] == "무기":
             return item["item_equipment_part"]
     raise ValueError(f"무기를 찾을 수 없습니다 ({key})")
+
+
+_OPTION_FLAT = {"str": "STR", "dex": "DEX", "int": "INT", "luk": "LUK", "max_hp": "HP",
+                "attack_power": "ATK", "magic_power": "MATK"}
+
+
+def _total_option_block(opt: dict) -> StatBlock:
+    """item_total_option(기본+추옵+주문서+스타포스+익셉셔널 합) → StatBlock."""
+    b = StatBlock()
+    for k, key in _OPTION_FLAT.items():
+        if num(opt.get(k)):
+            b.add(StatLine(key, num(opt.get(k)), False))
+    if num(opt.get("all_stat")):
+        for key in _FOUR:
+            b.add(StatLine(key, num(opt["all_stat"]), True))
+    if num(opt.get("max_hp_rate")):
+        b.add(StatLine("HP", num(opt["max_hp_rate"]), True))
+    if num(opt.get("boss_damage")):
+        b.add(StatLine("BOSS", num(opt["boss_damage"]), True))
+    if num(opt.get("damage")):
+        b.add(StatLine("DMG", num(opt["damage"]), True))
+    if num(opt.get("ignore_monster_armor")):
+        b.add(StatLine("IED", num(opt["ignore_monster_armor"]), True))
+    return b
+
+
+def _add_texts(block: StatBlock, texts, level: int, excluded: list[str]) -> None:
+    for t in texts:
+        if not t:
+            continue
+        lines = parse_option(t, level)
+        if lines is None:
+            excluded.append(t)
+            continue
+        for line in lines:
+            block.add(line)
+
+
+def item(item_json: dict, level: int) -> Item:
+    stats = _total_option_block(item_json.get("item_total_option") or {})
+    excluded: list[str] = []
+    texts = [item_json.get(f"{p}{n}") for p in ("potential_option_", "additional_potential_option_") for n in (1, 2, 3)]
+    _add_texts(stats, texts, level, excluded)
+    return Item(
+        slot=item_json["item_equipment_slot"],
+        part=item_json["item_equipment_part"],
+        name=item_json["item_name"],
+        starforce=int(num(item_json.get("starforce"))),
+        stats=stats,
+        excluded=excluded,
+    )
+
+
+def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
+    basic = bundle["character/basic"]
+    level = int(num(basic["character_level"]))
+    eq = bundle["character/item-equipment"]
+    hy = bundle["character/hyper-stat"]
+    ab = bundle["character/ability"]
+    excluded: list[str] = []
+
+    equipment: dict[int, dict[str, Item]] = {}
+    for n in (1, 2, 3):
+        items = [item(x, level) for x in eq.get(f"item_equipment_preset_{n}") or []]
+        equipment[n] = {it.slot: it for it in items}
+        for it in items:
+            excluded.extend(it.excluded)
+    # 프리셋을 쓰지 않는 캐릭터는 preset_no가 비거나 프리셋 목록이 null이다 → 현재 착용을 그 프리셋으로 본다.
+    active_eq = int(num(eq.get("preset_no"))) or 1
+    if not equipment.get(active_eq):
+        current = [item(x, level) for x in eq.get("item_equipment") or []]
+        equipment[active_eq] = {it.slot: it for it in current}
+        for it in current:
+            excluded.extend(it.excluded)
+
+    hyper: dict[int, StatBlock] = {}
+    for n in (1, 2, 3):
+        b = StatBlock()
+        _add_texts(b, [s.get("stat_increase") for s in hy.get(f"hyper_stat_preset_{n}") or []], level, excluded)
+        hyper[n] = b
+
+    ability: dict[int, StatBlock] = {}
+    for n in (1, 2, 3):
+        b = StatBlock()
+        info = (ab.get(f"ability_preset_{n}") or {}).get("ability_info", [])
+        _add_texts(b, [a.get("ability_value") for a in info], level, excluded)
+        ability[n] = b
+
+    return CharacterSnapshot(
+        character_class=basic["character_class"],
+        level=level,
+        date=bundle["character/stat"].get("date"),
+        final=final_stats(bundle["character/stat"]),
+        equipment_presets=equipment,
+        active_equipment_preset=active_eq,
+        hyper_presets=hyper,
+        active_hyper_preset=int(num(hy.get("use_preset_no"))) or 1,
+        ability_presets=ability,
+        active_ability_preset=int(num(ab.get("preset_no"))) or 1,
+        excluded=excluded,
+    )
