@@ -15,7 +15,7 @@ def test_lete_weapon_item_stats():
     assert (w.name, w.part, w.starforce) == ("제네시스 카르타", "카르타", 22)
     st = w.stats
     assert st.flat["MATK"] == 992 and st.flat["INT"] == 387 and st.flat["LUK"] == 295
-    assert st.pct["MATK"] == 21          # 잠재 마력 +9% + 에디 마력 +12%
+    assert st.pct["MATK"] == 24          # 잠재 마력 +9% + 에디 마력 +12% + 소울 마력 +3%
     assert st.boss == 100                 # 기본 30 + 잠재 40 + 30
     assert st.ied == [20]
     assert st.dmg == 12
@@ -47,3 +47,20 @@ def test_all_fixtures_convert_and_unknowns_are_reported():
         assert s.equipment_presets[s.active_equipment_preset], c
         for text in s.excluded:
             assert text.startswith(("AP를 직접 투자한 ", "패시브 스킬 레벨이 ")), (c, text)
+
+
+def test_exceptional_option_is_counted():
+    """item_total_option에는 익셉셔널 강화가 들어 있지 않다 (리뷰 Important 1)."""
+    s = snapshot(bundle("데몬슬레이어"))
+    mark = s.equipment_presets[s.active_equipment_preset]["얼굴장식"]
+    assert mark.name == "루즈 컨트롤 머신 마크"
+    assert mark.stats.flat["STR"] == 215 + 15
+    assert mark.stats.flat["ATK"] == 157 + 10
+
+
+def test_soul_option_and_soul_potential_are_counted():
+    """무기 소울 옵션과 소울 잠재 (리뷰 Important 2)."""
+    s = snapshot(bundle("데몬슬레이어"))
+    w = s.equipment_presets[s.active_equipment_preset]["무기"]
+    assert w.stats.pct["ATK"] == 46 + 3 + 4 + 3   # 잠재·에디 46 + 소울 3 + 소울 잠재 4·3
+    assert w.stats.flat["LUK"] == 100 + 16

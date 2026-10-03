@@ -13,8 +13,16 @@ def num(v) -> float:
     return float(str(v).replace(",", ""))
 
 
+# 공식·평가에 쓰는 스탯. 빠지면 0으로 메우지 않고 멈춘다 (스펙: 추정하지 않는다).
+_REQUIRED = {*_FOUR, "HP", "공격력", "마력", "데미지", "보스 몬스터 데미지", "최종 데미지",
+             "크리티컬 데미지", "방어율 무시", "최대 스탯공격력"}
+
+
 def final_stats(stat_json: dict) -> FinalStats:
     s = {x["stat_name"]: x["stat_value"] for x in stat_json["final_stat"]}
+    missing = sorted(_REQUIRED - s.keys())
+    if missing:
+        raise ValueError(f"스탯 응답에 필수 항목이 없습니다: {', '.join(missing)}")
 
     def i(name: str) -> int:
         return int(num(s.get(name)))
@@ -52,7 +60,8 @@ _OPTION_FLAT = {"str": "STR", "dex": "DEX", "int": "INT", "luk": "LUK", "max_hp"
 
 
 def _total_option_block(opt: dict) -> StatBlock:
-    """item_total_option(기본+추옵+주문서+스타포스+익셉셔널 합) → StatBlock."""
+    """옵션 블록 → StatBlock. item_total_option은 기본+추옵+주문서+스타포스 합이고 익셉셔널은 들어 있지 않다
+    (fixture 66건 실측) — 익셉셔널 블록은 따로 넘겨 더한다."""
     b = StatBlock()
     for k, key in _OPTION_FLAT.items():
         if num(opt.get(k)):
@@ -84,9 +93,13 @@ def _add_texts(block: StatBlock, texts, level: int, excluded: list[str]) -> None
 
 
 def item(item_json: dict, level: int) -> Item:
-    stats = _total_option_block(item_json.get("item_total_option") or {})
+    stats = (_total_option_block(item_json.get("item_total_option") or {})
+             + _total_option_block(item_json.get("item_exceptional_option") or {}))
     excluded: list[str] = []
-    texts = [item_json.get(f"{p}{n}") for p in ("potential_option_", "additional_potential_option_") for n in (1, 2, 3)]
+    prefixes = ("potential_option_", "additional_potential_option_", "soul_potential_option_")
+    texts = [item_json.get(f"{p}{n}") for p in prefixes for n in (1, 2, 3)]
+    # 소울: soul_active가 비어 있어도 soul_option이 오는 경우가 있다(나이트로드). soul_pad/soul_mad는 의미 미확인 → 1b에서 판단.
+    texts.append(item_json.get("soul_option"))
     _add_texts(stats, texts, level, excluded)
     return Item(
         slot=item_json["item_equipment_slot"],

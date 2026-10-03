@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 
 from engine.stats.formula import stat_attack_max
@@ -39,3 +41,12 @@ def test_engine_stat_attack_equals_api(cls):
 def test_demon_avenger_is_explicitly_unsupported():
     with pytest.raises(UnsupportedJob):
         job_profile(load("데몬어벤져", "character/stat")["character_class"])
+
+
+@pytest.mark.parametrize("missing", ["최종 데미지", "데미지", "마력", "INT", "최대 스탯공격력"])
+def test_final_stats_missing_required_stat_raises(missing):
+    """필수 스탯이 빠지면 0으로 메우지 않고 멈춘다 (리뷰 Important 3)."""
+    data = copy.deepcopy(load("레테", "character/stat"))
+    data["final_stat"] = [x for x in data["final_stat"] if x["stat_name"] != missing]
+    with pytest.raises(ValueError, match=missing):
+        final_stats(data)
