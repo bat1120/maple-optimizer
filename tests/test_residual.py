@@ -51,10 +51,10 @@ def test_ied_and_boss_move_index_in_right_direction():
     assert swap_item(snap, snap.active_setting, "무기", stronger, BOSS, CAT) > base
 
 
-def test_rank_settings_has_27_sorted():
+def test_rank_settings_covers_all_presets_sorted():
     snap = snapshot(bundle("레테"))
     ranked = rank_settings(snap, BOSS, CAT)
-    assert len(ranked) == 27
+    assert len(ranked) == 81  # 장비 3 × 하이퍼 3 × 어빌 3 × 유니온 3
     assert [v for _, v in ranked] == sorted((v for _, v in ranked), reverse=True)
     assert all(isinstance(s, Setting) for s, _ in ranked)
 
@@ -65,3 +65,11 @@ def test_missing_slot_in_preset_falls_back_to_worn_item():
     src = sources_for(snap, Setting(1, snap.active_hyper_preset, snap.active_ability_preset), CAT)
     active = sources_for(snap, snap.active_setting, CAT)
     assert src.pct.flat.get("LUK", 0) > 0.5 * active.pct.flat.get("LUK", 0)
+
+
+def test_union_preset_changes_prediction():
+    snap = snapshot(bundle("레테"))
+    hunt_union = evaluate_setting(snap, Setting(2, 3, 2, 2), BOSS, CAT)
+    boss_union = evaluate_setting(snap, Setting(2, 3, 2, 3), BOSS, CAT)
+    assert boss_union > hunt_union * 1.2   # 보공 40%·방무 40% 차이
+    assert evaluate_setting(snap, Setting(2, 3, 2), BOSS, CAT) == hunt_union  # union 생략 = 현재 적용 프리셋

@@ -189,9 +189,24 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
     titles = {n: _title_block(eq.get(f"title_preset{n}"), level, excluded) for n in (1, 2, 3)}
     if not titles[active_eq].flat and eq.get("title"):
         titles[active_eq] = _title_block(eq.get("title"), level, excluded)
+    ur = bundle.get("user/union-raider") or {}
     union = StatBlock()
-    for text in (bundle.get("user/union-raider") or {}).get("union_raider_stat") or []:
+    for text in ur.get("union_raider_stat") or []:
         _add_texts(union, _union_texts(text), level, excluded)
+    # 유니온 프리셋별 효과. 프리셋 목록이 없으면 현재 효과(union_state_stat)를 적용 중인 프리셋으로 본다.
+    active_union = int(num(ur.get("use_preset_no"))) or 1
+    union_states: dict[int, StatBlock] = {}
+    for p in ur.get("union_state_stat_preset") or []:
+        b = StatBlock()
+        for text in p.get("union_state_stat") or []:
+            _add_texts(b, _union_texts(text), level, excluded)
+        if p.get("union_state_stat"):
+            union_states[int(num(p.get("preset_no")))] = b
+    if active_union not in union_states and ur.get("union_state_stat"):
+        b = StatBlock()
+        for text in ur["union_state_stat"]:
+            _add_texts(b, _union_texts(text), level, excluded)
+        union_states[active_union] = b
 
     return CharacterSnapshot(
         character_class=basic["character_class"],
@@ -208,6 +223,8 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         titles=titles,
         symbols=_symbol_block(bundle.get("character/symbol-equipment")),
         union=union,
+        union_states=union_states,
+        active_union_preset=active_union if union_states else 0,
     )
 
 

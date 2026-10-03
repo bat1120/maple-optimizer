@@ -32,3 +32,11 @@ describe("formatPct / parsePotentials", () => {
     expect(parsePotentials("INT +12%\n\n  LUK +9% \n")).toEqual(["INT +12%", "LUK +9%"]);
   });
 });
+
+describe("settingLabel", () => {
+  it("유니온 프리셋이 있으면 함께 표시", async () => {
+    const { settingLabel } = await import("./format.js");
+    expect(settingLabel({ equipment: 2, hyper: 3, ability: 2, union: 3 })).toBe("장비 2 · 하이퍼 3 · 어빌 2 · 유니온 3");
+    expect(settingLabel({ equipment: 1, hyper: 1, ability: 1 })).toBe("장비 1 · 하이퍼 1 · 어빌 1");
+  });
+});

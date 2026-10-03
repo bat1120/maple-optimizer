@@ -6,6 +6,7 @@ class SettingIn(BaseModel):
     equipment: int = Field(ge=1, le=3)
     hyper: int = Field(ge=1, le=3)
     ability: int = Field(ge=1, le=3)
+    union: int | None = Field(None, ge=1, le=10)
 
 
 class ListingIn(BaseModel):

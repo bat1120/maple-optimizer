@@ -2,9 +2,10 @@
  "best_setting": {
   "equipment": 2,
   "hyper": 3,
-  "ability": 2
+  "ability": 2,
+  "union": 3
  },
- "listing_delta_pct": 1.9104177174709358,
+ "listing_delta_pct": 1.9087981930383524,
  "starforce_17_22_mean": 16304969523.809526,
  "cube_boss2_probability": 0.02765023512510947,
  "craft_compare": {
@@ -24,11 +25,12 @@
   "setting": {
    "equipment": 2,
    "hyper": 3,
-   "ability": 2
+   "ability": 2,
+   "union": 3
   },
   "budget": 5000000000.0,
   "spent": 4000000000,
-  "gain_pct": 2.006073393809582,
+  "gain_pct": 2.0239194367896562,
   "actions": [
    {
     "slot": "반지1",

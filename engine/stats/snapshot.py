@@ -6,10 +6,11 @@ from engine.stats.model import FinalStats, StatBlock
 
 @dataclass(frozen=True)
 class Setting:
-    """장비·하이퍼스탯·어빌리티 프리셋 번호 조합."""
+    """장비·하이퍼스탯·어빌리티·유니온 프리셋 번호 조합. union=None이면 스냅샷에 적용 중인 유니온 프리셋."""
     equipment: int
     hyper: int
     ability: int
+    union: int | None = None
 
 
 @dataclass
@@ -38,7 +39,10 @@ class CharacterSnapshot:
     titles: dict[int, StatBlock] = field(default_factory=dict)  # 장비 프리셋 번호 → 칭호
     symbols: StatBlock = field(default_factory=StatBlock)        # 아케인·어센틱 심볼 (%미적용)
     union: StatBlock = field(default_factory=StatBlock)          # 유니온 공격대원 효과 (스탯은 %미적용)
+    union_states: dict[int, StatBlock] = field(default_factory=dict)  # 유니온 프리셋별 효과 (union_state_stat_preset)
+    active_union_preset: int = 0
 
     @property
     def active_setting(self) -> Setting:
-        return Setting(self.active_equipment_preset, self.active_hyper_preset, self.active_ability_preset)
+        return Setting(self.active_equipment_preset, self.active_hyper_preset, self.active_ability_preset,
+                       self.active_union_preset or None)

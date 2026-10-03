@@ -101,3 +101,14 @@ def test_lete_union_raider_stats():
     assert s.union.boss == 6 and s.union.cd == 5 and s.union.ied == [5]
     assert s.union.flat["MATK"] == 20
     assert not [t for t in s.excluded if "이동속도" in t or "재사용" in t]
+
+
+def test_union_state_presets_are_parsed():
+    """유니온 프리셋별 효과(union_state_stat_preset). 사냥 2번, 보스 3번."""
+    from helpers import pair_bundle
+    s = snapshot(bundle("레테"))
+    assert s.active_union_preset == 2
+    assert s.union_states[2].flat["MATK"] == 15 and s.union_states[2].cd == 20 and s.union_states[2].boss == 0
+    u3 = s.union_states[3]
+    assert u3.flat["INT"] == 75 and u3.flat["MATK"] == 14 and u3.boss == 40 and u3.ied == [40] and u3.cd == 20
+    assert snapshot(pair_bundle("레테_boss")).active_union_preset == 3
