@@ -69,9 +69,10 @@ def preset_items(snap: CharacterSnapshot, equipment_preset: int) -> dict[str, It
 def sources_for(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
                 items: dict[str, Item] | None = None) -> Sources:
     items = preset_items(snap, setting.equipment) if items is None else items
+    # 예비 특수 반지도 스탯은 들어간다(2026-10-04 인게임 툴팁 실측). 세트 개수에서는 뺀다(API 세트 개수와 일치).
     worn = [it for it in items.values() if it.slot not in NOT_WORN_SLOTS]
     pct = StatBlock()
-    for it in worn:
+    for it in items.values():
         pct = pct + it.stats
     counts = count_sets(worn, job_profile(snap.character_class).branches, catalog)
     sets, excluded = set_block(counts, snap.level, catalog)

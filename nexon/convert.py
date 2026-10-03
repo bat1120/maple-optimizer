@@ -117,8 +117,11 @@ _PLUS_NUMBER = re.compile(r"[+-]\s*\d")
 
 
 def _title_block(title: dict | None, level: int, excluded: list[str]) -> StatBlock:
-    """칭호 설명문에서 "올스탯 +10", "공격력/마력+10" 같은 줄만 읽는다. 숫자 없는 줄은 설명문이다."""
+    """칭호 설명문에서 "올스탯 +10", "공격력/마력+10" 같은 줄만 읽는다. 숫자 없는 줄은 설명문이다.
+    옵션 적용 기간이 끝난 칭호(date_option_expire == "expired")는 효과가 없다."""
     b = StatBlock()
+    if (title or {}).get("date_option_expire") == "expired":
+        return b
     for raw in ((title or {}).get("title_description") or "").splitlines():
         line = raw.strip().lstrip("-").strip().replace("최대 HP/최대 MP", "최대 HP").replace("최대 HP/MP", "최대 HP")
         if not line or not _PLUS_NUMBER.search(line) or line.startswith("옵션 적용 기간"):

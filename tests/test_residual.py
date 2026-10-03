@@ -87,12 +87,24 @@ def test_equivalent_main_stat_gain():
     assert equivalent_main_stat(pred, xenon, 1.02) == pytest.approx(0.02 * (3540 + 3397 + 6768))
 
 
-def test_clean_pair_int_prediction_within_60_both_directions():
-    """2026-10-04 02:50~52 같은 상태에서 세팅만 바꾼 짝. 유니온 프리셋 효과 주스탯은 %적용이어야 INT가 맞는다."""
+def test_clean_pair_int_prediction_within_quarter_percent():
+    """2026-10-04 버프 동일 짝(사냥 02:52 ↔ 보스 02:56). 유니온 프리셋 효과 주스탯 %적용이 가설 중 최선(+127/−97).
+    만료 칭호 반영 전에는 ±40이었으나 그건 잘못된 칭호 올스탯 10이 오차를 상쇄한 결과 — 남은 INT 출처는 인게임
+    INT 툴팁으로 확정 예정. 그때까지 0.25% 이내를 고정한다."""
     from helpers import pair_bundle
-    h, b = snapshot(pair_bundle("레테_hunt2")), snapshot(pair_bundle("레테_boss2"))
+    h, b = snapshot(pair_bundle("레테_hunt2")), snapshot(pair_bundle("레테_boss3"))
     for x, y in ((h, b), (b, h)):
         p = predict(calibrate(x, CAT), sources_for(x, y.active_setting, CAT))
-        assert abs(p.stats["INT"] - y.final.stats["INT"]) <= 60, (p.stats["INT"], y.final.stats["INT"])
+        assert abs(p.stats["INT"] / y.final.stats["INT"] - 1) <= 0.0025, (p.stats["INT"], y.final.stats["INT"])
         for k in ("dmg", "boss", "fd", "cd", "cr"):
             assert getattr(p, k) == pytest.approx(getattr(y.final, k), abs=1e-6), k
+
+
+def test_spare_special_ring_stats_are_counted():
+    """2026-10-04 인게임 툴팁: 보스 프리셋 '장비 아이템' 마력이 예비 특수 반지(리스트레인트 링) 마력 4만큼 더 크다."""
+    from helpers import pair_bundle
+    snap = snapshot(pair_bundle("레테_boss3"))
+    with_ring = sources_for(snap, snap.active_setting, CAT).pct.flat.get("MATK", 0)
+    items = dict(snap.equipment_presets[2]); items.pop("예비 특수 반지")
+    without = sources_for(snap, snap.active_setting, CAT, items).pct.flat.get("MATK", 0)
+    assert with_ring - without == 4

@@ -69,7 +69,7 @@ def test_soul_option_and_soul_potential_are_counted():
 def test_lete_titles_per_preset():
     s = snapshot(bundle("레테"))
     t1, t2 = s.titles[1], s.titles[2]
-    assert t1.flat["INT"] == 10 and t1.flat["MATK"] == 5      # 쑥쑥 새싹: 올스탯 10, 공마 5
+    assert t1.flat == {}                                       # 쑥쑥 새싹: 옵션 기간 만료(date_option_expire=expired)
     assert t2.flat["INT"] == 20 and t2.flat["MATK"] == 10 and t2.boss == 10   # 마스테리아의 소환사
     assert s.titles[3].flat == {}
 
@@ -129,3 +129,11 @@ def test_link_skill_presets_are_parsed():
 def test_snapshot_without_link_data_still_works():
     s = snapshot(bundle("히어로"))
     assert s.link_presets == {} and s.active_link_preset == 0
+
+
+def test_expired_title_has_no_effect():
+    """칭호 date_option_expire == "expired" → 효과 없음 (2026-10-04 인게임 툴팁: 쑥쑥 새싹 미표시)."""
+    from helpers import pair_bundle
+    s = snapshot(pair_bundle("레테_hunt2"))
+    assert s.titles[1].flat == {} and s.titles[1].boss == 0      # 쑥쑥 새싹 (만료)
+    assert s.titles[2].flat["MATK"] == 10                          # 마스테리아의 소환사

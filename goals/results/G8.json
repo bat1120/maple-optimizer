@@ -6,7 +6,7 @@
   "union": 3,
   "link": 2
  },
- "listing_delta_pct": 1.9087981930383746,
+ "listing_delta_pct": 1.9163599337365111,
  "starforce_17_22_mean": 16304969523.809526,
  "cube_boss2_probability": 0.02765023512510947,
  "craft_compare": {
@@ -32,7 +32,7 @@
   },
   "budget": 5000000000.0,
   "spent": 4000000000,
-  "gain_pct": 2.023919436789634,
+  "gain_pct": 2.0110839403832292,
   "actions": [
    {
     "slot": "반지1",
