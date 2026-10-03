@@ -85,3 +85,14 @@ def test_equivalent_main_stat_gain():
     assert equivalent_main_stat(pred, lete, 1.0) == 0
     xenon = job_profile("제논")  # 주스탯 3개, 부스탯 없음 → 주스탯 합 기준
     assert equivalent_main_stat(pred, xenon, 1.02) == pytest.approx(0.02 * (3540 + 3397 + 6768))
+
+
+def test_clean_pair_int_prediction_within_60_both_directions():
+    """2026-10-04 02:50~52 같은 상태에서 세팅만 바꾼 짝. 유니온 프리셋 효과 주스탯은 %적용이어야 INT가 맞는다."""
+    from helpers import pair_bundle
+    h, b = snapshot(pair_bundle("레테_hunt2")), snapshot(pair_bundle("레테_boss2"))
+    for x, y in ((h, b), (b, h)):
+        p = predict(calibrate(x, CAT), sources_for(x, y.active_setting, CAT))
+        assert abs(p.stats["INT"] - y.final.stats["INT"]) <= 60, (p.stats["INT"], y.final.stats["INT"])
+        for k in ("dmg", "boss", "fd", "cd", "cr"):
+            assert getattr(p, k) == pytest.approx(getattr(y.final, k), abs=1e-6), k

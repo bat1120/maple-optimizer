@@ -1,0 +1,263 @@
+{
+ "date": null,
+ "character_class": "레테",
+ "character_link_skill": [
+  {
+   "skill_name": "데몬스 퓨리",
+   "skill_description": "[마스터 레벨 : 3]\r\n대상이 보스일 경우, 내면에 잠재된 분노를 이끌어 내 더욱 강력한 데미지를 입힌다.",
+   "skill_level": 2,
+   "skill_effect": "보스 몬스터 공격 시 데미지 15% 증가",
+   "skill_effect_next": "보스 몬스터 공격 시 데미지 20% 증가"
+  },
+  {
+   "skill_name": "무아",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신을 잊어버릴 정도로 전투에 집중한다.\n전투 상태에 돌입하면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "전투 상태에 돌입 시 데미지 11% 증가, 지속시간 10초",
+   "skill_effect_next": "전투 상태에 돌입 시 데미지 16% 증가, 지속시간 10초"
+  },
+  {
+   "skill_name": "소울 컨트랙트",
+   "skill_description": "[마스터 레벨 : 3]\r\n에스카다와의 계약을 통해 순간적으로 데미지를 극대화한다.\n소울 컨트랙트는 다른 스킬 사용 중 사용 가능하다.",
+   "skill_level": 3,
+   "skill_effect": "10초 동안 데미지 60% 증가\n재사용 대기시간 60초",
+   "skill_effect_next": null
+  },
+  {
+   "skill_name": "시프 커닝",
+   "skill_description": "[마스터 레벨 : 9]\r\n도적 특유의 교활함을 발휘해 적을 약화시키면 데미지가 증가한다.\n재사용 대기시간 초기화, 버프 지속시간 증가의 효과를 받지 않는다.",
+   "skill_level": 6,
+   "skill_effect": "적에게 상태 이상을 적용시키면 10초 동안 데미지 18% 증가\n재발동 대기시간 20초 ",
+   "skill_effect_next": "적에게 상태 이상을 적용시키면 10초 동안 데미지 21% 증가\n재발동 대기시간 20초 "
+  },
+  {
+   "skill_name": "와일드 레이지",
+   "skill_description": "[마스터 레벨 : 3]\r\n분노로 인해 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "데미지 10% 증가",
+   "skill_effect_next": "데미지 15% 증가"
+  },
+  {
+   "skill_name": "인텐시브 인썰트",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신보다 약한 적에겐 더 효과적인 공격을 가한다.",
+   "skill_level": 2,
+   "skill_effect": "캐릭터보다 레벨이 낮은 몬스터 공격 시 데미지 6% 증가, 상태 이상에 걸린 몬스터 공격 시 데미지 6% 증가",
+   "skill_effect_next": "캐릭터보다 레벨이 낮은 몬스터 공격 시 데미지 9% 증가, 상태 이상에 걸린 몬스터 공격 시 데미지 9% 증가"
+  },
+  {
+   "skill_name": "임피리컬 널리지",
+   "skill_description": "[마스터 레벨 : 9]\r\n실전적인 탐구를 통해 약점을 파악하여 해당 적에 대한 데미지와 방어율 무시를 점차 증가시킨다.",
+   "skill_level": 6,
+   "skill_effect": "공격한 적에 대한 약점을 70% 확률로 파악, 파악한 약점은 10초 동안 지속되며 최대 3회까지 중첩\n중첩 당 데미지 3%, 방어율 무시 3% 증가",
+   "skill_effect_next": "공격한 적에 대한 약점을 72% 확률로 파악, 파악한 약점은 10초 동안 지속되며 최대 3회까지 중첩\n중첩 당 데미지 4%, 방어율 무시 4% 증가"
+  },
+  {
+   "skill_name": "전투의 흐름",
+   "skill_description": "[마스터 레벨 : 3]\r\n전투의 흐름이 끊기지 않게 유지한다.\n주변에 적이 있으면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "10초 동안 데미지 10% 증가",
+   "skill_effect_next": "10초 동안 데미지 15% 증가"
+  },
+  {
+   "skill_name": "판단",
+   "skill_description": "[마스터 레벨 : 3]\r\n타고난 판단력으로 적에게 가능한 최고의 치명상을 입힌다.",
+   "skill_level": 2,
+   "skill_effect": " 크리티컬 데미지 4% 증가",
+   "skill_effect_next": " 크리티컬 데미지 6% 증가"
+  },
+  {
+   "skill_name": "퍼미에이트",
+   "skill_description": "[마스터 레벨 : 3]\r\n무엇으로 가려도 스며드는 빛의 힘으로 적의 방어를 일정 부분 무시한다.",
+   "skill_level": 2,
+   "skill_effect": "방어율 무시 15% 증가",
+   "skill_effect_next": "방어율 무시 20% 증가"
+  },
+  {
+   "skill_name": "프라이어 프리퍼레이션",
+   "skill_description": "[마스터 레벨 : 3]\r\n적을 확실하게 처리하기 위한 사전 준비를 한다.",
+   "skill_level": 2,
+   "skill_effect": "적 8명 처치, 혹은 보스 몬스터에게 5번 공격 적중 시 사전 준비 1번 완료, 사전 준비를 5번 마치면 20초 동안 데미지 17% 증가\n재발동 대기시간 40초",
+   "skill_effect_next": "적 8명 처치, 혹은 보스 몬스터에게 5번 공격 적중 시 사전 준비 1번 완료, 사전 준비를 5번 마치면 20초 동안 데미지 25% 증가\n재발동 대기시간 40초"
+  },
+  {
+   "skill_name": "하이브리드 로직",
+   "skill_description": "[마스터 레벨 : 3]\r\n하이브리드 로직 디자인을 적용하여 모든 능력치가 영구히 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "모든 능력치 10% 증가",
+   "skill_effect_next": "모든 능력치 15% 증가"
+  }
+ ],
+ "character_link_skill_preset_1": [
+  {
+   "skill_name": "판단",
+   "skill_description": "[마스터 레벨 : 3]\r\n타고난 판단력으로 적에게 가능한 최고의 치명상을 입힌다.",
+   "skill_level": 2,
+   "skill_effect": " 크리티컬 데미지 4% 증가"
+  },
+  {
+   "skill_name": "하이브리드 로직",
+   "skill_description": "[마스터 레벨 : 3]\r\n하이브리드 로직 디자인을 적용하여 모든 능력치가 영구히 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "모든 능력치 10% 증가"
+  },
+  {
+   "skill_name": "프라이어 프리퍼레이션",
+   "skill_description": "[마스터 레벨 : 3]\r\n적을 확실하게 처리하기 위한 사전 준비를 한다.",
+   "skill_level": 2,
+   "skill_effect": "적 8명 처치, 혹은 보스 몬스터에게 5번 공격 적중 시 사전 준비 1번 완료, 사전 준비를 5번 마치면 20초 동안 데미지 17% 증가\n재발동 대기시간 40초"
+  },
+  {
+   "skill_name": "전투의 흐름",
+   "skill_description": "[마스터 레벨 : 3]\r\n전투의 흐름이 끊기지 않게 유지한다.\n주변에 적이 있으면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "10초 동안 데미지 10% 증가"
+  },
+  {
+   "skill_name": "와일드 레이지",
+   "skill_description": "[마스터 레벨 : 3]\r\n분노로 인해 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "데미지 10% 증가"
+  },
+  {
+   "skill_name": "무아",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신을 잊어버릴 정도로 전투에 집중한다.\n전투 상태에 돌입하면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "전투 상태에 돌입 시 데미지 11% 증가, 지속시간 10초"
+  },
+  {
+   "skill_name": "인텐시브 인썰트",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신보다 약한 적에겐 더 효과적인 공격을 가한다.",
+   "skill_level": 2,
+   "skill_effect": "캐릭터보다 레벨이 낮은 몬스터 공격 시 데미지 6% 증가, 상태 이상에 걸린 몬스터 공격 시 데미지 6% 증가"
+  },
+  {
+   "skill_name": "자신감",
+   "skill_description": "[마스터 레벨 : 3]\r\n강한 적에게도 위축되지 않는 자신감으로 적의 방어율을 일정 부분 무시하고 체력이 가득 찬 몬스터를 공격할 때 더 큰 피해를 입힌다.",
+   "skill_level": 2,
+   "skill_effect": "방어율 무시 10% 증가, HP가 100%인 몬스터 공격 시 데미지 14% 증가"
+  },
+  {
+   "skill_name": "자연의 벗",
+   "skill_description": "[마스터 레벨 : 3]\r\n주변의 자연과 친구가 되어 도움을 받는다. 신비한 자연의 힘을 견디지 못하는 약한 몬스터에게는 더 큰 효과가 있다.",
+   "skill_level": 2,
+   "skill_effect": "데미지 5% 증가\n일반 몬스터 20명 처치 시 자연의 도움 발동, 자연의 도움 발동 시 30초 동안 일반 몬스터 공격 시 데미지 11% 증가\n재발동 대기시간 30초"
+  },
+  {
+   "skill_name": "엘프의 축복",
+   "skill_description": "[마스터 레벨 : 3]\r\n고대 엘프의 축복으로 에우렐로 돌아갈 수 있고, 영구적으로 경험치 획득량이 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "사용 시 에우렐로 귀환\n재사용 대기시간 1800초\n[패시브 효과 : 경험치 획득량 15% 증가]"
+  },
+  {
+   "skill_name": "룬 퍼시스턴스",
+   "skill_description": "[마스터 레벨 : 3]\r\n룬의 마력을 증폭시켜 해방된 룬의 힘 지속시간을 증가 시킨다.",
+   "skill_level": 2,
+   "skill_effect": "해방된 룬의 힘 지속시간 50% 증가"
+  },
+  {
+   "skill_name": "어드벤쳐러 큐리어스",
+   "skill_description": "[마스터 레벨 : 9]\r\n특유의 호기심을 발휘해 몬스터 컬렉션 등록 확률과 크리티컬 확률을 증가시킨다.\n몬스터 컬렉션 등록 확률은 기존 확률에 곱적용으로 적용된다.",
+   "skill_level": 6,
+   "skill_effect": "몬스터 컬렉션 등록 확률 35%, 크리티컬 확률 10% 증가"
+  }
+ ],
+ "character_link_skill_preset_2": [
+  {
+   "skill_name": "데몬스 퓨리",
+   "skill_description": "[마스터 레벨 : 3]\r\n대상이 보스일 경우, 내면에 잠재된 분노를 이끌어 내 더욱 강력한 데미지를 입힌다.",
+   "skill_level": 2,
+   "skill_effect": "보스 몬스터 공격 시 데미지 15% 증가"
+  },
+  {
+   "skill_name": "무아",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신을 잊어버릴 정도로 전투에 집중한다.\n전투 상태에 돌입하면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "전투 상태에 돌입 시 데미지 11% 증가, 지속시간 10초"
+  },
+  {
+   "skill_name": "소울 컨트랙트",
+   "skill_description": "[마스터 레벨 : 3]\r\n에스카다와의 계약을 통해 순간적으로 데미지를 극대화한다.\n소울 컨트랙트는 다른 스킬 사용 중 사용 가능하다.",
+   "skill_level": 3,
+   "skill_effect": "10초 동안 데미지 60% 증가\n재사용 대기시간 60초"
+  },
+  {
+   "skill_name": "시프 커닝",
+   "skill_description": "[마스터 레벨 : 9]\r\n도적 특유의 교활함을 발휘해 적을 약화시키면 데미지가 증가한다.\n재사용 대기시간 초기화, 버프 지속시간 증가의 효과를 받지 않는다.",
+   "skill_level": 6,
+   "skill_effect": "적에게 상태 이상을 적용시키면 10초 동안 데미지 18% 증가\n재발동 대기시간 20초 "
+  },
+  {
+   "skill_name": "와일드 레이지",
+   "skill_description": "[마스터 레벨 : 3]\r\n분노로 인해 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "데미지 10% 증가"
+  },
+  {
+   "skill_name": "인텐시브 인썰트",
+   "skill_description": "[마스터 레벨 : 3]\r\n자신보다 약한 적에겐 더 효과적인 공격을 가한다.",
+   "skill_level": 2,
+   "skill_effect": "캐릭터보다 레벨이 낮은 몬스터 공격 시 데미지 6% 증가, 상태 이상에 걸린 몬스터 공격 시 데미지 6% 증가"
+  },
+  {
+   "skill_name": "임피리컬 널리지",
+   "skill_description": "[마스터 레벨 : 9]\r\n실전적인 탐구를 통해 약점을 파악하여 해당 적에 대한 데미지와 방어율 무시를 점차 증가시킨다.",
+   "skill_level": 6,
+   "skill_effect": "공격한 적에 대한 약점을 70% 확률로 파악, 파악한 약점은 10초 동안 지속되며 최대 3회까지 중첩\n중첩 당 데미지 3%, 방어율 무시 3% 증가"
+  },
+  {
+   "skill_name": "전투의 흐름",
+   "skill_description": "[마스터 레벨 : 3]\r\n전투의 흐름이 끊기지 않게 유지한다.\n주변에 적이 있으면 데미지가 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "10초 동안 데미지 10% 증가"
+  },
+  {
+   "skill_name": "판단",
+   "skill_description": "[마스터 레벨 : 3]\r\n타고난 판단력으로 적에게 가능한 최고의 치명상을 입힌다.",
+   "skill_level": 2,
+   "skill_effect": " 크리티컬 데미지 4% 증가"
+  },
+  {
+   "skill_name": "퍼미에이트",
+   "skill_description": "[마스터 레벨 : 3]\r\n무엇으로 가려도 스며드는 빛의 힘으로 적의 방어를 일정 부분 무시한다.",
+   "skill_level": 2,
+   "skill_effect": "방어율 무시 15% 증가"
+  },
+  {
+   "skill_name": "프라이어 프리퍼레이션",
+   "skill_description": "[마스터 레벨 : 3]\r\n적을 확실하게 처리하기 위한 사전 준비를 한다.",
+   "skill_level": 2,
+   "skill_effect": "적 8명 처치, 혹은 보스 몬스터에게 5번 공격 적중 시 사전 준비 1번 완료, 사전 준비를 5번 마치면 20초 동안 데미지 17% 증가\n재발동 대기시간 40초"
+  },
+  {
+   "skill_name": "하이브리드 로직",
+   "skill_description": "[마스터 레벨 : 3]\r\n하이브리드 로직 디자인을 적용하여 모든 능력치가 영구히 증가한다.",
+   "skill_level": 2,
+   "skill_effect": "모든 능력치 10% 증가"
+  }
+ ],
+ "character_link_skill_preset_3": [],
+ "character_owned_link_skill": {
+  "skill_name": "커버넌트",
+  "skill_description": "[마스터 레벨 : 3]\r\n소환수와의 유대가 힘을 증폭시킨다.",
+  "skill_level": 2,
+  "skill_effect": "소환수 소환 시 데미지 8% 증가"
+ },
+ "character_owned_link_skill_preset_1": {
+  "skill_name": "커버넌트",
+  "skill_description": "[마스터 레벨 : 3]\r\n소환수와의 유대가 힘을 증폭시킨다.",
+  "skill_level": 2,
+  "skill_effect": "소환수 소환 시 데미지 8% 증가"
+ },
+ "character_owned_link_skill_preset_2": {
+  "skill_name": "커버넌트",
+  "skill_description": "[마스터 레벨 : 3]\r\n소환수와의 유대가 힘을 증폭시킨다.",
+  "skill_level": 2,
+  "skill_effect": "소환수 소환 시 데미지 8% 증가"
+ },
+ "character_owned_link_skill_preset_3": {
+  "skill_name": "커버넌트",
+  "skill_description": "[마스터 레벨 : 3]\r\n소환수와의 유대가 힘을 증폭시킨다.",
+  "skill_level": 2,
+  "skill_effect": "소환수 소환 시 데미지 8% 증가"
+ }
+}
