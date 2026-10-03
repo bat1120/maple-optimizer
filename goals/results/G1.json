@@ -1,6 +1,6 @@
 {
- "criterion1_err_fixture_pair": 0.014301014375218468,
- "criterion1_err_same_buff_pair_reference": 0.018871778343636514,
+ "criterion1_err_clean_pair": 0.012182481593631889,
+ "criterion1_err_old_pair_reference": 0.021224992775292773,
  "criterion2_worst_abs_delta": 0.0,
  "criterion3_best_setting": {
   "equipment": 2,

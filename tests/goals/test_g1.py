@@ -33,18 +33,16 @@ def _predict_boss_sa(snap):
 
 
 def test_criterion1_hunt_to_boss_prediction_within_1pct():
-    actual = final_stats(pair_bundle("레테_boss")["character/stat"]).stat_attack_max
-    hunt = snapshot(bundle("레테"))
-    err = abs(_predict_boss_sa(hunt) / actual - 1)
-
-    # 참고 측정: 보스 스냅샷과 같은 버프 상태였던 인게임 사냥 세팅 스크린샷(2026-10-03) 수치로 바꾼 입력
-    same_buff = dataclasses.replace(hunt, final=dataclasses.replace(
-        hunt.final, stats={**hunt.final.stats, "STR": 3413, "DEX": 3059, "INT": 51896, "LUK": 5960},
-        matk=4852, dmg=84.0, fd=186.70, boss=294.0, ied=83.61, cd=58.0))
-    err_same_buff = abs(_predict_boss_sa(same_buff) / actual - 1)
-    _record("criterion1_err_fixture_pair", err)
-    _record("criterion1_err_same_buff_pair_reference", err_same_buff)
-    assert err <= 0.01, f"fixture 짝 오차 {err:.4%} (같은 버프 짝 참고값 {err_same_buff:.4%})"
+    """판정 짝: 2026-10-04 02:52(사냥)·02:56(보스) 같은 상태(마력 버프 꺼짐)에서 세팅만 바꿔 받은 fixture.
+    이전 짝(2026-10-03 사냥 fixture ↔ 보스 스냅샷)은 버프 상태가 달라 참고값으로만 기록한다."""
+    hunt = snapshot(pair_bundle("레테_hunt2"))
+    boss = snapshot(pair_bundle("레테_boss3"))
+    err = abs(_predict_boss_sa(hunt) / boss.final.stat_attack_max - 1)
+    old_actual = final_stats(pair_bundle("레테_boss")["character/stat"]).stat_attack_max
+    err_old = abs(_predict_boss_sa(snapshot(bundle("레테"))) / old_actual - 1)
+    _record("criterion1_err_clean_pair", err)
+    _record("criterion1_err_old_pair_reference", err_old)
+    assert err <= 0.01, f"같은 상태 짝 오차 {err:.4%} (이전 짝 참고 {err_old:.4%})"
 
 
 def test_criterion2_self_swap_delta_is_zero_for_45_classes():
