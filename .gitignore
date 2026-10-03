@@ -11,3 +11,4 @@ dist/
 .cache/
 web/node_modules/
 web/dist/
+.raw-history/
