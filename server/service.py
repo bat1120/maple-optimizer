@@ -162,3 +162,20 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
                     "per_100m": (delta / (price / 1e8)) if (delta is not None and price) else None})
         out.append(row)
     return out
+
+
+def recommend(snap: CharacterSnapshot, defense: float, top: int = 5) -> dict:
+    """게임 경매장 검색 조건 카드. 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도)."""
+    from engine.market.recommend import recommend_searches
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    cards = []
+    for r in recommend_searches(snap, chosen, b, CATALOG, top=top):
+        category = r.slot.rstrip("0123456789") or r.slot
+        cards.append({"slot": r.slot, "category": category, "target_potentials": r.target_potentials,
+                      "min_starforce": r.min_starforce, "delta_pct": r.delta_pct,
+                      "search": f"{category} · 잠재 {' / '.join(r.target_potentials)} · {r.min_starforce}성 이상",
+                      "current": {"name": r.current_name, "starforce": r.min_starforce,
+                                  "potentials": r.current_potentials}})
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
+            "note": "윗잠만 목표 잠재로 바꾼 같은 템 기준이에요. 스타포스·추옵·에디는 지금 템과 같다고 보고 계산했어요."}

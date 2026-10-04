@@ -66,3 +66,10 @@ describe("screen watch rows", () => {
     expect(screen.getByText(/총 옵션을 읽지 못했어요/)).toBeInTheDocument();
   });
 });
+
+describe("screen watch share target", () => {
+  it("게임 창이나 웹 경매장 탭을 공유하라고 안내한다", () => {
+    render(<ScreenWatch name="x" defense={300} capture={null} />);
+    expect(screen.getByText(/게임 창/)).toHaveTextContent("창 모드");
+  });
+});

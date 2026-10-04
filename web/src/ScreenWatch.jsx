@@ -3,14 +3,14 @@ import { postListings, postVision } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
-// 공유한 경매장 탭을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
+// 공유한 게임 창(또는 웹 경매장 탭)을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
 // 넥슨 서버에는 아무 요청도 하지 않는다 — 사용자 화면에 보이는 픽셀만 읽는다.
 
 export const browserCapture =
   typeof navigator !== "undefined" && navigator.mediaDevices?.getDisplayMedia
     ? {
         async start() {
-          const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser" }, audio: false });
+          const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "window" }, audio: false });
           const video = document.createElement("video");
           video.srcObject = stream;
           video.muted = true;
@@ -132,7 +132,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
 
   const connect = async () => {
     setError(null);
-    if (!cap) return setError({ message: "이 브라우저는 탭 화면 공유를 지원하지 않아요. PC 크롬·엣지에서 열어 주세요." });
+    if (!cap) return setError({ message: "이 브라우저는 화면 공유를 지원하지 않아요. PC 크롬·엣지에서 열어 주세요." });
     try {
       setSession(await cap.start());
     } catch (e) {
@@ -148,7 +148,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
     <section className="panel">
       <h3>경매장 화면 분석 (관리자)</h3>
       <p className="muted">
-        웹 경매장 탭을 공유하면 화면이 바뀔 때마다 매물을 읽어 평가해요. 공유한 탭의 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 탭만 공유해 주세요.
+        공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
+        화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.
       </p>
       {session ? (
         <p>연결됨 · 분석 {count}회 <button type="button" onClick={disconnect}>연결 끊기</button></p>

@@ -1,4 +1,5 @@
 """넥슨 응답 JSON → 엔진 타입. 넥슨 키 이름은 이 파일 밖으로 나가지 않는다."""
+import copy
 import re
 
 from engine.options import StatLine, parse_option
@@ -95,20 +96,24 @@ def _add_texts(block: StatBlock, texts, level: int, excluded: list[str]) -> None
 
 
 def item(item_json: dict, level: int) -> Item:
-    stats = (_total_option_block(item_json.get("item_total_option") or {})
-             + _total_option_block(item_json.get("item_exceptional_option") or {}))
+    core = (_total_option_block(item_json.get("item_total_option") or {})
+            + _total_option_block(item_json.get("item_exceptional_option") or {}))
     excluded: list[str] = []
-    prefixes = ("potential_option_", "additional_potential_option_", "soul_potential_option_")
-    texts = [item_json.get(f"{p}{n}") for p in prefixes for n in (1, 2, 3)]
+    pots = [t for t in (item_json.get(f"potential_option_{n}") for n in (1, 2, 3)) if t]
+    after = [item_json.get(f"{p}{n}") for p in ("additional_potential_option_", "soul_potential_option_") for n in (1, 2, 3)]
     # 소울: soul_active가 비어 있어도 soul_option이 오는 경우가 있다(나이트로드). soul_pad/soul_mad는 의미 미확인 → 1b에서 판단.
-    texts.append(item_json.get("soul_option"))
-    _add_texts(stats, texts, level, excluded)
+    after = [t for t in after + [item_json.get("soul_option")] if t]
+    stats = copy.deepcopy(core)
+    _add_texts(stats, pots + after, level, excluded)
     return Item(
         slot=item_json["item_equipment_slot"],
         part=item_json["item_equipment_part"],
         name=item_json["item_name"],
         starforce=int(num(item_json.get("starforce"))),
         stats=stats,
+        potentials=pots,
+        core=core,
+        after=after,
         excluded=excluded,
     )
 

@@ -22,6 +22,10 @@ class Item:
     starforce: int
     stats: StatBlock
     excluded: list[str] = field(default_factory=list)  # 해석 못 한 옵션 원문 (계산 제외)
+    # 잠재 교체(검색 추천)용: 윗잠 원문, 윗잠을 뺀 기본 블록, 윗잠 뒤에 더해지는 원문(에디·소울). core가 None이면 교체 불가
+    potentials: list[str] = field(default_factory=list)
+    core: StatBlock | None = None
+    after: list[str] = field(default_factory=list)
 
 
 @dataclass

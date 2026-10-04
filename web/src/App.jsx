@@ -5,6 +5,7 @@ import { loadListings, saveListings } from "./storage.js";
 import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "./Panels.jsx";
 import AgentPanel from "./AgentPanel.jsx";
 import ScreenWatch from "./ScreenWatch.jsx";
+import RecommendPanel from "./RecommendPanel.jsx";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
 const TOTAL_LABEL = { ATK: "공격력", MATK: "마력", "ALL%": "올스탯%", BOSS: "보공%", IED: "방무%", DMG: "데미지%" };
@@ -210,6 +211,7 @@ export default function App() {
           <CraftPanel key={cube ? `${cube.probability}-${cube.cost}` : "none"} initialCube={cube} />
         </div>
       </section>
+      <RecommendPanel name={summary ? name.trim() : ""} defense={defense} />
       <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} />
       <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} />
     </main>

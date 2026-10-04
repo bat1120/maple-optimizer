@@ -37,6 +37,10 @@ export function getSettings(name, bossDefense = 300) {
   return request(`${base(name)}/settings?boss_defense=${bossDefense}`);
 }
 
+export function getRecommend(name, bossDefense = 300, top = 5) {
+  return request(`${base(name)}/recommend?boss_defense=${bossDefense}&top=${top}`);
+}
+
 export function postListings(name, body) {
   return request(`${base(name)}/listings`, {
     method: "POST",

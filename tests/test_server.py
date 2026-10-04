@@ -192,3 +192,12 @@ def test_listing_and_settings_report_equivalent_main_stat(tmp_path, clock):
     assert lst["ranking"][0]["main_stat_gain"] > 0 and "main_stat_gain_per_100m" in lst["ranking"][0]
     st = c.get("/api/character/내신부레테/settings").json()["ranking"][0]
     assert st["main_stat_vs_active"] > 0
+
+
+def test_recommend_route_returns_search_cards_on_boss_setting(tmp_path, clock):
+    r = make(tmp_path, clock).get("/api/character/내신부레테/recommend?boss_defense=300&top=3").json()
+    assert r["evaluation_setting"]["equipment"] == 2 and len(r["recommendations"]) == 3
+    first = r["recommendations"][0]
+    assert first["search"].startswith(f"{first['category']} · 잠재 ") and first["delta_pct"] > 0
+    ring = make(tmp_path, clock).get("/api/character/내신부레테/recommend?top=20").json()["recommendations"]
+    assert all(c["category"] == "반지" for c in ring if c["slot"].startswith("반지"))
