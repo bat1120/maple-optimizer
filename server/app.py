@@ -212,6 +212,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         setting: dict | None = None
         seen: list[str] = []
 
+    @app.get("/api/character/{name}/paths")
+    def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
+                      date: str | None = None):
+        return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct)
+
     @app.get("/api/market/observed")
     def market_observed(request: Request):
         """화면 분석으로 쌓인 관측 시세(관리자 전용)."""

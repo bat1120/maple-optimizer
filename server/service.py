@@ -214,6 +214,21 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                      "쿨감 줄은 유지해요 — " + _cooldown_note(cooldown_main_pct))}
 
 
+def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
+          cooldown_main_pct: float | None = None, top: int = 30) -> dict:
+    """업그레이드 경로 비교: 구매·직작·지금 템 큐브를 억당 실딜로(세트 효과 반영)."""
+    from engine.market.paths import upgrade_paths
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    r = upgrade_paths(snap, chosen, b, CATALOG, observed, cooldown_main_pct)
+    fmt = lambda ps: [{**p, "cost_text": meso_text(p["cost"])} for p in ps]  # noqa: E731
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "all": fmt(r["all"][:top]),
+            "best_by_slot": fmt(r["best_by_slot"]), "observed_count": len(observed or []),
+            "note": ("구매 = 관측 매물을 그대로 끼운 실딜(세트 개수를 다시 세서 세트 효과 변화 포함, set_change), 다른 월드 매물은 +10%. "
+                     "직작 = 관측 매물 가격 + 그 매물 등급에서 단계까지 메소 재설정 평균. 큐브 = 지금 템에 메소 재설정 평균. "
+                     "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
+
+
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

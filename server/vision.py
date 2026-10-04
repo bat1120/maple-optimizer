@@ -25,12 +25,18 @@ _SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["name", "category", "part", "starforce", "total", "potentials", "additional", "price"],
+                "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
+                             "total", "potentials", "additional", "price"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
                     "part": {"type": "string", "description": "무기면 무기 종류(예: 카르타), 아니면 category와 같게"},
                     "starforce": {"type": ["integer", "null"]},
+                    "level": {"type": ["integer", "null"], "description": "툴팁의 착용 레벨(REQ LEV). 안 보이면 null"},
+                    "potential_grade": {"type": ["string", "null"], "enum": ["레어", "에픽", "유니크", "레전드리", None],
+                                        "description": "잠재능력 등급. 안 보이면 null"},
+                    "additional_grade": {"type": ["string", "null"], "enum": ["레어", "에픽", "유니크", "레전드리", None],
+                                         "description": "에디셔널 잠재능력 등급. 안 보이면 null"},
                     "total": {
                         "type": "object", "additionalProperties": False, "required": list(_TOTAL_KEYS),
                         "properties": {k: {"type": ["number", "null"]} for k in _TOTAL_KEYS},

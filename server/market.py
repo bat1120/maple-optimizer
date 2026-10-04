@@ -23,10 +23,14 @@ class PriceStore:
         lines = list(read.get("potential_lines") or []), list(read.get("additional") or [])
         if not price or not (lines[0] or lines[1]) or not read.get("category"):
             return False
-        body = {"category": read["category"], "name": read.get("name"), "starforce": read.get("starforce") or 0,
-                "potential_lines": lines[0], "additional": lines[1], "price": int(price)}
+        body = {"category": read["category"], "name": read.get("name"), "part": read.get("part"),
+                "starforce": read.get("starforce") or 0, "level": read.get("level"),
+                "potential_grade": read.get("potential_grade"), "additional_grade": read.get("additional_grade"),
+                "total": read.get("total") or {}, "potential_lines": lines[0], "additional": lines[1],
+                "price": int(price), "sold": bool(read.get("sold")), "other_world": bool(read.get("other_world")),
+                "source": read.get("source") or "화면"}
         key = json.dumps([body["category"], body["name"], body["starforce"], sorted(lines[0]), sorted(lines[1]),
-                          body["price"]], ensure_ascii=False)
+                          body["price"], body["sold"]], ensure_ascii=False)
         now = self._clock()
         self._db.execute("DELETE FROM observed WHERE seen_at <= ?", (now - KEEP_SECONDS,))
         cur = self._db.execute("INSERT OR IGNORE INTO observed VALUES (?, ?, ?)",

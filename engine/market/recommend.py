@@ -255,9 +255,9 @@ def _route(it: Item) -> str:
 
 
 def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-            cooldown_main_pct: float | None = None, observed: list[dict] | None = None) -> dict:
+            cooldown_main_pct: float | None = None, observed: list[dict] | None = None, planner=None) -> dict:
     """부위 → {name, starforce, route, current, 잠재/에디: [단계…], next: {종류: 처음 오르는 단계 번호|None}}."""
-    pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
+    pl = planner or _Planner(snap, setting, boss, catalog, cooldown_main_pct)
     out = {}
     for slot, it in pl.slots():
         row = {"name": it.name, "starforce": it.starforce, "route": _route(it),
