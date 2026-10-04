@@ -111,3 +111,8 @@
 - INT: 만료 칭호를 빼고 나니 점령 %적용 가설에서 +127/−97(이전 ±40은 잘못된 칭호 올스탯이 상쇄한 결과). 회귀 테스트를 0.25% 이내로 재설정, 남은 INT 출처는 인게임 INT 툴팁으로 확정 예정
 - 남은 차: 사냥 장비 마력이 인게임보다 30 큼(도전자 8세트 공마 30과 같은 값 — 후보). 판정 기준 안이라 후속 과제로 둔다
 - validate 264 passed, G1~G8 VERIFY 전부 OK
+
+## 2026-10-04 G9 VERIFIED — 웹 패널 확장
+- BASELINE: verify G9 → Panels 테스트 없음(exit 1)
+- BUILD: web/src/Panels.jsx(StarforcePanel·CubePanel·CraftPanel·OptimizePanel), api.js(postStarforce·postCube·postCraft·postOptimize), App에 "강화 계산" 섹션(큐브 결과 → 직작 비교 자동 입력)과 매물 아래 예산 최적화
+- VERIFY exit 0: 패널 4개 테스트 통과, vitest 21 passed, build 0. G4·G8 VERIFY 유지, validate 264 passed

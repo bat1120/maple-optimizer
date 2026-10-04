@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getCharacter, getSettings, postListings } from "./api.js";
 import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, parsePrice, settingLabel } from "./format.js";
 import { loadListings, saveListings } from "./storage.js";
+import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "./Panels.jsx";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
 const TOTAL_LABEL = { ATK: "공격력", MATK: "마력", "ALL%": "올스탯%", BOSS: "보공%", IED: "방무%", DMG: "데미지%" };
@@ -127,6 +128,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [cube, setCube] = useState(null);
 
   const lookup = async (e) => {
     e.preventDefault();
@@ -194,8 +196,17 @@ export default function App() {
             </section>
           )}
           <ListingResults result={result} />
+          <OptimizePanel name={name.trim()} listings={listings} defense={defense} />
         </>
       )}
+      <section>
+        <h2>강화 계산</h2>
+        <div className="panels">
+          <StarforcePanel />
+          <CubePanel onResult={setCube} />
+          <CraftPanel key={cube ? `${cube.probability}-${cube.cost}` : "none"} initialCube={cube} />
+        </div>
+      </section>
     </main>
   );
 }

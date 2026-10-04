@@ -12,3 +12,7 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
 .error { color: #c92a2a; }
 .muted { color: #6b6b73; font-size: 0.9rem; }
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.panel { margin: 0; }
+.check { flex-direction: row; align-items: center; gap: 6px; }
+ol.plain { list-style: none; padding-left: 0; }

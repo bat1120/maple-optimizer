@@ -44,3 +44,12 @@ export function postListings(name, body) {
     body: JSON.stringify(body),
   });
 }
+
+function post(url, body) {
+  return request(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+
+export const postStarforce = (body) => post("/api/enhance/starforce", body);
+export const postCube = (body) => post("/api/enhance/cube", body);
+export const postCraft = (body) => post("/api/craft/compare", body);
+export const postOptimize = (name, body) => post(`${base(name)}/optimize`, body);

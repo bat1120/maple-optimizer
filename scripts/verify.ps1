@@ -14,14 +14,15 @@ if ($code -ne 0) { Write-Output "VERIFY FAIL (pytest exit $code)"; exit 1 }
 if ($out -match "skipped") { Write-Output "VERIFY FAIL: skip 발생 (skip은 통과가 아니다)"; exit 1 }
 if ($out -notmatch "\d+ passed") { Write-Output "VERIFY FAIL: 실행된 테스트 없음"; exit 1 }
 
-if ($id -eq "g4") {
+if ($id -eq "g4" -or $id -eq "g9") {
     $env:NO_COLOR = "1"; $env:FORCE_COLOR = "0"
     & npm --prefix web run build 2>&1 | Out-String | Write-Output
     if ($LASTEXITCODE -ne 0) { Write-Output "VERIFY FAIL: web build"; exit 1 }
     $web = & npm --prefix web test 2>&1 | Out-String
     Write-Output $web
     if ($LASTEXITCODE -ne 0) { Write-Output "VERIFY FAIL: web test"; exit 1 }
-    if ($web -match "Tests\s+(\d+) passed") { if ([int]$Matches[1] -lt 8) { Write-Output "VERIFY FAIL: vitest $($Matches[1]) < 8"; exit 1 } }
+    if ($web -match "Tests\s+(\d+) passed") { $min = if ($id -eq "g9") { 20 } else { 8 }
+    if ([int]$Matches[1] -lt $min) { Write-Output "VERIFY FAIL: vitest $($Matches[1]) < $min"; exit 1 } }
     else { Write-Output "VERIFY FAIL: vitest 결과를 읽을 수 없음"; exit 1 }
 }
 

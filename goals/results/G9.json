@@ -1,0 +1,9 @@
+{
+ "vitest_passed": 21,
+ "panels": [
+  "starforce panel",
+  "cube panel",
+  "craft panel",
+  "optimize panel"
+ ]
+}
