@@ -6,6 +6,7 @@ import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "./Panels.j
 import AgentPanel from "./AgentPanel.jsx";
 import ScreenWatch from "./ScreenWatch.jsx";
 import RecommendPanel from "./RecommendPanel.jsx";
+import RoadmapPanel from "./RoadmapPanel.jsx";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
 const TOTAL_LABEL = { ATK: "공격력", MATK: "마력", "ALL%": "올스탯%", BOSS: "보공%", IED: "방무%", DMG: "데미지%" };
@@ -223,6 +224,7 @@ export default function App() {
         </div>
       </section>
       <RecommendPanel name={summary ? name.trim() : ""} defense={defense} />
+      <RoadmapPanel name={summary ? name.trim() : ""} defense={defense} />
       <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} />
       <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} onFeeRate={onFeeRate} />
     </main>

@@ -1,15 +1,18 @@
-"""매물 검색 추천: 부위마다 '지금보다 한 단계 위' 잠재를 찾고, 그때의 보스 실딜 상승을 계산해 순위를 매긴다.
+"""매물 검색 추천과 전체 부위 로드맵.
 
-한 번에 고점(레전 3줄 이탈)으로 건너뛰지 않는다. 부위별 잠재 사다리를 낮은 단계부터 올라가며 실딜이 처음으로
-오르는 단계를 추천한다(2026-10-04 실사용 피드백). 게임 경매장에서 그대로 검색할 수 있게 부위·잠재·최소 스타포스를 돌려준다.
+부위마다 윗잠(잠재)·에디를 등급별 단계(에픽 2줄 → 에픽 3줄 → 유니크 2줄 → … → 레전드리 3줄)로 나눠, 각 단계에서
+가장 좋은 '흔한' 조합(줄마다 공식 확률 2% 이상인 옵션 중 단독 기여가 가장 큰 것, 2·3번째 줄은 1번째 줄 수치인
+'이탈'을 빼고)의 보스 실딜 상승을 계산한다.
+추천 카드는 실딜이 처음 오르는 단계, 즉 '지금보다 한 단계 위'다(2026-10-04 실사용 피드백: 고점 한 번에 추천 X).
 
-줄 수치(Ruling, 근거 파일):
-- 무기·보조무기·엠블렘 공/마%: 레전드리 12/9, 보공 40/35/30, 방무 40/35/30 — engine/data/cube_black.json(200제 무기 공식 확률표)
-- 주스탯%: 착용 레벨 250 이상 레전 13/10·유니크 10/7, 그 밖 레전 12/9·유니크 9/6 — 레테 장비 실측(250제 장갑 13·10, 160제 신발 9·6)
-- 쿨감(스킬 재사용 대기시간 -N초) 줄은 실딜 공식으로 값을 매길 수 없어 바꾸지 않고 유지한다.
-  사용자가 '쿨감 1초 = 주스탯 N%'를 주면 그 환산으로 실딜에 넣는다.
+- 줄 수치·확률: engine/data/cube_tables.json (공식 큐브 확률표, tools/fetch_cube_tables.py). 201레벨부터 수치 +1.
+- 쿨감(스킬 재사용 대기시간 -N초) 줄은 실딜 공식으로 값을 매길 수 없어 유지한다. '쿨감 1초 = 주스탯 N%'를 주면 환산해 넣는다.
+- 제네시스·데스티니 무기는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
 """
 import copy
+import functools
+import json
+import pathlib
 import re
 from dataclasses import dataclass, field
 
@@ -17,76 +20,89 @@ from engine.options import StatLine, parse_option
 from engine.stats.evaluate import Evaluator
 from engine.stats.jobs import job_profile
 from engine.stats.metrics import BossProfile
-from engine.stats.sets import SetCatalog
+from engine.stats.sets import SPECIAL_WEAPON, SetCatalog
 from engine.stats.snapshot import CharacterSnapshot, Item, Setting
 
-# 잠재를 바꿔 살 대상이 아닌 슬롯(잠재가 없거나 경매장 거래 대상이 아님)
 SKIP_SLOTS = ("훈장", "뱃지", "포켓 아이템", "기계 심장", "예비 특수 반지")
-_ATK_NAME = {"ATK": "공격력", "MATK": "마력"}
+GRADES = ("에픽", "유니크", "레전드리")
+KINDS = ("잠재", "에디")
+COMMON_MIN_PROB = 2.0  # % — 이보다 드문 줄은 '흔한 조합'에 넣지 않는다
+MIN_GAIN = 0.1         # % — 이보다 작은 실딜 상승은 '다음 단계'로 치지 않는다(노이즈 수준 교체 방지)
 _COOLDOWN = re.compile(r"^스킬 재사용 대기시간\s*:?\s*-(\d+)초$")
-_EPS = 1e-9
+_TABLES = pathlib.Path(__file__).resolve().parents[1] / "data" / "cube_tables.json"
 
 
 @dataclass
 class Recommendation:
     slot: str
-    target_potentials: list[str]
-    delta_pct: float                 # 현재 세팅 대비 보스 실딜 상승률(%)
-    min_starforce: int               # 현재 템 스타포스 이상
+    kind: str                         # 잠재 | 에디
+    grade: str
+    lines_good: int                   # 유효 줄 수
+    target: list[str]
+    delta_pct: float
+    probability: float                # 이 조합이 한 번에 나올 확률(참고, 공식표 줄 확률의 곱)
+    min_starforce: int
     current_name: str
-    current_potentials: list[str] = field(default_factory=list)
-    step: int = 1                    # 사다리 몇 단계인가(1이 가장 흔한 잠재)
-    steps: int = 1
-    kept: list[str] = field(default_factory=list)  # 유지한 줄(쿨감)
+    current: list[str] = field(default_factory=list)
+    kept: list[str] = field(default_factory=list)
+    route: str = "경매장"
+
+
+@functools.lru_cache(maxsize=1)
+def _tables() -> dict:
+    return json.loads(_TABLES.read_text(encoding="utf-8"))["tables"]
+
+
+def _part(slot: str) -> str:
+    return slot.rstrip("0123456789")
+
+
+def line_tables(kind: str, grade: str, slot: str, level: int) -> list[dict[str, float]] | None:
+    """[{옵션: 확률%}] × 3. 레벨 201 이상은 '250' 구간, 그 구간이 없는 부위는 '200' 구간."""
+    bands = _tables().get(kind, {}).get(grade, {}).get(_part(slot))
+    if not bands:
+        return None
+    return bands["250"] if level > 200 and "250" in bands else bands["200"]
 
 
 def cooldown_seconds(it: Item) -> int:
     return sum(int(m[1]) for t in it.potentials + it.after if (m := _COOLDOWN.match(t.strip())))
 
 
-def with_potentials(it: Item, lines: list[str], level: int) -> Item:
-    """윗잠만 lines로 바꾼 아이템. 에디·소울·기본 옵션은 그대로 둔다."""
-    if it.core is None:
-        raise ValueError(f"{it.slot}: 잠재를 바꿀 수 없는 아이템이에요")
+def _rebuild(it: Item, potentials: list[str], after: list[str], additional: list[str], level: int) -> Item:
     stats = copy.deepcopy(it.core)
-    excluded = [t for t in it.excluded if t not in it.potentials]
-    for t in list(lines) + it.after:
+    excluded = []
+    for t in potentials + after:
         parsed = parse_option(t, level)
         if parsed is None:
-            if t in lines:
-                excluded.append(t)
+            excluded.append(t)
             continue
         for line in parsed:
             stats.add(line)
     return Item(slot=it.slot, part=it.part, name=it.name, starforce=it.starforce, stats=stats, excluded=excluded,
-                potentials=list(lines), core=it.core, after=it.after, level=it.level)
+                potentials=list(potentials), core=it.core, after=list(after), additional=list(additional),
+                level=it.level)
 
 
-def ladder(slot: str, main: str, attack: str, level: int) -> list[list[list[str]]]:
-    """부위별 잠재 단계. 각 단계는 같은 정도로 흔한 3줄(또는 2줄) 조합 목록이다."""
-    a = _ATK_NAME[attack]
-    A12, A9 = f"{a} +12%", f"{a} +9%"
-    if slot in ("무기", "보조무기"):
-        return [[[A12, A9]],
-                [[A12, A9, A9], [A12, "보스 몬스터 데미지 +30%", A9], [A12, A9, "몬스터 방어율 무시 +30%"]],
-                [[A12, "보스 몬스터 데미지 +35%", A9], [A12, "보스 몬스터 데미지 +30%", "보스 몬스터 데미지 +30%"]],
-                [[A12, "보스 몬스터 데미지 +40%", A9], [A12, A12, A9]]]
-    if slot == "엠블렘":
-        return [[[A12, A9]],
-                [[A12, A9, A9], [A12, A9, "몬스터 방어율 무시 +30%"]],
-                [[A12, "몬스터 방어율 무시 +35%", A9]],
-                [[A12, A12, A9], [A12, "몬스터 방어율 무시 +40%", A9]]]
-    hi = level >= 250
-    lp, ln, up, un = (13, 10, 10, 7) if hi else (12, 9, 9, 6)
-    M = lambda v: f"{main} +{v}%"  # noqa: E731
-    if slot == "장갑":
-        return [[["크리티컬 데미지 +8%", M(lp)]],
-                [["크리티컬 데미지 +8%", "크리티컬 데미지 +8%"]],
-                [["크리티컬 데미지 +8%", "크리티컬 데미지 +8%", M(ln)]]]
-    return [[[M(up), M(un)]],
-            [[M(up), M(un), M(un)], [M(lp), M(ln)]],
-            [[M(lp), M(ln), M(ln)]],
-            [[M(lp), M(lp), M(ln)]]]
+def _check(it: Item) -> None:
+    if it.core is None:
+        raise ValueError(f"{it.slot}: 잠재를 바꿀 수 없는 아이템이에요")
+
+
+def with_potentials(it: Item, lines: list[str], level: int) -> Item:
+    """윗잠만 lines로 바꾼 아이템. 에디·소울·기본 옵션은 그대로 둔다."""
+    _check(it)
+    return _rebuild(it, list(lines), it.after, it.additional, level)
+
+
+def with_additional(it: Item, lines: list[str], level: int) -> Item:
+    """에디만 lines로 바꾼 아이템. 윗잠·소울·기본 옵션은 그대로 둔다."""
+    _check(it)
+    rest = it.after[len(it.additional):]
+    return _rebuild(it, it.potentials, list(lines) + rest, list(lines), level)
+
+
+SWAP = {"잠재": with_potentials, "에디": with_additional}
 
 
 def _valued(it: Item, main: str, per_sec: float | None) -> Item:
@@ -100,33 +116,100 @@ def _valued(it: Item, main: str, per_sec: float | None) -> Item:
     return out
 
 
+class _Planner:
+    def __init__(self, snap, setting, boss, catalog, cooldown_main_pct):
+        job = job_profile(snap.character_class)
+        self.snap, self.main, self.per_sec = snap, job.mains[0], cooldown_main_pct
+        self.useful = {self.main, job.attack, "BOSS", "IED", "CD", "DMG"}
+        self.ev = Evaluator(snap, setting, boss, catalog)
+        self.raw = self.ev.base_items()
+        self.items = {s: _valued(it, self.main, cooldown_main_pct) for s, it in self.raw.items()}
+        self.base = self.ev.index(self.items)
+
+    def delta(self, slot: str, kind: str, lines: list[str]) -> float:
+        trial = dict(self.items)
+        trial[slot] = _valued(SWAP[kind](self.raw[slot], lines, self.snap.level), self.main, self.per_sec)
+        return (self.ev.index(trial) / self.base - 1) * 100
+
+    def is_useful(self, option: str) -> bool:
+        parsed = parse_option(option, self.snap.level)
+        return bool(parsed) and any(line.key in self.useful for line in parsed)
+
+    def tiers(self, slot: str, kind: str) -> list[dict]:
+        it = self.raw[slot]
+        kept = [t for t in it.potentials if _COOLDOWN.match(t.strip())] if kind == "잠재" else []
+        single: dict[str, float] = {}
+        out = []
+        for grade in GRADES:
+            tables = line_tables(kind, grade, slot, it.level)
+            if not tables or any(k not in tables[0] for k in kept):  # 쿨감 -2초는 레전드리 1번째 줄에만 있다
+                continue
+            for n in (2, 3):
+                chosen, prob = [], 1.0
+                for pos in range(len(kept), min(3, len(kept) + n)):
+                    cands = [o for o, p in tables[pos].items() if p >= COMMON_MIN_PROB and self.is_useful(o)
+                             and (pos == 0 or o not in tables[0])]
+                    if not cands:
+                        break
+                    for o in cands:
+                        if o not in single:
+                            single[o] = self.delta(slot, kind, kept + [o])
+                    best = max(cands, key=lambda o: single[o])
+                    chosen.append(best)
+                    prob *= tables[pos][best] / 100
+                if not chosen:
+                    continue
+                target = kept + chosen
+                out.append({"grade": grade, "lines_good": len(chosen), "target": target, "probability": prob,
+                            "delta_pct": self.delta(slot, kind, target)})
+        return out
+
+    def slots(self):
+        for slot, it in self.raw.items():
+            if slot in SKIP_SLOTS or it.core is None or not it.potentials:
+                continue
+            if not line_tables("잠재", "레전드리", slot, it.level):
+                continue
+            yield slot, it
+
+
+def _route(it: Item) -> str:
+    return "큐브" if it.name.startswith(SPECIAL_WEAPON) else "경매장"
+
+
+def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
+            cooldown_main_pct: float | None = None) -> dict:
+    """부위 → {name, starforce, route, current, 잠재/에디: [단계…], next: {종류: 처음 오르는 단계 번호|None}}."""
+    pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
+    out = {}
+    for slot, it in pl.slots():
+        row = {"name": it.name, "starforce": it.starforce, "route": _route(it),
+               "current": {"잠재": list(it.potentials), "에디": list(it.additional)}, "next": {}}
+        for kind in KINDS:
+            tiers = pl.tiers(slot, kind)
+            row[kind] = tiers
+            row["next"][kind] = next((i for i, t in enumerate(tiers) if t["delta_pct"] >= MIN_GAIN), None)
+        out[slot] = row
+    return out
+
+
 def recommend_searches(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-                       top: int = 5, cooldown_main_pct: float | None = None) -> list[Recommendation]:
-    """부위마다 실딜이 처음 오르는 사다리 단계를 골라, 상승률 내림차순으로."""
-    job = job_profile(snap.character_class)
-    main = job.mains[0]
-    ev = Evaluator(snap, setting, boss, catalog)
-    items = {s: _valued(it, main, cooldown_main_pct) for s, it in ev.base_items().items()}
-    raw = ev.base_items()
-    base = ev.index(items)
+                       top: int = 5, cooldown_main_pct: float | None = None,
+                       include_cube_route: bool = False) -> list[Recommendation]:
+    """경매장 검색 카드: 부위·종류(잠재/에디)마다 실딜이 처음 오르는 단계를 상승률 내림차순으로."""
+    rm = roadmap(snap, setting, boss, catalog, cooldown_main_pct)
     out = []
-    for slot, it in raw.items():
-        if slot in SKIP_SLOTS or it.core is None or not it.potentials:
+    for slot, row in rm.items():
+        if row["route"] != "경매장" and not include_cube_route:
             continue
-        kept = [t for t in it.potentials if _COOLDOWN.match(t.strip())]
-        tiers = ladder(slot, main, job.attack, it.level)
-        for n, tier in enumerate(tiers, 1):
-            best = None
-            for option in tier:
-                target = kept + option[:3 - len(kept)]
-                trial = dict(items)
-                trial[slot] = _valued(with_potentials(it, target, snap.level), main, cooldown_main_pct)
-                delta = (ev.index(trial) / base - 1) * 100
-                if best is None or delta > best[1]:
-                    best = (target, delta)
-            if best and best[1] > _EPS:
-                out.append(Recommendation(slot, best[0], best[1], it.starforce, it.name, list(it.potentials),
-                                          step=n, steps=len(tiers), kept=kept))
-                break
+        for kind in KINDS:
+            i = row["next"][kind]
+            if i is None:
+                continue
+            t = row[kind][i]
+            kept = [x for x in t["target"] if _COOLDOWN.match(x.strip())]
+            out.append(Recommendation(slot, kind, t["grade"], t["lines_good"], t["target"], t["delta_pct"],
+                                      t["probability"], row["starforce"], row["name"], row["current"][kind], kept,
+                                      row["route"]))
     out.sort(key=lambda r: r.delta_pct, reverse=True)
     return out[:top]

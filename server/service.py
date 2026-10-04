@@ -188,23 +188,40 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     return out
 
 
+def _cooldown_note(cooldown_main_pct: float | None) -> str:
+    return (f"쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요." if cooldown_main_pct
+            else "쿨감 효율은 실딜에 넣지 않았어요(쿨감 1초 = 주스탯 몇 %인지 정하면 넣어요).")
+
+
 def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_main_pct: float | None = None) -> dict:
-    """게임 경매장 검색 조건 카드. 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도)."""
+    """게임 경매장 검색 조건 카드(잠재·에디). 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도).
+    제네시스·데스티니 무기처럼 경매장에서 살 수 없는 템은 빠진다(로드맵에서 큐브 경로로 본다)."""
     from engine.market.recommend import recommend_searches
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
     cards = []
     for r in recommend_searches(snap, chosen, b, CATALOG, top=top, cooldown_main_pct=cooldown_main_pct):
         category = r.slot.rstrip("0123456789") or r.slot
-        cards.append({"slot": r.slot, "category": category, "target_potentials": r.target_potentials,
-                      "min_starforce": r.min_starforce, "delta_pct": r.delta_pct,
-                      "step": r.step, "steps": r.steps, "kept": r.kept,
-                      "search": f"{category} · 잠재 {' / '.join(r.target_potentials)} · {r.min_starforce}성 이상",
-                      "current": {"name": r.current_name, "starforce": r.min_starforce,
-                                  "potentials": r.current_potentials}})
+        cards.append({"slot": r.slot, "category": category, "kind": r.kind, "grade": r.grade,
+                      "lines_good": r.lines_good, "target_potentials": r.target, "min_starforce": r.min_starforce,
+                      "delta_pct": r.delta_pct, "probability": r.probability, "kept": r.kept,
+                      "search": f"{category} · {r.kind} {r.grade} {' / '.join(r.target)} · {r.min_starforce}성 이상",
+                      "current": {"name": r.current_name, "starforce": r.min_starforce, "potentials": r.current}})
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
             "cooldown_main_pct": cooldown_main_pct,
-            "note": ("부위마다 지금보다 한 단계 위(실딜이 처음 오르는 잠재 단계)를 골랐어요. 윗잠만 바꾼 같은 템 기준이고 "
-                     "스타포스·추옵·에디는 그대로예요. 쿨감 줄은 유지해요"
-                     + (f" — 쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요." if cooldown_main_pct
-                        else " — 쿨감 효율은 실딜에 넣지 않았어요(쿨감 1초 = 주스탯 몇 %인지 정하면 넣어요)."))}
+            "note": ("부위·잠재/에디마다 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐어요. "
+                     "줄 수치는 공식 큐브 확률표의 흔한 줄(확률 2% 이상, 이탈 제외)이고, 그 줄만 바꾼 같은 템 기준이에요. "
+                     "쿨감 줄은 유지해요 — " + _cooldown_note(cooldown_main_pct))}
+
+
+def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None) -> dict:
+    """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""
+    from engine.market.recommend import roadmap as build
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    rows = [{"slot": slot, **row} for slot, row in build(snap, chosen, b, CATALOG, cooldown_main_pct).items()]
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "cooldown_main_pct": cooldown_main_pct,
+            "slots": rows,
+            "note": ("각 단계 = 그 등급에서 흔한 줄(확률 2% 이상, 이탈 제외)로 2줄·3줄을 맞춘 경우예요. probability는 큐브 한 번에 "
+                     "그 조합이 나올 확률(참고)이에요. route가 '큐브'인 부위(제네시스 무기 등)는 경매장에서 살 수 없어요. "
+                     + _cooldown_note(cooldown_main_pct))}

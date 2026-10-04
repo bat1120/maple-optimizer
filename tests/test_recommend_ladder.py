@@ -1,5 +1,9 @@
-"""매물 검색 추천: 한 번에 고점이 아니라 '지금보다 한 단계 위'를, 쿨감 줄은 버리지 않는다 (2026-10-04 실사용 피드백)."""
-from engine.market.recommend import cooldown_seconds, ladder, recommend_searches, with_potentials
+"""매물 검색 추천·로드맵: 공식 확률표 수치로 등급별 단계를 만들고, 지금보다 한 단계 위를 추천한다.
+
+2026-10-04 실사용 피드백: 고점 한 번에 추천 X, 쿨감 줄 유지, 에디 추천, 제네시스 무기는 경매장 대상 아님, 전체 부위 로드맵.
+"""
+from engine.market.recommend import (cooldown_seconds, line_tables, recommend_searches, roadmap, with_additional,
+                                     with_potentials)
 from engine.stats.evaluate import Evaluator, rank_settings
 from engine.stats.metrics import BossProfile
 from engine.stats.sets import SetCatalog
@@ -14,67 +18,86 @@ def _setup():
     return snap, rank_settings(snap, BOSS, CAT)[0][0]
 
 
-def _by_slot(**kw):
+def _items():
     snap, setting = _setup()
-    return {r.slot: r for r in recommend_searches(snap, setting, BOSS, CAT, top=30, **kw)}
+    return snap, Evaluator(snap, setting, BOSS, CAT).base_items()
+
+
+def _recs(**kw):
+    snap, setting = _setup()
+    return {(r.slot, r.kind): r for r in recommend_searches(snap, setting, BOSS, CAT, top=60, **kw)}
 
 
 def _int_sum(lines):
-    return sum(float(t.split("+")[1].rstrip("%")) for t in lines if t.startswith("INT +"))
+    return sum(float(t.split("+")[1].rstrip("%")) for t in lines if t.startswith("INT +") and t.endswith("%"))
 
 
-def test_item_level_is_kept_from_api():
-    snap, setting = _setup()
-    items = Evaluator(snap, setting, BOSS, CAT).base_items()
+def test_item_keeps_level_and_additional_lines():
+    _, items = _items()
     assert items["장갑"].level == 250 and items["상의"].level == 150
+    assert items["상의"].additional == ["INT +4%", "마력 +10"]
 
 
-def test_ladder_uses_official_line_values_by_item_level():
-    assert ladder("상의", "INT", "MATK", 150)[0] == [["INT +9%", "INT +6%"]]
-    assert ["INT +13%", "INT +10%", "INT +10%"] in ladder("모자", "INT", "MATK", 250)[2]
-    assert ladder("무기", "INT", "MATK", 200)[0] == [["마력 +12%", "마력 +9%"]]
+def test_official_tables_by_grade_part_and_level_band():
+    assert "INT +9%" in line_tables("잠재", "유니크", "상의", 150)[0]
+    assert "INT +12%" in line_tables("잠재", "레전드리", "모자", 200)[0]
+    assert "INT +13%" in line_tables("잠재", "레전드리", "모자", 201)[0]     # 201레벨부터 +1 (공식표 실측)
+    assert "INT +6%" in line_tables("에디", "유니크", "모자", 150)[0]
+    assert line_tables("잠재", "유니크", "반지4", 130) == line_tables("잠재", "유니크", "반지", 130)
+    assert line_tables("잠재", "에픽", "엠블렘", 250) == line_tables("잠재", "에픽", "엠블렘", 200)  # 201+ 구간 없는 부위
 
 
-def test_recommends_next_step_not_the_top():
-    recs = _by_slot()
-    assert _int_sum(recs["상의"].target_potentials) == 21          # 지금 9+6=15 → 유니크 3줄 21, 레전 30으로 건너뛰지 않음
-    assert recs["상의"].step == 2
-    assert _int_sum(recs["반지1"].target_potentials) == 30         # 지금 12+9=21 → 레전 3줄 30
+def test_identity_when_replacing_with_own_lines():
+    snap, items = _items()
+    for slot, it in items.items():
+        if it.core is None:
+            continue
+        for same in (with_potentials(it, it.potentials, snap.level), with_additional(it, it.additional, snap.level)):
+            assert same.stats == it.stats, slot
+
+
+def test_next_step_not_the_top():
+    recs = _recs()
+    top = recs[("상의", "잠재")]
+    assert (top.grade, top.lines_good) == ("유니크", 3) and top.delta_pct > 0     # 유니크 2줄 15% → 유니크 3줄
+    assert recs[("반지1", "잠재")].grade == "레전드리"
 
 
 def test_cooldown_lines_are_kept_on_hat():
-    recs = _by_slot()
-    hat = recs["모자"]
-    assert "스킬 재사용 대기시간 -2초" in hat.target_potentials and len(hat.target_potentials) == 3
-    assert hat.kept == ["스킬 재사용 대기시간 -2초"]
+    hat = _recs()[("모자", "잠재")]
+    assert hat.kept == ["스킬 재사용 대기시간 -2초"] and hat.target[0] == "스킬 재사용 대기시간 -2초"
 
 
-def test_cooldown_seconds_reads_lines():
+def test_additional_potential_is_recommended():
+    recs = _recs()
+    assert any(k == "에디" for _, k in recs)
+    r = recs[("상의", "에디")]
+    assert r.delta_pct > 0 and r.current == ["INT +4%", "마력 +10"]
+
+
+def test_genesis_weapon_is_cube_route_not_auction():
+    recs = _recs()
+    assert ("무기", "잠재") not in recs and ("무기", "에디") not in recs
     snap, setting = _setup()
-    hat = Evaluator(snap, setting, BOSS, CAT).base_items()["모자"]
-    assert cooldown_seconds(hat) == 2
-    assert cooldown_seconds(with_potentials(hat, ["INT +9%"], snap.level)) == 0
+    weapon = roadmap(snap, setting, BOSS, CAT)["무기"]
+    assert weapon["route"] == "큐브" and weapon["잠재"]
+
+
+def test_roadmap_covers_every_slot_with_tiers():
+    snap, setting = _setup()
+    rm = roadmap(snap, setting, BOSS, CAT)
+    assert len(rm) >= 17 and "훈장" not in rm
+    tiers = rm["상의"]["잠재"]
+    assert [t["grade"] for t in tiers][:2] == ["에픽", "에픽"] and all(0 < t["probability"] <= 1 for t in tiers)
+    assert rm["상의"]["next"]["잠재"] == next(i for i, t in enumerate(tiers) if t["delta_pct"] >= 0.1)
 
 
 def test_cooldown_value_when_user_gives_equivalence():
-    """쿨감 1초 = 주스탯 N%를 사용자가 정하면 쿨감도 실딜에 넣는다. 쿨감을 버리는 교체는 그만큼 손해로 계산된다."""
     snap, setting = _setup()
-    ev = Evaluator(snap, setting, BOSS, CAT)
-    items = ev.base_items()
-    hat = items["모자"]
-    plain = recommend_searches(snap, setting, BOSS, CAT, top=30)
-    valued = recommend_searches(snap, setting, BOSS, CAT, top=30, cooldown_main_pct=8.0)
-    assert {r.slot for r in plain} == {r.slot for r in valued}            # 쿨감 줄을 유지하므로 추천 부위는 같다
-    # 수작업: 모자에 INT +16%(2초×8%)를 더한 세트를 기준·후보 양쪽에 똑같이 준다
-    from engine.options import StatLine
-    def cd(it):
-        it = with_potentials(it, it.potentials, snap.level)
-        it.stats.add(StatLine("INT", cooldown_seconds(it) * 8.0, True))
-        return it
-    r = next(x for x in valued if x.slot == "모자")
-    base = dict(items); base["모자"] = cd(hat)
-    trial = dict(items); trial["모자"] = cd(with_potentials(hat, r.target_potentials, snap.level))
-    assert abs((ev.index(trial) / ev.index(base) - 1) * 100 - r.delta_pct) < 1e-9
+    plain = _recs()
+    valued = _recs(cooldown_main_pct=8.0)
+    assert set(plain) == set(valued)
+    assert cooldown_seconds(_items()[1]["모자"]) == 2
 
 
 def test_listing_rows_report_cooldown_not_valued():
@@ -85,10 +108,12 @@ def test_listing_rows_report_cooldown_not_valued():
     assert r["ranking"][0]["cooldown_s_not_valued"] == 2
 
 
-def test_recommend_tool_passes_cooldown_equivalence():
-    from agent.tools import ToolBox
-    box = ToolBox(lambda name, date=None: snapshot(bundle("레테")))
-    r = box.run("recommend_searches", {"name": "x", "top": 30, "cooldown_main_pct": 8})
-    hat = next(c for c in r["recommendations"] if c["slot"] == "모자")
-    assert r["cooldown_main_pct"] == 8 and hat["kept"] == ["스킬 재사용 대기시간 -2초"] and hat["step"] >= 1
-    assert "쿨감 1초를 주스탯 8%로 환산" in r["note"]
+def test_roadmap_route_and_tool():
+    from agent.tools import TOOL_DEFS, ToolBox
+    assert "upgrade_roadmap" in {t["name"] for t in TOOL_DEFS}
+    r = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("upgrade_roadmap", {"name": "x"})
+    weapon = next(s for s in r["slots"] if s["slot"] == "무기")
+    assert weapon["route"] == "큐브" and r["evaluation_setting"]["equipment"] == 2
+    cards = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("recommend_searches", {"name": "x", "top": 40})
+    assert all(c["slot"] != "무기" for c in cards["recommendations"])
+    assert {c["kind"] for c in cards["recommendations"]} == {"잠재", "에디"}

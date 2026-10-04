@@ -100,7 +100,8 @@ def item(item_json: dict, level: int) -> Item:
             + _total_option_block(item_json.get("item_exceptional_option") or {}))
     excluded: list[str] = []
     pots = [t for t in (item_json.get(f"potential_option_{n}") for n in (1, 2, 3)) if t]
-    after = [item_json.get(f"{p}{n}") for p in ("additional_potential_option_", "soul_potential_option_") for n in (1, 2, 3)]
+    additional = [t for t in (item_json.get(f"additional_potential_option_{n}") for n in (1, 2, 3)) if t]
+    after = additional + [item_json.get(f"soul_potential_option_{n}") for n in (1, 2, 3)]
     # 소울: soul_active가 비어 있어도 soul_option이 오는 경우가 있다(나이트로드). soul_pad/soul_mad는 의미 미확인 → 1b에서 판단.
     after = [t for t in after + [item_json.get("soul_option")] if t]
     stats = copy.deepcopy(core)
@@ -114,6 +115,7 @@ def item(item_json: dict, level: int) -> Item:
         potentials=pots,
         core=core,
         after=after,
+        additional=additional,
         level=int(num((item_json.get("item_base_option") or {}).get("base_equipment_level"))),
         excluded=excluded,
     )

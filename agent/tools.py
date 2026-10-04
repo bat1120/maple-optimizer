@@ -39,11 +39,14 @@ TOOL_DEFS = [
     {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
                       "required": ["name"]}},
-    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 지금보다 한 단계 위 잠재(step/steps)로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
+    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위·잠재/에디마다 지금보다 한 단계 위(grade·lines_good)로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
                       "required": ["name"]}},
+    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등).",
+     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
+                                                         "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "setting": _SETTING, "listings": {"type": "array", "items": _LISTING},
@@ -111,6 +114,9 @@ class ToolBox:
 
     def _recommend_searches(self, name, boss_defense=300.0, top=5, cooldown_main_pct=None):
         return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
+
+    def _upgrade_roadmap(self, name, boss_defense=300.0, cooldown_main_pct=None):
+        return service.roadmap(self._load(name), boss_defense, cooldown_main_pct)
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
         return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],

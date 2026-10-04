@@ -42,6 +42,11 @@ export function getRecommend(name, bossDefense = 300, top = 5, cooldownMainPct =
   return request(`${base(name)}/recommend?boss_defense=${bossDefense}&top=${top}${cd}`);
 }
 
+export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
+  const cd = cooldownMainPct ? `&cooldown_main_pct=${cooldownMainPct}` : "";
+  return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
+}
+
 export function postListings(name, body) {
   return request(`${base(name)}/listings`, {
     method: "POST",

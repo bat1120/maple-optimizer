@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { getRoadmap } from "./api.js";
+import { formatPct, settingLabel } from "./format.js";
+
+// 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
+const KINDS = ["잠재", "에디"];
+const label = (t) => `${t.grade} ${t.lines_good}줄`;
+
+function Next({ row, kind }) {
+  const i = row.next?.[kind];
+  if (i == null) return <span className="muted">—</span>;
+  const t = row[kind][i];
+  return <span>{label(t)} {formatPct(t.delta_pct)}<br /><span className="muted">{t.target.join(" / ")}</span></span>;
+}
+
+export default function RoadmapPanel({ name, defense }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setData(await getRoadmap(name, defense));
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="panel">
+      <h3>전체 부위 로드맵</h3>
+      <button type="button" onClick={load} disabled={!name || busy}>전체 부위 로드맵</button>
+      {error && <p role="alert" className="error">{error.message}</p>}
+      {data && (
+        <>
+          <p className="muted">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · {data.note}</p>
+          <table>
+            <thead><tr><th>부위</th><th>지금</th><th>잠재 다음 단계</th><th>에디 다음 단계</th></tr></thead>
+            <tbody>
+              {data.slots.map((row) => (
+                <tr key={row.slot}>
+                  <td>
+                    <strong>{row.slot}</strong>{row.route === "큐브" ? <span className="muted"> · 큐브(경매장 구매 불가)</span> : null}
+                    <br /><span className="muted">{row.name}{row.starforce ? ` ${row.starforce}성` : ""}</span>
+                  </td>
+                  <td className="muted">{row.current["잠재"].join(" / ") || "—"}<br />{row.current["에디"].join(" / ") || "—"}</td>
+                  {KINDS.map((k) => <td key={k}><Next row={row} kind={k} /></td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {data.slots.map((row) => (
+            <details key={row.slot}>
+              <summary>{row.slot} 모든 단계</summary>
+              {KINDS.map((k) => (
+                <ul key={k} className="plain">
+                  {row[k].map((t, i) => (
+                    <li key={i}>{k} {label(t)} · {t.target.join(" / ")} · {formatPct(t.delta_pct)}
+                      <span className="muted"> · 한 번에 나올 확률 {(t.probability * 100).toPrecision(2)}%</span></li>
+                  ))}
+                </ul>
+              ))}
+            </details>
+          ))}
+        </>
+      )}
+    </section>
+  );
+}

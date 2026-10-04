@@ -40,9 +40,9 @@ export default function RecommendPanel({ name, defense }) {
               {data.recommendations.map((r) => (
                 <li key={r.slot}>
                   <strong>{r.slot}</strong> · 실딜 {formatPct(r.delta_pct)}
-                  {r.step ? <span className="muted"> · 다음 단계 {r.step}/{r.steps}</span> : null}
+                  <span className="muted"> · {r.kind} {r.grade} {r.lines_good}줄</span>
                   <br />
-                  검색: {r.category} · 잠재 {r.target_potentials.join(" / ")} · {r.min_starforce}성 이상
+                  검색: {r.category} · {r.kind} {r.target_potentials.join(" / ")} · {r.min_starforce}성 이상
                   {r.kept?.length ? <><br /><span className="muted">유지: {r.kept.join(" / ")}</span></> : null}
                   <br />
                   <span className="muted">

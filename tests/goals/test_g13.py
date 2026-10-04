@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from agent.tools import TOOL_DEFS, ToolBox
-from engine.market.recommend import SKIP_SLOTS, recommend_searches, with_potentials
+from engine.market.recommend import SKIP_SLOTS, SWAP, recommend_searches, with_potentials
 from engine.stats.evaluate import evaluate_setting, rank_settings, swap_item
 from engine.stats.metrics import BossProfile
 from engine.stats.residual import preset_items
@@ -38,7 +38,7 @@ def test_criterion1_recommendations_positive_sorted_and_match_hand_swap():
     items = preset_items(snap, setting.equipment)
     worst = 0.0
     for r in recs:
-        target = with_potentials(items[r.slot], r.target_potentials, snap.level)
+        target = SWAP[r.kind](items[r.slot], r.target, snap.level)
         hand = (swap_item(snap, setting, r.slot, target, BOSS, CAT) / base - 1) * 100
         worst = max(worst, abs(hand - r.delta_pct))
     deltas = [r.delta_pct for r in recs]
