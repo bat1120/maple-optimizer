@@ -16,6 +16,7 @@
 | 큐브 목표 확률 | `POST /api/enhance/cube` | 공식 확률표(레전드리·무기·200) 정확 열거 |
 | 직작 vs 매물 | `POST /api/craft/compare` | 직작 비용 분포에서 매물 가격의 위치(추옵 미포함) |
 | 예산 최적화 | `POST /api/character/{닉네임}/optimize` | 부위당 1개, 예산 이내 |
+| AI 에이전트 (관리자) | `POST /api/admin/login`, `POST /api/agent/chat` (SSE) | Claude Opus 5.5 tool use. 숫자는 도구 결과에서만 인용, 대조 안 된 숫자는 경고 |
 
 ## 로컬 실행
 
@@ -35,6 +36,10 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 |---|---|---|
 | `NEXON_API_KEY` | 저장소 루트 `.env` (git 제외) 또는 환경변수 | 넥슨 Open API 개발 단계 키(5건/초, 1,000건/일). 공개 전에는 서비스 단계 키로 교체 |
 | (배포 후) 같은 키 | VM의 `~/maple-optimizer/.env` | `docker compose`가 `env_file`로 읽는다 (H1) |
+| `ANTHROPIC_API_KEY` | `.env` (로컬·VM) | 관리자 에이전트용 Claude API 키 (H5). 없으면 에이전트만 꺼진다 |
+| `ADMIN_PASSWORD_HASH` | `.env` | `uv run python -c "from server.admin import make_password_hash as h; print(h('비밀번호'))"` 결과. 비밀번호 원문은 저장하지 않는다 |
+| `SESSION_SECRET` | `.env` | 32자 이상 임의 문자열 (관리자 쿠키 서명) |
+| `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 Claude를 호출하지 않는다 |
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |

@@ -16,3 +16,5 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
 .panel { margin: 0; }
 .check { flex-direction: row; align-items: center; gap: 6px; }
 ol.plain { list-style: none; padding-left: 0; }
+.chat p { margin: 4px 0; white-space: pre-wrap; }
+.chat .me { font-weight: 600; }

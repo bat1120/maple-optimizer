@@ -53,3 +53,31 @@ export const postStarforce = (body) => post("/api/enhance/starforce", body);
 export const postCube = (body) => post("/api/enhance/cube", body);
 export const postCraft = (body) => post("/api/craft/compare", body);
 export const postOptimize = (name, body) => post(`${base(name)}/optimize`, body);
+
+export const adminLogin = (password) => post("/api/admin/login", { password });
+
+// 에이전트 SSE 스트림: 이벤트마다 onEvent를 부른다. 연결·인증 실패는 ApiError로 던진다.
+export async function streamAgent(messages, onEvent) {
+  const res = await fetch("/api/agent/chat", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages }),
+  });
+  if (!res.ok) {
+    let body = null;
+    try { body = await res.json(); } catch { body = null; }
+    throw new ApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? `요청 실패 (HTTP ${res.status})`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const chunk = buf.slice(0, i);
+      buf = buf.slice(i + 2);
+      if (chunk.startsWith("data: ")) onEvent(JSON.parse(chunk.slice(6)));
+    }
+  }
+}

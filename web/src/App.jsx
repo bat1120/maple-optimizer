@@ -3,6 +3,7 @@ import { getCharacter, getSettings, postListings } from "./api.js";
 import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, parsePrice, settingLabel } from "./format.js";
 import { loadListings, saveListings } from "./storage.js";
 import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "./Panels.jsx";
+import AgentPanel from "./AgentPanel.jsx";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
 const TOTAL_LABEL = { ATK: "공격력", MATK: "마력", "ALL%": "올스탯%", BOSS: "보공%", IED: "방무%", DMG: "데미지%" };
@@ -207,6 +208,7 @@ export default function App() {
           <CraftPanel key={cube ? `${cube.probability}-${cube.cost}` : "none"} initialCube={cube} />
         </div>
       </section>
+      <AgentPanel />
     </main>
   );
 }

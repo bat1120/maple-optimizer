@@ -124,3 +124,9 @@
 ## 2026-10-04 G10 VERIFIED
 - 사용자가 Docker Desktop 실행 → VERIFY exit 0: ① compose config 0 ② amd64 이미지 빌드 0, 컨테이너 /api/health 200, / 에 root div ③ 워크플로 시크릿 4개(GHCR_READ_TOKEN·VM_HOST·VM_SSH_KEY·VM_USER) README 문서화
 - 추가 확인: `docker buildx --platform linux/arm64` 빌드 성공(약 5분, QEMU), arm64 컨테이너에서 server·engine import 정상 — Oracle Ampere 대상 확인
+
+## 2026-10-04 G11 VERIFIED — 관리자 전용 AI 에이전트
+- 사용자 요청("AI 에이전트도 있었으면")으로 범위 밖이던 5단계 진행. 같은 날 GitHub 비공개 저장소 생성·푸시(github.com/bat1120/maple-optimizer, H4 완료)
+- BUILD: agent/tools.py(엔진 도구 7개: lookup_character·rank_settings·evaluate_listings·starforce_cost·cube_probability·craft_compare·optimize_budget, 서버 스키마로 입력 검증, 오류는 error 결과로), agent/numbers.py(억·만·% 환산 숫자 출처 검사), agent/loop.py(manual tool use 루프, claude-opus-5-5 effort medium, server-side fallback "default", refusal·max_tokens·pause_turn 처리, append-only), server/admin.py(PBKDF2 비밀번호 해시·HMAC 세션 쿠키·KST 일일 토큰 사용량), /api/admin/login·/api/agent/chat(SSE), web AgentPanel(로그인·스트림·검증 안 된 숫자 경고)
+- VERIFY exit 0 (goals/results/G11.json): ① 4/4 ② 위조 숫자 검출 ['999억'] ③ 401→로그인→200 ④ 예산 초과 후 Claude 호출 0회 ⑤ ['error', 'done']
+- validate 267 passed, vitest 24. 실제 Claude 호출 스모크는 키 필요 → H5

@@ -4,8 +4,10 @@ import pathlib
 import time
 from collections.abc import Callable
 
+import json
+
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from engine.market.listing import InvalidPrice, NoDamage
@@ -17,6 +19,9 @@ from nexon.convert import snapshot
 from server import service
 from server.cache import BundleCache
 from server.ratelimit import SlidingWindow
+from pydantic import BaseModel
+
+from server import admin
 from server.schemas import CraftIn, CubeIn, ListingsIn, OptimizeIn, StarforceIn
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -42,8 +47,11 @@ def _err(e: ApiError) -> JSONResponse:
 
 
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
-               window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None) -> FastAPI:
+               window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
+               agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
+               agent_daily_token_budget: int = 200_000) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
+    usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
     limiter = SlidingWindow(rate_limit, window, clock)
 
@@ -145,6 +153,46 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         except ValueError as e:
             raise ApiError(422, "INVALID_INPUT", str(e)) from None
 
+    class LoginIn(BaseModel):
+        password: str
+
+    class ChatIn(BaseModel):
+        messages: list[dict]
+
+    @app.post("/api/admin/login")
+    def login(body: LoginIn):
+        if not (admin_password_hash and session_secret):
+            raise ApiError(503, "ADMIN_DISABLED", "관리자 기능이 설정되지 않았습니다(ADMIN_PASSWORD_HASH·SESSION_SECRET).")
+        if not admin.check_password(body.password, admin_password_hash):
+            raise ApiError(401, "BAD_PASSWORD", "비밀번호가 틀렸습니다.")
+        r = JSONResponse({"status": "ok"})
+        r.set_cookie(admin.COOKIE, admin.sign_session(session_secret, clock()), max_age=admin.SESSION_TTL,
+                     httponly=True, samesite="strict")
+        return r
+
+    @app.post("/api/agent/chat")
+    def agent_chat(body: ChatIn, request: Request):
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        if agent_client is None:
+            raise ApiError(503, "AGENT_DISABLED", "에이전트가 설정되지 않았습니다(ANTHROPIC_API_KEY).")
+        from agent.loop import run_agent
+        from agent.tools import ToolBox
+
+        def events():
+            if usage.used() >= agent_daily_token_budget:
+                yield {"type": "error", "message": f"오늘 에이전트 토큰 한도({agent_daily_token_budget:,})를 다 썼어요. 내일 다시 이용해 주세요."}
+                yield {"type": "done", "unverified_numbers": []}
+                return
+            yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date)), body.messages,
+                                 on_usage=usage.add)
+
+        def sse():
+            for e in events():
+                yield "data: " + json.dumps(e, ensure_ascii=False, default=str) + "\n\n"
+
+        return StreamingResponse(sse(), media_type="text/event-stream")
+
     if static_dir and pathlib.Path(static_dir, "index.html").exists():
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")  # API 라우트 뒤에 둔다
     return app
@@ -154,4 +202,24 @@ def default_app() -> FastAPI:
     """실서버용: .env의 넥슨 키, 저장소의 .cache/ SQLite."""
     from nexon.client import NexonClient, load_api_key
     client = NexonClient(load_api_key(ROOT))
-    return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"))
+    admin_hash, secret = _env("ADMIN_PASSWORD_HASH"), _env("SESSION_SECRET")
+    agent_client = None
+    if admin_hash and secret and (_env("ANTHROPIC_API_KEY") or _env("ANTHROPIC_AUTH_TOKEN")):
+        import anthropic
+        agent_client = anthropic.Anthropic(api_key=_env("ANTHROPIC_API_KEY") or None)
+    return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"),
+                      agent_client=agent_client, admin_password_hash=admin_hash, session_secret=secret,
+                      agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000))
+
+
+def _env(key: str) -> str | None:
+    """환경변수, 없으면 저장소 .env. 값은 출력하지 않는다."""
+    import os
+    if os.environ.get(key):
+        return os.environ[key]
+    env = ROOT / ".env"
+    if env.exists():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            if line.startswith(f"{key}=") and line.split("=", 1)[1].strip():
+                return line.split("=", 1)[1].strip()
+    return None
