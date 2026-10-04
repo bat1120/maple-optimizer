@@ -25,8 +25,9 @@ export const browserCapture =
               return frameHash(c.getImageData(0, 0, 64, 64));
             },
             image() {
-              const scale = Math.min(1, 1600 / (video.videoWidth || 1600));
-              big.width = Math.round((video.videoWidth || 1600) * scale);
+              // 1920(FHD)까지는 줄이지 않는다 — 줄이면 툴팁 숫자를 잘못 읽는다(2026-10-04 측정: 255→2550)
+              const scale = Math.min(1, 1920 / (video.videoWidth || 1920));
+              big.width = Math.round((video.videoWidth || 1920) * scale);
               big.height = Math.round((video.videoHeight || 900) * scale);
               big.getContext("2d").drawImage(video, 0, 0, big.width, big.height);
               return big.toDataURL("image/jpeg", 0.85);
@@ -66,7 +67,7 @@ function Row({ item, name, defense, onUpdate }) {
   };
   return (
     <li>
-      <strong>{r.name}</strong>{r.starforce ? ` ${r.starforce}성` : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
+      <strong>{r.name}</strong>{r.starforce ? <span title={item.starforce_note}> {r.starforce}성(확인 필요)</span> : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
       <br />
       <span className="muted">{formatTotals(r.total)}{r.potentials?.length ? ` · ${r.potentials.join(" / ")}` : ""}</span>
       {item.unverified_lines?.length ? (

@@ -28,7 +28,7 @@ _SCHEMA = {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
-                             "total", "potentials", "additional", "price"],
+                             "total", "breakdown", "potentials", "additional", "price", "equipped"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
@@ -44,6 +44,13 @@ _SCHEMA = {
                         "properties": {k: {"type": ["number", "null"]} for k in _TOTAL_KEYS},
                         "description": "툴팁의 총 수치. 올스탯%는 ALL%, 보스 몬스터 데미지%는 BOSS, 몬스터 방어율 무시%는 IED",
                     },
+                    "breakdown": {
+                        "type": "object", "additionalProperties": False, "required": list(_TOTAL_KEYS),
+                        "properties": {k: {"type": ["array", "null"], "items": {"type": "number"}} for k in _TOTAL_KEYS},
+                        "description": "총 수치 줄 괄호 안의 값들(예: 'STR +316 (80 +80 +156)' → [80, 80, 156]). 괄호가 없으면 null",
+                    },
+                    "equipped": {"type": "boolean",
+                                 "description": "'현재 장착 중인 장비'라고 적힌 비교 툴팁(사용자가 끼고 있는 템)이면 true. 매물이면 false"},
                     "potentials": {"type": "array", "items": {"type": "string"},
                                    "description": "윗잠(잠재능력) 줄 원문 그대로 (예: 'INT +12%'). 에디셔널은 넣지 않는다"},
                     "additional": {"type": "array", "items": {"type": "string"},
@@ -55,6 +62,8 @@ _SCHEMA = {
     },
 }
 _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 JSON으로 옮겨라.
+- 마우스를 올린 매물 툴팁 옆에 '현재 장착 중인 장비'라고 적힌 비교 툴팁이 뜰 수 있다. 그것은 사용자가 끼고 있는 템이라 매물이 아니다 — equipped=true로 표시한다.
+- 총 수치 줄의 괄호 안 값(기본 + 추가옵션 + 강화)을 breakdown에 그대로 옮긴다. 괄호가 없는 줄은 null.
 - 화면 글자를 그대로 옮긴다. 고치거나 줄이거나 바꿔 쓰지 않는다(옵션 문장·아이템 이름 포함). 화면에 없는 값은 채우지 않는다.
 - 일부가 가려지거나 잘린 값은 null. 스타포스는 툴팁 위쪽 별을 셀 수 있을 때만 채운다(별을 셀 수 있을 때만, 잘렸으면 null).
 - 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다. 윗잠(잠재능력)은 potentials, 에디셔널 잠재능력은 additional에 따로.
@@ -90,10 +99,27 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         raise VisionError(f"화면을 매물 정보로 읽지 못했어요: {e}") from None
     if not isinstance(data, dict) or not isinstance(data.get("listings"), list):
         raise VisionError("화면 분석 결과 형식이 올바르지 않아요.")
+    equipped = [x for x in data["listings"] if x.get("equipped")]
+    data["equipped"] = [x.get("name") for x in equipped]  # 비교 툴팁(끼고 있는 템)은 매물이 아니다
+    data["listings"] = [x for x in data["listings"] if not x.get("equipped")]
     for item in data["listings"]:
         item["total"] = {k: v for k, v in (item.get("total") or {}).items() if v is not None}
+        item["breakdown"] = {k: v for k, v in (item.get("breakdown") or {}).items() if v}
         normalize_listing(item)
     return data
+
+
+def checksum_failures(item: dict) -> list[str]:
+    """괄호 안 값의 합이 총 수치와 다른 줄 — 숫자를 잘못 읽었다(2026-10-04 측정: 255→2550, 76→276)."""
+    total, parts = item.get("total") or {}, item.get("breakdown") or {}
+    out = []
+    for k, ps in parts.items():
+        if not ps or total.get(k) is None:
+            continue
+        if abs(sum(ps) - total[k]) > 1e-6:
+            fmt = lambda v: f"{v:g}"  # noqa: E731
+            out.append(f"{k}: {fmt(total[k])} ≠ {'+'.join(fmt(p) for p in ps)}")
+    return out
 
 
 @functools.lru_cache(maxsize=1)

@@ -156,16 +156,33 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     b = boss(defense)
     chosen = (setting or rank_settings(snap, b, CATALOG)[0][0]) if snap else None
     base = evaluate_setting(snap, chosen, b, CATALOG) if snap else None
+    own = {(it.name, tuple(sorted(it.potentials))) for preset in (snap.equipment_presets.values() if snap else [])
+           for it in preset.values() if it.potentials}
     for x in listings:
         sig = signature(x)
-        from server.vision import unverified_lines
+        from server.vision import checksum_failures, unverified_lines
         row = {"signature": sig, "read": x, "evaluated": False,
-               "unverified_lines": unverified_lines(list(x.get("potentials") or []))}
+               "unverified_lines": unverified_lines(list(x.get("potentials") or [])),
+               "unverified_totals": checksum_failures(x),
+               "starforce_note": "스타포스는 화면 판독값이라 틀릴 수 있어요(확인 필요) — 실딜은 총 옵션으로 계산해서 영향이 없어요"}
         if sig in seen:
             out.append(row)
             continue
         if snap is None:
             row["reason"] = "캐릭터를 먼저 조회해 주세요 — 조회하면 자동으로 다시 평가해요"
+            out.append(row)
+            continue
+        main_lines = sorted(x.get("potential_lines") or x.get("potentials") or [])
+        if main_lines and (x.get("name"), tuple(main_lines)) in own:
+            # 넥슨 API의 착용 템과 이름·윗잠이 같다 = 옆에 뜬 '현재 장착 중인 장비' 비교 툴팁(AI가 놓쳐도 잡는다)
+            row["equipped"] = True
+            row["reason"] = "지금 착용 중인 템이에요(비교 툴팁) — 매물로 평가하지 않아요"
+            out.append(row)
+            continue
+        if row["unverified_totals"]:
+            # 괄호 합이 안 맞으면 숫자를 잘못 읽은 것 — 틀린 숫자로 평가하지 않는다(실측값 원칙)
+            row["reason"] = ("총 옵션 검산이 맞지 않아요(" + ", ".join(row["unverified_totals"])
+                             + ") — 화면이 작게 잡혔을 수 있어요. 툴팁을 다시 띄워 주세요")
             out.append(row)
             continue
         if not x.get("total"):
