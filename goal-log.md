@@ -144,3 +144,8 @@
 - BUILD: web/src/watch.js(16×16 회색조 해시·평균 절대 차이·2프레임 안정·3초 쿨다운), ScreenWatch.jsx(getDisplayMedia 탭 공유, 1.5초 주기, 지문 중복 제거, 읽은 내용·평가 표시, OpenAI 전송 고지), server/vision.py(Responses API input_image detail high + json_schema strict 구조화 출력, 깨진 JSON → VisionError), service.vision_items(반지·펜던트 슬롯 후보 중 실딜 최대 자리, 목록만 보이면 평가 생략), /api/vision/listings(관리자 쿠키·일일 토큰 한도 429)
 - 실제 화면 공유·실제 비전 호출은 H6
 - VERIFY exit 0 (goals/results/G12.json): ① screen watch 6개 통과 ② 깨진 JSON → VisionError ③ 1회차 평가 1, 2회차(같은 매물) 0 ④ 반지 슬롯 엔진 반지3 = 수작업 반지3 ⑤ 미인증 401, 한도 초과 429·비전 호출 1회. validate 269, vitest 30
+
+## 2026-10-04 H5 VERIFIED — 에이전트 실호출
+- 사용자가 .env에 OPENAI_API_KEY 등록(처음엔 Windows 숨김 입력 Ctrl+V로 제어문자 1자만 저장 → setup_secrets에 형식 검사·클립보드 읽기 추가, 최종은 메모장으로 입력). 키 164자·인증 OK, gpt-6 계열 4종 사용 가능 확인(값 미출력)
+- tools/agent_smoke.py로 실제 OpenAI(gpt-6.1-sol) + 실제 넥슨 데이터: "보스 세팅 최선인지·반지 교체 효율" → lookup_character·rank_settings 호출, 답변의 수치(2.4754배, 18성·17성) 전부 도구 결과에서 확인(미검증 0), 오류 0, 6,091토큰. 매물 가격이 없어 반지 효율은 "판단 불가, 툴팁·가격을 달라"고 답함 — 숫자 원칙 준수
+- 사용자 요청 "5.6 sol mini": 해당 ID 없음. 사용 가능 5.6 계열 gpt-5.6-sol($4/$20)·gpt-5.6-terra($2/$12)·gpt-5.6-luna($0.20/$1.20) — 사용자 확인 대기
