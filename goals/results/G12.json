@@ -1,0 +1,23 @@
+{
+ "criterion1_screen_watch_tests": {
+  "화면 공유를 지원하지 않으면 안내한다": "passed",
+  "화면이 바뀌어 안정되면 분석을 보내고, 평가 결과와 중복 지문을 이어서 보낸다": "passed",
+  "같은 화면이 반복되면 분석하지 않는다 (첫 안정 화면 1회 뒤 0회)": "passed",
+  "툴팁이 바뀌면 2프레임 안정된 뒤에 한 번 분석한다": "passed",
+  "쿨다운 3초 안에는 화면이 바뀌어도 다시 부르지 않는다": "passed",
+  "frameHash는 RGBA 픽셀을 16×16 회색조로 줄이고 frameDiff는 평균 절대 차이": "passed"
+ },
+ "criterion2_bad_json_raises": true,
+ "criterion3": {
+  "first_evaluated": 1,
+  "second_evaluated": 0
+ },
+ "criterion4": {
+  "engine_slot": "반지3",
+  "hand_slot": "반지3"
+ },
+ "criterion5": {
+  "after_budget_status": 429,
+  "calls": 1
+ }
+}

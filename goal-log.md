@@ -137,3 +137,10 @@
 - agent/loop.py를 Responses API manual loop로 재작성: store=False, 매 턴 output(reasoning·function_call) 재투입, function_call_output, reasoning effort medium, max_output_tokens 32000, refusal 콘텐츠·incomplete 상태 처리, 깨진 JSON 인자는 error 결과로 모델에 반환. 도구 정의는 평평한 function 형식(strict False — 선택 필드 보존)
 - 의존성 anthropic 제거, openai 3.24.0 추가. 설치된 SDK의 responses.create 시그니처·ResponseFunctionToolCall 필드와 루프 인자 일치 확인
 - 판정 테스트 가짜 클라이언트를 OpenAI 응답 형태로 바꿔 RED(3 실패) → 재작성 후 5/5. 단위 테스트(거절·incomplete·깨진 인자) 추가
+
+## 2026-10-04 G12 — 경매장 화면 실시간 분석
+- 배경 조사: 경매장 전체 수집은 불가(Open API 없음, 웹 경매장은 로그인·OTP·계정당 하루 검색 100회·과대 검색 거부·세션 1개). 비공개 API 자동화는 운영정책 [4-4]("홈페이지의 정보를 … 열람하는 프로그램", "공식 제공하지 않는 … 프로그램")·약관 제11조 4호에 걸릴 위험 → 하지 않음. iframe 임베드는 X-Frame-Options: SAMEORIGIN으로 불가
+- 사용자 결정: 화면이 바뀔 때마다 자동 분석(B). 넥슨 서버 요청 0 — 사용자가 공유한 탭의 픽셀만 읽음
+- BUILD: web/src/watch.js(16×16 회색조 해시·평균 절대 차이·2프레임 안정·3초 쿨다운), ScreenWatch.jsx(getDisplayMedia 탭 공유, 1.5초 주기, 지문 중복 제거, 읽은 내용·평가 표시, OpenAI 전송 고지), server/vision.py(Responses API input_image detail high + json_schema strict 구조화 출력, 깨진 JSON → VisionError), service.vision_items(반지·펜던트 슬롯 후보 중 실딜 최대 자리, 목록만 보이면 평가 생략), /api/vision/listings(관리자 쿠키·일일 토큰 한도 429)
+- 실제 화면 공유·실제 비전 호출은 H6
+- VERIFY exit 0 (goals/results/G12.json): ① screen watch 6개 통과 ② 깨진 JSON → VisionError ③ 1회차 평가 1, 2회차(같은 매물) 0 ④ 반지 슬롯 엔진 반지3 = 수작업 반지3 ⑤ 미인증 401, 한도 초과 429·비전 호출 1회. validate 269, vitest 30

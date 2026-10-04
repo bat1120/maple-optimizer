@@ -81,3 +81,5 @@ export async function streamAgent(messages, onEvent) {
     }
   }
 }
+
+export const postVision = (body) => post("/api/vision/listings", body);

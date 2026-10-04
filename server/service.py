@@ -119,3 +119,37 @@ def optimize(snap: CharacterSnapshot, setting: Setting | None, defense: float, b
     plan = greedy(Evaluator(snap, chosen, b, CATALOG), actions, budget)
     return {"setting": asdict(chosen), "budget": budget, "spent": plan.spent, "gain_pct": plan.gain_pct,
             "actions": [{"slot": a.slot, "name": a.item.name, "cost": a.cost} for a in plan.actions]}
+
+
+def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defense: float, listings: list[dict],
+                 seen: set[str]) -> list[dict]:
+    """비전으로 읽은 매물을 평가한다. 반지·펜던트는 슬롯 후보 중 실딜이 가장 오르는 자리를 고른다."""
+    from engine.stats.evaluate import evaluate_setting, predict_setting, swap_item
+    from engine.stats.metrics import equivalent_main_stat
+    from server.vision import SLOTS_BY_CATEGORY, signature
+
+    out = []
+    b = boss(defense)
+    chosen = (setting or rank_settings(snap, b, CATALOG)[0][0]) if snap else None
+    base = evaluate_setting(snap, chosen, b, CATALOG) if snap else None
+    for x in listings:
+        sig = signature(x)
+        row = {"signature": sig, "read": x, "evaluated": False}
+        if sig in seen or snap is None or not (x.get("potentials") or x.get("total")):
+            out.append(row)  # 이미 평가했거나, 캐릭터가 없거나, 툴팁 정보가 없다(목록만 보임)
+            continue
+        cat = x.get("category") or "기타"
+        slots = SLOTS_BY_CATEGORY.get(cat, (cat,))
+        item = item_from_input(slots[0], x.get("part") or cat, x.get("name") or "?", x.get("total") or {},
+                               x.get("potentials") or [], snap.level, x.get("starforce") or 0)
+        scored = [(s, swap_item(snap, chosen, s, item, b, CATALOG)) for s in slots]
+        slot, new = max(scored, key=lambda t: t[1])
+        delta = (new / base - 1) * 100 if base else None
+        gain = equivalent_main_stat(predict_setting(snap, chosen, CATALOG), job_profile(snap.character_class),
+                                    new / base) if base else None
+        price = x.get("price")
+        row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
+                    "main_stat_gain": gain, "excluded": item.excluded,
+                    "per_100m": (delta / (price / 1e8)) if (delta is not None and price) else None})
+        out.append(row)
+    return out

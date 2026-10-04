@@ -4,6 +4,7 @@ import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, par
 import { loadListings, saveListings } from "./storage.js";
 import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "./Panels.jsx";
 import AgentPanel from "./AgentPanel.jsx";
+import ScreenWatch from "./ScreenWatch.jsx";
 
 const TOTAL_KEYS = ["STR", "DEX", "INT", "LUK", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG"];
 const TOTAL_LABEL = { ATK: "공격력", MATK: "마력", "ALL%": "올스탯%", BOSS: "보공%", IED: "방무%", DMG: "데미지%" };
@@ -209,6 +210,7 @@ export default function App() {
         </div>
       </section>
       <AgentPanel />
+      <ScreenWatch name={summary ? name.trim() : ""} defense={defense} />
     </main>
   );
 }

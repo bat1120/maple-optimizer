@@ -194,6 +194,34 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
         return StreamingResponse(sse(), media_type="text/event-stream")
 
+    class VisionIn(BaseModel):
+        image: str
+        name: str | None = None
+        boss_defense: float = 300.0
+        setting: dict | None = None
+        seen: list[str] = []
+
+    @app.post("/api/vision/listings")
+    def vision_listings(body: VisionIn, request: Request):
+        """공유된 경매장 탭 캡처 → 매물 추출·평가. 넥슨 서버에는 요청하지 않는다(화면 픽셀만 읽는다)."""
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        if agent_client is None:
+            raise ApiError(503, "AGENT_DISABLED", "AI 기능이 설정되지 않았습니다(OPENAI_API_KEY).")
+        if usage.used() >= agent_daily_token_budget:
+            raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요.")
+        if not body.image.startswith("data:image/"):
+            raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
+        from server.vision import VisionError, extract_listings
+        try:
+            data = extract_listings(agent_client, body.image, on_usage=usage.add)
+        except VisionError as e:
+            raise ApiError(422, "VISION_PARSE", str(e)) from None
+        snap = load(body.name, None) if body.name else None
+        setting = Setting(**body.setting) if body.setting else None
+        return {"tooltip_visible": data["tooltip_visible"],
+                "items": service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))}
+
     if static_dir and pathlib.Path(static_dir, "index.html").exists():
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")  # API 라우트 뒤에 둔다
     return app
