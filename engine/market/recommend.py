@@ -16,6 +16,7 @@ import pathlib
 import re
 from dataclasses import dataclass, field
 
+from engine.market.cube_value import expected_cost
 from engine.options import StatLine, parse_option
 from engine.stats.evaluate import Evaluator
 from engine.stats.jobs import job_profile
@@ -81,7 +82,7 @@ def _rebuild(it: Item, potentials: list[str], after: list[str], additional: list
             stats.add(line)
     return Item(slot=it.slot, part=it.part, name=it.name, starforce=it.starforce, stats=stats, excluded=excluded,
                 potentials=list(potentials), core=it.core, after=list(after), additional=list(additional),
-                level=it.level)
+                level=it.level, potential_grade=it.potential_grade, additional_grade=it.additional_grade)
 
 
 def _check(it: Item) -> None:
@@ -160,9 +161,46 @@ class _Planner:
                 if not chosen:
                     continue
                 target = kept + chosen
+                reach = self.reach(slot, kind, tables, kept, chosen, single)
+                cur = it.potential_grade if kind == "잠재" else it.additional_grade
+                cost = expected_cost(kind, it.level, cur, grade, reach)
+                delta = self.delta(slot, kind, target)
                 out.append({"grade": grade, "lines_good": len(chosen), "target": target, "probability": prob,
-                            "delta_pct": self.delta(slot, kind, target)})
+                            "reach_probability": reach, "delta_pct": delta, "cube_cost": cost,
+                            "per_100m": delta / (cost / 1e8) if cost else None})
         return out
+
+    def reach(self, slot, kind, tables, kept, chosen, single) -> float:
+        """재설정 한 번에 이 단계 이상(줄별 단독 기여의 합이 목표 조합 이상)이 나올 확률.
+        줄 기여를 더해서 비교하는 근사다 — 실딜은 곱연산이라 정확한 값과 조금 다를 수 있다."""
+        key0 = ("__kept__", kind)
+        if key0 not in single:
+            single[key0] = self.delta(slot, kind, list(kept))
+        s0 = single[key0]
+        factor = 1.0
+        for pos, k in enumerate(kept):
+            factor *= tables[pos].get(k, 0.0) / 100
+        dists = []
+        for pos in range(len(kept), 3):
+            dist, mass = [], 0.0
+            for o, pr in tables[pos].items():
+                if self.is_useful(o):
+                    if o not in single:
+                        single[o] = self.delta(slot, kind, list(kept) + [o])
+                    dist.append((single[o] - s0, pr / 100))
+                    mass += pr / 100
+            dist.append((0.0, max(0.0, 1 - mass)))
+            dists.append(dist)
+        goal = sum(single[o] - s0 for o in chosen) - 1e-9
+        acc = [(0.0, 1.0)]
+        for dist in dists:
+            merged: dict[float, float] = {}
+            for a, pa in acc:
+                for b, pb in dist:
+                    key = round(a + b, 9)
+                    merged[key] = merged.get(key, 0.0) + pa * pb
+            acc = list(merged.items())
+        return min(1.0, factor * sum(pr for v, pr in acc if v >= goal))
 
     def slots(self):
         for slot, it in self.raw.items():
@@ -191,6 +229,20 @@ def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
             row["next"][kind] = next((i for i, t in enumerate(tiers) if t["delta_pct"] >= MIN_GAIN), None)
         out[slot] = row
     return out
+
+
+def value_ranking(rm: dict) -> list[dict]:
+    """가격 대비 순위: 부위·종류마다 억당 실딜 상승률이 가장 높은 큐브 단계 하나씩, 억당 내림차순.
+    실딜이 MIN_GAIN 미만이거나 큐브로 갈 수 없는(지금보다 낮은 등급·잠재 없음) 단계는 뺀다."""
+    out = []
+    for slot, row in rm.items():
+        for kind in KINDS:
+            cands = [t for t in row[kind] if t["delta_pct"] >= MIN_GAIN and t["cube_cost"]]
+            if cands:
+                t = max(cands, key=lambda x: x["per_100m"])
+                out.append({"slot": slot, "kind": kind, "name": row["name"], "route": row["route"],
+                            "current": row["current"][kind], **t})
+    return sorted(out, key=lambda x: x["per_100m"], reverse=True)
 
 
 def recommend_searches(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,

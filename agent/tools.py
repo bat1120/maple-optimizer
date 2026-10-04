@@ -44,7 +44,7 @@ TOOL_DEFS = [
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
                       "required": ["name"]}},
-    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등).",
+    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m).",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",

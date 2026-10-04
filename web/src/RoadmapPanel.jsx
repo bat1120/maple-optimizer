@@ -38,7 +38,25 @@ export default function RoadmapPanel({ name, defense }) {
       {data && (
         <>
           <p className="muted">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · {data.note}</p>
-          <table>
+          {data.value_ranking?.length > 0 && (
+            <>
+              <h4>가격 대비 순위 (큐브 메소 재설정 기준)</h4>
+              <p className="muted">{data.value_note}</p>
+              <table aria-label="가격 대비 순위">
+                <thead><tr><th>#</th><th>부위</th><th>단계</th><th>실딜</th><th>평균 비용</th><th>억당</th></tr></thead>
+                <tbody>
+                  {data.value_ranking.map((v, i) => (
+                    <tr key={`${v.slot}-${v.kind}`}>
+                      <td>{i + 1}</td><td>{v.slot} {v.kind}</td>
+                      <td>{label(v)}<br /><span className="muted">{v.target.join(" / ")}</span></td>
+                      <td>{formatPct(v.delta_pct)}</td><td>{v.cube_cost_text}</td><td>{formatPct(v.per_100m)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          <table aria-label="부위별 다음 단계">
             <thead><tr><th>부위</th><th>지금</th><th>잠재 다음 단계</th><th>에디 다음 단계</th></tr></thead>
             <tbody>
               {data.slots.map((row) => (

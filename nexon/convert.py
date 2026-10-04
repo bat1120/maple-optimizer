@@ -116,6 +116,8 @@ def item(item_json: dict, level: int) -> Item:
         core=core,
         after=after,
         additional=additional,
+        potential_grade=item_json.get("potential_option_grade"),
+        additional_grade=item_json.get("additional_potential_option_grade"),
         level=int(num((item_json.get("item_base_option") or {}).get("base_equipment_level"))),
         excluded=excluded,
     )

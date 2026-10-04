@@ -27,7 +27,9 @@ class Item:
     core: StatBlock | None = None
     after: list[str] = field(default_factory=list)
     additional: list[str] = field(default_factory=list)  # 에디 원문(after의 앞부분)
-    level: int = 0  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
+    level: int = 0
+    potential_grade: str | None = None   # 레어·에픽·유니크·레전드리
+    additional_grade: str | None = None  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
 
 
 @dataclass
