@@ -25,7 +25,7 @@ _SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["name", "category", "part", "starforce", "total", "potentials", "price"],
+                "required": ["name", "category", "part", "starforce", "total", "potentials", "additional", "price"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
@@ -37,7 +37,9 @@ _SCHEMA = {
                         "description": "툴팁의 총 수치. 올스탯%는 ALL%, 보스 몬스터 데미지%는 BOSS, 몬스터 방어율 무시%는 IED",
                     },
                     "potentials": {"type": "array", "items": {"type": "string"},
-                                   "description": "잠재·에디셔널 줄 원문 그대로 (예: 'INT +12%')"},
+                                   "description": "윗잠(잠재능력) 줄 원문 그대로 (예: 'INT +12%'). 에디셔널은 넣지 않는다"},
+                    "additional": {"type": "array", "items": {"type": "string"},
+                                   "description": "에디셔널 잠재능력 줄 원문 그대로 (예: '마력 +10')"},
                     "price": {"type": ["integer", "null"], "description": "판매 가격(메소). 보이지 않으면 null"},
                 },
             },
@@ -45,7 +47,7 @@ _SCHEMA = {
     },
 }
 _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 JSON으로 옮겨라.
-- 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다.
+- 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다. 윗잠(잠재능력)은 potentials, 에디셔널 잠재능력은 additional에 따로.
 - 목록만 보이면 이름·스타포스·가격만 채우고 나머지는 null/빈 배열.
 - 가격은 매물 목록 행(또는 구매 창)의 판매 가격이다. 툴팁 아이템의 가격은 마우스가 올라가 있거나 선택(강조)된 행의 가격이다. 툴팁에 없더라도 같은 아이템 행의 가격을 찾아 넣는다.
 - 총 수치는 툴팁 윗부분의 STR/DEX/INT/LUK/최대 HP/공격력/마력/보스/방무/올스탯% 줄(괄호 안 세부 합이 아니라 맨 앞 합계)이다.
@@ -93,10 +95,17 @@ def normalize_fee(v) -> float | None:
 
 
 def normalize_listing(item: dict) -> dict:
-    """판독 결과 보정: 무기로 읽었지만 무기 종류표에 없는 템(깃펜·포스실드 등)은 보조무기다."""
+    """판독 결과 보정.
+    - 무기로 읽었지만 무기 종류표에 없는 템(깃펜·포스실드 등)은 보조무기다.
+    - 윗잠(potential_lines)·에디(additional)를 따로 보관하고, 평가용 potentials는 둘을 합친다(관측 시세가 둘을 구분한다).
+      이미 보정된 매물을 다시 넣어도(재평가) 줄이 두 번 붙지 않는다."""
     from engine.stats.weapons import WEAPON_CONSTANTS
     if item.get("category") == "무기" and item.get("part") not in WEAPON_CONSTANTS:
         item["category"] = item["part"] = "보조무기"
+    if "potential_lines" not in item:
+        item["potential_lines"] = list(item.get("potentials") or [])
+        item["additional"] = list(item.get("additional") or [])
+        item["potentials"] = item["potential_lines"] + item["additional"]
     return item
 
 

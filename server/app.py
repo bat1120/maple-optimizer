@@ -54,6 +54,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
+    from server.market import PriceStore
+    prices = PriceStore(db_path, clock)
     limiter = SlidingWindow(rate_limit, window, clock)
 
     @app.middleware("http")
@@ -116,7 +118,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.get("/api/character/{name}/roadmap")
     def roadmap(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None):
-        return service.roadmap(load(name, date), boss_defense, cooldown_main_pct)
+        return service.roadmap(load(name, date), boss_defense, cooldown_main_pct, prices.rows())
 
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):
@@ -194,7 +196,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 yield {"type": "error", "message": f"오늘 에이전트 토큰 한도({agent_daily_token_budget:,})를 다 썼어요. 내일 다시 이용해 주세요."}
                 yield {"type": "done", "unverified_numbers": []}
                 return
-            yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date)), body.messages,
+            yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows), body.messages,
                                  on_usage=usage.add)
 
         def sse():
@@ -209,6 +211,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         boss_defense: float = 300.0
         setting: dict | None = None
         seen: list[str] = []
+
+    @app.get("/api/market/observed")
+    def market_observed(request: Request):
+        """화면 분석으로 쌓인 관측 시세(관리자 전용)."""
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        rows = prices.rows()
+        return {"count": len(rows), "rows": rows[-200:]}
 
     class VisionEvalIn(BaseModel):
         name: str
@@ -241,6 +251,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap = load(body.name, None) if body.name else None
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
+        for x in data["listings"]:
+            prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
                 "items": service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))}
 

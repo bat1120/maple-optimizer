@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { getRoadmap } from "./api.js";
-import { formatPct, settingLabel } from "./format.js";
+import { formatMeso, formatPct, settingLabel } from "./format.js";
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
 const label = (t) => `${t.grade} ${t.lines_good}줄`;
+// 관측 시세: 화면 분석으로 쌓인 매물 중 이 단계 조건을 갖춘 것
+const marketText = (m) => (m ? `시세 ${formatMeso(m.median)} (${m.count}건, 최저 ${formatMeso(m.min)}) · 억당 ${formatPct(m.per_100m)}` : "시세 없음");
 
 function Next({ row, kind }) {
   const i = row.next?.[kind];
@@ -41,15 +43,16 @@ export default function RoadmapPanel({ name, defense }) {
           {data.value_ranking?.length > 0 && (
             <>
               <h4>가격 대비 순위 (큐브 메소 재설정 기준)</h4>
-              <p className="muted">{data.value_note}</p>
+              <p className="muted">{data.value_note} {data.market_note}</p>
               <table aria-label="가격 대비 순위">
-                <thead><tr><th>#</th><th>부위</th><th>단계</th><th>실딜</th><th>평균 비용</th><th>억당</th></tr></thead>
+                <thead><tr><th>#</th><th>부위</th><th>단계</th><th>실딜</th><th>큐브 평균 비용</th><th>억당</th><th>관측 시세</th></tr></thead>
                 <tbody>
                   {data.value_ranking.map((v, i) => (
                     <tr key={`${v.slot}-${v.kind}`}>
                       <td>{i + 1}</td><td>{v.slot} {v.kind}</td>
                       <td>{label(v)}<br /><span className="muted">{v.target.join(" / ")}</span></td>
                       <td>{formatPct(v.delta_pct)}</td><td>{v.cube_cost_text}</td><td>{formatPct(v.per_100m)}</td>
+                      <td className="muted">{marketText(v.market)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -78,7 +81,7 @@ export default function RoadmapPanel({ name, defense }) {
                 <ul key={k} className="plain">
                   {row[k].map((t, i) => (
                     <li key={i}>{k} {label(t)} · {t.target.join(" / ")} · {formatPct(t.delta_pct)}
-                      <span className="muted"> · 한 번에 나올 확률 {(t.probability * 100).toPrecision(2)}%</span></li>
+                      <span className="muted"> · 한 번에 나올 확률 {(t.probability * 100).toPrecision(2)}%{t.market ? ` · ${marketText(t.market)}` : ""}</span></li>
                   ))}
                 </ul>
               ))}

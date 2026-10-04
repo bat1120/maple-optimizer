@@ -44,7 +44,7 @@ TOOL_DEFS = [
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
                       "required": ["name"]}},
-    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m).",
+    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m). 단계의 market은 화면에서 읽어 쌓인 관측 시세(count·median·min·per_100m).",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
@@ -82,8 +82,9 @@ def openai_tools() -> list[dict]:
 
 
 class ToolBox:
-    def __init__(self, load: Callable[..., CharacterSnapshot]):
+    def __init__(self, load: Callable[..., CharacterSnapshot], market: Callable[[], list[dict]] | None = None):
         self._load = load
+        self._market = market  # 관측 시세(화면 분석으로 쌓인 매물 가격)
 
     def run(self, name: str, args: dict) -> dict:
         """도구 실행. 실패는 예외 대신 {"error": 한국어 메시지}로 돌려 Claude가 보고 고칠 수 있게 한다."""
@@ -116,7 +117,8 @@ class ToolBox:
         return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
 
     def _upgrade_roadmap(self, name, boss_defense=300.0, cooldown_main_pct=None):
-        return service.roadmap(self._load(name), boss_defense, cooldown_main_pct)
+        return service.roadmap(self._load(name), boss_defense, cooldown_main_pct,
+                               self._market() if self._market else None)
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
         return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],

@@ -14,6 +14,7 @@ import functools
 import json
 import pathlib
 import re
+import statistics
 from dataclasses import dataclass, field
 
 from engine.market.cube_value import expected_cost
@@ -211,12 +212,50 @@ class _Planner:
             yield slot, it
 
 
+def _line_stats(line: str, level: int) -> list[tuple]:
+    m = _COOLDOWN.match(line.strip())
+    if m:
+        return [("COOLDOWN", False, float(m[1]))]
+    return [(x.key, x.percent, x.value) for x in parse_option(line, level) or []]
+
+
+def covers(lines: list[str], target: list[str], level: int) -> bool:
+    """매물 줄이 목표 줄을 모두 덮는가: 목표 줄마다 같은 스탯·같은 단위로 수치가 같거나 큰 매물 줄이 하나씩 있어야 한다.
+    (올스탯 +9%는 주스탯 +9% 줄을 덮는다.) 실딜과 무관한 목표 줄은 따지지 않는다."""
+    have = [_line_stats(x, level) for x in lines]
+    used = [False] * len(have)
+    need = sorted((_line_stats(t, level) for t in target), key=lambda s: -max((v for *_, v in s), default=0))
+    for stats in need:
+        if not stats:
+            continue
+        ok = [i for i, h in enumerate(have) if not used[i]
+              and all(any(k == hk and p == hp and hv >= v for hk, hp, hv in h) for k, p, v in stats)]
+        if not ok:
+            return False
+        used[min(ok, key=lambda i: sum(hv for *_, hv in have[i]))] = True
+    return True
+
+
+def _market(observed: list[dict], slot: str, kind: str, it: Item, tier: dict, level: int) -> dict | None:
+    key = "potential_lines" if kind == "잠재" else "additional"
+    hits = [r for r in observed
+            if r.get("category") == _part(slot) and (r.get("starforce") or 0) >= it.starforce
+            and covers(r.get(key) or [], tier["target"], level)]
+    if not hits:
+        return None
+    prices = [r["price"] for r in hits]
+    seen = [r.get("seen_at") or 0 for r in hits]
+    med = statistics.median(prices)
+    return {"count": len(prices), "median": med, "min": min(prices), "last_seen": max(seen),
+            "per_100m": tier["delta_pct"] / (med / 1e8)}
+
+
 def _route(it: Item) -> str:
     return "큐브" if it.name.startswith(SPECIAL_WEAPON) else "경매장"
 
 
 def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-            cooldown_main_pct: float | None = None) -> dict:
+            cooldown_main_pct: float | None = None, observed: list[dict] | None = None) -> dict:
     """부위 → {name, starforce, route, current, 잠재/에디: [단계…], next: {종류: 처음 오르는 단계 번호|None}}."""
     pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
     out = {}
@@ -225,6 +264,8 @@ def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                "current": {"잠재": list(it.potentials), "에디": list(it.additional)}, "next": {}}
         for kind in KINDS:
             tiers = pl.tiers(slot, kind)
+            for t in tiers:
+                t["market"] = _market(observed or [], slot, kind, it, t, snap.level)
             row[kind] = tiers
             row["next"][kind] = next((i for i, t in enumerate(tiers) if t["delta_pct"] >= MIN_GAIN), None)
         out[slot] = row

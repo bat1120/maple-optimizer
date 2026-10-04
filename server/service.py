@@ -214,13 +214,14 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                      "쿨감 줄은 유지해요 — " + _cooldown_note(cooldown_main_pct))}
 
 
-def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None) -> dict:
+def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
+            observed: list[dict] | None = None) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""
     from engine.market.recommend import roadmap as build
     from engine.market.recommend import value_ranking
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
-    rm = build(snap, chosen, b, CATALOG, cooldown_main_pct)
+    rm = build(snap, chosen, b, CATALOG, cooldown_main_pct, observed)
     rows = [{"slot": slot, **row} for slot, row in rm.items()]
     value = [{**v, "cube_cost_text": meso_text(v["cube_cost"])} for v in value_ranking(rm)]
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "cooldown_main_pct": cooldown_main_pct,
@@ -228,6 +229,9 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             "value_note": ("가격 대비 순위: 메소 재설정(윗잠=블랙 큐브, 에디=화이트 에디셔널 큐브)으로 그 단계까지 가는 평균 비용 "
                            "(등급 상승·천장 포함)과 억당 실딜 상승률. 도달 확률은 줄별 기여를 더해 비교한 근사예요. "
                            "경매장에서 그 단계 템을 이보다 싸게 사면 그쪽이 이득이에요 — 화면 매물 평가로 비교하세요."),
+            "market_note": (f"관측 시세: 지금까지 화면 분석으로 읽은 매물 {len(observed or [])}건 중 같은 부위·스타포스 이상·"
+                            "그 단계 줄을 모두 갖춘 매물의 가격(최근 30일). 다른 옵션(스타포스·추옵·다른 쪽 잠재)은 "
+                            "다를 수 있어 참고용이에요."),
             "note": ("각 단계 = 그 등급에서 흔한 줄(확률 2% 이상, 이탈 제외)로 2줄·3줄을 맞춘 경우예요. probability는 큐브 한 번에 "
                      "그 조합이 나올 확률(참고)이에요. route가 '큐브'인 부위(제네시스 무기 등)는 경매장에서 살 수 없어요. "
                      + _cooldown_note(cooldown_main_pct))}
