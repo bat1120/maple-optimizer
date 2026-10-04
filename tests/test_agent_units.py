@@ -61,3 +61,12 @@ def test_bad_tool_arguments_are_returned_to_model_as_error():
     ev = list(run_agent(_client(bad, final), _toolbox(), [{"role": "user", "content": "x"}]))
     results = [e for e in ev if e["type"] == "tool_result"]
     assert results and "JSON" in results[0]["result"]["error"] and ev[-1]["type"] == "done"
+
+
+def test_setup_secrets_update_env_keeps_other_lines():
+    import importlib.util, pathlib
+    spec = importlib.util.spec_from_file_location("setup_secrets", pathlib.Path(__file__).parents[1] / "tools" / "setup_secrets.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    out = m.update_env("NEXON_API_KEY=abc\nOPENAI_API_KEY=\n# 주석\n", {"OPENAI_API_KEY": "k1", "SESSION_SECRET": "s"})
+    assert out == "NEXON_API_KEY=abc\nOPENAI_API_KEY=k1\n# 주석\nSESSION_SECRET=s\n"
