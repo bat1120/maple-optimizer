@@ -119,7 +119,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap = load(name, date)
         setting = Setting(**body.setting.model_dump()) if body.setting else None
         try:
-            return service.listings(snap, setting, body.boss_defense, body.listings)
+            return service.listings(snap, setting, body.boss_defense, body.listings, body.fee_rate)
         except InvalidPrice as e:
             raise ApiError(400, "INVALID_PRICE", str(e)) from None
         except NoDamage as e:
@@ -155,7 +155,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap = load(name, date)
         setting = Setting(**body.setting.model_dump()) if body.setting else None
         try:
-            return service.optimize(snap, setting, body.boss_defense, body.budget, body.candidates)
+            return service.optimize(snap, setting, body.boss_defense, body.budget, body.candidates, body.fee_rate)
         except ValueError as e:
             raise ApiError(422, "INVALID_INPUT", str(e)) from None
 

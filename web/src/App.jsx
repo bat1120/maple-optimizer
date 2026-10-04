@@ -93,7 +93,7 @@ function ListingForm({ slots, onAdd }) {
         <textarea rows={6} value={form.potentials} onChange={(e) => set("potentials", e.target.value)} />
       </label>
       <label>가격<input value={form.price} placeholder="45억 3000만" onChange={(e) => set("price", e.target.value)} /></label>
-      <label>지금 템 판매 예상가<input value={form.resale} placeholder="0" onChange={(e) => set("resale", e.target.value)} /></label>
+      <label>지금 템 판매 예상가(등록가 — 수수료는 자동으로 빼요)<input value={form.resale} placeholder="0" onChange={(e) => set("resale", e.target.value)} /></label>
       <ErrorBox error={error} />
       <button type="submit">매물 추가</button>
     </form>
@@ -125,6 +125,7 @@ function ListingResults({ result }) {
 export default function App() {
   const [name, setName] = useState("");
   const [defense, setDefense] = useState(300);
+  const [feeRate, setFeeRate] = useState(0.05); // 경매장 판매 수수료: 지금 템 판매 대금에서만 빠진다
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
   const [listings, setListings] = useState(loadListings);
@@ -161,7 +162,7 @@ export default function App() {
   const evaluate = async () => {
     setError(null);
     try {
-      setResult(await postListings(name.trim(), { boss_defense: defense, listings }));
+      setResult(await postListings(name.trim(), { boss_defense: defense, fee_rate: feeRate, listings }));
     } catch (err) {
       setError(err);
     }
@@ -176,6 +177,12 @@ export default function App() {
         <label>닉네임<input value={name} onChange={(e) => setName(e.target.value)} /></label>
         <label>보스 방어율(%)
           <input type="number" value={defense} onChange={(e) => setDefense(Number(e.target.value) || 0)} />
+        </label>
+        <label>경매장 판매 수수료
+          <select value={String(feeRate)} onChange={(e) => setFeeRate(Number(e.target.value))}>
+            <option value="0.05">5% (기본)</option>
+            <option value="0.03">3% (MVP 실버 이상·PC방)</option>
+          </select>
         </label>
         <button type="submit" disabled={busy}>조회</button>
       </form>
@@ -200,7 +207,7 @@ export default function App() {
             </section>
           )}
           <ListingResults result={result} />
-          <OptimizePanel name={name.trim()} listings={listings} defense={defense} />
+          <OptimizePanel name={name.trim()} listings={listings} defense={defense} feeRate={feeRate} />
         </>
       )}
       <section>

@@ -47,4 +47,21 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "조회" }));
     expect(f).not.toHaveBeenCalled();
   });
+
+  it("판매 수수료를 고르면 효율 계산에 함께 보낸다 (기본 5%, MVP 실버↑·PC방 3%)", async () => {
+    localStorage.setItem("maple-optimizer.listings.v1", JSON.stringify([
+      { slot: "무기", part: "카르타", name: "새 무기", total: { MATK: 300 }, potentials: [], price: 5e9, resale: 1e9 }]));
+    const f = routeFetch({ "/listings": [200, { setting: { equipment: 2, hyper: 3, ability: 2 }, boss: { name: "기준" }, ranking: [] }],
+                           "/settings": [200, SETTINGS], "/api/character/": [200, SUMMARY] });
+    render(<App />);
+    expect(screen.getByLabelText("경매장 판매 수수료")).toHaveValue("0.05");
+    fireEvent.change(screen.getByLabelText("경매장 판매 수수료"), { target: { value: "0.03" } });
+    fireEvent.change(screen.getByLabelText("닉네임"), { target: { value: "내신부레테" } });
+    fireEvent.click(screen.getByRole("button", { name: "조회" }));
+    fireEvent.click(await screen.findByRole("button", { name: "효율 계산" }));
+    await vi.waitFor(() => expect(f.mock.calls.some(([u]) => u.endsWith("/listings"))).toBe(true));
+    const [, opts] = f.mock.calls.find(([u]) => u.endsWith("/listings"));
+    expect(JSON.parse(opts.body).fee_rate).toBe(0.03);
+    localStorage.clear();
+  });
 });

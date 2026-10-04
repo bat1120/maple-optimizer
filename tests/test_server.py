@@ -76,7 +76,7 @@ def test_listings_ranked_by_efficiency(tmp_path, clock):
 
 
 def test_listing_invalid_price_is_400_korean(tmp_path, clock):
-    body = {"listings": [{**RING, "price": 100, "resale": 100}]}
+    body = {"listings": [{**RING, "price": 95, "resale": 100}]}  # 수수료 5% 뺀 판매 대금 95 = 가격
     r = make(tmp_path, clock).post("/api/character/내신부레테/listings", json=body)
     assert r.status_code == 400 and r.json()["code"] == "INVALID_PRICE" and "가격" in r.json()["message"]
 

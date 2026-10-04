@@ -24,6 +24,7 @@ class ListingIn(BaseModel):
 class ListingsIn(BaseModel):
     setting: SettingIn | None = None
     boss_defense: float = 300.0
+    fee_rate: float = Field(0.05, ge=0, le=0.1)  # 경매장 판매 수수료(5%, MVP 실버↑·PC방 3%)
     listings: list[ListingIn]
 
 
@@ -74,4 +75,5 @@ class OptimizeIn(BaseModel):
     setting: SettingIn | None = None
     boss_defense: float = 300.0
     budget: float = Field(ge=0)
+    fee_rate: float = Field(0.05, ge=0, le=0.1)
     candidates: list[ListingIn]

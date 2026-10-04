@@ -31,6 +31,8 @@ _CONDITIONS = {
                    "restore": {"type": "string", "enum": ["full", "basic"]}},
 }
 
+_FEE = {"type": "number", "description": "경매장 판매 수수료(판매 대금에서 빠짐). 기본 0.05, MVP 실버 이상·PC방이면 0.03"}
+
 TOOL_DEFS = [
     {"name": "lookup_character", "description": "닉네임으로 캐릭터 요약(직업·레벨·적용 세팅·스탯공격력·장비 프리셋)을 조회한다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
@@ -44,7 +46,8 @@ TOOL_DEFS = [
                       "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
-                                                         "setting": _SETTING, "listings": {"type": "array", "items": _LISTING}},
+                                                         "setting": _SETTING, "listings": {"type": "array", "items": _LISTING},
+                                                         "fee_rate": _FEE},
                       "required": ["name", "listings"]}},
     {"name": "starforce_cost", "description": "스타포스 강화 비용: 정확한 기대값(exact_mean, 메소)과 분포(중앙값·p75·p90). destroy_cost는 파괴 시 비용(스페어+복구).",
      "input_schema": {"type": "object", "properties": {"level": {"type": "integer"}, "start": {"type": "integer"},
@@ -63,7 +66,7 @@ TOOL_DEFS = [
     {"name": "optimize_budget", "description": "예산 안에서 실딜을 가장 많이 올리는 후보 조합(부위당 1개)과 순서를 고른다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "budget": {"type": "number"},
                                                          "boss_defense": {"type": "number"}, "setting": _SETTING,
-                                                         "candidates": {"type": "array", "items": _LISTING}},
+                                                         "candidates": {"type": "array", "items": _LISTING}, "fee_rate": _FEE},
                       "required": ["name", "budget", "candidates"]}},
 ]
 
@@ -109,8 +112,9 @@ class ToolBox:
     def _recommend_searches(self, name, boss_defense=300.0, top=5, cooldown_main_pct=None):
         return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
 
-    def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None):
-        return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings])
+    def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
+        return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],
+                                fee_rate)
 
     def _starforce_cost(self, level, start, target, destroy_cost, conditions=None):
         return service.starforce(StarforceIn(level=level, start=start, target=target, destroy_cost=destroy_cost,
@@ -127,6 +131,6 @@ class ToolBox:
     def _craft_compare(self, **kw):
         return service.craft_compare(CraftIn(**kw))
 
-    def _optimize_budget(self, name, budget, candidates, boss_defense=300.0, setting=None):
+    def _optimize_budget(self, name, budget, candidates, boss_defense=300.0, setting=None, fee_rate=0.05):
         return service.optimize(self._load(name), self._setting(setting), boss_defense, budget,
-                                [ListingIn(**x) for x in candidates])
+                                [ListingIn(**x) for x in candidates], fee_rate)

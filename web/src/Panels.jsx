@@ -175,7 +175,7 @@ export function CraftPanel({ initialCube }) {
   );
 }
 
-export function OptimizePanel({ name, listings, defense }) {
+export function OptimizePanel({ name, listings, defense, feeRate = 0.05 }) {
   const [budget, setBudget] = useState("");
   const { error, setError, result, run } = useAsync();
   const submit = (e) => {
@@ -183,7 +183,7 @@ export function OptimizePanel({ name, listings, defense }) {
     if (!listings.length) return setError({ message: "먼저 매물을 추가해 주세요." });
     const b = parsePrice(budget);
     if (b == null) return setError({ message: "예산을 입력해 주세요 (예: 50억)." });
-    run(() => postOptimize(name, { budget: b, boss_defense: defense, candidates: listings }));
+    run(() => postOptimize(name, { budget: b, boss_defense: defense, fee_rate: feeRate, candidates: listings }));
   };
   return (
     <form onSubmit={submit} className="panel">

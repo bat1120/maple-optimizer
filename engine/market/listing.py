@@ -22,12 +22,22 @@ class NoDamage(ValueError):
     """현재 세팅의 보스 실딜 지수가 0 (방무 부족). 상승률을 정의할 수 없다."""
 
 
+DEFAULT_FEE_RATE = 0.05  # 경매장 판매 수수료 기본 5%, MVP 실버 이상·PC방 3% (2026-10-04 확인)
+FEE_RATES = (0.03, 0.05)
+
+
+def net_resale(resale: float, fee_rate: float) -> float:
+    """지금 템을 팔았을 때 손에 들어오는 메소 = 판매가 × (1 − 수수료)."""
+    return resale * (1 - fee_rate)
+
+
 @dataclass(frozen=True)
 class Listing:
     slot: str
     item: Item
     price: int        # 메소
-    resale: int = 0   # 지금 그 부위 템의 판매 예상가 (메소)
+    resale: int = 0   # 지금 그 부위 템의 판매 예상가 (메소, 경매장 등록가)
+    fee_rate: float = DEFAULT_FEE_RATE  # 판매 수수료. 사는 가격엔 붙지 않고 판매 대금에서 빠진다
 
 
 @dataclass(frozen=True)
@@ -36,7 +46,7 @@ class ListingEval:
     base: float       # 현재 실딜 지수
     new: float        # 교체 후 실딜 지수
     delta_pct: float  # (new/base − 1) × 100
-    per_100m: float   # delta_pct ÷ ((가격 − 판매가)/1억)
+    per_100m: float   # delta_pct ÷ ((가격 − 판매가×(1−수수료))/1억)
     main_stat_gain: float = 0.0           # 환산 주스탯 상승량 (metrics.equivalent_main_stat)
     main_stat_gain_per_100m: float = 0.0  # 억당 환산 주스탯
 
@@ -72,9 +82,9 @@ def item_from_input(slot: str, part: str, name: str, total: dict[str, float], po
 
 def evaluate_listing(snap: CharacterSnapshot, setting: Setting, listing: Listing, boss: BossProfile,
                      catalog: SetCatalog) -> ListingEval:
-    cost = listing.price - listing.resale
+    cost = listing.price - net_resale(listing.resale, listing.fee_rate)
     if cost <= 0:
-        raise InvalidPrice(f"가격({listing.price:,})이 판매 예상가({listing.resale:,}) 이하입니다")
+        raise InvalidPrice(f"가격({listing.price:,})이 수수료 뺀 판매 대금({net_resale(listing.resale, listing.fee_rate):,.0f}) 이하입니다")
     base = evaluate_setting(snap, setting, boss, catalog)
     if base <= 0:
         raise NoDamage(f"{boss.name}: 방어율 무시가 부족해 현재 데미지가 0입니다 (방무 {snap.final.ied:.2f}%)")
