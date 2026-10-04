@@ -39,8 +39,12 @@ def main() -> int:
     text = ENV.read_text(encoding="utf-8") if ENV.exists() else ""
     values: dict[str, str] = {}
 
-    key = getpass.getpass("OPENAI_API_KEY 붙여넣기 (입력은 안 보여요, 건너뛰려면 Enter): ").strip()
+    key = getpass.getpass("OPENAI_API_KEY 붙여넣기 — 마우스 오른쪽 클릭으로 붙여넣으세요 (입력은 안 보여요, 건너뛰려면 Enter): ").strip()
     if key:
+        # Windows 콘솔의 숨김 입력에 Ctrl+V를 누르면 키 대신 제어문자(^V) 하나만 들어간다
+        if not key.startswith("sk-") or len(key) < 40 or not key.isprintable():
+            print(f"  ! 키 형식이 아니에요(길이 {len(key)}). Ctrl+V 대신 마우스 오른쪽 클릭으로 붙여넣고 다시 실행해 주세요.")
+            return 1
         values["OPENAI_API_KEY"] = key
     elif not _has(text, "OPENAI_API_KEY"):
         print("  ! OPENAI_API_KEY가 없으면 AI 기능은 꺼진 채로 뜹니다.")
