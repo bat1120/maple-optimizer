@@ -1,0 +1,13 @@
+.git
+.venv
+.env
+.raw*
+.cache
+.superpowers
+**/__pycache__
+web/node_modules
+web/dist
+tests
+tools
+goals
+docs

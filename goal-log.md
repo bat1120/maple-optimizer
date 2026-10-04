@@ -116,3 +116,7 @@
 - BASELINE: verify G9 → Panels 테스트 없음(exit 1)
 - BUILD: web/src/Panels.jsx(StarforcePanel·CubePanel·CraftPanel·OptimizePanel), api.js(postStarforce·postCube·postCraft·postOptimize), App에 "강화 계산" 섹션(큐브 결과 → 직작 비교 자동 입력)과 매물 아래 예산 최적화
 - VERIFY exit 0: 패널 4개 테스트 통과, vitest 21 passed, build 0. G4·G8 VERIFY 유지, validate 264 passed
+
+## 2026-10-04 G10 진행 중 — 배포 준비물
+- BUILD: Dockerfile(web 빌드 → python:3.12-slim + uv, amd64·arm64), .dockerignore, docker-compose.yml(api + caddy, .env, 캐시·인증서 볼륨), deploy/Caddyfile(자동 HTTPS), .github/workflows/deploy.yml(테스트 → GHCR 멀티아치 푸시 → DEPLOY_ENABLED일 때 SSH 배포), README 배포·시크릿 표(VM_HOST·VM_USER·VM_SSH_KEY·GHCR_READ_TOKEN·DEPLOY_ENABLED)
+- VERIFY: ① compose config exit 0 ③ 워크플로 파싱·시크릿 문서화 통과. ② 이미지 빌드·health: Docker Desktop 데몬이 꺼져 있어 실행 불가(실패로 기록, skip 아님)

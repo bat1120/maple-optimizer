@@ -1,0 +1,30 @@
+# VM에서: DOMAIN=<도메인> docker compose up -d
+# 이미지: CI가 ghcr.io/<owner>/maple-optimizer:latest 로 올린다. 로컬 빌드면 IMAGE를 비워 두고 build를 쓴다.
+services:
+  api:
+    image: ${IMAGE:-maple-optimizer:local}
+    build: .
+    env_file: .env            # NEXON_API_KEY (README "시크릿" 표)
+    volumes:
+      - cache:/app/.cache     # SQLite 캐시 (15분/30일)
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN을 지정해 주세요}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # 자동 HTTPS 인증서
+    restart: unless-stopped
+
+volumes:
+  cache:
+  caddy_data:

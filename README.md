@@ -34,10 +34,26 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | 값 | 위치 | 비고 |
 |---|---|---|
 | `NEXON_API_KEY` | 저장소 루트 `.env` (git 제외) 또는 환경변수 | 넥슨 Open API 개발 단계 키(5건/초, 1,000건/일). 공개 전에는 서비스 단계 키로 교체 |
-| (배포 후) 같은 키 | VM의 `.env` | `docker compose`가 읽는다 (H1) |
-| (배포 후) SSH 키·레지스트리 토큰 | GitHub Actions Secrets | 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
+| (배포 후) 같은 키 | VM의 `~/maple-optimizer/.env` | `docker compose`가 `env_file`로 읽는다 (H1) |
+| `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
+| `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
+| `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.
+
+## 배포 (Oracle Always Free ARM VM)
+
+```bash
+# VM에서 (Docker·compose 설치 후)
+git clone <저장소> ~/maple-optimizer && cd ~/maple-optimizer
+printf 'NEXON_API_KEY=...
+' > .env
+DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE=ghcr.io/<owner>/maple-optimizer:latest
+```
+
+- `Dockerfile`: 웹 빌드 → Python 런타임(uv). amd64·arm64 둘 다. 키는 이미지에 넣지 않고 실행 시 `.env`로 넣는다.
+- `docker-compose.yml`: `api`(FastAPI) + `caddy`(자동 HTTPS, `deploy/Caddyfile`).
+- `.github/workflows/deploy.yml`: 테스트 → arm64/amd64 이미지를 ghcr.io에 푸시 → (`DEPLOY_ENABLED=true`일 때) SSH로 VM 갱신.
 
 ## 테스트와 게이트
 

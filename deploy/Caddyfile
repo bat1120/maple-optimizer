@@ -1,0 +1,5 @@
+# 자동 HTTPS(Let's Encrypt) + API·웹 리버스 프록시. 웹 정적 파일은 FastAPI가 서빙한다.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy api:8000
+}

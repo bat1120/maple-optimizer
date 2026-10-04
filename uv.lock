@@ -185,6 +185,7 @@ analysis = [
 ]
 dev = [
     { name = "pytest" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -199,7 +200,10 @@ analysis = [
     { name = "numpy", specifier = ">=2" },
     { name = "scipy", specifier = ">=1.13" },
 ]
-dev = [{ name = "pytest", specifier = ">=8" }]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
 
 [[package]]
 name = "numpy"

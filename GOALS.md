@@ -20,7 +20,7 @@
 | G7 | 4 | 예산 최적화 (`engine/optimize`) | ① 고정 시드 30개 소규모 인스턴스(후보 ≤ 10)에서 재평가 탐욕법/전수 탐색 최적값 비율 평균 ≥ 0.95, 최소 ≥ 0.85 (측정값 기록) ② 부위 배타성 위반 0건 ③ 예산 초과 0건 | 자동 | VERIFIED |
 | G8 | 2~4 | 로컬 통합: 서버+웹으로 조회→매물→강화 비용→최적화 흐름 | ① 녹화 fixture 기반 E2E 테스트(서버 API 연쇄 호출) 통과 ② `scripts/run-local.ps1`로 서버 기동 후 `/api/health` 200 ③ README에 로컬 실행·시크릿 소재지 문서화 | 자동 | VERIFIED |
 | G9 | 2~4 | 웹 화면 확장: 스타포스 비용·큐브 확률·직작 vs 매물·예산 최적화 패널 | ① 패널 4개 각각 "입력 → 서버 호출 → 결과 표시" vitest 통과(테스트 이름 고정: starforce panel, cube panel, craft panel, optimize panel) ② vitest 전체 ≥ 20 통과 ③ `npm --prefix web run build` 종료코드 0 | 자동 | VERIFIED |
-| G10 | 배포 | 배포 준비물: Dockerfile(arm64 가능), docker-compose(api+caddy), Caddyfile, GitHub Actions 워크플로 | ① `docker compose config` 종료코드 0 ② `docker build` 성공 후 컨테이너에서 `/api/health` 200 ③ 워크플로 YAML 파싱 + 시크릿 이름이 README 표와 일치 | 자동 | TODO |
+| G10 | 배포 | 배포 준비물: Dockerfile(arm64 가능), docker-compose(api+caddy), Caddyfile, GitHub Actions 워크플로 | ① `docker compose config` 종료코드 0 ② `docker build` 성공 후 컨테이너에서 `/api/health` 200 ③ 워크플로 YAML 파싱 + 시크릿 이름이 README 표와 일치 | 자동 | DOING (①③ 통과, ② Docker 데몬 필요) |
 | H1 | 배포 | Oracle Always Free VM 생성, 도메인, Docker Compose 배포 | VM에서 `https://<도메인>/api/health` 200 | 사람 | TODO |
 | H2 | 배포 | 넥슨 서비스 단계 키 신청 | 서비스 단계 키 발급 | 사람 | TODO |
 | H3 | 배포 | GitHub 저장소 생성·원격 연결, Actions Secrets 등록 | `git push` 성공 | 사람 | TODO |
