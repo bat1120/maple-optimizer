@@ -73,3 +73,29 @@ describe("agent panel with screen items", () => {
     expect(sent).not.toContain("delta_pct");   // 숫자는 에이전트가 도구로 다시 계산해야 출처 검사가 된다
   });
 });
+
+describe("agent panel character context", () => {
+  it("화면 매물이 없어도 조회한 캐릭터를 질문에 붙인다", async () => {
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" }), { status: 200 }))
+      .mockResolvedValueOnce(sseResponse([{ type: "done", unverified_numbers: [] }]));
+    render(<AgentPanel name="내신부레테" />);
+    fireEvent.change(screen.getByLabelText("관리자 비밀번호"), { target: { value: "pw" } });
+    fireEvent.click(screen.getByRole("button", { name: "로그인" }));
+    fireEvent.change(await screen.findByLabelText("질문"), { target: { value: "200억으로 뭐부터" } });
+    fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+    await screen.findByText(/200억으로 뭐부터/);
+    expect(JSON.parse(f.mock.calls[1][1].body).messages.at(-1).content).toContain("[조회한 캐릭터: 내신부레테]");
+  });
+
+  it("목록에서만 본 매물은 빼고, 가격 못 읽은 매물에는 같은 이름 목록 가격을 후보로 붙인다", async () => {
+    const { withScreenItems } = await import("./AgentPanel.jsx");
+    const row = (name, price) => ({ signature: name + price, evaluated: false, read: { name, total: {}, potentials: [], price } });
+    const tip = { signature: "t", evaluated: true, slot: "보조무기", read: { name: "녹스 마법깃펜", category: "보조무기",
+      total: { INT: 10 }, potentials: ["마력 +12%"], price: null } };
+    const sent = withScreenItems("분석해줘", "내신부레테", [row("녹스 마법깃펜", 4e10), row("녹스 마법깃펜", 5e10), row("미트라", 9e9), tip]);
+    const json = JSON.parse(sent.slice(sent.lastIndexOf("\n") + 1));
+    expect(json).toHaveLength(1);
+    expect(json[0].list_prices).toEqual([4e10, 5e10]);
+  });
+});

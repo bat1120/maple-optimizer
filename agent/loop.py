@@ -26,6 +26,8 @@ SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 관
 - 매물은 사용자가 붙여넣은 툴팁을 total(총 옵션)과 potentials(잠재·에디 줄)로 나눠 넣고, 어떻게 해석했는지 먼저 짧게 보여 준다.
 - 가격은 메소 정수로 넣는다(45억 3000만 → 4530000000).
 - "뭘 사야 해", "경매장에서 뭘 검색해" 같은 질문에는 recommend_searches를 쓰고, 각 카드의 search 문자열을 게임 경매장 검색 조건으로 그대로 안내한다(부위·잠재·최소 스타포스). 사용자가 그 조건으로 검색한 화면을 연결하면 화면 매물을 평가한다.
+- 질문에 "[조회한 캐릭터: 이름]"이 붙어 있으면 그 이름으로 도구를 부른다. 닉네임을 다시 묻지 않는다.
+- 첨부 매물의 price가 null이고 list_prices(같은 이름 목록 행 가격 후보)가 있으면, 후보 가격마다 evaluate_listings로 억당을 계산해 보여 주고 툴팁이 어느 행인지 확인을 부탁한다.
 - 가격은 도구 결과의 price_text를 글자 그대로 옮긴다. 메소 숫자를 직접 억·만으로 바꾸지 않는다(자릿수 실수 방지).
 - 도구가 held로 돌려준 매물은 평가 숫자를 만들지 말고 reason을 그대로 전한다.
 - 질문에 "[경매장 화면에서 읽은 매물]" JSON이 붙어 있으면 그 매물을 evaluate_listings로 평가한 뒤, 억당 효율이 높은 순으로 살지 말지 판단한다. price가 null인 매물은 가격을 물어본다.
@@ -49,7 +51,8 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
               on_usage: Callable[[int], None] | None = None, model: str | None = None) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
-    seen: list = []
+    # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
+    seen: list = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
     try:
         for _ in range(max_turns):
             resp = client.responses.create(

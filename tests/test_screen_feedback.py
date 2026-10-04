@@ -67,3 +67,16 @@ def test_vision_evaluate_route_requires_admin_and_reevaluates(tmp_path):
     c.post("/api/admin/login", json={"password": "pw"})
     items = c.post("/api/vision/evaluate", json=body).json()["items"]
     assert items[0]["evaluated"] and items[0]["slot"] == "보조무기"
+
+
+def test_numbers_the_user_wrote_are_not_flagged():
+    """사용자가 쓴 "200억"·첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다(2026-10-04 실사용)."""
+    from types import SimpleNamespace as NS
+    from agent.loop import run_agent
+    usage = NS(input_tokens=1, output_tokens=1)
+    final = NS(output=[], output_text="200억 예산이면 보스 몬스터 데미지 +40% 매물부터 봐요. 77억은 모르는 숫자", status="completed", usage=usage)
+    seq = [final]
+    client = NS(responses=NS(create=lambda **kw: seq.pop(0)))
+    msgs = [{"role": "user", "content": '200억으로 뭐부터?\n[{"potentials":["보스 몬스터 데미지 +40%"]}]'}]
+    done = list(run_agent(client, _box(), msgs))[-1]
+    assert done["unverified_numbers"] == ["77억"]
