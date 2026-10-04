@@ -50,6 +50,10 @@ TOOL_DEFS = [
     {"name": "upgrade_paths", "description": "업그레이드 경로 비교(추천의 기본 근거): 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브를 억당 실딜(per_100m)로 정렬한다. 세트 효과 변화(set_change)가 실딜에 들어가 있다. best_by_slot은 부위별 최선 경로. cost_text를 그대로 인용.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
+    {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10). 갱신 뒤 upgrade_paths를 다시 부른다.",
+     "input_schema": {"type": "object", "properties": {"name": {"type": "string"},
+                                                         "slots": {"type": "array", "items": {"type": "string"}},
+                                                         "max_searches": {"type": "integer"}}, "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "setting": _SETTING, "listings": {"type": "array", "items": _LISTING},
@@ -85,8 +89,10 @@ def openai_tools() -> list[dict]:
 
 
 class ToolBox:
-    def __init__(self, load: Callable[..., CharacterSnapshot], market: Callable[[], list[dict]] | None = None):
+    def __init__(self, load: Callable[..., CharacterSnapshot], market: Callable[[], list[dict]] | None = None,
+                 refresh: Callable[..., dict] | None = None):
         self._load = load
+        self._refresh = refresh  # 웹 경매장 검색(maple-auction-mcp)으로 관측 시세 갱신 — 일일 검색 한도 소진
         self._market = market  # 관측 시세(화면 분석으로 쌓인 매물 가격)
 
     def run(self, name: str, args: dict) -> dict:
@@ -126,6 +132,11 @@ class ToolBox:
     def _upgrade_paths(self, name, boss_defense=300.0, cooldown_main_pct=None):
         return service.paths(self._load(name), boss_defense, self._market() if self._market else None,
                              cooldown_main_pct)
+
+    def _refresh_market(self, name, slots=None, max_searches=10):
+        if not self._refresh:
+            return {"error": "경매장 검색 연결이 없어요(AUCTION_MCP_CMD 미설정)."}
+        return self._refresh(name, slots, max_searches)
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
         return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],

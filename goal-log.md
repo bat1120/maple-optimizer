@@ -188,3 +188,5 @@
 - 후속(같은 날) 관측 시세: 비전 스키마에 에디(additional) 분리, 읽은 매물(가격+줄 있는 것)을 PriceStore(SQLite, 30일)에 저장, 로드맵 단계마다 같은 부위·스타포스 이상·줄 덮음(covers) 매물의 중앙값·최저가·억당. GET /api/market/observed(관리자), 도구·웹 표시. 경매장 자동 조회 없음. validate 317 / vitest 49 · G11~G13 OK
 - 후속(같은 날) 업그레이드 경로 비교: engine/market/paths.py — 구매(관측 매물 그대로, 세트 재계산·set_change, 다른 월드 +10%)·직작(매물가+매물 등급→단계 메소 재설정 평균)·큐브(지금 템)를 억당 정렬, best_by_slot. GET /paths, upgrade_paths 도구(추천의 기본 근거). 비전에 착용 레벨·잠재/에디 등급 추가. validate 324 · G11~G13 OK
 - Ruling: 직작은 매물 스타포스 그대로(스타포스 강화 비용·스탯 미포함), 레벨 모르면 지금 템 레벨로 비용 구간 — 틀리면 직작 비용 과소/구간 차이
+- 후속(같은 날) maple-auction-mcp 연결(사용자 결정: 시세까지 분석): server/auction_mcp.py — MCP stdio 클라이언트, 로드맵 다음 단계 줄→검색 필터(합산), 부위·스타포스·착용 레벨·직업군 조건으로 판매 중/판매 완료/직작 베이스 검색, 결과→관측 시세. 읽기 도구만, 갱신당 최대 15회(에이전트 10), POST /api/market/refresh(관리자, AUCTION_MCP_CMD 없으면 503), refresh_market 도구, 웹 경로 비교 패널(갱신 버튼). 가짜 MCP로 검증. validate 330 / vitest 51 · G11~G13 OK
+- Ruling: 사용자가 비공식 경로(로그인 브라우저로 웹 경매장 검색)를 위험을 알고 선택 — 로컬 전용·옵트인·읽기 전용·소량으로 제한. 주무기는 무기 종류 분류가 필요해 검색 제외

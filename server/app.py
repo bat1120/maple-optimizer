@@ -20,7 +20,7 @@ from nexon.convert import snapshot
 from server import service
 from server.cache import BundleCache
 from server.ratelimit import SlidingWindow
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from server import admin
 from server.schemas import CraftIn, CubeIn, ListingsIn, OptimizeIn, StarforceIn
@@ -50,7 +50,7 @@ def _err(e: ApiError) -> JSONResponse:
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
-               agent_daily_token_budget: int = 200_000) -> FastAPI:
+               agent_daily_token_budget: int = 200_000, auction_mcp_command=None) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
@@ -196,7 +196,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 yield {"type": "error", "message": f"오늘 에이전트 토큰 한도({agent_daily_token_budget:,})를 다 썼어요. 내일 다시 이용해 주세요."}
                 yield {"type": "done", "unverified_numbers": []}
                 return
-            yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows), body.messages,
+            yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows,
+                                                      refresh=_agent_refresh), body.messages,
                                  on_usage=usage.add)
 
         def sse():
@@ -216,6 +217,36 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
                       date: str | None = None):
         return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct)
+
+    class MarketRefreshIn(BaseModel):
+        name: str
+        slots: list[str] | None = None
+        max_searches: int = Field(15, ge=1, le=30)
+        boss_defense: float = 300.0
+
+    def _market_refresh(name: str, slots=None, max_searches: int = 15, boss_defense: float = 300.0) -> dict:
+        if not auction_mcp_command:
+            raise ApiError(503, "AUCTION_DISABLED",
+                           "경매장 검색 연결이 꺼져 있어요. 로컬 PC에서 AUCTION_MCP_CMD(예: npx.cmd -y maple-auction-mcp)를 "
+                           ".env에 넣고, 크롬에 maple-auction-mcp 확장을 설치해 웹 경매장에 로그인해 주세요.")
+        from server.auction_mcp import McpUnavailable, refresh_market
+        try:
+            return refresh_market(load(name, None), auction_mcp_command, prices, slots, max_searches, boss_defense)
+        except McpUnavailable as e:
+            raise ApiError(503, "AUCTION_UNAVAILABLE", str(e)) from None
+
+    @app.post("/api/market/refresh")
+    def market_refresh(body: MarketRefreshIn, request: Request):
+        """로드맵 다음 단계 조건으로 웹 경매장을 검색(판매 중·판매 완료)해 관측 시세에 넣는다(관리자, 일일 검색 한도 소진)."""
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        return _market_refresh(body.name, body.slots, body.max_searches, body.boss_defense)
+
+    def _agent_refresh(name, slots=None, max_searches=10):
+        try:
+            return _market_refresh(name, slots, min(int(max_searches), 15))
+        except ApiError as e:
+            return {"error": e.message}
 
     @app.get("/api/market/observed")
     def market_observed(request: Request):
@@ -279,7 +310,8 @@ def default_app() -> FastAPI:
             os.environ.setdefault("OPENAI_MODEL", _env("OPENAI_MODEL"))
     return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"),
                       agent_client=agent_client, admin_password_hash=admin_hash, session_secret=secret,
-                      agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000))
+                      agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000),
+                      auction_mcp_command=_env("AUCTION_MCP_CMD"))
 
 
 def _env(key: str) -> str | None:

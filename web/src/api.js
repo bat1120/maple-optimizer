@@ -47,6 +47,12 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
   return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
 }
 
+export function getPaths(name, bossDefense = 300) {
+  return request(`${base(name)}/paths?boss_defense=${bossDefense}`);
+}
+
+export const postMarketRefresh = (body) => post("/api/market/refresh", body);
+
 export function postListings(name, body) {
   return request(`${base(name)}/listings`, {
     method: "POST",

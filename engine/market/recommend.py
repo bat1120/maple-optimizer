@@ -260,7 +260,7 @@ def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
     pl = planner or _Planner(snap, setting, boss, catalog, cooldown_main_pct)
     out = {}
     for slot, it in pl.slots():
-        row = {"name": it.name, "starforce": it.starforce, "route": _route(it),
+        row = {"name": it.name, "starforce": it.starforce, "level": it.level, "route": _route(it),
                "current": {"잠재": list(it.potentials), "에디": list(it.additional)}, "next": {}}
         for kind in KINDS:
             tiers = pl.tiers(slot, kind)
