@@ -66,7 +66,8 @@ def item_from_input(slot: str, part: str, name: str, total: dict[str, float], po
             continue
         for line in lines:
             stats.add(line)
-    return Item(slot=slot, part=part, name=name, starforce=starforce, stats=stats, excluded=excluded)
+    return Item(slot=slot, part=part, name=name, starforce=starforce, stats=stats, excluded=excluded,
+                potentials=list(potentials))
 
 
 def evaluate_listing(snap: CharacterSnapshot, setting: Setting, listing: Listing, boss: BossProfile,

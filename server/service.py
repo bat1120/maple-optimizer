@@ -2,6 +2,7 @@
 from dataclasses import asdict
 
 from engine.market.listing import Listing, item_from_input, rank_listings
+from engine.market.recommend import cooldown_seconds
 from engine.stats.evaluate import evaluate_setting, rank_settings
 from engine.stats.formula import stat_attack_max
 from engine.stats.jobs import job_profile
@@ -72,6 +73,7 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
     return {"setting": asdict(chosen), "boss": asdict(b), "held": held,
             "ranking": [{"slot": e.listing.slot, "name": e.listing.item.name, "price": e.listing.price,
                          "price_text": meso_text(e.listing.price),
+                         "cooldown_s_not_valued": cooldown_seconds(e.listing.item),  # 실딜 계산에 안 들어간 쿨감 초
                          "resale": e.listing.resale, "delta_pct": e.delta_pct, "per_100m": e.per_100m,
                          "main_stat_gain": e.main_stat_gain, "main_stat_gain_per_100m": e.main_stat_gain_per_100m,
                          "excluded": e.listing.item.excluded} for e in ranked]}
@@ -178,18 +180,23 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     return out
 
 
-def recommend(snap: CharacterSnapshot, defense: float, top: int = 5) -> dict:
+def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_main_pct: float | None = None) -> dict:
     """게임 경매장 검색 조건 카드. 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도)."""
     from engine.market.recommend import recommend_searches
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
     cards = []
-    for r in recommend_searches(snap, chosen, b, CATALOG, top=top):
+    for r in recommend_searches(snap, chosen, b, CATALOG, top=top, cooldown_main_pct=cooldown_main_pct):
         category = r.slot.rstrip("0123456789") or r.slot
         cards.append({"slot": r.slot, "category": category, "target_potentials": r.target_potentials,
                       "min_starforce": r.min_starforce, "delta_pct": r.delta_pct,
+                      "step": r.step, "steps": r.steps, "kept": r.kept,
                       "search": f"{category} · 잠재 {' / '.join(r.target_potentials)} · {r.min_starforce}성 이상",
                       "current": {"name": r.current_name, "starforce": r.min_starforce,
                                   "potentials": r.current_potentials}})
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
-            "note": "윗잠만 목표 잠재로 바꾼 같은 템 기준이에요. 스타포스·추옵·에디는 지금 템과 같다고 보고 계산했어요."}
+            "cooldown_main_pct": cooldown_main_pct,
+            "note": ("부위마다 지금보다 한 단계 위(실딜이 처음 오르는 잠재 단계)를 골랐어요. 윗잠만 바꾼 같은 템 기준이고 "
+                     "스타포스·추옵·에디는 그대로예요. 쿨감 줄은 유지해요"
+                     + (f" — 쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요." if cooldown_main_pct
+                        else " — 쿨감 효율은 실딜에 넣지 않았어요(쿨감 1초 = 주스탯 몇 %인지 정하면 넣어요)."))}

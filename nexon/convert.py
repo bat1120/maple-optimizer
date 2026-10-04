@@ -114,6 +114,7 @@ def item(item_json: dict, level: int) -> Item:
         potentials=pots,
         core=core,
         after=after,
+        level=int(num((item_json.get("item_base_option") or {}).get("base_equipment_level"))),
         excluded=excluded,
     )
 

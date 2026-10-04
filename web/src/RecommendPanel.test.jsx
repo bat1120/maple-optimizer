@@ -10,10 +10,10 @@ const body = {
   note: "윗잠만 목표 잠재로 바꾼 같은 템 기준이에요.",
   recommendations: [
     { slot: "보조무기", category: "보조무기", target_potentials: ["마력 +12%", "보스 몬스터 데미지 +40%", "마력 +9%"],
-      min_starforce: 0, delta_pct: 6.6118, search: "보조무기 · 잠재 마력 +12% / 보스 몬스터 데미지 +40% / 마력 +9% · 0성 이상",
+      min_starforce: 0, delta_pct: 6.6118, step: 2, steps: 4, kept: [], search: "보조무기 · 잠재 마력 +12% / 보스 몬스터 데미지 +40% / 마력 +9% · 0성 이상",
       current: { name: "녹스 마법깃펜", starforce: 0, potentials: ["보스 몬스터 데미지 +40%", "보스 몬스터 데미지 +35%"] } },
     { slot: "반지1", category: "반지", target_potentials: ["INT +12%", "INT +9%", "INT +9%"],
-      min_starforce: 17, delta_pct: 1.2, search: "반지 · 잠재 INT +12% / INT +9% / INT +9% · 17성 이상",
+      min_starforce: 17, delta_pct: 1.2, step: 1, steps: 4, kept: ["스킬 재사용 대기시간 -2초"], search: "반지 · 잠재 INT +12% / INT +9% / INT +9% · 17성 이상",
       current: { name: "이터널 플레임 링", starforce: 17, potentials: ["INT +12%", "INT +9%", "최대 HP +9%"] } },
   ],
 };
@@ -44,5 +44,16 @@ describe("recommend panel", () => {
     render(<RecommendPanel name="x" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
     expect(screen.getByText(/잠재만 바꿔서 오르는 부위가 없어요/)).toBeInTheDocument();
+  });
+
+  it("다음 단계와 유지한 쿨감 줄을 보여주고, 쿨감 환산값을 넣으면 함께 보낸다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
+    render(<RecommendPanel name="내신부레테" defense={300} />);
+    fireEvent.change(screen.getByLabelText("쿨감 1초 = 주스탯 %"), { target: { value: "8" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
+    expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/recommend?boss_defense=300&top=5&cooldown_main_pct=8`);
+    const cards = screen.getAllByRole("listitem");
+    expect(cards[0]).toHaveTextContent("다음 단계 2/4");
+    expect(cards[1]).toHaveTextContent("유지: 스킬 재사용 대기시간 -2초");
   });
 });

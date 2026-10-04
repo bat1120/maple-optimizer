@@ -37,8 +37,9 @@ export function getSettings(name, bossDefense = 300) {
   return request(`${base(name)}/settings?boss_defense=${bossDefense}`);
 }
 
-export function getRecommend(name, bossDefense = 300, top = 5) {
-  return request(`${base(name)}/recommend?boss_defense=${bossDefense}&top=${top}`);
+export function getRecommend(name, bossDefense = 300, top = 5, cooldownMainPct = null) {
+  const cd = cooldownMainPct ? `&cooldown_main_pct=${cooldownMainPct}` : "";
+  return request(`${base(name)}/recommend?boss_defense=${bossDefense}&top=${top}${cd}`);
 }
 
 export function postListings(name, body) {

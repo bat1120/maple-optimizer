@@ -26,6 +26,7 @@ class Item:
     potentials: list[str] = field(default_factory=list)
     core: StatBlock | None = None
     after: list[str] = field(default_factory=list)
+    level: int = 0  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
 
 
 @dataclass

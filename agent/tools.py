@@ -37,9 +37,11 @@ TOOL_DEFS = [
     {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
                       "required": ["name"]}},
-    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 윗잠을 목표 잠재로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
+    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 지금보다 한 단계 위 잠재(step/steps)로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
-                                                         "top": {"type": "integer"}}, "required": ["name"]}},
+                                                         "top": {"type": "integer"},
+                                                         "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
+                      "required": ["name"]}},
     {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "setting": _SETTING, "listings": {"type": "array", "items": _LISTING}},
@@ -104,8 +106,8 @@ class ToolBox:
         r["ranking"] = r["ranking"][:10]
         return r
 
-    def _recommend_searches(self, name, boss_defense=300.0, top=5):
-        return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)))
+    def _recommend_searches(self, name, boss_defense=300.0, top=5, cooldown_main_pct=None):
+        return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None):
         return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings])

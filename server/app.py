@@ -110,8 +110,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return service.settings(load(name, date), boss_defense)
 
     @app.get("/api/character/{name}/recommend")
-    def recommend(name: str, boss_defense: float = 300.0, top: int = 5, date: str | None = None):
-        return service.recommend(load(name, date), boss_defense, max(1, min(top, 20)))
+    def recommend(name: str, boss_defense: float = 300.0, top: int = 5, cooldown_main_pct: float | None = None,
+                  date: str | None = None):
+        return service.recommend(load(name, date), boss_defense, max(1, min(top, 20)), cooldown_main_pct)
 
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):

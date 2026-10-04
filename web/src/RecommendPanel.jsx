@@ -8,12 +8,13 @@ export default function RecommendPanel({ name, defense }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(""); // 쿨감 1초 = 주스탯 N% (비우면 쿨감은 실딜에 넣지 않는다)
 
   const load = async () => {
     setBusy(true);
     setError(null);
     try {
-      setData(await getRecommend(name, defense));
+      setData(await getRecommend(name, defense, 5, Number(cooldown) > 0 ? Number(cooldown) : null));
     } catch (e) {
       setError(e);
     } finally {
@@ -24,6 +25,9 @@ export default function RecommendPanel({ name, defense }) {
   return (
     <section className="panel">
       <h3>경매장 검색 추천</h3>
+      <label>쿨감 1초 = 주스탯 %
+        <input inputMode="decimal" value={cooldown} placeholder="비우면 쿨감 미반영" onChange={(e) => setCooldown(e.target.value)} />
+      </label>
       <button type="button" onClick={load} disabled={!name || busy}>검색 추천 받기</button>
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
@@ -36,8 +40,10 @@ export default function RecommendPanel({ name, defense }) {
               {data.recommendations.map((r) => (
                 <li key={r.slot}>
                   <strong>{r.slot}</strong> · 실딜 {formatPct(r.delta_pct)}
+                  {r.step ? <span className="muted"> · 다음 단계 {r.step}/{r.steps}</span> : null}
                   <br />
                   검색: {r.category} · 잠재 {r.target_potentials.join(" / ")} · {r.min_starforce}성 이상
+                  {r.kept?.length ? <><br /><span className="muted">유지: {r.kept.join(" / ")}</span></> : null}
                   <br />
                   <span className="muted">
                     지금: {r.current.name}{r.current.starforce ? ` ${r.current.starforce}성` : ""}
