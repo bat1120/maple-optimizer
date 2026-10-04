@@ -123,3 +123,33 @@ describe("screen watch needs-check lines", () => {
     expect(screen.getByText(/확인 필요: HP 회복 아이템 및 회복 스킬 \+30%/)).toBeInTheDocument();
   });
 });
+
+describe("screen watch corrections", () => {
+  const row = { signature: "c1", frame_id: "1-abcdef12", evaluated: true, slot: "모자", delta_pct: 0.8, excluded: [],
+                read: { name: "에테르넬 메이지햇", starforce: 25, total: { INT: 150 }, potential_lines: ["INT +13%"],
+                        additional: ["마력 +10"], potentials: ["INT +13%", "마력 +10"], price: 5e9 } };
+
+  it("잘못 읽은 값을 고치면 정답으로 보내고, 다시 평가된 줄로 바꾸고, 학습 데이터 수를 보여준다", async () => {
+    const fixed = { ...row, signature: "c2", read: { ...row.read, starforce: 21, corrected: true } };
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(ok({ item: fixed }))
+      .mockResolvedValueOnce(ok({ enabled: true, frames: 3, corrected: 1 }));
+    render(<ScreenWatch name="내신부레테" defense={300} capture={null} initialItems={[row]} />);
+    fireEvent.click(screen.getByRole("button", { name: "고치기" }));
+    fireEvent.change(screen.getByLabelText("스타포스"), { target: { value: "21" } });
+    fireEvent.change(screen.getByLabelText("윗잠 (한 줄에 하나)"), { target: { value: "INT +13%" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "저장" })); });
+    expect(f.mock.calls[0][0]).toBe("/api/vision/correct");
+    const body = JSON.parse(f.mock.calls[0][1].body);
+    expect(body).toMatchObject({ frame_id: "1-abcdef12", signature: "c1", name: "내신부레테", boss_defense: 300 });
+    expect(body.fields).toEqual({ name: "에테르넬 메이지햇", starforce: 21, potentials: ["INT +13%"], additional: ["마력 +10"], price: 5e9 });
+    expect(await screen.findByText(/21성/)).toBeInTheDocument();
+    expect(screen.getByText(/고친 값/)).toBeInTheDocument();
+    expect(screen.getByText("학습 데이터: 프레임 3장 · 고친 것 1건")).toBeInTheDocument();
+  });
+
+  it("학습 데이터가 꺼져 있으면(frame_id 없음) 고치기 버튼이 없다", () => {
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[{ ...row, frame_id: null }]} />);
+    expect(screen.queryByRole("button", { name: "고치기" })).toBeNull();
+  });
+});

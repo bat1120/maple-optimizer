@@ -100,3 +100,5 @@ export async function streamAgent(messages, onEvent) {
 
 export const postVision = (body) => post("/api/vision/listings", body);
 export const postVisionEvaluate = (body) => post("/api/vision/evaluate", body);
+export const postVisionCorrect = (body) => post("/api/vision/correct", body);
+export const getVisionDataset = () => request("/api/vision/dataset");

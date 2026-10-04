@@ -15,3 +15,6 @@ web/dist/
 .raw-weapons/
 .raw-extra/
 .raw-history-pairs/
+
+# 화면 분석 학습 데이터(내 PC 전용)
+.data/

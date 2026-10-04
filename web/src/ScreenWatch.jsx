@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { postListings, postVision, postVisionEvaluate } from "./api.js";
+import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
@@ -46,11 +46,47 @@ export function formatTotals(total) {
   return parts.length ? `총옵션 ${parts.join(" · ")}` : "총옵션 못 읽음";
 }
 
+const lines = (t) => t.split("\n").map((s) => s.trim()).filter(Boolean);
+
+// 잘못 읽은 값 고치기: 정답으로 저장(내 PC 학습 데이터)하고 고친 값으로 다시 평가한다
+function EditForm({ item, name, defense, onSaved, onCancel }) {
+  const r = item.read || {};
+  const [f, setF] = useState({
+    name: r.name || "", starforce: String(r.starforce ?? ""), price: r.price ? String(r.price) : "",
+    potentials: (r.potential_lines || r.potentials || []).join("\n"), additional: (r.additional || []).join("\n"),
+  });
+  const [error, setError] = useState(null);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const save = async () => {
+    const price = /^\d+$/.test(f.price) ? Number(f.price) : parsePrice(f.price);
+    const fields = { name: f.name.trim(), starforce: f.starforce === "" ? null : Number(f.starforce),
+                     potentials: lines(f.potentials), additional: lines(f.additional), price: price ?? null };
+    try {
+      const res = await postVisionCorrect({ frame_id: item.frame_id, signature: item.signature, name, boss_defense: defense, fields });
+      onSaved(res.item);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <span className="inline">
+      <label>이름<input value={f.name} onChange={set("name")} /></label>
+      <label>스타포스<input inputMode="numeric" value={f.starforce} onChange={set("starforce")} /></label>
+      <label>윗잠 (한 줄에 하나)<textarea rows={3} value={f.potentials} onChange={set("potentials")} /></label>
+      <label>에디 (한 줄에 하나)<textarea rows={3} value={f.additional} onChange={set("additional")} /></label>
+      <label>가격<input value={f.price} onChange={set("price")} /></label>
+      <button type="button" onClick={save}>저장</button> <button type="button" onClick={onCancel}>취소</button>
+      {error && <span className="error"> {error}</span>}
+    </span>
+  );
+}
+
 // 화면에서 읽은 내용을 그대로 보여 준다(잘못 읽었는지 사용자가 확인할 수 있게). 가격을 못 읽었으면 직접 넣는다.
-function Row({ item, name, defense, onUpdate }) {
+function Row({ item, name, defense, onUpdate, onReplace }) {
   const r = item.read || {};
   const [price, setPrice] = useState("");
   const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(false);
   const calc = async () => {
     const p = parsePrice(price);
     if (!p) return setError("가격을 예: 45억 3000만 처럼 입력해 주세요.");
@@ -91,6 +127,10 @@ function Row({ item, name, defense, onUpdate }) {
           <button type="button" onClick={calc}>억당 계산</button>
         </span>
       )}
+      {r.corrected && <span className="muted"> · 고친 값</span>}
+      {item.frame_id && name && !editing && <> <button type="button" onClick={() => setEditing(true)}>고치기</button></>}
+      {editing && <EditForm item={item} name={name} defense={defense} onCancel={() => setEditing(false)}
+                            onSaved={(u) => { setEditing(false); onReplace(item.signature, u); }} />}
       {error && <span className="error"> {error}</span>}
     </li>
   );
@@ -102,6 +142,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
   useEffect(() => { onItems?.(items); }, [items, onItems]);
   const [count, setCount] = useState(0);
+  const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
+  const refreshStats = () => getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {});
   const [error, setError] = useState(null);
   const watcher = useRef(createWatcher());
   const seen = useRef(new Set());
@@ -130,6 +172,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
       try {
         const r = await postVision({ image: session.image(), name: name || null, boss_defense: defense, seen: [...seen.current] });
         setCount((c) => c + 1);
+        if (r.frame_id) refreshStats();
         if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
         const fresh = r.items.filter((it) => !seen.current.has(it.signature));
         fresh.filter((it) => it.evaluated).forEach((it) => seen.current.add(it.signature));
@@ -182,6 +225,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}
       {error && <p role="alert" className="error">{error.message}</p>}
+      {stats && <p className="muted">학습 데이터: 프레임 {stats.frames}장 · 고친 것 {stats.corrected}건</p>}
       {listOnly.length > 0 && (
         <details>
           <summary>목록에서 본 매물 {listOnly.length}개 (툴팁을 띄우면 평가해요)</summary>
@@ -192,7 +236,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
         <ul className="plain">
           {detailed.map((it) => (
             <Row key={it.signature} item={it} name={name} defense={defense}
-                 onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))} />
+                 onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))}
+                 onReplace={(old, u) => { setItems((prev) => prev.map((p) => (p.signature === old ? u : p))); refreshStats(); }} />
           ))}
         </ul>
       )}

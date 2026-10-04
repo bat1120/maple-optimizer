@@ -50,12 +50,19 @@ def _err(e: ApiError) -> JSONResponse:
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
-               agent_daily_token_budget: int = 200_000, auction_mcp_command=None) -> FastAPI:
+               agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
+               vision_dataset_dir: str | None = None) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
     from server.market import PriceStore
     prices = PriceStore(db_path, clock)
+    from server.dataset import DatasetStore
+    dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
+
+    def _require_admin(request: Request) -> None:
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
     limiter = SlidingWindow(rate_limit, window, clock)
 
     @app.middleware("http")
@@ -289,8 +296,53 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from server.vision import normalize_fee
         for x in data["listings"]:
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
+        frame_id = dataset.save_frame(body.image, data) if dataset else None  # 내 PC 학습 데이터(켜졌을 때만)
+        items = service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))
+        for it in items:
+            it["frame_id"] = frame_id
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
-                "items": service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))}
+                "frame_id": frame_id, "items": items}
+
+    class VisionCorrectIn(BaseModel):
+        frame_id: str
+        signature: str
+        name: str
+        boss_defense: float = 300.0
+        fields: dict
+
+    _EDITABLE = ("name", "starforce", "level", "potentials", "additional", "price", "total")
+
+    @app.post("/api/vision/correct")
+    def vision_correct(body: VisionCorrectIn, request: Request):
+        """화면에서 잘못 읽은 값을 고친다: 정답으로 저장하고, 고친 값으로 다시 평가한다."""
+        _require_admin(request)
+        if dataset is None:
+            raise ApiError(503, "DATASET_DISABLED", "학습 데이터 저장이 꺼져 있어요(VISION_DATASET_DIR).")
+        from server.vision import signature
+        try:
+            reading = dataset.reading(body.frame_id)
+        except KeyError:
+            raise ApiError(404, "FRAME_NOT_FOUND", "그 화면 기록을 찾지 못했어요.") from None
+        read = next((x for x in reading.get("listings") or [] if signature(x) == body.signature), None)
+        if read is None:
+            raise ApiError(404, "LISTING_NOT_FOUND", "그 매물을 찾지 못했어요.")
+        fields = {k: v for k, v in body.fields.items() if k in _EDITABLE}
+        dataset.save_correction(body.frame_id, body.signature, fields)
+        read = {**read, **fields, "corrected": True}
+        if "potentials" in fields or "additional" in fields:
+            read["potential_lines"] = list(fields.get("potentials", read.get("potential_lines") or []))
+            read["additional"] = list(fields.get("additional", read.get("additional") or []))
+            read["potentials"] = read["potential_lines"] + read["additional"]
+        if "starforce" in fields:
+            read["starforce_source"] = "사용자 수정"
+        item = service.vision_items(load(body.name, None), None, body.boss_defense, [read], [])[0]
+        item["frame_id"] = body.frame_id
+        return {"item": item}
+
+    @app.get("/api/vision/dataset")
+    def vision_dataset(request: Request):
+        _require_admin(request)
+        return {"enabled": dataset is not None, **(dataset.stats() if dataset else {"frames": 0, "corrected": 0})}
 
     if static_dir and pathlib.Path(static_dir, "index.html").exists():
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")  # API 라우트 뒤에 둔다
@@ -311,7 +363,8 @@ def default_app() -> FastAPI:
     return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"),
                       agent_client=agent_client, admin_password_hash=admin_hash, session_secret=secret,
                       agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000),
-                      auction_mcp_command=_env("AUCTION_MCP_CMD"))
+                      auction_mcp_command=_env("AUCTION_MCP_CMD"),
+                      vision_dataset_dir=_env("VISION_DATASET_DIR"))
 
 
 def _env(key: str) -> str | None:
