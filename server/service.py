@@ -135,8 +135,17 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     for x in listings:
         sig = signature(x)
         row = {"signature": sig, "read": x, "evaluated": False}
-        if sig in seen or snap is None or not (x.get("potentials") or x.get("total")):
-            out.append(row)  # 이미 평가했거나, 캐릭터가 없거나, 툴팁 정보가 없다(목록만 보임)
+        if sig in seen:
+            out.append(row)
+            continue
+        if snap is None:
+            row["reason"] = "캐릭터를 먼저 조회해 주세요"
+            out.append(row)
+            continue
+        if not x.get("total"):
+            # 총 옵션 없이 평가하면 기본 스탯 0인 템처럼 계산돼 큰 음수가 나온다 → 보류
+            row["reason"] = "총 옵션을 읽지 못했어요 — 툴팁 윗부분(STR·INT·마력 합계)이 보이게 띄워 주세요"
+            out.append(row)
             continue
         cat = x.get("category") or "기타"
         slots = SLOTS_BY_CATEGORY.get(cat, (cat,))

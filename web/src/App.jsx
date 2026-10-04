@@ -131,6 +131,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [cube, setCube] = useState(null);
+  const [screenItems, setScreenItems] = useState([]);
 
   const lookup = async (e) => {
     e.preventDefault();
@@ -209,8 +210,8 @@ export default function App() {
           <CraftPanel key={cube ? `${cube.probability}-${cube.cost}` : "none"} initialCube={cube} />
         </div>
       </section>
-      <AgentPanel />
-      <ScreenWatch name={summary ? name.trim() : ""} defense={defense} />
+      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} />
+      <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} />
     </main>
   );
 }

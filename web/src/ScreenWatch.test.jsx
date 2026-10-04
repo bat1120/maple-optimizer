@@ -38,3 +38,31 @@ describe("screen watch panel", () => {
     expect(screen.getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
   });
 });
+
+describe("screen watch rows", () => {
+  const base = { signature: "s2", evaluated: true, slot: "모자", setting: { equipment: 2, hyper: 3, ability: 2 },
+                 delta_pct: 0.8, per_100m: null, main_stat_gain: 300, excluded: [],
+                 read: { name: "에테르넬 메이지햇", category: "모자", part: "모자", starforce: 22,
+                         total: { INT: 120, MATK: 60 }, potentials: ["INT +12%"], price: null } };
+
+  it("읽은 총 옵션을 보여주고, 가격을 못 읽으면 입력해서 억당을 계산한다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      { ok: true, status: 200, json: async () => ({ ranking: [{ per_100m: 0.0178, main_stat_gain_per_100m: 6.7 }] }) });
+    render(<ScreenWatch name="내신부레테" defense={300} capture={null} initialItems={[base]} />);
+    expect(screen.getByText(/총옵션 INT 120 · 마력 60/)).toBeInTheDocument();
+    expect(screen.getByText(/가격 못 읽음/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("에테르넬 메이지햇 가격"), { target: { value: "45억" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "억당 계산" })); });
+    const body = JSON.parse(f.mock.calls[0][1].body);
+    expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/listings`);
+    expect(body).toMatchObject({ setting: base.setting, boss_defense: 300,
+                                 listings: [{ slot: "모자", name: "에테르넬 메이지햇", total: { INT: 120, MATK: 60 }, price: 4_500_000_000 }] });
+    expect(await screen.findByText(/억당 \+0\.018%/)).toBeInTheDocument();
+  });
+
+  it("평가를 보류한 이유를 보여준다", () => {
+    const pending = { signature: "s3", evaluated: false, reason: "총 옵션을 읽지 못했어요", read: { name: "모자", potentials: [] } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[pending]} />);
+    expect(screen.getByText(/총 옵션을 읽지 못했어요/)).toBeInTheDocument();
+  });
+});

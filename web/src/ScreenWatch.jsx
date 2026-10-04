@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { postVision } from "./api.js";
-import { formatMeso, formatPct, formatStat } from "./format.js";
+import { postListings, postVision } from "./api.js";
+import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
 // 공유한 경매장 탭을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
@@ -37,12 +37,38 @@ export const browserCapture =
       }
     : null;
 
-function Row({ item }) {
+const TOTAL_LABEL = { HP: "HP", ATK: "공격력", MATK: "마력", "ALL%": "올스탯", BOSS: "보공", IED: "방무", DMG: "데미지" };
+const PCT = new Set(["ALL%", "BOSS", "IED", "DMG"]);
+
+export function formatTotals(total) {
+  const parts = Object.entries(total || {}).map(([k, v]) => `${TOTAL_LABEL[k] ?? k} ${v}${PCT.has(k) ? "%" : ""}`);
+  return parts.length ? `총옵션 ${parts.join(" · ")}` : "총옵션 못 읽음";
+}
+
+// 화면에서 읽은 내용을 그대로 보여 준다(잘못 읽었는지 사용자가 확인할 수 있게). 가격을 못 읽었으면 직접 넣는다.
+function Row({ item, name, defense, onUpdate }) {
   const r = item.read || {};
+  const [price, setPrice] = useState("");
+  const [error, setError] = useState(null);
+  const calc = async () => {
+    const p = parsePrice(price);
+    if (!p) return setError("가격을 예: 45억 3000만 처럼 입력해 주세요.");
+    try {
+      const res = await postListings(name, { setting: item.setting, boss_defense: defense, listings: [{
+        slot: item.slot, part: r.part || r.category || item.slot, name: r.name || "?", total: r.total || {},
+        potentials: r.potentials || [], starforce: r.starforce || 0, price: p }] });
+      const top = res.ranking[0];
+      onUpdate({ ...item, read: { ...r, price: p }, per_100m: top.per_100m, main_stat_gain_per_100m: top.main_stat_gain_per_100m });
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
   return (
     <li>
-      <strong>{r.name}</strong>{r.starforce ? ` ${r.starforce}성` : ""}{r.price ? ` · ${formatMeso(r.price)}` : ""}
-      {r.potentials?.length ? <span className="muted"> · {r.potentials.join(" / ")}</span> : null}
+      <strong>{r.name}</strong>{r.starforce ? ` ${r.starforce}성` : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
+      <br />
+      <span className="muted">{formatTotals(r.total)}{r.potentials?.length ? ` · ${r.potentials.join(" / ")}` : ""}</span>
       <br />
       {item.evaluated ? (
         <span>
@@ -52,16 +78,24 @@ function Row({ item }) {
           {item.excluded?.length ? <span className="muted"> · 계산 제외: {item.excluded.join(", ")}</span> : null}
         </span>
       ) : (
-        <span className="muted">목록만 보여요 — 툴팁을 띄우면 평가해요</span>
+        <span className="muted">{item.reason || "목록만 보여요 — 툴팁을 띄우면 평가해요"}</span>
       )}
+      {item.evaluated && !r.price && name && (
+        <span className="inline">
+          <input aria-label={`${r.name} 가격`} value={price} placeholder="45억" onChange={(e) => setPrice(e.target.value)} />
+          <button type="button" onClick={calc}>억당 계산</button>
+        </span>
+      )}
+      {error && <span className="error"> {error}</span>}
     </li>
   );
 }
 
-export default function ScreenWatch({ name, defense, capture, intervalMs = 1500 }) {
+export default function ScreenWatch({ name, defense, capture, intervalMs = 1500, initialItems = [], onItems }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
-  const [items, setItems] = useState([]); // signature 기준 중복 없는 목록
+  const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
+  useEffect(() => { onItems?.(items); }, [items, onItems]);
   const [count, setCount] = useState(0);
   const [error, setError] = useState(null);
   const watcher = useRef(createWatcher());
@@ -122,7 +156,14 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500 
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}
       {error && <p role="alert" className="error">{error.message}</p>}
-      {items.length > 0 && <ul className="plain">{items.map((it) => <Row key={it.signature} item={it} />)}</ul>}
+      {items.length > 0 && (
+        <ul className="plain">
+          {items.map((it) => (
+            <Row key={it.signature} item={it} name={name} defense={defense}
+                 onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

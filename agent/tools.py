@@ -88,7 +88,13 @@ class ToolBox:
         return Setting(**s) if s else None
 
     def _lookup_character(self, name):
-        return service.summary(self._load(name))
+        snap = self._load(name)
+        r = service.summary(snap)
+        best = service.settings(snap, 300.0)["ranking"][0]["setting"]
+        r["evaluation_setting"] = best
+        r["evaluation_note"] = ("평가는 보스 실딜 최적 세팅(evaluation_setting) 기준이다. active_setting이 사냥 세팅인 것은 "
+                                "사냥 중이라서 정상이다 — 프리셋 전환을 권하지 않는다.")
+        return r
 
     def _rank_settings(self, name, boss_defense=300.0):
         r = service.settings(self._load(name), boss_defense)

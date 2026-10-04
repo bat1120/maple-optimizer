@@ -50,3 +50,26 @@ describe("agent panel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("토큰 한도");
   });
 });
+
+describe("agent panel with screen items", () => {
+  it("화면에서 읽은 매물을 질문에 붙여 보낸다 (평가는 에이전트가 도구로 다시 한다)", async () => {
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" }), { status: 200 }))
+      .mockResolvedValueOnce(sseResponse([{ type: "done", unverified_numbers: [] }]));
+    const items = [{ signature: "s", evaluated: true, slot: "모자", delta_pct: 1, read: {
+      name: "에테르넬 메이지햇", category: "모자", part: "모자", starforce: 22, total: { INT: 120 }, potentials: ["INT +12%"], price: 4.5e9 } }];
+    render(<AgentPanel name="내신부레테" screenItems={items} />);
+    fireEvent.change(screen.getByLabelText("관리자 비밀번호"), { target: { value: "pw" } });
+    fireEvent.click(screen.getByRole("button", { name: "로그인" }));
+    expect(await screen.findByText(/화면 매물 1개를 함께 보내요/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("질문"), { target: { value: "경매장에서 본거 어때" } });
+    fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+    await screen.findByText(/경매장에서 본거 어때/);
+    const sent = JSON.parse(f.mock.calls[1][1].body).messages.at(-1).content;
+    expect(sent).toContain("경매장에서 본거 어때");
+    expect(sent).toContain("캐릭터: 내신부레테");
+    expect(sent).toContain('"name":"에테르넬 메이지햇"');
+    expect(sent).toContain('"price":4500000000');
+    expect(sent).not.toContain("delta_pct");   // 숫자는 에이전트가 도구로 다시 계산해야 출처 검사가 된다
+  });
+});

@@ -70,3 +70,48 @@ def test_setup_secrets_update_env_keeps_other_lines():
     spec.loader.exec_module(m)
     out = m.update_env("NEXON_API_KEY=abc\nOPENAI_API_KEY=\n# 주석\n", {"OPENAI_API_KEY": "k1", "SESSION_SECRET": "s"})
     assert out == "NEXON_API_KEY=abc\nOPENAI_API_KEY=k1\n# 주석\nSESSION_SECRET=s\n"
+
+
+def test_man_particle_is_not_ten_thousand():
+    """"프리셋 2만의 효과"의 '만'은 '오직'이다 (2026-10-04 실사용 오탐)."""
+    assert unverified_numbers("이건 프리셋 2만의 효과가 아니라 조합 전체 값입니다.", [{}]) == []
+    got = {raw: v for raw, v, _ in extract("가격 3000만 메소, 45억 3000만")}
+    assert got["3000만"] == 30_000_000 and got["45억 3000만"] == 4_530_000_000
+
+
+def test_vision_signature_ignores_ocr_noise_in_price_and_totals():
+    from server.vision import signature
+    a = {"name": "에테르넬 메이지햇", "starforce": 22, "potentials": ["LUK +13%", "스킬 재사용 대기시간 -2초"],
+         "price": 4_500_000_000, "total": {"INT": 120}}
+    b = {**a, "price": 4_500_000_001, "total": {"INT": 121}}
+    assert signature(a) == signature(b)
+
+
+def test_vision_item_without_total_options_is_not_evaluated():
+    """총 옵션을 못 읽으면 기본 스탯 0인 템처럼 평가돼 큰 음수가 나온다 → 평가 보류."""
+    from helpers import bundle
+    from nexon.convert import snapshot
+    from server.service import vision_items
+    snap = snapshot(bundle("레테"))
+    row = vision_items(snap, None, 300, [{"name": "에테르넬 메이지햇", "category": "모자", "part": "모자", "starforce": 22,
+                                          "total": {}, "potentials": ["LUK +13%"], "price": 4_500_000_000}], set())[0]
+    assert row["evaluated"] is False and "총 옵션" in row["reason"]
+
+
+def test_negative_numbers_and_numbers_inside_strings_are_verified():
+    """2026-10-04 실호출 오탐: '-10.43%'(도구 값 -10.43)와 잠재 문자열 'INT +12%' 속 숫자."""
+    src = [{"listings": [{"potentials": ["INT +12%", "LUK +13%"]}]},
+           {"ranking": [{"delta_pct": -10.4312, "per_100m": -0.2318}]}]
+    text = "실딜 -10.43%, 억당 -0.23%, 잠재 INT 12%·LUK 13%"
+    assert unverified_numbers(text, src) == []
+    assert unverified_numbers("실딜 -55.5%", src) == ["55.5%"]
+
+
+def test_lookup_character_reports_boss_setting_as_evaluation_basis():
+    from helpers import bundle
+    from nexon.convert import snapshot
+    from agent.tools import ToolBox
+    r = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("lookup_character", {"name": "x"})
+    assert r["active_setting"]["equipment"] == 1                     # 지금은 사냥 세팅
+    assert r["evaluation_setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3, "link": 2}
+    assert "보스" in r["evaluation_note"]

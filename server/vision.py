@@ -45,6 +45,8 @@ _SCHEMA = {
 _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 JSON으로 옮겨라.
 - 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다.
 - 목록만 보이면 이름·스타포스·가격만 채우고 나머지는 null/빈 배열.
+- 가격은 매물 목록 행(또는 구매 창)의 판매 가격이다. 툴팁에 없더라도 같은 아이템 행의 가격을 찾아 넣는다.
+- 총 수치는 툴팁 윗부분의 STR/DEX/INT/LUK/최대 HP/공격력/마력/보스/방무/올스탯% 줄(괄호 안 세부 합이 아니라 맨 앞 합계)이다.
 - 읽을 수 없는 값은 추측하지 말고 null. 숫자 단위(억·만)는 메소 정수로 바꾼다."""
 
 
@@ -78,6 +80,6 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
 
 def signature(item: dict) -> str:
     """같은 매물을 두 번 평가하지 않도록 쓰는 지문."""
-    key = json.dumps([item.get("name"), item.get("starforce"), sorted(item.get("potentials") or []),
-                      item.get("price"), sorted((item.get("total") or {}).items())], ensure_ascii=False)
+    # 가격·총 옵션은 화면을 읽을 때마다 숫자가 조금씩 흔들려 같은 매물이 둘로 갈린다(2026-10-04 실사용) → 뺀다
+    key = json.dumps([item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])], ensure_ascii=False)
     return hashlib.sha1(key.encode()).hexdigest()[:16]

@@ -1,6 +1,6 @@
 """숫자 출처 검사: 답변에 나온 계산 숫자가 도구 입력·결과에 실제로 있는지 본다 (스펙 §10 "숫자 원칙").
 
-- "45억 3000만", "1.2억", "3000만" → 메소로 환산해 비교
+- "45억 3000만", "1.2억", "3000만" → 메소로 환산해 비교 ("2만의"처럼 조사가 붙은 "만"은 '오직'이라 숫자가 아니다)
 - "2.765%" → 그대로 또는 도구 값×100(0~1 확률)과 비교
 - 30 이하 소수점 없는 정수(성·프리셋·레벨 같은 서수)는 검사하지 않는다
 - 허용 오차: 답변 숫자의 표시 자릿수 반올림 범위, 최소 0.1%
@@ -8,7 +8,7 @@
 import re
 
 _EOK = re.compile(r"(\d+(?:\.\d+)?)\s*억(?:\s*(\d+)\s*만)?")
-_MAN = re.compile(r"(?<![\d.])(\d+(?:\.\d+)?)\s*만")
+_MAN = re.compile(r"(?<![\d.])(\d+(?:\.\d+)?)\s*만(?![의이을를으에은는도과와만])")  # "프리셋 2만의" = 오직
 _NUM = re.compile(r"(?<![\d.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(%|배)?")
 
 
@@ -46,6 +46,8 @@ def _numbers(obj, acc):
         return acc
     if isinstance(obj, (int, float)):
         acc.append(float(obj))
+    elif isinstance(obj, str):  # 잠재 문자열 "INT +12%", 아이템 설명 속 숫자도 출처다
+        acc.extend(v for _, v, _ in extract(obj))
     elif isinstance(obj, dict):
         for v in obj.values():
             _numbers(v, acc)
@@ -57,6 +59,7 @@ def _numbers(obj, acc):
 
 def unverified_numbers(text: str, sources: list) -> list[str]:
     values = _numbers(sources, [])
+    values += [abs(v) for v in values if v < 0]  # 답변의 "-10.43%"는 부호 없이 추출된다
     candidates = values + [v * 100 for v in values if -1 <= v <= 1] + [(v - 1) * 100 for v in values if 0 < v < 10]
     bad = []
     for raw, n, unit in extract(text):
