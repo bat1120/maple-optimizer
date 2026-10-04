@@ -158,7 +158,9 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     base = evaluate_setting(snap, chosen, b, CATALOG) if snap else None
     for x in listings:
         sig = signature(x)
-        row = {"signature": sig, "read": x, "evaluated": False}
+        from server.vision import unverified_lines
+        row = {"signature": sig, "read": x, "evaluated": False,
+               "unverified_lines": unverified_lines(list(x.get("potentials") or []))}
         if sig in seen:
             out.append(row)
             continue

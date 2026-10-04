@@ -20,7 +20,8 @@ export function withScreenItems(question, name, items, feeRate = null) {
     const x = { slot: i.slot || i.read?.category, part: i.read?.part || i.read?.category, name: i.read?.name,
       starforce: i.read?.starforce ?? 0, total: i.read?.total || {}, potentials: i.read?.potentials || [], price: i.read?.price ?? null };
     const cand = x.price == null ? prices(x.name) : [];
-    return cand.length ? { ...x, list_prices: cand } : x;
+    const withCheck = i.unverified_lines?.length ? { ...x, unverified_lines: i.unverified_lines } : x;
+    return cand.length ? { ...withCheck, list_prices: cand } : withCheck;
   });
   return `${head}
 [경매장 화면에서 읽은 매물 — evaluate_listings로 평가해서 답해 줘. price가 null이면 list_prices 후보로 계산하거나 가격을 물어봐]

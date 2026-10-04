@@ -104,4 +104,12 @@ describe("agent panel character context", () => {
     expect(withScreenItems("q", "내신부레테", [], 0.03)).toContain("[경매장 판매 수수료: 3% — fee_rate 0.03]");
     expect(withScreenItems("q", "내신부레테", [])).not.toContain("수수료");
   });
+
+  it("확인 필요 줄을 첨부 매물에 함께 보낸다", async () => {
+    const { withScreenItems } = await import("./AgentPanel.jsx");
+    const item = { signature: "u", evaluated: true, slot: "장갑", unverified_lines: ["HP 회복 아이템 및 회복 스킬 +30%"],
+      read: { name: "글러브", category: "장갑", total: { STR: 1 }, potentials: ["HP 회복 아이템 및 회복 스킬 +30%"], price: 1 } };
+    const sent = withScreenItems("q", "x", [item]);
+    expect(sent).toContain('"unverified_lines":["HP 회복 아이템 및 회복 스킬 +30%"]');
+  });
 });

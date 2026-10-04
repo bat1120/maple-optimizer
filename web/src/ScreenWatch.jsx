@@ -69,6 +69,10 @@ function Row({ item, name, defense, onUpdate }) {
       <strong>{r.name}</strong>{r.starforce ? ` ${r.starforce}성` : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
       <br />
       <span className="muted">{formatTotals(r.total)}{r.potentials?.length ? ` · ${r.potentials.join(" / ")}` : ""}</span>
+      {item.unverified_lines?.length ? (
+        // 공식 큐브 옵션표에 없는 줄: 화면 글자와 다르게 읽었을 수 있다 — 툴팁과 대조해 달라고 알린다
+        <span className="error"> · 확인 필요: {item.unverified_lines.join(" / ")}</span>
+      ) : null}
       <br />
       {item.evaluated ? (
         <span>

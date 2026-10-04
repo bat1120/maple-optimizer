@@ -3,9 +3,11 @@
 넥슨 서버에는 아무 요청도 보내지 않는다 — 사용자 화면에 이미 보이는 내용만 읽는다.
 숫자는 모델이 읽은 값이므로 화면에 "읽은 내용"을 그대로 보여 주고 확인받는다.
 """
+import functools
 import hashlib
 import json
 import os
+import pathlib
 
 _TOTAL_KEYS = ("STR", "DEX", "INT", "LUK", "HP", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG")
 CATEGORIES = ("무기", "보조무기", "엠블렘", "모자", "상의", "하의", "신발", "장갑", "망토", "어깨장식", "벨트",
@@ -53,6 +55,8 @@ _SCHEMA = {
     },
 }
 _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 JSON으로 옮겨라.
+- 화면 글자를 그대로 옮긴다. 고치거나 줄이거나 바꿔 쓰지 않는다(옵션 문장·아이템 이름 포함). 화면에 없는 값은 채우지 않는다.
+- 일부가 가려지거나 잘린 값은 null. 스타포스는 툴팁 위쪽 별을 셀 수 있을 때만 채운다(별을 셀 수 있을 때만, 잘렸으면 null).
 - 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다. 윗잠(잠재능력)은 potentials, 에디셔널 잠재능력은 additional에 따로.
 - 목록만 보이면 이름·스타포스·가격만 채우고 나머지는 null/빈 배열.
 - 가격은 매물 목록 행(또는 구매 창)의 판매 가격이다. 툴팁 아이템의 가격은 마우스가 올라가 있거나 선택(강조)된 행의 가격이다. 툴팁에 없더라도 같은 아이템 행의 가격을 찾아 넣는다.
@@ -90,6 +94,21 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         item["total"] = {k: v for k, v in (item.get("total") or {}).items() if v is not None}
         normalize_listing(item)
     return data
+
+
+@functools.lru_cache(maxsize=1)
+def _official_options() -> frozenset[str]:
+    """공식 큐브 확률표(engine/data/cube_tables.json)에 있는 잠재·에디 옵션 문장 전부."""
+    path = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data" / "cube_tables.json"
+    tables = json.loads(path.read_text(encoding="utf-8"))["tables"]
+    return frozenset(o for kind in tables.values() for g in kind.values() for p in g.values()
+                     for band in p.values() for line in band for o in line)
+
+
+def unverified_lines(lines: list[str]) -> list[str]:
+    """공식 옵션표에 없는 줄 — 화면 글자와 다르게 옮겼을 수 있다(2026-10-04 골든셋: AI가 문장을 줄여 적음)."""
+    official = _official_options()
+    return [x for x in lines if x and x.strip() not in official]
 
 
 def normalize_fee(v) -> float | None:

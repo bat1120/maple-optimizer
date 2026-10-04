@@ -113,3 +113,13 @@ describe("screen watch fee", () => {
     expect(onFeeRate).toHaveBeenCalledWith(0.03);
   });
 });
+
+describe("screen watch needs-check lines", () => {
+  it("공식 옵션표에 없는 줄은 확인 필요로 표시한다", () => {
+    const row = { signature: "u1", evaluated: true, slot: "장갑", delta_pct: 0.5, excluded: [],
+                  unverified_lines: ["HP 회복 아이템 및 회복 스킬 +30%"],
+                  read: { name: "에테르넬 나이트글러브", total: { STR: 253 }, potentials: ["크리티컬 데미지 +8%"], price: 1e10 } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} />);
+    expect(screen.getByText(/확인 필요: HP 회복 아이템 및 회복 스킬 \+30%/)).toBeInTheDocument();
+  });
+});
