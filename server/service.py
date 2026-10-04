@@ -164,7 +164,8 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
         row = {"signature": sig, "read": x, "evaluated": False,
                "unverified_lines": unverified_lines(list(x.get("potentials") or [])),
                "unverified_totals": checksum_failures(x),
-               "starforce_note": "스타포스는 화면 판독값이라 틀릴 수 있어요(확인 필요) — 실딜은 총 옵션으로 계산해서 영향이 없어요"}
+               "starforce_note": ("스타포스는 툴팁 별을 코드로 센 값이에요" if x.get("starforce_source") == "별 세기" else
+                                  "스타포스는 화면 판독값이라 틀릴 수 있어요(확인 필요) — 실딜은 총 옵션으로 계산해서 영향이 없어요")}
         if sig in seen:
             out.append(row)
             continue

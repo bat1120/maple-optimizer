@@ -279,9 +279,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요.")
         if not body.image.startswith("data:image/"):
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
-        from server.vision import VisionError, extract_listings
+        from server.vision import VisionError, analyze_frame
         try:
-            data = extract_listings(agent_client, body.image, on_usage=usage.add)
+            data = analyze_frame(agent_client, body.image, on_usage=usage.add)
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap = load(body.name, None) if body.name else None

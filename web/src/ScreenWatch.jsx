@@ -67,7 +67,7 @@ function Row({ item, name, defense, onUpdate }) {
   };
   return (
     <li>
-      <strong>{r.name}</strong>{r.starforce ? <span title={item.starforce_note}> {r.starforce}성(확인 필요)</span> : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
+      <strong>{r.name}</strong>{r.starforce ? <span title={item.starforce_note}> {r.starforce}성{r.starforce_source === "별 세기" ? "" : "(확인 필요)"}</span> : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
       <br />
       <span className="muted">{formatTotals(r.total)}{r.potentials?.length ? ` · ${r.potentials.join(" / ")}` : ""}</span>
       {item.unverified_lines?.length ? (

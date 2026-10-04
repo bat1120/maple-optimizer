@@ -28,7 +28,7 @@ _SCHEMA = {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
-                             "total", "breakdown", "potentials", "additional", "price", "equipped"],
+                             "total", "breakdown", "potentials", "additional", "price", "equipped", "tooltip"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
@@ -49,6 +49,8 @@ _SCHEMA = {
                         "properties": {k: {"type": ["array", "null"], "items": {"type": "number"}} for k in _TOTAL_KEYS},
                         "description": "총 수치 줄 괄호 안의 값들(예: 'STR +316 (80 +80 +156)' → [80, 80, 156]). 괄호가 없으면 null",
                     },
+                    "tooltip": {"type": ["integer", "null"],
+                                "description": "이 매물의 잠재·총 수치를 읽은 '툴팁 N' 이미지 번호(0부터). 목록 행만 보고 읽었으면 null"},
                     "equipped": {"type": "boolean",
                                  "description": "'현재 장착 중인 장비'라고 적힌 비교 툴팁(사용자가 끼고 있는 템)이면 true. 매물이면 false"},
                     "potentials": {"type": "array", "items": {"type": "string"},
@@ -63,7 +65,7 @@ _SCHEMA = {
 }
 _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 JSON으로 옮겨라.
 - 마우스를 올린 매물 툴팁 옆에 '현재 장착 중인 장비'라고 적힌 비교 툴팁이 뜰 수 있다. 그것은 사용자가 끼고 있는 템이라 매물이 아니다 — equipped=true로 표시한다.
-- 총 수치 줄의 괄호 안 값(기본 + 추가옵션 + 강화)을 breakdown에 그대로 옮긴다. 괄호가 없는 줄은 null.
+- 총 수치 줄의 괄호 안 값(기본 + 추가옵션 + 주문서 + 스타포스)을 breakdown에 그대로 옮긴다. 작은 값(+1, +3)까지 하나도 빠짐없이. 괄호가 없는 줄은 null.
 - 화면 글자를 그대로 옮긴다. 고치거나 줄이거나 바꿔 쓰지 않는다(옵션 문장·아이템 이름 포함). 화면에 없는 값은 채우지 않는다.
 - 일부가 가려지거나 잘린 값은 null. 스타포스는 툴팁 위쪽 별을 셀 수 있을 때만 채운다(별을 셀 수 있을 때만, 잘렸으면 null).
 - 툴팁이 떠 있으면 그 아이템의 총 수치·잠재·에디 줄을 빠짐없이 옮긴다. 윗잠(잠재능력)은 potentials, 에디셔널 잠재능력은 additional에 따로.
@@ -73,6 +75,13 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
 - 보조무기(깃펜·포스실드·소울링·오브 등)는 category를 보조무기로. 무기는 캐릭터가 휘두르는 주무기만.
 - 잠재·에디 줄은 "에디셔널 잠재능력:" 같은 머리말 없이 옵션 문장만, 숫자(예: "캐릭터 기준 10레벨 당")는 빠짐없이 옮긴다.
 - 판매 등록 창 등에 판매 수수료 비율이 보이면 fee_rate에 그 퍼센트 숫자를 넣는다. 보이지 않으면 null(추측 금지).
+- 첫 이미지는 화면 전체, 그다음 '툴팁 0', '툴팁 1'… 이미지는 화면에서 찾은 툴팁을 원래 크기로 자른 것이다.
+  잠재·에디·총 수치·breakdown은 툴팁 이미지에서 읽고, 가격·목록 행은 화면 전체에서 읽는다. 읽은 툴팁 번호를 tooltip에 넣는다.
+  툴팁 이미지의 아이템은 목록에 같은 이름 행이 안 보여도 반드시 listings에 넣는다(가격은 같은 이름 행이 있을 때만, 없으면 null).
+- 예시(툴팁 글자 → 옮기는 법):
+  "STR +253 (55 +91 +107)" → total.STR=253, breakdown.STR=[55, 91, 107] / "올스탯 +5% (0% +5%)" → total["ALL%"]=5, breakdown["ALL%"]=[0, 5]
+  "잠재능력 : 레전드리" 아래 "크리티컬 데미지 +8%" → potential_grade="레전드리", potentials에 "크리티컬 데미지 +8%" 그대로
+  "스타포스, 주문서, 추가옵션 강화 불가" → starforce=0 / 별이 잘려 안 보이면 starforce=null
 - 읽을 수 없는 값은 추측하지 말고 null. 숫자 단위(억·만)는 메소 정수로 바꾼다."""
 
 
@@ -81,13 +90,14 @@ class VisionError(ValueError):
 
 
 def extract_listings(client, image_data_url: str, model: str | None = None,
-                     on_usage=None) -> dict:
+                     on_usage=None, crops: list[str] | None = None) -> dict:
+    content = [{"type": "input_text", "text": _PROMPT},
+               {"type": "input_image", "image_url": image_data_url, "detail": "high"}]
+    for i, c in enumerate(crops or []):
+        content += [{"type": "input_text", "text": f"툴팁 {i}"}, {"type": "input_image", "image_url": c, "detail": "high"}]
     resp = client.responses.create(
         model=model or os.environ.get("OPENAI_VISION_MODEL") or os.environ.get("OPENAI_MODEL") or "gpt-6-luna",
-        input=[{"role": "user", "content": [
-            {"type": "input_text", "text": _PROMPT},
-            {"type": "input_image", "image_url": image_data_url, "detail": "high"},
-        ]}],
+        input=[{"role": "user", "content": content}],
         text={"format": {"type": "json_schema", "name": "auction_listings", "schema": _SCHEMA, "strict": True}},
         reasoning={"effort": "low"}, max_output_tokens=16000, store=False,
     )
@@ -165,3 +175,48 @@ def signature(item: dict) -> str:
     # 가격·총 옵션은 화면을 읽을 때마다 숫자가 조금씩 흔들려 같은 매물이 둘로 갈린다(2026-10-04 실사용) → 뺀다
     key = json.dumps([item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])], ensure_ascii=False)
     return hashlib.sha1(key.encode()).hexdigest()[:16]
+
+
+def _data_url(img) -> str:
+    import base64
+    import io
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+@functools.lru_cache(maxsize=1)
+def _item_names() -> tuple[str, ...]:
+    from engine.stats.sets import SetCatalog
+    return tuple(SetCatalog.load().items)
+
+
+def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None) -> dict:
+    """화면 공유 프레임 분석: 툴팁을 찾아 원래 크기로 잘라 함께 보내고, AI 판독값 중 코드로 확인할 수 있는 것은 바꾼다.
+    - 스타포스: 툴팁 별을 코드로 센 값(로컬 실측 15/15, AI 판독 1/9 — 2026-10-04)
+    - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)"""
+    import base64
+    import io
+
+    from PIL import Image
+
+    from server.tooltip import correct_name, count_stars, crop, find_tooltips
+    try:
+        img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1]))).convert("RGB")
+        tips = [crop(img, b) for b in find_tooltips(img)]
+    except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
+        tips = []
+    data = extract_listings(client, image_data_url, model, on_usage, crops=[_data_url(t) for t in tips])
+    stars = [count_stars(t) for t in tips]
+    data["tooltips_found"] = len(tips)
+    for x in data["listings"]:
+        i = x.get("tooltip")
+        counted = stars[i] if isinstance(i, int) and 0 <= i < len(stars) else None
+        x["starforce_ai"] = x.get("starforce")
+        if counted is not None:
+            x["starforce"], x["starforce_source"] = counted, "별 세기"
+        else:
+            x["starforce_source"] = "화면 판독(확인 필요)"
+        x["name_read"] = x.get("name")
+        x["name"], _ = correct_name(x.get("name"), _item_names())
+    return data
