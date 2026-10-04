@@ -120,3 +120,7 @@
 ## 2026-10-04 G10 진행 중 — 배포 준비물
 - BUILD: Dockerfile(web 빌드 → python:3.12-slim + uv, amd64·arm64), .dockerignore, docker-compose.yml(api + caddy, .env, 캐시·인증서 볼륨), deploy/Caddyfile(자동 HTTPS), .github/workflows/deploy.yml(테스트 → GHCR 멀티아치 푸시 → DEPLOY_ENABLED일 때 SSH 배포), README 배포·시크릿 표(VM_HOST·VM_USER·VM_SSH_KEY·GHCR_READ_TOKEN·DEPLOY_ENABLED)
 - VERIFY: ① compose config exit 0 ③ 워크플로 파싱·시크릿 문서화 통과. ② 이미지 빌드·health: Docker Desktop 데몬이 꺼져 있어 실행 불가(실패로 기록, skip 아님)
+
+## 2026-10-04 G10 VERIFIED
+- 사용자가 Docker Desktop 실행 → VERIFY exit 0: ① compose config 0 ② amd64 이미지 빌드 0, 컨테이너 /api/health 200, / 에 root div ③ 워크플로 시크릿 4개(GHCR_READ_TOKEN·VM_HOST·VM_SSH_KEY·VM_USER) README 문서화
+- 추가 확인: `docker buildx --platform linux/arm64` 빌드 성공(약 5분, QEMU), arm64 컨테이너에서 server·engine import 정상 — Oracle Ampere 대상 확인

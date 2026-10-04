@@ -1,6 +1,7 @@
 {
  "criterion1_compose_config_exit": 0,
- "criterion2_build_exit": 1,
+ "criterion2_build_exit": 0,
+ "criterion2_health_status": 200,
  "criterion3_secrets": [
   "GHCR_READ_TOKEN",
   "VM_HOST",
