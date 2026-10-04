@@ -1,6 +1,6 @@
 """OpenAI Responses API 함수 호출 루프 (manual loop). 이벤트를 차례로 내보낸다: text, tool_call, tool_result, error, done.
 
-- 모델 기본값 gpt-6.1-sol (환경변수 OPENAI_MODEL로 변경), reasoning effort medium
+- 모델 기본값 gpt-6-luna (환경변수 OPENAI_MODEL로 변경), reasoning effort medium
 - store=False(상태 비저장): 매 턴 응답 output 항목(reasoning·function_call)을 그대로 다시 넣는다 — 공식 가이드의
   "reasoning items ... must also be passed back with tool call outputs"
 - 실패는 반드시 error 이벤트로 알리고 done으로 끝난다(조용히 끊기지 않게)
@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterator
 from agent.numbers import unverified_numbers
 from agent.tools import ToolBox, openai_tools
 
-DEFAULT_MODEL = "gpt-6.1-sol"
+DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
 SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 관리자 한 명이 쓴다.
 
 숫자 규칙 — 가장 중요하다:

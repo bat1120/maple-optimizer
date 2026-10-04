@@ -82,9 +82,11 @@ def test_criterion1_four_scenarios_call_the_right_tools():
         results = tool_results(events)
         if names == [expected] and results and "error" not in results[0] and events[-1]["type"] == "done":
             ok += 1
-        assert fake.calls[0]["model"] == "gpt-6.1-sol"
+        from agent.loop import DEFAULT_MODEL
+        assert fake.calls[0]["model"] == DEFAULT_MODEL
         assert fake.calls[0]["store"] is False and fake.calls[0]["reasoning"] == {"effort": "medium"}
         assert {t["name"] for t in fake.calls[0]["tools"]} >= {expected}
+        assert all(t["parameters"]["additionalProperties"] is False for t in fake.calls[0]["tools"])
     _record("criterion1_scenarios_ok", f"{ok}/4")
     assert ok == 4
 

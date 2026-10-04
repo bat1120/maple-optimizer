@@ -55,7 +55,7 @@ class VisionError(ValueError):
 def extract_listings(client, image_data_url: str, model: str | None = None,
                      on_usage=None) -> dict:
     resp = client.responses.create(
-        model=model or os.environ.get("OPENAI_VISION_MODEL") or os.environ.get("OPENAI_MODEL") or "gpt-6.1-sol",
+        model=model or os.environ.get("OPENAI_VISION_MODEL") or os.environ.get("OPENAI_MODEL") or "gpt-6-luna",
         input=[{"role": "user", "content": [
             {"type": "input_text", "text": _PROMPT},
             {"type": "input_image", "image_url": image_data_url, "detail": "high"},
