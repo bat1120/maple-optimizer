@@ -236,7 +236,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap = load(body.name, None) if body.name else None
         setting = Setting(**body.setting) if body.setting else None
-        return {"tooltip_visible": data["tooltip_visible"],
+        from server.vision import normalize_fee
+        return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
                 "items": service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))}
 
     if static_dir and pathlib.Path(static_dir, "index.html").exists():

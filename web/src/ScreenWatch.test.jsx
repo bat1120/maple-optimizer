@@ -97,3 +97,19 @@ describe("screen watch pending rows", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 });
+
+describe("screen watch fee", () => {
+  it("화면에서 판매 수수료를 읽으면 알려준다", async () => {
+    vi.useFakeTimers();
+    const hashes = [100, 100, 100];
+    let k = 0;
+    const capture = { start: async () => ({ hash: () => new Array(256).fill(hashes[Math.min(k++, 2)]),
+                                            image: () => "data:image/jpeg;base64,AAA", stop: vi.fn() }) };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: false, fee_rate: 0.03, items: [] }));
+    const onFeeRate = vi.fn();
+    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={1500} onFeeRate={onFeeRate} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 4; i++) await act(async () => { vi.advanceTimersByTime(1500); });
+    expect(onFeeRate).toHaveBeenCalledWith(0.03);
+  });
+});

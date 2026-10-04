@@ -6,10 +6,12 @@ import { adminLogin, streamAgent } from "./api.js";
 // 답변 숫자의 출처 검사가 된다.
 const isListOnly = (i) => !Object.keys(i.read?.total || {}).length && !(i.read?.potentials || []).length;
 
-export function withScreenItems(question, name, items) {
-  const head = name ? `${question}
+export function withScreenItems(question, name, items, feeRate = null) {
+  const who = name ? `${question}
 
 [조회한 캐릭터: ${name}]` : question;
+  const head = feeRate ? `${who}
+[경매장 판매 수수료: ${Math.round(feeRate * 1000) / 10}% — fee_rate ${feeRate}]` : who;
   // 목록 행만 읽은 매물(총옵션·잠재 없음)은 평가할 수 없어 보내지 않는다. 대신 같은 이름의 목록 가격을 가격 후보로 쓴다.
   const rows = (items || []).filter((i) => !isListOnly(i));
   if (!rows.length) return head;
@@ -25,7 +27,7 @@ export function withScreenItems(question, name, items) {
 ${JSON.stringify(listings)}`;
 }
 
-export default function AgentPanel({ name = "", screenItems = [] }) {
+export default function AgentPanel({ name = "", screenItems = [], feeRate = null }) {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [question, setQuestion] = useState("");
@@ -49,7 +51,7 @@ export default function AgentPanel({ name = "", screenItems = [] }) {
   const send = async (e) => {
     e.preventDefault();
     if (!question.trim() || busy) return;
-    const messages = [...history, { role: "user", content: withScreenItems(question.trim(), name, screenItems) }];
+    const messages = [...history, { role: "user", content: withScreenItems(question.trim(), name, screenItems, feeRate) }];
     setLog((l) => [...l, { type: "user", text: question.trim() }]);
     setQuestion("");
     setBusy(true);

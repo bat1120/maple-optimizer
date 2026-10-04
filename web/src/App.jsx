@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { getCharacter, getSettings, postListings } from "./api.js";
 import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, parsePrice, settingLabel } from "./format.js";
 import { loadListings, saveListings } from "./storage.js";
@@ -126,6 +126,8 @@ export default function App() {
   const [name, setName] = useState("");
   const [defense, setDefense] = useState(300);
   const [feeRate, setFeeRate] = useState(0.05); // 경매장 판매 수수료: 지금 템 판매 대금에서만 빠진다
+  const [feeFromScreen, setFeeFromScreen] = useState(false);
+  const onFeeRate = useCallback((f) => { setFeeRate(f); setFeeFromScreen(true); }, []);
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
   const [listings, setListings] = useState(loadListings);
@@ -179,10 +181,12 @@ export default function App() {
           <input type="number" value={defense} onChange={(e) => setDefense(Number(e.target.value) || 0)} />
         </label>
         <label>경매장 판매 수수료
-          <select value={String(feeRate)} onChange={(e) => setFeeRate(Number(e.target.value))}>
+          <select value={String(feeRate)} onChange={(e) => { setFeeRate(Number(e.target.value)); setFeeFromScreen(false); }}>
             <option value="0.05">5% (기본)</option>
             <option value="0.03">3% (MVP 실버 이상·PC방)</option>
+            {![0.05, 0.03].includes(feeRate) && <option value={String(feeRate)}>{Math.round(feeRate * 1000) / 10}%</option>}
           </select>
+          {feeFromScreen && <span className="muted"> 화면에서 읽음</span>}
         </label>
         <button type="submit" disabled={busy}>조회</button>
       </form>
@@ -219,8 +223,8 @@ export default function App() {
         </div>
       </section>
       <RecommendPanel name={summary ? name.trim() : ""} defense={defense} />
-      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} />
-      <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} />
+      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} />
+      <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} onFeeRate={onFeeRate} />
     </main>
   );
 }

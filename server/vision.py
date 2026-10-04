@@ -15,8 +15,10 @@ SLOTS_BY_CATEGORY = {"반지": ("반지1", "반지2", "반지3", "반지4"), "�
 _SCHEMA = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["tooltip_visible", "listings"],
+    "required": ["tooltip_visible", "listings", "fee_rate"],
     "properties": {
+        "fee_rate": {"type": ["number", "null"],
+                     "description": "화면에 경매장 판매 수수료 비율이 보이면(판매 등록 창의 '수수료 5%' 등) 그 퍼센트 숫자(예: 5). 안 보이면 null"},
         "tooltip_visible": {"type": "boolean", "description": "아이템 상세 툴팁(잠재 옵션이 보이는 창)이 화면에 떠 있는가"},
         "listings": {
             "type": "array",
@@ -49,6 +51,7 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
 - 총 수치는 툴팁 윗부분의 STR/DEX/INT/LUK/최대 HP/공격력/마력/보스/방무/올스탯% 줄(괄호 안 세부 합이 아니라 맨 앞 합계)이다.
 - 보조무기(깃펜·포스실드·소울링·오브 등)는 category를 보조무기로. 무기는 캐릭터가 휘두르는 주무기만.
 - 잠재·에디 줄은 "에디셔널 잠재능력:" 같은 머리말 없이 옵션 문장만, 숫자(예: "캐릭터 기준 10레벨 당")는 빠짐없이 옮긴다.
+- 판매 등록 창 등에 판매 수수료 비율이 보이면 fee_rate에 그 퍼센트 숫자를 넣는다. 보이지 않으면 null(추측 금지).
 - 읽을 수 없는 값은 추측하지 말고 null. 숫자 단위(억·만)는 메소 정수로 바꾼다."""
 
 
@@ -79,6 +82,14 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         item["total"] = {k: v for k, v in (item.get("total") or {}).items() if v is not None}
         normalize_listing(item)
     return data
+
+
+def normalize_fee(v) -> float | None:
+    """판독한 수수료 → 소수(0.05). 퍼센트(5)로 와도 받는다. 0 이하·10% 초과는 잘못 읽은 것으로 보고 버린다."""
+    if not isinstance(v, (int, float)) or isinstance(v, bool) or v <= 0:
+        return None
+    rate = v / 100 if v >= 1 else float(v)
+    return round(rate, 4) if rate <= 0.1 else None
 
 
 def normalize_listing(item: dict) -> dict:

@@ -91,7 +91,7 @@ function Row({ item, name, defense, onUpdate }) {
   );
 }
 
-export default function ScreenWatch({ name, defense, capture, intervalMs = 1500, initialItems = [], onItems }) {
+export default function ScreenWatch({ name, defense, capture, intervalMs = 1500, initialItems = [], onItems, onFeeRate }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
@@ -125,6 +125,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
       try {
         const r = await postVision({ image: session.image(), name: name || null, boss_defense: defense, seen: [...seen.current] });
         setCount((c) => c + 1);
+        if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
         const fresh = r.items.filter((it) => !seen.current.has(it.signature));
         fresh.filter((it) => it.evaluated).forEach((it) => seen.current.add(it.signature));
         if (fresh.length) {
@@ -142,7 +143,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
       }
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [session, name, defense, intervalMs]);
+  }, [session, name, defense, intervalMs, onFeeRate]);
 
   const connect = async () => {
     setError(null);

@@ -98,4 +98,10 @@ describe("agent panel character context", () => {
     expect(json).toHaveLength(1);
     expect(json[0].list_prices).toEqual([4e10, 5e10]);
   });
+
+  it("판매 수수료를 질문에 붙인다", async () => {
+    const { withScreenItems } = await import("./AgentPanel.jsx");
+    expect(withScreenItems("q", "내신부레테", [], 0.03)).toContain("[경매장 판매 수수료: 3% — fee_rate 0.03]");
+    expect(withScreenItems("q", "내신부레테", [])).not.toContain("수수료");
+  });
 });
