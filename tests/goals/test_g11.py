@@ -1,4 +1,4 @@
-"""G11 판정 — 관리자 전용 AI 에이전트. Claude 응답은 가짜 클라이언트로 고정한다(실호출은 H5)."""
+"""G11 판정 — 관리자 전용 AI 에이전트(OpenAI Responses API). 모델 응답은 가짜 클라이언트로 고정한다(실호출은 H5)."""
 import json
 import pathlib
 from types import SimpleNamespace as NS
@@ -22,12 +22,12 @@ def _record(k, v):
     RESULTS.write_text(json.dumps(_m, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
-class FakeClaude:
-    """스크립트된 응답을 순서대로 돌려준다. 호출 인자를 기록한다."""
+class FakeLLM:
+    """OpenAI client.responses.create 흉내. 스크립트된 응답을 순서대로 돌려주고 호출 인자를 기록한다."""
 
     def __init__(self, script):
         self.script, self.calls = list(script), []
-        self.beta = NS(messages=NS(create=self._create))
+        self.responses = NS(create=self._create)
 
     def _create(self, **kw):
         self.calls.append(kw)
@@ -38,16 +38,19 @@ class FakeClaude:
 
 
 def tool_turn(*calls):
-    blocks = [NS(type="tool_use", id=f"t{i}", name=n, input=a) for i, (n, a) in enumerate(calls)]
-    return NS(content=blocks, stop_reason="tool_use", usage=NS(input_tokens=1000, output_tokens=100))
+    items = [NS(type="reasoning", id="rs_1")] + [
+        NS(type="function_call", id=f"fc{i}", call_id=f"call_{i}", name=n, arguments=json.dumps(a, ensure_ascii=False))
+        for i, (n, a) in enumerate(calls)]
+    return NS(output=items, output_text="", status="completed", usage=NS(input_tokens=1000, output_tokens=100))
 
 
 def text_turn(text):
-    return NS(content=[NS(type="text", text=text)], stop_reason="end_turn", usage=NS(input_tokens=1200, output_tokens=200))
+    msg = NS(type="message", role="assistant", content=[NS(type="output_text", text=text)])
+    return NS(output=[msg], output_text=text, status="completed", usage=NS(input_tokens=1200, output_tokens=200))
 
 
 def run(script, question, toolbox):
-    fake = FakeClaude(script)
+    fake = FakeLLM(script)
     events = list(run_agent(fake, toolbox, [{"role": "user", "content": question}], max_turns=6))
     return fake, events
 
@@ -79,7 +82,8 @@ def test_criterion1_four_scenarios_call_the_right_tools():
         results = tool_results(events)
         if names == [expected] and results and "error" not in results[0] and events[-1]["type"] == "done":
             ok += 1
-        assert fake.calls[0]["model"] == "claude-opus-5-5"
+        assert fake.calls[0]["model"] == "gpt-6.1-sol"
+        assert fake.calls[0]["store"] is False and fake.calls[0]["reasoning"] == {"effort": "medium"}
         assert {t["name"] for t in fake.calls[0]["tools"]} >= {expected}
     _record("criterion1_scenarios_ok", f"{ok}/4")
     assert ok == 4
@@ -104,7 +108,7 @@ def test_criterion2_number_provenance():
 
 
 def _app(tmp_path, script, budget=1_000_000):
-    fake = FakeClaude(script)
+    fake = FakeLLM(script)
     app = create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3"),
                      agent_client=fake, admin_password_hash=make_password_hash("secret-pw", iterations=1000),
                      session_secret="s" * 32, agent_daily_token_budget=budget)

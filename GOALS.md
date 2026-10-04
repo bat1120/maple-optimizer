@@ -24,6 +24,6 @@
 | H1 | 배포 | Oracle Always Free VM 생성, 도메인, Docker Compose 배포 | VM에서 `https://<도메인>/api/health` 200 | 사람 | TODO |
 | H2 | 배포 | 넥슨 서비스 단계 키 신청 | 서비스 단계 키 발급 | 사람 | TODO |
 | H3 | 배포 | GitHub Actions Secrets·Variables 등록 (README 시크릿 표) | 배포 job 성공 | 사람 | TODO |
-| G11 | 5 | 관리자 전용 AI 에이전트 (Claude tool use, 엔진 도구 7개, SSE) | ① 고정 시나리오 4개(가짜 Claude 응답)에서 도구 호출 이름·인자·순서 4/4 일치 ② 숫자 출처 검사: 정상 시나리오 답변 숫자 100% 도구 결과에 존재, 위조 숫자 시나리오 검출 1/1 ③ 미인증 401, 로그인 후 200, 틀린 비밀번호 401 ④ 일일 토큰 예산 초과 시 Claude 호출 0회 + 한국어 안내 ⑤ 도구 예외 시 SSE `error` 이벤트 후 `done`(조용히 끊기지 않음) | 자동 | VERIFIED |
+| G11 | 5 | 관리자 전용 AI 에이전트 (OpenAI Responses API 함수 호출, 엔진 도구 7개, SSE — 2026-10-04 Claude에서 전환) | ① 고정 시나리오 4개(가짜 모델 응답)에서 도구 호출 이름·인자·순서 4/4 일치 ② 숫자 출처 검사: 정상 시나리오 답변 숫자 100% 도구 결과에 존재, 위조 숫자 시나리오 검출 1/1 ③ 미인증 401, 로그인 후 200, 틀린 비밀번호 401 ④ 일일 토큰 예산 초과 시 모델 호출 0회 + 한국어 안내 ⑤ 도구 예외 시 SSE `error` 이벤트 후 `done`(조용히 끊기지 않음) | 자동 | VERIFIED |
 | H4 | 배포 | GitHub 저장소 생성·원격 연결 | 2026-10-04 완료: github.com/bat1120/maple-optimizer (private) | 사람 | VERIFIED |
-| H5 | 5 | Claude API 키를 VM·로컬 `.env`에 넣고 에이전트 실호출 스모크 | 실제 질문 1개에 도구 호출 ≥ 1 + 숫자 검증 통과 | 사람 | TODO |
+| H5 | 5 | OpenAI API 키를 VM·로컬 `.env`에 넣고 에이전트 실호출 스모크 | 실제 질문 1개에 도구 호출 ≥ 1 + 숫자 검증 통과 | 사람 | TODO |

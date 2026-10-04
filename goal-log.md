@@ -130,3 +130,10 @@
 - BUILD: agent/tools.py(엔진 도구 7개: lookup_character·rank_settings·evaluate_listings·starforce_cost·cube_probability·craft_compare·optimize_budget, 서버 스키마로 입력 검증, 오류는 error 결과로), agent/numbers.py(억·만·% 환산 숫자 출처 검사), agent/loop.py(manual tool use 루프, claude-opus-5-5 effort medium, server-side fallback "default", refusal·max_tokens·pause_turn 처리, append-only), server/admin.py(PBKDF2 비밀번호 해시·HMAC 세션 쿠키·KST 일일 토큰 사용량), /api/admin/login·/api/agent/chat(SSE), web AgentPanel(로그인·스트림·검증 안 된 숫자 경고)
 - VERIFY exit 0 (goals/results/G11.json): ① 4/4 ② 위조 숫자 검출 ['999억'] ③ 401→로그인→200 ④ 예산 초과 후 Claude 호출 0회 ⑤ ['error', 'done']
 - validate 267 passed, vitest 24. 실제 Claude 호출 스모크는 키 필요 → H5
+
+## 2026-10-04 G11 모델 공급자 전환: Anthropic → OpenAI (사용자 결정)
+- 공식 문서 확인(developers.openai.com): GPT-6 계열 API ID `gpt-6-astra`($10/$50), `gpt-6.1-sol`($2/$10, 현행 Sol), `gpt-6-luna`($0.10/$0.50) — 모두 함수 호출·Responses API 지원, Responses가 새 프로젝트 권장
+- Ruling: 기본 모델 `gpt-6.1-sol` — 에이전트는 계산하지 않고 도구 선택·설명만 하므로 Astra 불필요, 비용·성능 균형. `OPENAI_MODEL`로 변경 가능 — 틀리면 응답 품질/비용만 달라짐
+- agent/loop.py를 Responses API manual loop로 재작성: store=False, 매 턴 output(reasoning·function_call) 재투입, function_call_output, reasoning effort medium, max_output_tokens 32000, refusal 콘텐츠·incomplete 상태 처리, 깨진 JSON 인자는 error 결과로 모델에 반환. 도구 정의는 평평한 function 형식(strict False — 선택 필드 보존)
+- 의존성 anthropic 제거, openai 3.24.0 추가. 설치된 SDK의 responses.create 시그니처·ResponseFunctionToolCall 필드와 루프 인자 일치 확인
+- 판정 테스트 가짜 클라이언트를 OpenAI 응답 형태로 바꿔 RED(3 실패) → 재작성 후 5/5. 단위 테스트(거절·incomplete·깨진 인자) 추가

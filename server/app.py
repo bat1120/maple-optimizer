@@ -1,5 +1,6 @@
 """FastAPI 앱. 넥슨 오류·엔진 오류를 구분된 HTTP 상태와 한국어 메시지로 돌려준다 (스펙 §12)."""
 import datetime as dt
+import os
 import pathlib
 import time
 from collections.abc import Callable
@@ -175,7 +176,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
             raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
         if agent_client is None:
-            raise ApiError(503, "AGENT_DISABLED", "에이전트가 설정되지 않았습니다(ANTHROPIC_API_KEY).")
+            raise ApiError(503, "AGENT_DISABLED", "에이전트가 설정되지 않았습니다(OPENAI_API_KEY).")
         from agent.loop import run_agent
         from agent.tools import ToolBox
 
@@ -204,9 +205,11 @@ def default_app() -> FastAPI:
     client = NexonClient(load_api_key(ROOT))
     admin_hash, secret = _env("ADMIN_PASSWORD_HASH"), _env("SESSION_SECRET")
     agent_client = None
-    if admin_hash and secret and (_env("ANTHROPIC_API_KEY") or _env("ANTHROPIC_AUTH_TOKEN")):
-        import anthropic
-        agent_client = anthropic.Anthropic(api_key=_env("ANTHROPIC_API_KEY") or None)
+    if admin_hash and secret and _env("OPENAI_API_KEY"):
+        import openai
+        agent_client = openai.OpenAI(api_key=_env("OPENAI_API_KEY"))
+        if _env("OPENAI_MODEL"):
+            os.environ.setdefault("OPENAI_MODEL", _env("OPENAI_MODEL"))
     return create_app(client.fetch_bundle, str(ROOT / ".cache" / "cache.sqlite3"), static_dir=str(ROOT / "web" / "dist"),
                       agent_client=agent_client, admin_password_hash=admin_hash, session_secret=secret,
                       agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000))

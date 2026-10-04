@@ -63,6 +63,12 @@ TOOL_DEFS = [
 ]
 
 
+def openai_tools() -> list[dict]:
+    """Responses API 함수 도구 형식(평평한 구조). 선택 필드가 있어 strict 정규화를 끈다."""
+    return [{"type": "function", "name": t["name"], "description": t["description"],
+             "parameters": t["input_schema"], "strict": False} for t in TOOL_DEFS]
+
+
 class ToolBox:
     def __init__(self, load: Callable[..., CharacterSnapshot]):
         self._load = load
