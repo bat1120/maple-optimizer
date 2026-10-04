@@ -55,8 +55,11 @@ _PLUS = re.compile(r"^(?P<name>.+?)\s*:?\s*(?P<sign>[+-])\s*(?P<num>\d+(?:\.\d+)
 _INCREASE = re.compile(r"^(?P<name>.+?)\s+(?P<num>\d+(?:\.\d+)?)(?P<unit>%)?\s*증가$")
 
 
+_GRADE_PREFIX = re.compile(r"^(?:에디셔널\s*)?잠재\s*능력\s*:\s*")  # 화면 판독이 붙이는 머리말 "에디셔널 잠재능력: "
+
+
 def parse_option(text: str, level: int) -> list[StatLine] | None:
-    text = text.strip()
+    text = _GRADE_PREFIX.sub("", text.strip())
     if text.startswith(_IRRELEVANT_PREFIXES):
         return []
     parts = [text] if "(" in text else [p.strip() for p in text.split(",")]

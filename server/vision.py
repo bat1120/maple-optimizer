@@ -47,6 +47,8 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
 - 목록만 보이면 이름·스타포스·가격만 채우고 나머지는 null/빈 배열.
 - 가격은 매물 목록 행(또는 구매 창)의 판매 가격이다. 툴팁에 없더라도 같은 아이템 행의 가격을 찾아 넣는다.
 - 총 수치는 툴팁 윗부분의 STR/DEX/INT/LUK/최대 HP/공격력/마력/보스/방무/올스탯% 줄(괄호 안 세부 합이 아니라 맨 앞 합계)이다.
+- 보조무기(깃펜·포스실드·소울링·오브 등)는 category를 보조무기로. 무기는 캐릭터가 휘두르는 주무기만.
+- 잠재·에디 줄은 "에디셔널 잠재능력:" 같은 머리말 없이 옵션 문장만, 숫자(예: "캐릭터 기준 10레벨 당")는 빠짐없이 옮긴다.
 - 읽을 수 없는 값은 추측하지 말고 null. 숫자 단위(억·만)는 메소 정수로 바꾼다."""
 
 
@@ -75,7 +77,16 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         raise VisionError("화면 분석 결과 형식이 올바르지 않아요.")
     for item in data["listings"]:
         item["total"] = {k: v for k, v in (item.get("total") or {}).items() if v is not None}
+        normalize_listing(item)
     return data
+
+
+def normalize_listing(item: dict) -> dict:
+    """판독 결과 보정: 무기로 읽었지만 무기 종류표에 없는 템(깃펜·포스실드 등)은 보조무기다."""
+    from engine.stats.weapons import WEAPON_CONSTANTS
+    if item.get("category") == "무기" and item.get("part") not in WEAPON_CONSTANTS:
+        item["category"] = item["part"] = "보조무기"
+    return item
 
 
 def signature(item: dict) -> str:

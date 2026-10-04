@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { postListings, postVision } from "./api.js";
+import { postListings, postVision, postVisionEvaluate } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
@@ -102,6 +102,20 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
   const seen = useRef(new Set());
   const busy = useRef(false);
 
+  // 캐릭터 조회 전에 읽은 매물: 조회되면 이미 읽은 내용으로 다시 평가한다(비전 재호출 없음)
+  useEffect(() => {
+    if (!name) return;
+    const pending = items.filter((it) => !it.evaluated && it.reason?.startsWith("캐릭터를 먼저"));
+    if (!pending.length) return;
+    postVisionEvaluate({ name, boss_defense: defense, listings: pending.map((p) => p.read) })
+      .then((r) => {
+        const bySig = new Map(r.items.map((x, i) => [pending[i].signature, { ...x, signature: pending[i].signature }]));
+        bySig.forEach((x, sig) => { if (x.evaluated) seen.current.add(sig); });
+        setItems((prev) => prev.map((p) => bySig.get(p.signature) || p));
+      })
+      .catch((e) => setError(e));
+  }, [name, defense]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!session) return undefined;
     const timer = setInterval(async () => {
@@ -144,6 +158,11 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
     setSession(null);
   };
 
+  // 툴팁 없이 목록 행만 읽은 매물은 평가할 수 없으니 한 줄로 접는다
+  const isListOnly = (it) => !it.evaluated && !Object.keys(it.read?.total || {}).length && !(it.read?.potentials || []).length;
+  const listOnly = items.filter(isListOnly);
+  const detailed = items.filter((it) => !isListOnly(it));
+
   return (
     <section className="panel">
       <h3>경매장 화면 분석 (관리자)</h3>
@@ -157,9 +176,15 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}
       {error && <p role="alert" className="error">{error.message}</p>}
-      {items.length > 0 && (
+      {listOnly.length > 0 && (
+        <details>
+          <summary>목록에서 본 매물 {listOnly.length}개 (툴팁을 띄우면 평가해요)</summary>
+          <p className="muted">{listOnly.map((it) => `${it.read?.name}${it.read?.price ? ` ${formatMeso(it.read.price)}` : ""}`).join(" · ")}</p>
+        </details>
+      )}
+      {detailed.length > 0 && (
         <ul className="plain">
-          {items.map((it) => (
+          {detailed.map((it) => (
             <Row key={it.signature} item={it} name={name} defense={defense}
                  onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))} />
           ))}

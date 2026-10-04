@@ -205,6 +205,18 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         setting: dict | None = None
         seen: list[str] = []
 
+    class VisionEvalIn(BaseModel):
+        name: str
+        boss_defense: float = 300.0
+        listings: list[dict]
+
+    @app.post("/api/vision/evaluate")
+    def vision_evaluate(body: VisionEvalIn, request: Request):
+        """이미 화면에서 읽은 매물을 다시 평가한다(캐릭터 조회 전에 읽은 줄). 비전 호출 없음."""
+        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
+            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        return {"items": service.vision_items(load(body.name, None), None, body.boss_defense, body.listings[:50], [])}
+
     @app.post("/api/vision/listings")
     def vision_listings(body: VisionIn, request: Request):
         """공유된 경매장 탭 캡처 → 매물 추출·평가. 넥슨 서버에는 요청하지 않는다(화면 픽셀만 읽는다)."""

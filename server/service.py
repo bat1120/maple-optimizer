@@ -50,14 +50,28 @@ def settings(snap: CharacterSnapshot, defense: float) -> dict:
                         for s, v in ranked]}
 
 
+def meso_text(v: float | None) -> str | None:
+    """메소 → "327억 9999만". 만 미만은 버린다(답변에 그대로 인용하도록 도구 결과에 싣는다)."""
+    if v is None:
+        return None
+    eok, man = int(v // 100_000_000), int(v % 100_000_000 // 10_000)
+    return " ".join(p for p in (f"{eok}억" if eok else "", f"{man}만" if man else "") if p) or f"{int(v)}"
+
+
+_NO_TOTAL = "총 옵션이 없어 평가하지 않았어요 — 툴팁 윗부분이 보이게 띄워 주세요"
+
+
 def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, inputs: list) -> dict:
     b = boss(defense)
     chosen = setting or rank_settings(snap, b, CATALOG)[0][0]
+    # 총 옵션 없이 평가하면 기본 스탯 0인 템처럼 계산돼 큰 음수가 나온다(2026-10-04 실사용 -19.5%) → 보류
+    held = [{"name": x.name, "price_text": meso_text(x.price), "reason": _NO_TOTAL} for x in inputs if not x.total]
     built = [Listing(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
-                     x.price, x.resale) for x in inputs]
-    ranked = rank_listings(snap, chosen, built, b, CATALOG)
-    return {"setting": asdict(chosen), "boss": asdict(b),
+                     x.price, x.resale) for x in inputs if x.total]
+    ranked = rank_listings(snap, chosen, built, b, CATALOG) if built else []
+    return {"setting": asdict(chosen), "boss": asdict(b), "held": held,
             "ranking": [{"slot": e.listing.slot, "name": e.listing.item.name, "price": e.listing.price,
+                         "price_text": meso_text(e.listing.price),
                          "resale": e.listing.resale, "delta_pct": e.delta_pct, "per_100m": e.per_100m,
                          "main_stat_gain": e.main_stat_gain, "main_stat_gain_per_100m": e.main_stat_gain_per_100m,
                          "excluded": e.listing.item.excluded} for e in ranked]}
@@ -139,7 +153,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
             out.append(row)
             continue
         if snap is None:
-            row["reason"] = "캐릭터를 먼저 조회해 주세요"
+            row["reason"] = "캐릭터를 먼저 조회해 주세요 — 조회하면 자동으로 다시 평가해요"
             out.append(row)
             continue
         if not x.get("total"):

@@ -61,7 +61,7 @@ describe("screen watch rows", () => {
   });
 
   it("평가를 보류한 이유를 보여준다", () => {
-    const pending = { signature: "s3", evaluated: false, reason: "총 옵션을 읽지 못했어요", read: { name: "모자", potentials: [] } };
+    const pending = { signature: "s3", evaluated: false, reason: "총 옵션을 읽지 못했어요", read: { name: "모자", potentials: ["LUK +13%"] } };
     render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[pending]} />);
     expect(screen.getByText(/총 옵션을 읽지 못했어요/)).toBeInTheDocument();
   });
@@ -71,5 +71,29 @@ describe("screen watch share target", () => {
   it("게임 창이나 웹 경매장 탭을 공유하라고 안내한다", () => {
     render(<ScreenWatch name="x" defense={300} capture={null} />);
     expect(screen.getByText(/게임 창/)).toHaveTextContent("창 모드");
+  });
+});
+
+describe("screen watch pending rows", () => {
+  const pen = { name: "이볼빙 녹스 마법깃펜", category: "보조무기", part: "보조무기", starforce: 0,
+                total: { INT: 10 }, potentials: ["마력 +12%"], price: 32_799_999_999 };
+  it("캐릭터 조회 전에 읽은 매물은 조회하면 다시 평가한다", async () => {
+    const pending = { signature: "p1", evaluated: false, reason: "캐릭터를 먼저 조회해 주세요", read: pen };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ items: [
+      { signature: "p1", evaluated: true, slot: "보조무기", delta_pct: -2.381, per_100m: -0.007, main_stat_gain: -900, excluded: [], read: pen }] }));
+    const { rerender } = render(<ScreenWatch name="" defense={300} capture={null} initialItems={[pending]} />);
+    expect(f).not.toHaveBeenCalled();
+    await act(async () => { rerender(<ScreenWatch name="내신부레테" defense={300} capture={null} initialItems={[pending]} />); });
+    expect(f.mock.calls[0][0]).toBe("/api/vision/evaluate");
+    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ name: "내신부레테", boss_defense: 300, listings: [pen] });
+    expect(await screen.findByText(/보조무기 자리 · 실딜 -2\.381%/)).toBeInTheDocument();
+  });
+
+  it("목록에서만 본 매물(총옵션·잠재 없음)은 한 줄로 접는다", () => {
+    const listOnly = (sig, price) => ({ signature: sig, evaluated: false, reason: "총 옵션을 읽지 못했어요",
+      read: { name: "미트라의 분노 : 마법사", total: {}, potentials: [], price } });
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[listOnly("a", 9e9), listOnly("b", 1e10)]} />);
+    expect(screen.getByText("목록에서 본 매물 2개 (툴팁을 띄우면 평가해요)")).toBeInTheDocument();
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 });
