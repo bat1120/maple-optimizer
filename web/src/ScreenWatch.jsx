@@ -159,6 +159,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
   // 0.5초마다 보고 1초 멈추면 툴팁이 뜬 것으로 본다 — 마우스로 훑어도 따라오게(2026-10-05)
   const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 800 }));
   const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 6장)
+  // 기본은 툴팁이 뜬 화면만 AI에 보낸다(실측: 툴팁 없는 화면 67%, 판독 0). 가격만 보이는 목록 화면도 읽으려면 켠다
+  const [readLists, setReadLists] = useState(false);
   const seen = useRef(new Set());
   const busy = useRef(false);
 
@@ -188,7 +190,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       busy.current = true;
       (async () => {
         try {
-          const r = await postVision({ image, name: name || null, boss_defense: defense, seen: [...seen.current] });
+          const r = await postVision({ image, name: name || null, boss_defense: defense, seen: [...seen.current],
+                                       tooltips_only: !readLists });
           setCount((c) => c + 1);
           if (r.frame_id) refreshStats();
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
@@ -217,7 +220,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       })();
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [session, name, defense, intervalMs, onFeeRate]);
+  }, [session, name, defense, intervalMs, onFeeRate, readLists]);
 
   const connect = async () => {
     setError(null);
@@ -250,6 +253,10 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       ) : (
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}
+      <label className="muted">
+        <input type="checkbox" checked={readLists} onChange={(e) => setReadLists(e.target.checked)} />
+        {" "}목록 화면도 읽기 (툴팁 없이 가격만 보이는 화면 — AI 토큰을 더 써요)
+      </label>
       {error && <p role="alert" className="error">{error.message}</p>}
       {stats && <p className="muted">학습 데이터: 프레임 {stats.frames}장 · 고친 것 {stats.corrected}건</p>}
       {name && (

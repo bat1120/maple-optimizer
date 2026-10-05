@@ -59,6 +59,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     prices = PriceStore(db_path, clock)
     from server.dataset import DatasetStore
     dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
+    from server.vision import FrameCache
+    frame_cache = FrameCache()  # 같은 툴팁·같은 화면은 AI를 다시 부르지 않는다
 
     def _require_admin(request: Request) -> None:
         if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
@@ -223,6 +225,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         boss_defense: float = 300.0
         setting: dict | None = None
         seen: list[str] = []
+        tooltips_only: bool = True  # 툴팁 없는 화면은 AI에 보내지 않는다(목록 화면도 읽으려면 false)
 
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
@@ -292,7 +295,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
         from server.vision import VisionError, analyze_frame
         try:
-            data = analyze_frame(agent_client, body.image, on_usage=usage.add)
+            data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
+                                 tooltips_only=body.tooltips_only)
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap = load(body.name, None) if body.name else None
@@ -300,7 +304,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from server.vision import normalize_fee
         for x in data["listings"]:
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
-        frame_id = dataset.save_frame(body.image, data) if dataset else None  # 내 PC 학습 데이터(켜졌을 때만)
+        # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다
+        frame_id = (dataset.save_frame(body.image, data)
+                    if dataset and not data.get("cached") and not data.get("skipped") else None)
         items = service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))
         for it in items:
             it["frame_id"] = frame_id

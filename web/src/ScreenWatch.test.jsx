@@ -229,3 +229,21 @@ describe("screen watch equipped reads", () => {
     expect(body.reads.map((r) => r.name).sort()).toEqual(["데이브레이크 펜던트", "여명의 가디언 엔젤 링"]);
   });
 });
+
+describe("screen watch tooltips only", () => {
+  it("기본은 툴팁 있는 화면만 읽고, 목록 화면도 읽기를 켜면 함께 보낸다", async () => {
+    vi.useFakeTimers();
+    let k = 0;
+    const seq = [10, 10, 60, 60, 60];
+    const capture = { start: async () => ({ hash: () => new Array(256).fill(seq[Math.min(k++, 4)]),
+                                            image: () => "data:image/jpeg;base64,A", stop: vi.fn() }) };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: false, items: [] }));
+    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 2; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(JSON.parse(f.mock.calls[0][1].body).tooltips_only).toBe(true);
+    fireEvent.click(screen.getByLabelText(/목록 화면도 읽기/));
+    for (let i = 0; i < 3; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(JSON.parse(f.mock.calls.at(-1)[1].body).tooltips_only).toBe(false);
+  });
+});

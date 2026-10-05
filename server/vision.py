@@ -198,7 +198,29 @@ def _item_names() -> tuple[str, ...]:
     return tuple(SetCatalog.load().items)
 
 
-def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None) -> dict:
+class FrameCache:
+    """같은 툴팁·같은 화면을 다시 AI에 보내지 않는다(2026-10-05 실측: 화면 46장 중 쓸모 있는 판독 15개, 하루 토큰 한도 소진).
+    - 툴팁이 있으면: 잘라낸 툴팁들의 축소 회색조 지문이 같으면 이전 판독을 그대로 쓴다.
+    - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
+
+    def __init__(self, size: int = 300):
+        self.tips: dict = {}
+        self.size = size
+        self.plain = None  # (지문, 판독)
+
+    @staticmethod
+    def fingerprint(img, n: int = 24) -> tuple:
+        import numpy as np
+        a = np.asarray(img.convert("L").resize((n, n)), dtype=np.int16)
+        return tuple((a // 24).flatten().tolist())
+
+    @staticmethod
+    def close(a: tuple, b: tuple) -> bool:
+        return sum(x != y for x, y in zip(a, b)) <= len(a) * 0.03
+
+
+def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None,
+                  cache: FrameCache | None = None, tooltips_only: bool = False) -> dict:
     """화면 공유 프레임 분석: 툴팁을 찾아 원래 크기로 잘라 함께 보내고, AI 판독값 중 코드로 확인할 수 있는 것은 바꾼다.
     - 스타포스: 툴팁 별을 코드로 센 값(로컬 실측 15/15, AI 판독 1/9 — 2026-10-04)
     - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)"""
@@ -214,7 +236,23 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         tips = [crop(img, b) for b in boxes]
         stars = [stars_near(img, b) for b in boxes]
     except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
-        tips, stars = [], []
+        img, tips, stars = None, [], []
+    if tooltips_only and img is not None and not tips:
+        # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)
+        return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
+                "tooltips_found": 0, "skipped": "툴팁 없음"}
+    import copy
+    key = None
+    if cache is not None and img is not None:
+        if tips:
+            key = tuple(sorted(cache.fingerprint(t) for t in tips))
+            hit = next((v for k, v in cache.tips.items() if len(k) == len(key) and all(map(cache.close, k, key))), None)
+            if hit is not None:
+                return {**copy.deepcopy(hit), "cached": True}
+        else:
+            fp = cache.fingerprint(img, 32)
+            if cache.plain and cache.close(cache.plain[0], fp):
+                return {**copy.deepcopy(cache.plain[1]), "cached": True}
     crop_urls = [_data_url(t) for t in tips]
     data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls)
     data["tooltips_found"] = len(tips)
@@ -231,6 +269,13 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         failed = [k for k in (x.get("breakdown") or {}) if any(c.startswith(f"{k}:") for c in checksum_failures(x))]
         if failed and isinstance(i, int) and 0 <= i < len(crop_urls):
             x["reread"] = _reread(client, crop_urls[i], x, failed, model, on_usage)
+    if cache is not None and img is not None:
+        if key is not None:
+            cache.tips[key] = copy.deepcopy(data)
+            while len(cache.tips) > cache.size:
+                cache.tips.pop(next(iter(cache.tips)))
+        else:
+            cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
     return data
 
 

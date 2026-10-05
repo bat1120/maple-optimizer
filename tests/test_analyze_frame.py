@@ -118,3 +118,34 @@ def test_no_reread_when_checksum_passes():
     fake = SeqClient(first)
     analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])))
     assert len(fake.calls) == 1
+
+
+def test_same_tooltip_again_reuses_previous_reading_without_ai():
+    """실측(2026-10-05): 화면 46장 중 쓸모 있는 판독 15개 — 같은 툴팁을 다시 보면 AI를 부르지 않고 이전 판독을 쓴다."""
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    frame = _url(_frame([((520, 120), _tooltip(lit=18))]))
+    analyze_frame(fake, frame, cache=cache)
+    again = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
+    assert len(fake.calls) == 1 and again["cached"] is True
+    other = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=7, seed=9))])), cache=cache)
+    assert len(fake.calls) == 2 and other.get("cached") is not True
+
+
+def test_unchanged_screen_without_tooltip_is_not_sent_again():
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([])
+    analyze_frame(fake, _url(_frame([])), cache=cache)
+    again = analyze_frame(fake, _url(_frame([])), cache=cache)
+    assert len(fake.calls) == 1 and again["cached"] is True
+
+
+def test_frame_without_tooltip_is_skipped_without_ai_when_tooltips_only():
+    """실측(2026-10-05 장비창 훑기): 46장 중 31장이 툴팁 없는 화면이었고 AI도 아무것도 못 읽음 — 보내지 않는다."""
+    fake = FakeClient([])
+    data = analyze_frame(fake, _url(_frame([])), tooltips_only=True)
+    assert len(fake.calls) == 0 and data["listings"] == [] and data["skipped"] == "툴팁 없음"
+    analyze_frame(fake, _url(_frame([])), tooltips_only=False)   # 목록 화면도 읽기: 그대로 보낸다
+    assert len(fake.calls) == 1

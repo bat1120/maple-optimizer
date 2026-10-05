@@ -62,7 +62,7 @@ def _client(tmp_path, dataset_dir):
 
 def test_vision_saves_frame_and_correction_reevaluates(tmp_path):
     c = _client(tmp_path, str(tmp_path / "ds"))
-    r = c.post("/api/vision/listings", json={"image": _jpeg(), "name": "내신부레테"}).json()
+    r = c.post("/api/vision/listings", json={"image": _jpeg(), "name": "내신부레테", "tooltips_only": False}).json()
     fid, item = r["frame_id"], r["items"][0]
     assert fid and item["frame_id"] == fid
     fixed = c.post("/api/vision/correct", json={"frame_id": fid, "signature": item["signature"], "name": "내신부레테",
@@ -74,7 +74,7 @@ def test_vision_saves_frame_and_correction_reevaluates(tmp_path):
 
 def test_dataset_is_off_by_default(tmp_path):
     c = _client(tmp_path, None)
-    r = c.post("/api/vision/listings", json={"image": _jpeg(), "name": "내신부레테"}).json()
+    r = c.post("/api/vision/listings", json={"image": _jpeg(), "name": "내신부레테", "tooltips_only": False}).json()
     assert r.get("frame_id") is None and not (tmp_path / "ds").exists()
     assert c.get("/api/vision/dataset").json() == {"enabled": False, "frames": 0, "corrected": 0}
     bad = c.post("/api/vision/correct", json={"frame_id": "x", "signature": "s", "name": "내신부레테", "fields": {}})
