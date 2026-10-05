@@ -4,7 +4,14 @@ param([switch]$Check, [int]$Port = 8000)
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-if (-not (Test-Path "web/dist/index.html")) {
+# 웹 소스가 빌드 결과보다 새로우면 다시 빌드한다(2026-10-05: 빌드가 없을 때만 빌드해서 고친 화면이 반영되지 않았음)
+$dist = "web/dist/index.html"
+$stale = -not (Test-Path $dist)
+if (-not $stale) {
+    $built = (Get-Item $dist).LastWriteTime
+    $stale = [bool](Get-ChildItem "web/src", "web/index.html" -Recurse -File | Where-Object { $_.LastWriteTime -gt $built } | Select-Object -First 1)
+}
+if ($stale) {
     & npm --prefix web run build | Out-Null
     if ($LASTEXITCODE -ne 0) { Write-Output "웹 빌드 실패"; exit 1 }
 }
