@@ -111,8 +111,9 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         raise VisionError("화면 분석 결과 형식이 올바르지 않아요.")
     equipped = [x for x in data["listings"] if x.get("equipped")]
     data["equipped"] = [x.get("name") for x in equipped]  # 비교 툴팁(끼고 있는 템)은 매물이 아니다
+    data["equipped_items"] = equipped                      # 판독은 따로 남긴다(학습 데이터용)
     data["listings"] = [x for x in data["listings"] if not x.get("equipped")]
-    for item in data["listings"]:
+    for item in data["listings"] + equipped:
         item["total"] = {k: v for k, v in (item.get("total") or {}).items() if v is not None}
         item["breakdown"] = {k: v for k, v in (item.get("breakdown") or {}).items() if v}
         normalize_listing(item)
@@ -209,7 +210,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     data = extract_listings(client, image_data_url, model, on_usage, crops=[_data_url(t) for t in tips])
     stars = [count_stars(t) for t in tips]
     data["tooltips_found"] = len(tips)
-    for x in data["listings"]:
+    for x in data["listings"] + data.get("equipped_items", []):
         i = x.get("tooltip")
         counted = stars[i] if isinstance(i, int) and 0 <= i < len(stars) else None
         x["starforce_ai"] = x.get("starforce")

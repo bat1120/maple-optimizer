@@ -39,6 +39,7 @@ def test_equipped_comparison_tooltip_is_not_a_listing():
     data = extract_listings(_fake(payload), "data:image/jpeg;base64,AAA")
     assert [x["name"] for x in data["listings"]] == ["어센던트 펄스 링"]
     assert data["equipped"] == ["카오스 링"]
+    assert [x["name"] for x in data["equipped_items"]] == ["카오스 링"]   # 학습 데이터용으로 판독은 따로 남긴다
 
 
 def test_checksum_flags_misread_totals():

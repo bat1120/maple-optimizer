@@ -79,6 +79,8 @@ def test_name_correction_fixes_one_or_two_letter_misreads_only():
     assert correct_name("에테르널 나이트글러브", names) == ("에테르넬 나이트글러브", True)
     assert correct_name("에테르넬 나이트글러브", names) == ("에테르넬 나이트글러브", False)
     assert correct_name("순록의 우유", names) == ("순록의 우유", False)
+    # 목록에 없는 진짜 이름을 두 글자 다른 이름으로 바꾸면 안 된다(실측: 아케인셰이드 나이트글러브 → 메이지글러브 오보정)
+    assert correct_name("에테르넬 메이지글러브", ["에테르넬 나이트글러브"]) == ("에테르넬 메이지글러브", False)
 
 
 def test_large_dark_area_is_not_a_tooltip():

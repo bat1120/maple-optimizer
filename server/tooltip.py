@@ -191,10 +191,10 @@ def _distance(a: str, b: str) -> int:
 
 
 def correct_name(name: str | None, names) -> tuple[str | None, bool]:
-    """한두 글자 틀린 이름만 알려진 이름으로 바로잡는다("에테르널"→"에테르넬"). 그 밖에는 그대로."""
+    """한 글자 틀린 이름만 알려진 이름으로 바로잡는다("에테르널"→"에테르넬"). 그 밖에는 그대로."""
     if not name or name in names:
         return name, False
     m = difflib.get_close_matches(name, list(names), n=1, cutoff=0.8)
-    if m and _distance(name, m[0]) <= 2:
+    if m and _distance(name, m[0]) <= 1:  # 두 글자 차이는 다른 템일 수 있다(나이트↔메이지, 2026-10-05 실측)
         return m[0], True
     return name, False

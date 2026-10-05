@@ -32,6 +32,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max", type=int, default=30)
     ap.add_argument("--dir", default=str(ROOT / ".data" / "web_tooltips"))
+    ap.add_argument("--redo-empty", action="store_true", help="매물·착용 판독이 하나도 없던 라벨을 다시 만든다")
     a = ap.parse_args()
     import openai
 
@@ -39,7 +40,13 @@ def main():
     from server.vision import analyze_frame
     client = openai.OpenAI(api_key=_env("OPENAI_API_KEY"))
     d = pathlib.Path(a.dir)
-    todo = [p for p in sorted(d.glob("*.png")) if not (d / f"{p.stem}.label.json").exists()][: a.max]
+    def need(p):
+        lab = d / f"{p.stem}.label.json"
+        if not lab.exists():
+            return True
+        old = json.loads(lab.read_text(encoding="utf-8"))
+        return a.redo_empty and not old["rows"] and old.get("tooltips_found")
+    todo = [p for p in sorted(d.glob("*.png")) if need(p)][: a.max]
     tokens, passed = 0, 0
     for p in todo:
         used = []
@@ -47,9 +54,10 @@ def main():
         data = analyze_frame(client, url, on_usage=used.append)
         tokens += sum(used)
         rows = []
-        for x in data["listings"]:
-            ok, why = verify(x)
-            rows.append({"verified": ok, "problems": why, "listing": x})
+        for role, xs in (("매물", data["listings"]), ("착용 비교", data.get("equipped_items", []))):
+            for x in xs:
+                ok, why = verify(x)
+                rows.append({"role": role, "verified": ok, "problems": why, "listing": x})
         passed += any(r["verified"] for r in rows)
         (d / f"{p.stem}.label.json").write_text(json.dumps({"tooltips_found": data.get("tooltips_found"), "rows": rows,
                                                             "tokens": sum(used)}, ensure_ascii=False, indent=1), encoding="utf-8")
