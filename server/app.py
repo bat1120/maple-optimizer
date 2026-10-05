@@ -356,6 +356,16 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return {"enabled": dataset is not None, **(dataset.stats() if dataset else {"frames": 0, "corrected": 0})}
 
     if static_dir and pathlib.Path(static_dir, "index.html").exists():
+        @app.middleware("http")
+        async def _no_cache_index(request: Request, call_next):
+            # 새로 빌드해도 브라우저가 옛 화면을 계속 쓰던 문제(2026-10-05): index.html은 매번 새로 확인하게 한다.
+            # /assets/는 파일 이름에 해시가 붙어 있어 캐시해도 된다.
+            response = await call_next(request)
+            path = request.url.path
+            if not path.startswith(("/api/", "/assets/")):
+                response.headers["Cache-Control"] = "no-cache"
+            return response
+
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")  # API 라우트 뒤에 둔다
     return app
 

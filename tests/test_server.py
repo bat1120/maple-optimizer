@@ -201,3 +201,14 @@ def test_recommend_route_returns_search_cards_on_boss_setting(tmp_path, clock):
     assert first["search"].startswith(f"{first['category']} · 잠재 ") and first["delta_pct"] > 0
     ring = make(tmp_path, clock).get("/api/character/내신부레테/recommend?top=20").json()["recommendations"]
     assert all(c["category"] == "반지" for c in ring if c["slot"].startswith("반지"))
+
+
+def test_index_page_is_not_cached_but_hashed_assets_are(tmp_path, clock):
+    """새로 빌드해도 브라우저가 옛 화면을 계속 쓰던 문제(2026-10-05) — index.html은 매번 새로 확인하게 한다."""
+    web = tmp_path / "dist"
+    (web / "assets").mkdir(parents=True)
+    (web / "index.html").write_text("<html>new</html>", encoding="utf-8")
+    (web / "assets" / "index-abc.js").write_text("x", encoding="utf-8")
+    c = make(tmp_path, clock, static_dir=str(web))
+    assert c.get("/").headers.get("cache-control") == "no-cache"
+    assert "no-cache" not in (c.get("/assets/index-abc.js").headers.get("cache-control") or "")
