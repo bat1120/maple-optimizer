@@ -36,3 +36,14 @@ def test_vision_row_carries_needs_check_lines():
     ok = normalize_listing({**GLOVE, "potentials": ["크리티컬 데미지 +8%", "크리티컬 데미지 +8%",
                                                      "HP 회복 아이템 및 회복 스킬 효율 +30%"]})
     assert vision_items(snapshot(bundle("레테")), None, 300.0, [ok], [])[0]["unverified_lines"] == []
+
+
+def test_rare_grade_and_low_level_options_are_official():
+    """실측(2026-10-05): 레어 등급·낮은 레벨 옵션이 표에 없어 헛경보 — 레어·레벨 10~250 구간 공식표로 넓혔다."""
+    assert unverified_lines(["최대 HP +60", "점프력 +4", "마력 +3"]) == []
+
+
+def test_lines_irrelevant_to_damage_are_not_flagged():
+    """실딜 계산에 안 쓰는 줄(공격 시 HP 회복 등)은 레벨마다 숫자가 달라 표 대조에서 뺀다."""
+    assert unverified_lines(["공격 시 3% 확률로 47의 HP 회복"]) == []
+    assert unverified_lines(["STR +1즈%"]) == ["STR +1즈%"]

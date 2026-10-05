@@ -24,6 +24,7 @@ BANDS = {"200": 200, "250": 250}  # 키는 구간의 대표 레벨(200 이하 / 
 # 옵션 문장 검사용(--all): 낮은 레벨 구간·레어 등급까지 받아 '공식표에 있는 문장' 목록을 넓힌다(2026-10-05: 점프력 +4·마력 +3 헛경보)
 ALL_BANDS = {str(v): v for v in (10, 30, 50, 70, 90, 110, 130, 150, 160, 200, 250)}
 OUT = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data" / "cube_tables.json"
+ROOT_DATA = pathlib.Path(__file__).resolve().parents[1] / ".data"
 
 _ROW = re.compile(r"<td>([^<]+)</td>\s*<td>([\d.]+)%</td>")
 
@@ -45,7 +46,7 @@ def main():
     import sys
     all_mode = "--all" in sys.argv
     bands = ALL_BANDS if all_mode else BANDS
-    out = OUT.with_name("cube_options_all.json") if all_mode else OUT
+    out = ROOT_DATA / "cube_options_all.json" if all_mode else OUT  # 전체 표는 크다(2.6MB) — .data에 두고 문장 목록만 저장소에
     jar = CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
     opener.open(f"{BASE}/addi", timeout=20).read()
@@ -72,6 +73,12 @@ def main():
                                "_bands": "200 = 장비 레벨 200 이하, 250 = 201 이상",
                                "tables": tables}, ensure_ascii=False, indent=0), encoding="utf-8")
     print("saved", out)
+    if all_mode:  # 화면 판독 검사용 옵션 문장 목록
+        opts = sorted({o for k in tables.values() for g in k.values() for p in g.values() for b in p.values() for ln in b for o in ln})
+        OUT.with_name("cube_options.json").write_text(json.dumps(
+            {"_source": f"{BASE}/GetSearchProbList", "_as_of": dt.date.today().isoformat(),
+             "_note": "잠재·에디 옵션 문장 목록(레어~레전드리, 장비 레벨 10~250 구간 합집합). 화면 판독 줄 검사용",
+             "options": opts}, ensure_ascii=False, indent=0), encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -136,16 +136,22 @@ def checksum_failures(item: dict) -> list[str]:
 @functools.lru_cache(maxsize=1)
 def _official_options() -> frozenset[str]:
     """공식 큐브 확률표(engine/data/cube_tables.json)에 있는 잠재·에디 옵션 문장 전부."""
-    path = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data" / "cube_tables.json"
-    tables = json.loads(path.read_text(encoding="utf-8"))["tables"]
-    return frozenset(o for kind in tables.values() for g in kind.values() for p in g.values()
-                     for band in p.values() for line in band for o in line)
+    data = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data"
+    tables = json.loads((data / "cube_tables.json").read_text(encoding="utf-8"))["tables"]
+    opts = {o for kind in tables.values() for g in kind.values() for p in g.values()
+            for band in p.values() for line in band for o in line}
+    wide = data / "cube_options.json"  # 레어·낮은 레벨까지 넓힌 목록(tools/fetch_cube_tables.py --all)
+    if wide.exists():
+        opts |= set(json.loads(wide.read_text(encoding="utf-8"))["options"])
+    return frozenset(opts)
 
 
 def unverified_lines(lines: list[str]) -> list[str]:
     """공식 옵션표에 없는 줄 — 화면 글자와 다르게 옮겼을 수 있다(2026-10-04 골든셋: AI가 문장을 줄여 적음)."""
+    from engine.options import parse_option
     official = _official_options()
-    return [x for x in lines if x and x.strip() not in official]
+    # 실딜 계산에 안 쓰는 줄(parse_option이 빈 결과 — '공격 시 HP 회복' 등)은 레벨마다 숫자가 달라 대조하지 않는다
+    return [x for x in lines if x and x.strip() not in official and parse_option(x.strip(), 250) != []]
 
 
 def normalize_fee(v) -> float | None:
