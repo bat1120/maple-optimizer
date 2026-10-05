@@ -204,9 +204,43 @@ class FrameCache:
     - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
 
     def __init__(self, size: int = 300):
+        import threading
         self.tips: dict = {}
         self.size = size
         self.plain = None  # (지문, 판독)
+        # 화면이 동시에 여러 장 보내므로(2026-10-06) 같은 툴팁을 읽는 중이면 기다렸다가 그 판독을 쓴다
+        self.lock = threading.Lock()
+        self.pending: list = []  # (지문, threading.Event)
+
+    def find(self, key: tuple):
+        return next((v for k, v in self.tips.items() if len(k) == len(key) and all(map(self.close, k, key))), None)
+
+    def claim(self, key: tuple, wait: float = 90.0):
+        """(이전 판독, None) 또는 (None, 내가 읽을 표시). 같은 툴팁을 다른 요청이 읽는 중이면 끝날 때까지 기다린다."""
+        import threading
+        while True:
+            with self.lock:
+                hit = self.find(key)
+                if hit is not None:
+                    return hit, None
+                ev = next((e for k, e in self.pending
+                           if len(k) == len(key) and all(map(self.close, k, key))), None)
+                if ev is None:
+                    mine = (key, threading.Event())
+                    self.pending.append(mine)
+                    return None, mine
+            if not ev.wait(wait):
+                return None, None  # 너무 오래 걸리면 기다리지 않고 직접 읽는다
+
+    def release(self, mine, data):
+        with self.lock:
+            if data is not None:
+                self.tips[mine[0]] = data
+                while len(self.tips) > self.size:
+                    self.tips.pop(next(iter(self.tips)))
+            if mine in self.pending:
+                self.pending.remove(mine)
+        mine[1].set()
 
     @staticmethod
     def fingerprint(img, n: int = 24) -> tuple:
@@ -242,17 +276,29 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
                 "tooltips_found": 0, "skipped": "툴팁 없음"}
     import copy
-    key = None
+    mine = None
     if cache is not None and img is not None:
         if tips:
-            key = tuple(sorted(cache.fingerprint(t) for t in tips))
-            hit = next((v for k, v in cache.tips.items() if len(k) == len(key) and all(map(cache.close, k, key))), None)
+            hit, mine = cache.claim(tuple(sorted(cache.fingerprint(t) for t in tips)))
             if hit is not None:
                 return {**copy.deepcopy(hit), "cached": True}
         else:
             fp = cache.fingerprint(img, 32)
             if cache.plain and cache.close(cache.plain[0], fp):
                 return {**copy.deepcopy(cache.plain[1]), "cached": True}
+    data = None
+    try:
+        data = _read_frame(client, image_data_url, model, on_usage, tips, stars)
+    finally:
+        if mine is not None:
+            cache.release(mine, copy.deepcopy(data) if data is not None else None)
+    if cache is not None and img is not None and not tips:
+        cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
+    return data
+
+
+def _read_frame(client, image_data_url, model, on_usage, tips, stars) -> dict:
+    from server.tooltip import correct_name
     crop_urls = [_data_url(t) for t in tips]
     data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls)
     data["tooltips_found"] = len(tips)
@@ -269,13 +315,6 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         failed = [k for k in (x.get("breakdown") or {}) if any(c.startswith(f"{k}:") for c in checksum_failures(x))]
         if failed and isinstance(i, int) and 0 <= i < len(crop_urls):
             x["reread"] = _reread(client, crop_urls[i], x, failed, model, on_usage)
-    if cache is not None and img is not None:
-        if key is not None:
-            cache.tips[key] = copy.deepcopy(data)
-            while len(cache.tips) > cache.size:
-                cache.tips.pop(next(iter(cache.tips)))
-        else:
-            cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
     return data
 
 

@@ -23,13 +23,22 @@ export function frameDiff(a, b) {
   return s / a.length;
 }
 
-export function createWatcher({ threshold = 8, stableFrames = 2, cooldownMs = 3000 } = {}) {
+// 크게(cell 이상) 바뀐 칸의 비율. 툴팁끼리 바뀔 때는 화면 일부만 바뀌어 평균 차이로는 못 잡는다
+// (2026-10-06 실측, 32×32: 툴팁 전환 최소 9.3%, 커서 이동 1% 미만, JPEG 잡음 0%)
+export function changedFraction(a, b, cell = 12) {
+  let n = 0;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > cell) n++;
+  return n / a.length;
+}
+
+export function createWatcher({ threshold = 8, stableFrames = 2, cooldownMs = 3000, minChanged = null } = {}) {
   let last = null, stable = 0, sent = null, sentAt = -Infinity;
   return {
     step(hash, now) {
-      stable = last && frameDiff(hash, last) < threshold ? stable + 1 : 1;
+      const same = (x, y) => frameDiff(x, y) < threshold && (minChanged == null || changedFraction(x, y) < minChanged);
+      stable = last && same(hash, last) ? stable + 1 : 1;
       last = hash;
-      const changed = !sent || frameDiff(hash, sent) >= threshold;
+      const changed = !sent || !same(hash, sent);
       if (changed && stable >= stableFrames && now - sentAt >= cooldownMs) {
         sent = hash;
         sentAt = now;

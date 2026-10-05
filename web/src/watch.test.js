@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createWatcher, frameDiff, frameHash } from "./watch.js";
+import { changedFraction, createWatcher, frameDiff, frameHash } from "./watch.js";
 
 // 16×16 회색조 프레임 흉내: 값 하나로 채운 배열
 const frame = (v, n = 256) => new Array(n).fill(v);
@@ -34,5 +34,27 @@ describe("screen watch", () => {
     expect(hash).toHaveLength(256);
     expect(hash.every((v) => v === 255)).toBe(true);
     expect(frameDiff(frame(10), frame(14))).toBe(4);
+  });
+  it("툴팁 부분만 바뀌어도(평균 차이는 작아도) 바뀐 화면으로 본다 — 2026-10-06 실측: 망토→신발 평균 3.8", () => {
+    const w = createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 0, minChanged: 0.03 });
+    const a = frame(100, 1024);
+    const b = a.map((v, i) => (i < 60 ? 160 : v));               // 1024칸 중 60칸(5.9%)만 크게 바뀜, 평균 차이 3.5
+    expect(frameDiff(a, b)).toBeLessThan(6);
+    w.step(a, 0); expect(w.step(a, 500)).toBe(true);
+    w.step(b, 1000);
+    expect(w.step(b, 1500)).toBe(true);
+  });
+
+  it("마우스 커서만 움직인 정도(몇 칸)는 바뀐 화면이 아니다", () => {
+    const w = createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 0, minChanged: 0.03 });
+    const a = frame(100, 1024);
+    const b = a.map((v, i) => (i < 6 ? 250 : v));                // 6칸(0.6%)
+    w.step(a, 0); w.step(a, 500);
+    w.step(b, 1000);
+    expect(w.step(b, 1500)).toBe(false);
+  });
+
+  it("changedFraction은 크게 바뀐 칸의 비율", () => {
+    expect(changedFraction(frame(100, 100), frame(100, 100).map((v, i) => (i < 5 ? 200 : v)))).toBe(0.05);
   });
 });

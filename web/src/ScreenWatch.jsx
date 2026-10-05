@@ -165,13 +165,14 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       setError(e);
     }
   };
-  // 0.5초마다 보고 1초 멈추면 툴팁이 뜬 것으로 본다 — 마우스로 훑어도 따라오게(2026-10-05)
-  const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 800 }));
-  const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 6장)
+  // 0.5초마다 보고 0.5초 멈추면 툴팁이 뜬 것으로 본다. 툴팁끼리 바뀌면 화면 일부만 바뀌므로 바뀐 칸 비율(3%)도 본다
+  // (2026-10-06: 1~2초씩 훑은 착용 템 중 일부만 읽힘 — 평균 차이로는 툴팁 전환을 놓치고, 한 장씩 보내 줄이 넘쳤다)
+  const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 300, minChanged: 0.03 }));
+  const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 40장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
   // 기본은 툴팁이 뜬 화면만 AI에 보낸다(실측: 툴팁 없는 화면 67%, 판독 0). 가격만 보이는 목록 화면도 읽으려면 켠다
   const [readLists, setReadLists] = useState(false);
   const seen = useRef(new Set());
-  const busy = useRef(false);
+  const inflight = useRef(0); // AI 판독은 한 장 7~10초 — 동시에 3장까지 보낸다
 
   // 캐릭터 조회 전에 읽은 매물: 조회되면 이미 읽은 내용으로 다시 평가한다(비전 재호출 없음)
   useEffect(() => {
@@ -192,11 +193,12 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
     const timer = setInterval(() => {
       if (watcher.current.step(session.hash(), Date.now())) {
         queue.current.push(session.image());
-        if (queue.current.length > 6) queue.current.shift();
+        if (queue.current.length > 40) queue.current.shift();
       }
-      if (busy.current || !queue.current.length) return;
-      const image = queue.current.shift();
-      busy.current = true;
+      while (inflight.current < 3 && queue.current.length) send(queue.current.shift());
+    }, intervalMs);
+    const send = (image) => {
+      inflight.current += 1;
       (async () => {
         try {
           const r = await postVision({ image, name: name || null, boss_defense: defense, seen: [...seen.current],
@@ -224,10 +226,10 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
         } catch (e) {
           setError(e);
         } finally {
-          busy.current = false;
+          inflight.current -= 1;
         }
       })();
-    }, intervalMs);
+    };
     return () => clearInterval(timer);
   }, [session, name, defense, intervalMs, onFeeRate, readLists]);
 

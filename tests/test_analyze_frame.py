@@ -149,3 +149,25 @@ def test_frame_without_tooltip_is_skipped_without_ai_when_tooltips_only():
     assert len(fake.calls) == 0 and data["listings"] == [] and data["skipped"] == "툴팁 없음"
     analyze_frame(fake, _url(_frame([])), tooltips_only=False)   # 목록 화면도 읽기: 그대로 보낸다
     assert len(fake.calls) == 1
+
+
+def test_same_tooltip_arriving_concurrently_calls_ai_once():
+    """화면이 동시에 3장까지 보내면(2026-10-06) 같은 툴팁이 읽는 중에 또 올 수 있다 — 먼저 온 판독을 기다렸다가 재사용한다."""
+    import threading
+    import time
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    slow = fake._create
+    fake.responses = NS(create=lambda **kw: (time.sleep(0.3), slow(**kw))[1])
+    frames = [_url(_frame([((520, 120), _tooltip(lit=18))])) for _ in range(3)]
+    out = [None] * 3
+    ts = [threading.Thread(target=lambda i=i: out.__setitem__(i, analyze_frame(fake, frames[i], cache=cache)))
+          for i in range(3)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert len(fake.calls) == 1
+    assert sum(bool(o.get("cached")) for o in out) == 2
+    assert all(o["listings"][0]["name"] == "에테르넬 나이트글러브" for o in out)

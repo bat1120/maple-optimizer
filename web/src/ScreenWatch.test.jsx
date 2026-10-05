@@ -155,29 +155,48 @@ describe("screen watch corrections", () => {
 });
 
 describe("screen watch queue", () => {
-  it("읽는 중에 바뀐 화면은 버리지 않고 줄 세웠다가 차례로 보낸다", async () => {
+  it("읽는 중에도 다음 화면을 동시에 보낸다(최대 3개) — AI 한 장 7~10초라 한 장씩이면 훑는 속도를 못 따라간다", async () => {
     vi.useFakeTimers();
-    const seq = [10, 10, 60, 60, 120, 120, 120, 120, 120, 120];
+    const seq = [10, 10, 60, 60, 120, 120, 180, 180, 240, 240, 240, 240];
     let k = 0;
     const capture = { start: async () => ({
       hash: () => new Array(256).fill(seq[Math.min(k++, seq.length - 1)]),
       image: () => `data:image/jpeg;base64,${k}`,
       stop: vi.fn(),
     }) };
-    let release;
-    const first = new Promise((r) => { release = r; });
-    const f = vi.spyOn(globalThis, "fetch")
-      .mockImplementationOnce(() => first)
-      .mockResolvedValue(ok({ tooltip_visible: true, items: [] }));
+    const waiting = [];
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
     render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
-    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
-    expect(f).toHaveBeenCalledTimes(1);                       // 첫 판독이 아직 안 끝남
-    await act(async () => { release(ok({ tooltip_visible: true, items: [] })); });
-    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
-    expect(f).toHaveBeenCalledTimes(3);                       // 줄 서 있던 두 화면을 차례로
+    for (let i = 0; i < 12; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(f).toHaveBeenCalledTimes(3);                       // 셋은 동시에, 나머지 둘은 줄에서 대기
+    await act(async () => { waiting.splice(0).forEach((r) => r(ok({ tooltip_visible: true, items: [] }))); });
+    for (let i = 0; i < 4; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(f).toHaveBeenCalledTimes(5);
     const sent = f.mock.calls.map((c) => JSON.parse(c[1].body).image);
-    expect(new Set(sent).size).toBe(3);
+    expect(new Set(sent).size).toBe(5);
+  });
+
+  it("1초씩 10개를 훑어도 하나도 버리지 않는다(줄 40장)", async () => {
+    vi.useFakeTimers();
+    const seq = [];
+    for (let v = 0; v < 10; v++) seq.push(20 * v + 10, 20 * v + 10);
+    let k = 0;
+    const capture = { start: async () => ({
+      hash: () => new Array(256).fill(seq[Math.min(k++, seq.length - 1)]),
+      image: () => `data:image/jpeg;base64,${Math.min(k, seq.length)}`,
+      stop: vi.fn(),
+    }) };
+    const waiting = [];
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
+    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 22; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    for (let round = 0; round < 6; round++) {
+      await act(async () => { waiting.splice(0).forEach((r) => r(ok({ tooltip_visible: true, items: [] }))); });
+      await act(async () => { vi.advanceTimersByTime(500); });
+    }
+    expect(f).toHaveBeenCalledTimes(10);
   });
 });
 
