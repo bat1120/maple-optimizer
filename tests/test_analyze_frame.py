@@ -72,3 +72,49 @@ def test_name_misread_is_corrected_with_set_item_names():
     data = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])))
     x = data["listings"][0]
     assert (x["name"], x["name_read"]) == ("에테르넬 나이트글러브", "에테르널 나이트글러브")
+
+
+class SeqClient:
+    """첫 호출은 매물 판독, 다음 호출은 줄 다시 읽기 응답."""
+
+    def __init__(self, *outputs):
+        self.calls, self.outputs = [], list(outputs)
+        self.responses = NS(create=self._create)
+
+    def _create(self, **kw):
+        self.calls.append(kw)
+        return NS(output=[], output_text=json.dumps(self.outputs.pop(0), ensure_ascii=False), status="completed",
+                  usage=NS(input_tokens=1, output_tokens=1))
+
+
+def _with_breakdown(parts):
+    x = _listing("고통의 근원", 18, 0)
+    x["total"] = {k: None for k in KEYS} | {"STR": 216}
+    x["breakdown"] = {k: None for k in KEYS} | {"STR": parts}
+    return x
+
+
+def test_checksum_failure_triggers_focused_reread_that_fixes_small_parts():
+    """실측: AI가 괄호 안 작은 값(+1)을 빠뜨려 검산 헛경보 — 그 줄만 다시 읽혀 맞으면 받아들인다."""
+    first = {"tooltip_visible": True, "fee_rate": None, "listings": [_with_breakdown([10, 131, 74])]}
+    again = {"lines": [{"key": "STR", "total": 216, "parts": [10, 131, 1, 74]}]}
+    fake = SeqClient(first, again)
+    data = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])))
+    x = data["listings"][0]
+    assert x["breakdown"]["STR"] == [10, 131, 1, 74] and x["reread"] == ["STR"]
+    assert len(fake.calls) == 2 and len(_images(fake.calls[1])) == 1   # 다시 읽기는 그 툴팁 한 장만
+
+
+def test_reread_that_still_disagrees_keeps_failure():
+    first = {"tooltip_visible": True, "fee_rate": None, "listings": [_with_breakdown([10, 131, 74])]}
+    again = {"lines": [{"key": "STR", "total": 216, "parts": [10, 131, 70]}]}
+    data = analyze_frame(SeqClient(first, again), _url(_frame([((520, 120), _tooltip(lit=18))])))
+    from server.vision import checksum_failures
+    assert checksum_failures(data["listings"][0]) and data["listings"][0].get("reread") == []
+
+
+def test_no_reread_when_checksum_passes():
+    first = {"tooltip_visible": True, "fee_rate": None, "listings": [_with_breakdown([10, 131, 1, 74])]}
+    fake = SeqClient(first)
+    analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])))
+    assert len(fake.calls) == 1

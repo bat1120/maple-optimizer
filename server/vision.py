@@ -207,7 +207,8 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         tips = [crop(img, b) for b in find_tooltips(img)]
     except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         tips = []
-    data = extract_listings(client, image_data_url, model, on_usage, crops=[_data_url(t) for t in tips])
+    crop_urls = [_data_url(t) for t in tips]
+    data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls)
     stars = [count_stars(t) for t in tips]
     data["tooltips_found"] = len(tips)
     for x in data["listings"] + data.get("equipped_items", []):
@@ -220,4 +221,45 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             x["starforce_source"] = "화면 판독(확인 필요)"
         x["name_read"] = x.get("name")
         x["name"], _ = correct_name(x.get("name"), _item_names())
+        failed = [k for k in (x.get("breakdown") or {}) if any(c.startswith(f"{k}:") for c in checksum_failures(x))]
+        if failed and isinstance(i, int) and 0 <= i < len(crop_urls):
+            x["reread"] = _reread(client, crop_urls[i], x, failed, model, on_usage)
     return data
+
+
+_REREAD_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["lines"],
+    "properties": {"lines": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False, "required": ["key", "total", "parts"],
+        "properties": {"key": {"type": "string", "enum": list(_TOTAL_KEYS)}, "total": {"type": "number"},
+                       "parts": {"type": "array", "items": {"type": "number"}}}}}},
+}
+_LABEL = {"STR": "STR", "DEX": "DEX", "INT": "INT", "LUK": "LUK", "HP": "최대 HP", "ATK": "공격력", "MATK": "마력",
+          "ALL%": "올스탯", "BOSS": "보스 몬스터 데미지", "IED": "몬스터 방어율 무시", "DMG": "데미지"}
+
+
+def _reread(client, crop_url: str, x: dict, keys: list[str], model, on_usage) -> list[str]:
+    """괄호 합이 안 맞는 줄만 그 툴팁에서 다시 읽는다(2026-10-05 실측: 검산 실패 대부분이 괄호 안 작은 값 누락).
+    다시 읽은 괄호 값의 합이 총 수치와 맞을 때만 받아들인다. 받아들인 줄 이름 목록을 돌려준다."""
+    names = ", ".join(_LABEL[k] for k in keys)
+    resp = client.responses.create(
+        model=model or os.environ.get("OPENAI_VISION_MODEL") or os.environ.get("OPENAI_MODEL") or "gpt-6-luna",
+        input=[{"role": "user", "content": [
+            {"type": "input_text", "text": f"이 툴팁에서 다음 줄만 옮겨라: {names}. 맨 앞 합계(total)와 괄호 안 값(parts)을 "
+                                           "작은 값(+1, +3)까지 하나도 빠짐없이 화면 글자 그대로. key는 STR/DEX/INT/LUK/HP/ATK/MATK/ALL%/BOSS/IED/DMG."},
+            {"type": "input_image", "image_url": crop_url, "detail": "high"}]}],
+        text={"format": {"type": "json_schema", "name": "lines", "schema": _REREAD_SCHEMA, "strict": True}},
+        reasoning={"effort": "low"}, max_output_tokens=4000, store=False)
+    if on_usage and getattr(resp, "usage", None):
+        on_usage(int(resp.usage.input_tokens) + int(resp.usage.output_tokens))
+    try:
+        lines = json.loads(resp.output_text or "")["lines"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return []
+    fixed = []
+    for ln in lines:
+        k, parts = ln.get("key"), ln.get("parts") or []
+        if k in keys and parts and abs(sum(parts) - (x.get("total") or {}).get(k, float("nan"))) < 1e-6                 and abs(ln.get("total", -1) - x["total"][k]) < 1e-6:
+            x["breakdown"][k] = parts
+            fixed.append(k)
+    return fixed

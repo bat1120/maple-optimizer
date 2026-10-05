@@ -17,10 +17,12 @@ from http.cookiejar import CookieJar
 
 BASE = "https://maplestory.nexon.com/Guide/OtherProbability/cube"
 CUBES = {"잠재": "5062010", "에디": "5062500"}
-GRADES = {"에픽": 2, "유니크": 3, "레전드리": 4}
+GRADES = {"레어": 1, "에픽": 2, "유니크": 3, "레전드리": 4}
 PARTS = {"무기": 1, "엠블렘": 2, "보조무기": 3, "모자": 6, "상의": 7, "하의": 9, "신발": 10, "장갑": 11, "망토": 12,
          "벨트": 13, "어깨장식": 14, "얼굴장식": 15, "눈장식": 16, "귀고리": 17, "반지": 18, "펜던트": 19}
-BANDS = {"200": 200, "250": 250}  # 키는 구간의 대표 레벨(200 이하 / 201 이상)
+BANDS = {"200": 200, "250": 250}  # 키는 구간의 대표 레벨(200 이하 / 201 이상) — 단계 계산용
+# 옵션 문장 검사용(--all): 낮은 레벨 구간·레어 등급까지 받아 '공식표에 있는 문장' 목록을 넓힌다(2026-10-05: 점프력 +4·마력 +3 헛경보)
+ALL_BANDS = {str(v): v for v in (10, 30, 50, 70, 90, 110, 130, 150, 160, 200, 250)}
 OUT = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data" / "cube_tables.json"
 
 _ROW = re.compile(r"<td>([^<]+)</td>\s*<td>([\d.]+)%</td>")
@@ -40,6 +42,10 @@ def parse(page: str) -> list[dict[str, float]] | None:
 
 
 def main():
+    import sys
+    all_mode = "--all" in sys.argv
+    bands = ALL_BANDS if all_mode else BANDS
+    out = OUT.with_name("cube_options_all.json") if all_mode else OUT
     jar = CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
     opener.open(f"{BASE}/addi", timeout=20).read()
@@ -47,7 +53,7 @@ def main():
     for kind, cube in CUBES.items():
         for grade, g in GRADES.items():
             for part, code in PARTS.items():
-                for band, lv in BANDS.items():
+                for band, lv in bands.items():
                     body = urllib.parse.urlencode({"nCubeItemID": cube, "nGrade": g, "nPartsType": code, "nReqLev": lv}).encode()
                     req = urllib.request.Request(f"{BASE}/GetSearchProbList", data=body, headers={
                         "X-Requested-With": "XMLHttpRequest", "Referer": f"{BASE}/addi",
@@ -61,11 +67,11 @@ def main():
                         raise ValueError(f"{kind} {grade} {part} {band}: {e}") from None
                     time.sleep(0.4)
             print(kind, grade, "ok")
-    OUT.write_text(json.dumps({"_source": f"{BASE}/GetSearchProbList (블랙 5062010, 에디셔널 5062500)",
+    out.write_text(json.dumps({"_source": f"{BASE}/GetSearchProbList (블랙 5062010, 에디셔널 5062500)",
                                "_as_of": dt.date.today().isoformat(),
                                "_bands": "200 = 장비 레벨 200 이하, 250 = 201 이상",
                                "tables": tables}, ensure_ascii=False, indent=0), encoding="utf-8")
-    print("saved", OUT)
+    print("saved", out)
 
 
 if __name__ == "__main__":
