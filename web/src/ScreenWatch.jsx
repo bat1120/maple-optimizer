@@ -242,10 +242,11 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       )}
       {error && <p role="alert" className="error">{error.message}</p>}
       {stats && <p className="muted">학습 데이터: 프레임 {stats.frames}장 · 고친 것 {stats.corrected}건</p>}
-      {name && items.length > 0 && (
+      {name && (
         <p className="muted">
-          장비창을 열고 착용 템 위로 마우스를 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.{" "}
-          <button type="button" onClick={scoreReads}>장비창 채점</button>
+          장비창 채점: 게임에서 장비창을 열고 착용 템 위로 마우스를 한 칸에 1초씩 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.
+          {items.length === 0 ? " (아직 읽은 툴팁이 없어요 — 먼저 화면을 연결해 훑어 주세요)" : ` (읽은 툴팁 ${items.length}개)`}{" "}
+          <button type="button" onClick={scoreReads} disabled={items.length === 0}>장비창 채점</button>
         </p>
       )}
       {score && (

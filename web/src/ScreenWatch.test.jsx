@@ -196,3 +196,12 @@ describe("screen watch equipment scoring", () => {
     expect(screen.getByText(/스타포스: 정답 22 \/ 읽음 21/)).toBeInTheDocument();
   });
 });
+
+describe("screen watch scoring button visibility", () => {
+  it("캐릭터를 조회했으면 읽은 툴팁이 없어도 채점 버튼이 보이고, 그때는 꺼져 있다", () => {
+    render(<ScreenWatch name="내신부레테" defense={300} capture={null} />);
+    const b = screen.getByRole("button", { name: "장비창 채점" });
+    expect(b).toBeDisabled();
+    expect(screen.getByText(/아직 읽은 툴팁이 없어요/)).toBeInTheDocument();
+  });
+});
