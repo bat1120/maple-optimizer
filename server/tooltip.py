@@ -153,9 +153,17 @@ def crop(img: Image.Image, box: tuple[int, int, int, int], margin: int = 4) -> I
     return img.crop((max(0, x0 - margin), max(0, y0 - margin), min(img.width, x1 + margin), min(img.height, y1 + margin)))
 
 
-def count_stars(tip: Image.Image) -> int | None:
+def stars_near(img: Image.Image, box: tuple[int, int, int, int]) -> int | None:
+    """툴팁 상자 위쪽 띠까지 포함해 별을 센다 — 첫 별 줄이 어두운 패널 위(배경)에 걸치면 상자가 그 아래에서 시작한다
+    (2026-10-05 자동 프레임 40장 실측: 22성을 7성으로 셈)."""
+    x0, y0, x1, _ = box
+    region = img.crop((max(0, x0 - 4), max(0, y0 - 40), min(img.width, x1 + 4), min(img.height, y0 + STAR_BAND)))
+    return count_stars(region, band=region.height)
+
+
+def count_stars(tip: Image.Image, band: int = STAR_BAND) -> int | None:
     """툴팁 맨 위 별 줄에서 노란(채워진) 별 개수. 노란 별이 하나도 없으면 None(0성인지 잘린 건지 모른다)."""
-    a = np.asarray(tip.convert("RGB")).astype(np.int16)[:STAR_BAND]
+    a = np.asarray(tip.convert("RGB")).astype(np.int16)[:band]
     # 채워진 별: 노랑~주황(빨강 높고 파랑 낮음). 화면에 따라 주황으로 보인다(2026-10-05 실측: 19성을 못 셈)
     yellow = (a[..., 0] > 200) & (a[..., 1] > 120) & (a[..., 2] < 110) & (a[..., 0] - a[..., 2] > 120)
     if yellow.sum() < 8:
@@ -201,21 +209,26 @@ def _count_star_rows(blobs) -> int | None:
             rows.append(cur)
             cur = [b]
     rows.append(cur)
-    total, step = 0, None
-    for i, row in enumerate(rows):
+    total, step, started = 0, None, False
+    for row in rows:
         row = sorted(row, key=lambda b: b[1])
         sizes = [b[0] for b in row]
-        if max(sizes) > 1.7 * min(sizes):
-            break
         xs = [b[1] for b in row]
         diffs = np.diff(xs)
-        if len(diffs):
+        regular = max(sizes) <= 1.7 * min(sizes)
+        if regular and len(diffs):
             base = float(diffs.min()) if step is None else step
-            if base <= 0 or any(not (0.7 * base <= d <= 2.3 * base) for d in diffs):
+            regular = base > 0 and all(0.7 * base <= d <= 2.3 * base for d in diffs)
+        elif regular:
+            # 덩어리 하나뿐인 줄: 이미 센 별 줄 바로 다음(16성 등)일 때만 별로 본다
+            regular = started and step is not None and abs(sizes[0] - ref_size) <= 0.6 * ref_size
+        if not regular:
+            if started:
                 break
-            step = step or base
-        elif i == 0:
-            break  # 맨 윗줄에 덩어리 하나뿐이면 별 줄인지 알 수 없다
+            continue  # 별 줄 위쪽 배경(노을 등)의 들쭉날쭉한 덩어리는 건너뛴다(2026-10-05 실측)
+        if not started:
+            started, ref_size = True, float(np.median(sizes))
+            step = step or (float(diffs.min()) if len(diffs) else None)
         total += len(row)
         if len(row) < 15:  # 덜 찬 줄 다음에는 채워진 별이 없다
             break

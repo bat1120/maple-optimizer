@@ -124,3 +124,27 @@ def test_orange_text_below_name_is_not_stars():
     for i, word in enumerate(["TRADE LOCKED (5/5)", "MEMENTO 2026.10.31"]):
         d.text((60, 6 + i * 16), word, fill=(255, 150, 40))
     assert count_stars(tip) is None
+
+
+def test_star_row_above_detected_box_is_still_counted():
+    """실측(자동 프레임 40장): 툴팁 상자가 첫 별 줄 아래에서 시작해 15개가 빠짐(22→7) — 상자 위쪽까지 보고 센다."""
+    from server.tooltip import stars_near
+    tip = _tooltip(lit=18, sparkles=False)
+    fr = _frame([((520, 160), tip.crop((0, 20, tip.width, tip.height)))])   # 패널은 둘째 별 줄부터
+    d = ImageDraw.Draw(fr)
+    for col in range(15):                                                   # 첫 별 줄(15개)은 패널 위 배경에 직접
+        _star(d, 520 + 40 + col * 15 + (col // 5) * 8, 152, 6, (255, 214, 0))
+    box = find_tooltips(fr)[0]
+    assert box[1] >= 155                       # 상자는 첫 별 줄을 놓친다
+    assert stars_near(fr, box) == 18
+
+
+def test_yellowish_background_above_tooltip_does_not_hide_stars():
+    """실측: 툴팁 위 배경(노을 등)의 노란 덩어리 때문에 별 세기가 멈춰 0성이 됨 — 위쪽 들쭉날쭉한 줄은 건너뛴다."""
+    from server.tooltip import stars_near
+    tip = _tooltip(lit=18, sparkles=False)
+    fr = _frame([((520, 160), tip)])
+    d = ImageDraw.Draw(fr)
+    for x, w in ((500, 30), (560, 9), (600, 50), (700, 14)):     # 툴팁 위 배경의 노란·주황 덩어리(크기·간격 제각각)
+        d.rectangle([x, 126, x + w, 126 + max(8, w // 2)], fill=(250, 180, 40))
+    assert stars_near(fr, find_tooltips(fr)[0]) == 18

@@ -207,15 +207,16 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
 
     from PIL import Image
 
-    from server.tooltip import correct_name, count_stars, crop, find_tooltips
+    from server.tooltip import correct_name, crop, find_tooltips, stars_near
     try:
         img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1]))).convert("RGB")
-        tips = [crop(img, b) for b in find_tooltips(img)]
+        boxes = find_tooltips(img)
+        tips = [crop(img, b) for b in boxes]
+        stars = [stars_near(img, b) for b in boxes]
     except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
-        tips = []
+        tips, stars = [], []
     crop_urls = [_data_url(t) for t in tips]
     data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls)
-    stars = [count_stars(t) for t in tips]
     data["tooltips_found"] = len(tips)
     for x in data["listings"] + data.get("equipped_items", []):
         i = x.get("tooltip")
