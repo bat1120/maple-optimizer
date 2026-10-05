@@ -153,3 +153,46 @@ describe("screen watch corrections", () => {
     expect(screen.queryByRole("button", { name: "고치기" })).toBeNull();
   });
 });
+
+describe("screen watch queue", () => {
+  it("읽는 중에 바뀐 화면은 버리지 않고 줄 세웠다가 차례로 보낸다", async () => {
+    vi.useFakeTimers();
+    const seq = [10, 10, 60, 60, 120, 120, 120, 120, 120, 120];
+    let k = 0;
+    const capture = { start: async () => ({
+      hash: () => new Array(256).fill(seq[Math.min(k++, seq.length - 1)]),
+      image: () => `data:image/jpeg;base64,${k}`,
+      stop: vi.fn(),
+    }) };
+    let release;
+    const first = new Promise((r) => { release = r; });
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue(ok({ tooltip_visible: true, items: [] }));
+    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(f).toHaveBeenCalledTimes(1);                       // 첫 판독이 아직 안 끝남
+    await act(async () => { release(ok({ tooltip_visible: true, items: [] })); });
+    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(f).toHaveBeenCalledTimes(3);                       // 줄 서 있던 두 화면을 차례로
+    const sent = f.mock.calls.map((c) => JSON.parse(c[1].body).image);
+    expect(new Set(sent).size).toBe(3);
+  });
+});
+
+describe("screen watch equipment scoring", () => {
+  it("읽은 툴팁을 넥슨 API 착용 템과 채점해 정확도와 틀린 항목을 보여준다", async () => {
+    const row = { signature: "e1", evaluated: false, read: { name: "에테르넬 메이지글러브", starforce: 22, total: { INT: 100 },
+                  potential_lines: ["크리티컬 데미지 +8%"], additional: [], potentials: ["크리티컬 데미지 +8%"] } };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({
+      matched: 1, unmatched: [], fields_ok: 12, fields: 13, accuracy: 0.9231,
+      items: [{ name: "에테르넬 메이지글러브", ok: 12, n: 13, miss: ["스타포스: 정답 22 / 읽음 21"] }] }));
+    render(<ScreenWatch name="내신부레테" defense={300} capture={null} initialItems={[row]} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "장비창 채점" })); });
+    expect(f.mock.calls[0][0]).toBe("/api/vision/score");
+    expect(JSON.parse(f.mock.calls[0][1].body)).toMatchObject({ name: "내신부레테", reads: [{ name: "에테르넬 메이지글러브", starforce: 22 }] });
+    expect(screen.getByText(/착용 템 1개 채점 · 항목 정확도 92.3% \(12\/13\)/)).toBeInTheDocument();
+    expect(screen.getByText(/스타포스: 정답 22 \/ 읽음 21/)).toBeInTheDocument();
+  });
+});

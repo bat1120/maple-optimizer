@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate } from "./api.js";
+import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
@@ -16,13 +16,13 @@ export const browserCapture =
           video.muted = true;
           await video.play();
           const small = document.createElement("canvas");
-          small.width = small.height = 64;
+          small.width = small.height = 128;
           const big = document.createElement("canvas");
           return {
             hash() {
               const c = small.getContext("2d");
-              c.drawImage(video, 0, 0, 64, 64);
-              return frameHash(c.getImageData(0, 0, 64, 64));
+              c.drawImage(video, 0, 0, 128, 128);
+              return frameHash(c.getImageData(0, 0, 128, 128), 32); // 32×32: 비슷한 툴팁끼리도 바뀐 걸 알아챈다
             },
             image() {
               // 1920(FHD)까지는 줄이지 않는다 — 줄이면 툴팁 숫자를 잘못 읽는다(2026-10-04 측정: 255→2550)
@@ -136,7 +136,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
   );
 }
 
-export default function ScreenWatch({ name, defense, capture, intervalMs = 1500, initialItems = [], onItems, onFeeRate }) {
+export default function ScreenWatch({ name, defense, capture, intervalMs = 500, initialItems = [], onItems, onFeeRate }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
@@ -145,7 +145,17 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
   const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
   const refreshStats = () => getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {});
   const [error, setError] = useState(null);
-  const watcher = useRef(createWatcher());
+  const [score, setScore] = useState(null); // 장비창 훑기 채점 결과(정답 = 넥슨 API 착용 템)
+  const scoreReads = async () => {
+    try {
+      setScore(await postVisionScore({ name, reads: items.map((i) => i.read || {}) }));
+    } catch (e) {
+      setError(e);
+    }
+  };
+  // 0.5초마다 보고 1초 멈추면 툴팁이 뜬 것으로 본다 — 마우스로 훑어도 따라오게(2026-10-05)
+  const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 800 }));
+  const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 6장)
   const seen = useRef(new Set());
   const busy = useRef(false);
 
@@ -165,30 +175,36 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
 
   useEffect(() => {
     if (!session) return undefined;
-    const timer = setInterval(async () => {
-      if (busy.current) return;
-      if (!watcher.current.step(session.hash(), Date.now())) return;
-      busy.current = true;
-      try {
-        const r = await postVision({ image: session.image(), name: name || null, boss_defense: defense, seen: [...seen.current] });
-        setCount((c) => c + 1);
-        if (r.frame_id) refreshStats();
-        if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
-        const fresh = r.items.filter((it) => !seen.current.has(it.signature));
-        fresh.filter((it) => it.evaluated).forEach((it) => seen.current.add(it.signature));
-        if (fresh.length) {
-          setItems((prev) => {
-            const known = new Set(prev.map((p) => p.signature));
-            return [...prev.filter((p) => !fresh.some((f) => f.signature === p.signature && f.evaluated)),
-                    ...fresh.filter((f) => !known.has(f.signature) || f.evaluated)];
-          });
-        }
-        setError(null);
-      } catch (e) {
-        setError(e);
-      } finally {
-        busy.current = false;
+    const timer = setInterval(() => {
+      if (watcher.current.step(session.hash(), Date.now())) {
+        queue.current.push(session.image());
+        if (queue.current.length > 6) queue.current.shift();
       }
+      if (busy.current || !queue.current.length) return;
+      const image = queue.current.shift();
+      busy.current = true;
+      (async () => {
+        try {
+          const r = await postVision({ image, name: name || null, boss_defense: defense, seen: [...seen.current] });
+          setCount((c) => c + 1);
+          if (r.frame_id) refreshStats();
+          if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
+          const fresh = r.items.filter((it) => !seen.current.has(it.signature));
+          fresh.filter((it) => it.evaluated).forEach((it) => seen.current.add(it.signature));
+          if (fresh.length) {
+            setItems((prev) => {
+              const known = new Set(prev.map((p) => p.signature));
+              return [...prev.filter((p) => !fresh.some((f) => f.signature === p.signature && f.evaluated)),
+                      ...fresh.filter((f) => !known.has(f.signature) || f.evaluated)];
+            });
+          }
+          setError(null);
+        } catch (e) {
+          setError(e);
+        } finally {
+          busy.current = false;
+        }
+      })();
     }, intervalMs);
     return () => clearInterval(timer);
   }, [session, name, defense, intervalMs, onFeeRate]);
@@ -226,6 +242,24 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 1500,
       )}
       {error && <p role="alert" className="error">{error.message}</p>}
       {stats && <p className="muted">학습 데이터: 프레임 {stats.frames}장 · 고친 것 {stats.corrected}건</p>}
+      {name && items.length > 0 && (
+        <p className="muted">
+          장비창을 열고 착용 템 위로 마우스를 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.{" "}
+          <button type="button" onClick={scoreReads}>장비창 채점</button>
+        </p>
+      )}
+      {score && (
+        <div>
+          <p>착용 템 {score.matched}개 채점 · 항목 정확도 {score.accuracy == null ? "—" : `${(score.accuracy * 100).toFixed(1)}%`} ({score.fields_ok}/{score.fields})
+            {score.unmatched.length ? <span className="muted"> · 착용 템과 못 맞춘 판독 {score.unmatched.length}개</span> : null}</p>
+          <ul className="plain">
+            {score.items.filter((it) => it.miss.length).map((it) => (
+              <li key={it.name} className="muted">{it.name}: {it.miss.join(" / ")}</li>
+            ))}
+          </ul>
+          <p className="muted">{score.note}</p>
+        </div>
+      )}
       {listOnly.length > 0 && (
         <details>
           <summary>목록에서 본 매물 {listOnly.length}개 (툴팁을 띄우면 평가해요)</summary>

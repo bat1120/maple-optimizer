@@ -339,6 +339,17 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         item["frame_id"] = body.frame_id
         return {"item": item}
 
+    class VisionScoreIn(BaseModel):
+        name: str
+        reads: list[dict]
+
+    @app.post("/api/vision/score")
+    def vision_score(body: VisionScoreIn, request: Request):
+        """장비창 훑기 채점: 화면에서 읽은 툴팁을 넥슨 API의 착용 템(정답)과 항목별로 비교한다."""
+        _require_admin(request)
+        from server.score import score_reads
+        return score_reads(load(body.name, None), body.reads[:100])
+
     @app.get("/api/vision/dataset")
     def vision_dataset(request: Request):
         _require_admin(request)
