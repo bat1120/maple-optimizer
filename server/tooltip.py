@@ -11,6 +11,7 @@ from PIL import Image
 CELL = 8                 # 툴팁 찾기 격자(픽셀)
 MIN_W, MIN_H = 160, 180  # 툴팁 최소 크기(픽셀)
 MAX_W = 600              # 툴팁 최대 폭(나란히 붙은 두 개는 나눈 뒤 잰다)
+SINGLE_MAX_W = 460       # 이보다 넓으면 툴팁 두 개가 붙은 것으로 본다(실측 툴팁 폭 250~450)
 STAR_BAND = 48           # 툴팁 맨 위에서 별 줄이 있는 높이(픽셀)
 
 
@@ -84,10 +85,16 @@ def _split_columns(a: np.ndarray, box: tuple[int, int, int, int]) -> list[tuple[
     luma = 0.299 * a[y0:y1, x0:x1, 0] + 0.587 * a[y0:y1, x0:x1, 1] + 0.114 * a[y0:y1, x0:x1, 2]
     light = (luma > 110).mean(axis=0)
     cuts = [i for i in range(MIN_W, (x1 - x0) - MIN_W) if light[i] > 0.7]
-    if not cuts:
-        return [box]
-    c = x0 + cuts[len(cuts) // 2]
-    return [(x0, y0, c, y1), (c + 1, y0, x1, y1)]
+    if cuts:
+        c = x0 + cuts[len(cuts) // 2]
+        return [(x0, y0, c, y1), (c + 1, y0, x1, y1)]
+    if x1 - x0 > SINGLE_MAX_W:
+        # 테두리 없이 딱 붙은 두 툴팁: 가운데쯤에서 '어두운 바탕' 비율이 가장 낮은 열(두 툴팁의 경계)에서 나눈다
+        dark = _dark_mask(a[y0:y1, x0:x1]).mean(axis=0)
+        lo, hi = int((x1 - x0) * 0.3), int((x1 - x0) * 0.7)
+        c = x0 + lo + int(np.argmin(dark[lo:hi]))
+        return [(x0, y0, c, y1), (c + 1, y0, x1, y1)]
+    return [box]
 
 
 def _column_runs(grid: np.ndarray) -> list[tuple[int, int, int]]:
@@ -149,7 +156,8 @@ def crop(img: Image.Image, box: tuple[int, int, int, int], margin: int = 4) -> I
 def count_stars(tip: Image.Image) -> int | None:
     """툴팁 맨 위 별 줄에서 노란(채워진) 별 개수. 노란 별이 하나도 없으면 None(0성인지 잘린 건지 모른다)."""
     a = np.asarray(tip.convert("RGB")).astype(np.int16)[:STAR_BAND]
-    yellow = (a[..., 0] > 200) & (a[..., 1] > 165) & (a[..., 2] < 110)
+    # 채워진 별: 노랑~주황(빨강 높고 파랑 낮음). 화면에 따라 주황으로 보인다(2026-10-05 실측: 19성을 못 셈)
+    yellow = (a[..., 0] > 200) & (a[..., 1] > 120) & (a[..., 2] < 110) & (a[..., 0] - a[..., 2] > 120)
     if yellow.sum() < 8:
         return None
     seen = np.zeros_like(yellow)
@@ -170,14 +178,48 @@ def count_stars(tip: Image.Image) -> int | None:
                     seen[ny, nx] = True
                     stack.append((ny, nx))
         bw, bh = x1 - x0 + 1, y1 - y0 + 1
-        if bw >= 4 and bh >= 4 and 0.5 <= bw / bh <= 2:   # 별은 거의 정사각형(배경의 가는 노란 선 제외, 2026-10-04 실측)
-            areas.append(n)
-    big = [s for s in areas if s >= 6]
+        if bw >= 4 and bh >= 4 and 0.6 <= bw / bh <= 1.7:   # 별은 정사각형에 가깝다(가는 선 제외, 경계에 잘린 별은 납작할 수 있다)
+            areas.append((n, (x0 + x1) / 2, (y0 + y1) / 2, bw))
+    big = [b for b in areas if b[0] >= 6]
     if not big:
         return None
-    ref = float(np.percentile(big, 75))
-    n = sum(1 for s in big if s >= 0.45 * ref)   # 반짝이 효과(작은 노란 점)는 별보다 훨씬 작다
-    return n or None
+    ref = float(np.percentile([b[0] for b in big], 75))
+    blobs = sorted((b for b in big if b[0] >= 0.45 * ref), key=lambda b: b[2])  # 반짝이(작은 점) 제외
+    return _count_star_rows(blobs)
+
+
+def _count_star_rows(blobs) -> int | None:
+    """별 줄은 툴팁 맨 위에 있고, 같은 크기의 별이 같은 간격(5개마다 조금 넓게)으로 늘어선다.
+    글자(주황 '교환 불가' 등)는 크기·간격이 들쭉날쭉하다 — 맨 위에서부터 '고른 줄'만 센다(2026-10-05 실측)."""
+    if not blobs:
+        return None
+    rows, cur = [], [blobs[0]]
+    for b in blobs[1:]:
+        if abs(b[2] - np.mean([c[2] for c in cur])) <= max(3, 0.5 * b[3]):
+            cur.append(b)
+        else:
+            rows.append(cur)
+            cur = [b]
+    rows.append(cur)
+    total, step = 0, None
+    for i, row in enumerate(rows):
+        row = sorted(row, key=lambda b: b[1])
+        sizes = [b[0] for b in row]
+        if max(sizes) > 1.7 * min(sizes):
+            break
+        xs = [b[1] for b in row]
+        diffs = np.diff(xs)
+        if len(diffs):
+            base = float(diffs.min()) if step is None else step
+            if base <= 0 or any(not (0.7 * base <= d <= 2.3 * base) for d in diffs):
+                break
+            step = step or base
+        elif i == 0:
+            break  # 맨 윗줄에 덩어리 하나뿐이면 별 줄인지 알 수 없다
+        total += len(row)
+        if len(row) < 15:  # 덜 찬 줄 다음에는 채워진 별이 없다
+            break
+    return total or None
 
 
 def _distance(a: str, b: str) -> int:

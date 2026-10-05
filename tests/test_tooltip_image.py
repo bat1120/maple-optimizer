@@ -94,3 +94,33 @@ def test_thin_yellow_line_at_edge_is_not_a_star():
     tip = _tooltip(lit=0, sparkles=False)
     ImageDraw.Draw(tip).rectangle([tip.width - 3, 4, tip.width - 2, 20], fill=(255, 220, 40))  # 가장자리 가는 노란 선
     assert count_stars(tip) is None
+
+
+def test_touching_tooltips_without_gap_are_split():
+    """마우스를 올린 매물과 '현재 장착 중인 장비' 툴팁이 틈 없이 붙어 뜨는 경우(2026-10-05 실측: 둘이 한 상자로 잡혀 별이 섞임)."""
+    left, right = _tooltip(w=290, lit=10, seed=4), _tooltip(w=290, lit=0, sparkles=False, seed=6)
+    for t in (left, right):  # 실제 화면처럼 밝은 테두리 없이
+        ImageDraw.Draw(t).rectangle([0, 0, t.width - 1, t.height - 1], outline=PANEL)
+    boxes = find_tooltips(_frame([((400, 100), left), ((690, 100), right)]))
+    assert len(boxes) == 2
+    assert count_stars(left) == 10 and count_stars(right) is None
+
+
+def test_orange_stars_are_counted():
+    """화면에 따라 채워진 별이 주황색으로 보인다(실측: 19성을 못 셈)."""
+    tip = _tooltip(lit=19, sparkles=False)
+    a = tip.load()
+    for y in range(0, 48):
+        for x in range(tip.width):
+            if a[x, y] == (255, 214, 0):
+                a[x, y] = (250, 165, 20)
+    assert count_stars(tip) == 19
+
+
+def test_orange_text_below_name_is_not_stars():
+    """별 없는 템(강화 불가)의 이름 아래 주황 글자('교환 불가' 등)를 별로 세면 안 된다(실측: 미트라 엠블렘을 18성으로 셈)."""
+    tip = _tooltip(lit=0, sparkles=False)
+    d = ImageDraw.Draw(tip)
+    for i, word in enumerate(["TRADE LOCKED (5/5)", "MEMENTO 2026.10.31"]):
+        d.text((60, 6 + i * 16), word, fill=(255, 150, 40))
+    assert count_stars(tip) is None
