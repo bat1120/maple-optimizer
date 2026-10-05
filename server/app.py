@@ -61,6 +61,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
     from server.vision import FrameCache
     frame_cache = FrameCache()  # 같은 툴팁·같은 화면은 AI를 다시 부르지 않는다
+    import collections
+    session_reads = collections.deque(maxlen=500)  # 장비창 채점용: 서버가 읽은 툴팁(매물·착용 템)을 기억한다
 
     def _require_admin(request: Request) -> None:
         if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
@@ -304,6 +306,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from server.vision import normalize_fee
         for x in data["listings"]:
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
+        if not data.get("cached"):
+            session_reads.extend(data["listings"] + data.get("equipped_items", []))
         # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다
         frame_id = (dataset.save_frame(body.image, data)
                     if dataset and not data.get("cached") and not data.get("skipped") else None)
@@ -359,7 +363,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         """장비창 훑기 채점: 화면에서 읽은 툴팁을 넥슨 API의 착용 템(정답)과 항목별로 비교한다."""
         _require_admin(request)
         from server.score import score_reads
-        return score_reads(load(body.name, None), body.reads[:100])
+        # 화면 쪽에서 판독이 빠져도(2026-10-05 실측) 서버가 기억한 판독을 함께 채점한다
+        return score_reads(load(body.name, None), list(session_reads) + body.reads[:100])
+
+    @app.post("/api/vision/score/reset")
+    def vision_score_reset(request: Request):
+        _require_admin(request)
+        session_reads.clear()
+        return {"cleared": True}
 
     @app.get("/api/vision/dataset")
     def vision_dataset(request: Request):

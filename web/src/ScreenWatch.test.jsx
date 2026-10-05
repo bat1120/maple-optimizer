@@ -198,11 +198,24 @@ describe("screen watch equipment scoring", () => {
 });
 
 describe("screen watch scoring button visibility", () => {
-  it("캐릭터를 조회했으면 읽은 툴팁이 없어도 채점 버튼이 보이고, 그때는 꺼져 있다", () => {
+  it("캐릭터를 조회했으면 채점 버튼이 항상 보인다(서버가 읽은 판독을 기억한다)", () => {
     render(<ScreenWatch name="내신부레테" defense={300} capture={null} />);
-    const b = screen.getByRole("button", { name: "장비창 채점" });
-    expect(b).toBeDisabled();
-    expect(screen.getByText(/아직 읽은 툴팁이 없어요/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "장비창 채점" })).toBeEnabled();
+  });
+
+  it("채점 결과는 모든 템을 ✓/✗로 보여주고, 초기화하면 서버 기억도 지운다", async () => {
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(ok({ matched: 2, unmatched: [], fields_ok: 32, fields: 33, accuracy: 0.97, note: "",
+        items: [{ name: "도전자의 신발", ok: 15, n: 15, miss: [] },
+                { name: "에테르넬 메이지글러브", ok: 14, n: 15, miss: ["레벨: 정답 250 / 읽음 225"] }] }))
+      .mockResolvedValueOnce(ok({ cleared: true }));
+    render(<ScreenWatch name="내신부레테" defense={300} capture={null} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "장비창 채점" })); });
+    expect(screen.getByText("✓ 도전자의 신발 15/15")).toBeInTheDocument();
+    expect(screen.getByText(/✗ 에테르넬 메이지글러브 14\/15 — 레벨: 정답 250 \/ 읽음 225/)).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "채점 초기화" })); });
+    expect(f.mock.calls[1][0]).toBe("/api/vision/score/reset");
+    expect(screen.queryByText("✓ 도전자의 신발 15/15")).toBeNull();
   });
 });
 

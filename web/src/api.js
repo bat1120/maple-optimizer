@@ -103,3 +103,4 @@ export const postVisionEvaluate = (body) => post("/api/vision/evaluate", body);
 export const postVisionCorrect = (body) => post("/api/vision/correct", body);
 export const getVisionDataset = () => request("/api/vision/dataset");
 export const postVisionScore = (body) => post("/api/vision/score", body);
+export const postVisionScoreReset = () => post("/api/vision/score/reset", {});

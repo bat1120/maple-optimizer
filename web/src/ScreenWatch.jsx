@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore } from "./api.js";
+import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, frameHash } from "./watch.js";
 
@@ -149,6 +149,15 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
   // 장비창 툴팁은 '착용 템'으로 분류돼 매물 목록에서 빠진다 — 채점용으로 이름별 마지막 판독을 따로 모은다
   const [equipped, setEquipped] = useState(new Map());
   const reads = [...items.map((i) => i.read || {}), ...equipped.values()];
+  const resetScore = async () => {
+    try {
+      await postVisionScoreReset();
+      setEquipped(new Map());
+      setScore(null);
+    } catch (e) {
+      setError(e);
+    }
+  };
   const scoreReads = async () => {
     try {
       setScore(await postVisionScore({ name, reads }));
@@ -262,8 +271,9 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       {name && (
         <p className="muted">
           장비창 채점: 게임에서 장비창을 열고 착용 템 위로 마우스를 한 칸에 1초씩 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.
-          {reads.length === 0 ? " (아직 읽은 툴팁이 없어요 — 먼저 화면을 연결해 훑어 주세요)" : ` (읽은 툴팁 ${reads.length}개)`}{" "}
-          <button type="button" onClick={scoreReads} disabled={reads.length === 0}>장비창 채점</button>
+          {reads.length ? ` (이 화면에서 읽은 툴팁 ${reads.length}개 — 서버가 기억한 판독도 함께 채점해요)` : " (서버가 기억한 판독으로 채점해요)"}{" "}
+          <button type="button" onClick={scoreReads}>장비창 채점</button>{" "}
+          <button type="button" onClick={resetScore}>채점 초기화</button>
         </p>
       )}
       {equipped.size > 0 && <p className="muted">착용 템 {equipped.size}개: {[...equipped.keys()].join(", ")}</p>}
@@ -272,8 +282,10 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
           <p>착용 템 {score.matched}개 채점 · 항목 정확도 {score.accuracy == null ? "—" : `${(score.accuracy * 100).toFixed(1)}%`} ({score.fields_ok}/{score.fields})
             {score.unmatched.length ? <span className="muted"> · 착용 템과 못 맞춘 판독 {score.unmatched.length}개</span> : null}</p>
           <ul className="plain">
-            {score.items.filter((it) => it.miss.length).map((it) => (
-              <li key={it.name} className="muted">{it.name}: {it.miss.join(" / ")}</li>
+            {score.items.map((it) => (
+              <li key={it.name} className={it.miss.length ? "error" : "muted"}>
+                {it.miss.length ? `✗ ${it.name} ${it.ok}/${it.n} — ${it.miss.join(" / ")}` : `✓ ${it.name} ${it.ok}/${it.n}`}
+              </li>
             ))}
           </ul>
           <p className="muted">{score.note}</p>
