@@ -67,7 +67,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.middleware("http")
     async def limit(request: Request, call_next):
-        if request.url.path.startswith("/api/"):
+        path = request.url.path
+        # 관리자 화면 분석은 0.5초마다 들어온다 — IP당 제한 대신 하루 토큰 한도로 묶는다(2026-10-05: 23번 중 5번 거절)
+        admin_vision = path.startswith("/api/vision/") and bool(session_secret) and admin.valid_session(
+            request.cookies.get(admin.COOKIE), session_secret, clock())
+        if path.startswith("/api/") and not admin_vision:
             ip = request.client.host if request.client else "unknown"
             if not limiter.allow(ip):
                 return _err(ApiError(429, "RATE_LIMIT", "요청이 너무 많습니다. 1분 뒤 다시 시도해 주세요."))
@@ -301,7 +305,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         for it in items:
             it["frame_id"] = frame_id
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
-                "frame_id": frame_id, "items": items}
+                "frame_id": frame_id, "items": items,
+                "equipped_items": data.get("equipped_items", [])}  # 착용 템 판독(장비창 채점용, 매물 아님)
 
     class VisionCorrectIn(BaseModel):
         frame_id: str

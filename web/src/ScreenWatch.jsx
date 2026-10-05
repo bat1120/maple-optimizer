@@ -146,9 +146,12 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
   const refreshStats = () => getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {});
   const [error, setError] = useState(null);
   const [score, setScore] = useState(null); // 장비창 훑기 채점 결과(정답 = 넥슨 API 착용 템)
+  // 장비창 툴팁은 '착용 템'으로 분류돼 매물 목록에서 빠진다 — 채점용으로 이름별 마지막 판독을 따로 모은다
+  const [equipped, setEquipped] = useState(new Map());
+  const reads = [...items.map((i) => i.read || {}), ...equipped.values()];
   const scoreReads = async () => {
     try {
-      setScore(await postVisionScore({ name, reads: items.map((i) => i.read || {}) }));
+      setScore(await postVisionScore({ name, reads }));
     } catch (e) {
       setError(e);
     }
@@ -189,6 +192,13 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
           setCount((c) => c + 1);
           if (r.frame_id) refreshStats();
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
+          if (r.equipped_items?.length) {
+            setEquipped((prev) => {
+              const next = new Map(prev);
+              r.equipped_items.forEach((x) => x.name && next.set(x.name, x));
+              return next;
+            });
+          }
           const fresh = r.items.filter((it) => !seen.current.has(it.signature));
           fresh.filter((it) => it.evaluated).forEach((it) => seen.current.add(it.signature));
           if (fresh.length) {
@@ -245,10 +255,11 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       {name && (
         <p className="muted">
           장비창 채점: 게임에서 장비창을 열고 착용 템 위로 마우스를 한 칸에 1초씩 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.
-          {items.length === 0 ? " (아직 읽은 툴팁이 없어요 — 먼저 화면을 연결해 훑어 주세요)" : ` (읽은 툴팁 ${items.length}개)`}{" "}
-          <button type="button" onClick={scoreReads} disabled={items.length === 0}>장비창 채점</button>
+          {reads.length === 0 ? " (아직 읽은 툴팁이 없어요 — 먼저 화면을 연결해 훑어 주세요)" : ` (읽은 툴팁 ${reads.length}개)`}{" "}
+          <button type="button" onClick={scoreReads} disabled={reads.length === 0}>장비창 채점</button>
         </p>
       )}
+      {equipped.size > 0 && <p className="muted">착용 템 {equipped.size}개: {[...equipped.keys()].join(", ")}</p>}
       {score && (
         <div>
           <p>착용 템 {score.matched}개 채점 · 항목 정확도 {score.accuracy == null ? "—" : `${(score.accuracy * 100).toFixed(1)}%`} ({score.fields_ok}/{score.fields})

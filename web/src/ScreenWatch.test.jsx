@@ -205,3 +205,27 @@ describe("screen watch scoring button visibility", () => {
     expect(screen.getByText(/아직 읽은 툴팁이 없어요/)).toBeInTheDocument();
   });
 });
+
+describe("screen watch equipped reads", () => {
+  it("장비창에서 읽은 착용 템도 모아서 보여주고 채점에 넣는다", async () => {
+    vi.useFakeTimers();
+    const seq = [10, 10, 60, 60, 60, 60];
+    let k = 0;
+    const capture = { start: async () => ({ hash: () => new Array(256).fill(seq[Math.min(k++, 5)]),
+                                            image: () => `data:image/jpeg;base64,${k}`, stop: vi.fn() }) };
+    const ring = { name: "여명의 가디언 엔젤 링", starforce: 18, potential_lines: ["INT +9%"], additional: [], total: { INT: 50 } };
+    const pendant = { name: "데이브레이크 펜던트", starforce: 22, potential_lines: ["INT +9%"], additional: [], total: { INT: 80 } };
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [], equipped_items: [ring] }))
+      .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [], equipped_items: [pendant, ring] }))
+      .mockResolvedValueOnce(ok({ matched: 2, unmatched: [], fields_ok: 10, fields: 10, accuracy: 1, items: [], note: "" }));
+    render(<ScreenWatch name="내신부레테" defense={300} capture={capture} intervalMs={500} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
+    expect(screen.getByText(/착용 템 2개: 여명의 가디언 엔젤 링, 데이브레이크 펜던트/)).toBeInTheDocument();
+    vi.useRealTimers();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "장비창 채점" })); });
+    const body = JSON.parse(f.mock.calls[2][1].body);
+    expect(body.reads.map((r) => r.name).sort()).toEqual(["데이브레이크 펜던트", "여명의 가디언 엔젤 링"]);
+  });
+});

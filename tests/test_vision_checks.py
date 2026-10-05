@@ -77,3 +77,31 @@ def test_starforce_from_screen_is_marked_unverified():
             "potentials": ["INT +12%"], "potential_lines": ["INT +12%"], "additional": [], "price": 1e9}
     row = vision_items(snapshot(bundle("레테")), None, 300.0, [read], [])[0]
     assert "스타포스" in row["starforce_note"] and "총 옵션" in row["starforce_note"]
+
+
+def _app_with(payload, tmp_path, rate_limit=3):
+    from fastapi.testclient import TestClient
+    from server.admin import make_password_hash
+    from server.app import create_app
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3"), agent_client=_fake(payload),
+                              admin_password_hash=make_password_hash("pw", 1000), session_secret="s" * 32,
+                              rate_limit=rate_limit))
+    c.post("/api/admin/login", json={"password": "pw"})
+    return c
+
+
+def test_admin_screen_analysis_is_not_rate_limited_per_ip(tmp_path):
+    """실측(2026-10-05): 0.5초 캡처가 IP당 분당 제한에 걸려 23번 중 5번 거절 — 관리자 화면 분석은 토큰 한도로만 묶는다."""
+    payload = {"tooltip_visible": True, "fee_rate": None, "listings": [_item("어센던트 펄스 링")]}
+    c = _app_with(payload, tmp_path)
+    codes = [c.post("/api/vision/listings", json={"image": "data:image/jpeg;base64,AAA"}).status_code for _ in range(8)]
+    assert codes == [200] * 8
+
+
+def test_response_includes_equipped_tooltip_reads(tmp_path):
+    """장비창 툴팁은 '착용 템'으로 분류돼 매물에서 빠진다 — 장비창 채점을 위해 판독은 따로 돌려준다."""
+    payload = {"tooltip_visible": True, "fee_rate": None,
+               "listings": [_item("어센던트 펄스 링"), _item("카오스 링", equipped=True)]}
+    r = _app_with(payload, tmp_path, rate_limit=30).post(
+        "/api/vision/listings", json={"image": "data:image/jpeg;base64,AAA"}).json()
+    assert [x["name"] for x in r["equipped_items"]] == ["카오스 링"]
