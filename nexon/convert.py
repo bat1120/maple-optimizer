@@ -120,6 +120,7 @@ def item(item_json: dict, level: int) -> Item:
         additional_grade=item_json.get("additional_potential_option_grade"),
         level=int(num((item_json.get("item_base_option") or {}).get("base_equipment_level"))),
         special_ring_level=int(num(item_json.get("special_ring_level"))),
+        icon=item_json.get("item_icon") or None,
         excluded=excluded,
     )
 
@@ -260,6 +261,9 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
 
     link_presets, active_link = _link_presets(bundle.get("character/link-skill"), level)
 
+    profile = {"name": basic.get("character_name"), "world": basic.get("world_name"),
+               "guild": basic.get("character_guild_name"), "image": basic.get("character_image") or None,
+               "class_level": basic.get("character_class_level"), "date_create": basic.get("character_date_create")}
     return CharacterSnapshot(
         character_class=basic["character_class"],
         level=level,
@@ -279,6 +283,7 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         active_union_preset=active_union if union_states else 0,
         link_presets=link_presets,
         active_link_preset=active_link,
+        profile=profile,
     )
 
 

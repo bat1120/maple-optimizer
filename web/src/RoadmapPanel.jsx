@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getRoadmap } from "./api.js";
 import { formatMeso, formatPct, settingLabel } from "./format.js";
 
@@ -15,7 +15,7 @@ function Next({ row, kind }) {
   return <span>{label(t)} {formatPct(t.delta_pct)}<br /><span className="muted">{t.target.join(" / ")}</span></span>;
 }
 
-export default function RoadmapPanel({ name, defense }) {
+export default function RoadmapPanel({ name, defense, autoLoad = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,26 +32,34 @@ export default function RoadmapPanel({ name, defense }) {
     }
   };
 
+  useEffect(() => { if (autoLoad && name) load(); }, [autoLoad, name, defense]); // eslint-disable-line react-hooks/exhaustive-deps
+  const best = Math.max(0, ...(data?.value_ranking || []).map((v) => v.per_100m || 0));
+
   return (
     <section className="panel">
       <h3>전체 부위 로드맵</h3>
-      <button type="button" onClick={load} disabled={!name || busy}>전체 부위 로드맵</button>
+      <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
+        {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "전체 부위 로드맵"}
+      </button>
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
         <>
-          <p className="muted">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · {data.note}</p>
+          <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅)</p>
+          <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>
           {data.value_ranking?.length > 0 && (
             <>
               <h4>가격 대비 순위 (큐브 메소 재설정 기준)</h4>
-              <p className="muted">{data.value_note} {data.market_note}</p>
+              <details className="note"><summary>가격·시세 기준 보기</summary><p className="muted small">{data.value_note} {data.market_note}</p></details>
               <table aria-label="가격 대비 순위">
-                <thead><tr><th>#</th><th>부위</th><th>단계</th><th>실딜</th><th>큐브 평균 비용</th><th>억당</th><th>관측 시세</th></tr></thead>
+                <thead><tr><th>#</th><th>부위</th><th>단계</th><th className="num">실딜</th><th className="num">큐브 평균 비용</th><th>억당 효율</th><th>관측 시세</th></tr></thead>
                 <tbody>
                   {data.value_ranking.map((v, i) => (
                     <tr key={`${v.slot}-${v.kind}`}>
-                      <td>{i + 1}</td><td>{v.slot} {v.kind}</td>
+                      <td><span className={`medal medal-${i + 1}`}>{i + 1}</span></td><td>{v.slot} {v.kind}</td>
                       <td>{label(v)}<br /><span className="muted">{v.target.join(" / ")}</span></td>
-                      <td>{formatPct(v.delta_pct)}</td><td>{v.cube_cost_text}</td><td>{formatPct(v.per_100m)}</td>
+                      <td className="num">{formatPct(v.delta_pct)}</td><td className="num">{v.cube_cost_text}</td>
+                      <td className="eff"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} />
+                        <span className="num">{formatPct(v.per_100m)}</span></td>
                       <td className="muted">{marketText(v.market)}</td>
                     </tr>
                   ))}

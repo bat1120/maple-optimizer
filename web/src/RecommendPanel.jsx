@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getRecommend } from "./api.js";
 import { formatPct, settingLabel } from "./format.js";
 
 // 게임 경매장 검색 조건 추천. 부위마다 윗잠을 목표 잠재로 바꿨을 때의 보스 실딜 상승을 엔진이 계산한다.
 // 사용자는 카드의 조건으로 게임에서 검색하고, 그 화면을 '경매장 화면 분석'에 연결해 실제 매물을 평가한다.
-export default function RecommendPanel({ name, defense }) {
+export default function RecommendPanel({ name, defense, autoLoad = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -22,13 +22,18 @@ export default function RecommendPanel({ name, defense }) {
     }
   };
 
+  useEffect(() => { if (autoLoad && name) load(); }, [autoLoad, name, defense]); // eslint-disable-line react-hooks/exhaustive-deps
+  const copy = (text) => { try { navigator.clipboard?.writeText(text); } catch { /* 복사 못 해도 화면에 조건이 보인다 */ } };
+
   return (
     <section className="panel">
       <h3>경매장 검색 추천</h3>
       <label>쿨감 1초 = 주스탯 %
         <input inputMode="decimal" value={cooldown} placeholder="비우면 쿨감 미반영" onChange={(e) => setCooldown(e.target.value)} />
       </label>
-      <button type="button" onClick={load} disabled={!name || busy}>검색 추천 받기</button>
+      <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
+        {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "검색 추천 받기"}
+      </button>
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
         <>
@@ -42,7 +47,13 @@ export default function RecommendPanel({ name, defense }) {
                   <strong>{r.slot}</strong> · 실딜 {formatPct(r.delta_pct)}
                   <span className="muted"> · {r.kind} {r.grade} {r.lines_good}줄</span>
                   <br />
-                  검색: {r.category} · {r.kind} {r.target_potentials.join(" / ")} · {r.min_starforce}성 이상
+                  <span className="chips">
+                    <span className="chip">{r.category}</span><span className="chip">{r.kind} {r.grade}</span>
+                    {r.target_potentials.map((t) => <span key={t} className="chip">{t}</span>)}
+                    <span className="chip">{r.min_starforce}성 이상</span>
+                    <button type="button" className="ghost small" onClick={() => copy(`${r.category} · ${r.kind} ${r.target_potentials.join(" / ")} · ${r.min_starforce}성 이상`)}>복사</button>
+                  </span>
+                  <span className="sr-only">검색: {r.category} · {r.kind} {r.target_potentials.join(" / ")} · {r.min_starforce}성 이상</span>
                   {r.kept?.length ? <><br /><span className="muted">유지: {r.kept.join(" / ")}</span></> : null}
                   <br />
                   <span className="muted">

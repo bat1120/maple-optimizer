@@ -31,6 +31,7 @@ class Item:
     potential_grade: str | None = None   # 레어·에픽·유니크·레전드리
     additional_grade: str | None = None  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
     special_ring_level: int = 0  # 특수 반지 스킬 레벨(컨티뉴어스·리스트레인트 등). 0이면 특수 반지 아님. 효과는 실딜에 없다
+    icon: str | None = None      # 넥슨 Open API item_icon 주소(화면 표시용, 저장하지 않는다)
 
 
 @dataclass
@@ -53,6 +54,7 @@ class CharacterSnapshot:
     active_union_preset: int = 0
     link_presets: dict[int, StatBlock] = field(default_factory=dict)  # 링크 스킬 프리셋 (조건 없는 효과만)
     active_link_preset: int = 0
+    profile: dict = field(default_factory=dict)  # 화면 표시용: 이름·월드·길드·캐릭터 이미지(넥슨 basic 그대로)
 
     @property
     def active_setting(self) -> Setting:

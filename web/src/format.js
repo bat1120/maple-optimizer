@@ -9,6 +9,16 @@ export function formatMeso(meso) {
   return parts.length ? parts.join(" ") : `${meso}`;
 }
 
+// 큰 숫자 카드용: 억·만 단위에 쉼표(1,234억 5,678만). 만 미만은 그대로
+export function formatBig(n) {
+  if (n == null || Number.isNaN(Number(n))) return "—";
+  const v = Math.round(Number(n));
+  if (Math.abs(v) < 10_000) return v.toLocaleString("ko-KR");
+  const eok = Math.floor(v / 100_000_000);
+  const man = Math.floor((v % 100_000_000) / 10_000);
+  return [eok ? `${eok.toLocaleString("ko-KR")}억` : "", man ? `${man.toLocaleString("ko-KR")}만` : ""].filter(Boolean).join(" ");
+}
+
 // "45억 3000만", "4.5억", "1,000,000" → 메소. 해석 불가면 null.
 export function parsePrice(text) {
   const t = String(text ?? "").replace(/[,\s]/g, "");

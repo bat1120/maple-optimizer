@@ -49,3 +49,13 @@ describe("formatStat", () => {
     expect(formatStat(-30.2)).toBe("-30");
   });
 });
+
+describe("formatBig", () => {
+  it("억·만 단위에 쉼표(큰 숫자 카드용)", async () => {
+    const { formatBig } = await import("./format.js");
+    expect(formatBig(123_456_789_012)).toBe("1,234억 5,678만");
+    expect(formatBig(98_765_432)).toBe("9,876만");
+    expect(formatBig(9_999)).toBe("9,999");
+    expect(formatBig(null)).toBe("—");
+  });
+});

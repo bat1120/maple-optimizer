@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getPaths, postMarketRefresh } from "./api.js";
 import { formatPct, settingLabel } from "./format.js";
 
@@ -10,7 +10,7 @@ function pathLabel(p) {
   return p.path === "직작" ? `직작 · ${p.name} + 큐브 ${step}` : `큐브 ${step}`;
 }
 
-export default function PathsPanel({ name, defense }) {
+export default function PathsPanel({ name, defense, autoLoad = false, showRefresh = true }) {
   const [data, setData] = useState(null);
   const [refresh, setRefresh] = useState(null);
   const [error, setError] = useState(null);
@@ -33,11 +33,15 @@ export default function PathsPanel({ name, defense }) {
     setData(await getPaths(name, defense));
   });
 
+  useEffect(() => { if (autoLoad && name) load(); }, [autoLoad, name, defense]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <section className="panel">
       <h3>업그레이드 경로 비교 (구매·직작·큐브)</h3>
-      <button type="button" onClick={load} disabled={!name || busy}>업그레이드 경로 비교</button>{" "}
-      <button type="button" onClick={update} disabled={!name || busy}>경매장 시세 갱신</button>
+      <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
+        {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "업그레이드 경로 비교"}
+      </button>{" "}
+      {showRefresh && <button type="button" onClick={update} disabled={!name || busy}>경매장 시세 갱신</button>}
       {refresh && (
         <p className="muted">
           검색 {refresh.searched}회 · 매물 {refresh.recorded}건 저장 · 오늘 남은 검색 {refresh.search_remaining ?? "?"}회

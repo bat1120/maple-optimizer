@@ -30,7 +30,11 @@ def summary(snap: CharacterSnapshot) -> dict:
         "combat_power_reference": f.combat_power,
         "final": {"stats": f.stats, "atk": f.atk, "matk": f.matk, "dmg": f.dmg, "boss": f.boss,
                   "fd": f.fd, "cd": f.cd, "ied": f.ied},
-        "equipment_presets": {str(n): [{"slot": it.slot, "name": it.name, "starforce": it.starforce}
+        "profile": {k: snap.profile.get(k) for k in ("name", "world", "guild", "image", "class_level", "date_create")},
+        "equipment_presets": {str(n): [{"slot": it.slot, "name": it.name, "starforce": it.starforce, "icon": it.icon,
+                                        "potential_grade": it.potential_grade, "additional_grade": it.additional_grade,
+                                        "potentials": list(it.potentials), "additional": list(it.additional),
+                                        "level": it.level, "special_ring_level": it.special_ring_level}
                                        for it in items.values()]
                               for n, items in snap.equipment_presets.items() if items},
         "excluded": sorted(set(snap.excluded)),

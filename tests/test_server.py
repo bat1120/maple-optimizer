@@ -50,7 +50,8 @@ def test_character_summary_lists_presets(tmp_path, clock):
     r = make(tmp_path, clock).get("/api/character/내신부레테").json()
     assert set(r["equipment_presets"]) == {"1", "2", "3"}
     weapon = next(i for i in r["equipment_presets"]["1"] if i["slot"] == "무기")
-    assert weapon == {"slot": "무기", "name": "제네시스 카르타", "starforce": 22}
+    assert {k: weapon[k] for k in ("slot", "name", "starforce")} == {"slot": "무기", "name": "제네시스 카르타", "starforce": 22}
+    assert {"icon", "potential_grade", "potentials", "additional"} <= set(weapon)  # UI 개편(2026-10-07): 장비창 상세
 
 
 def test_settings_ranking(tmp_path, clock):
