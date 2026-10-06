@@ -209,17 +209,48 @@ class FrameCache:
     - 툴팁이 있으면: 잘라낸 툴팁들의 축소 회색조 지문이 같으면 이전 판독을 그대로 쓴다.
     - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
 
-    def __init__(self, size: int = 300):
+    HOLD_S = 3.0  # 재사용은 '방금 대고 있던 툴팁'만 — 마지막으로 쓴 지 3초 안
+
+    def __init__(self, size: int = 300, clock=None):
         import threading
-        self.tips: dict = {}
+        import time
+        self.clock = clock or time.monotonic
+        self.tips: dict = {}  # 키 → (판독, 마지막으로 쓴 시각)
         self.size = size
         self.plain = None  # (지문, 판독)
         # 화면이 동시에 여러 장 보내므로(2026-10-06) 같은 툴팁을 읽는 중이면 기다렸다가 그 판독을 쓴다
         self.lock = threading.Lock()
         self.pending: list = []  # (지문, threading.Event)
 
+    @staticmethod
+    def textprint(tip, box=(0, 0, 0, 0)) -> tuple:
+        """툴팁 지문 = 글자(밝은 픽셀) 모양. 툴팁은 반투명이라 픽셀 지문은 뒤 배경에 흔들린다(같은 템 8~14% 차이, 2026-10-06).
+        맨 위 별 줄(반짝이)은 뺀다 — 별은 재사용할 때 지금 화면에서 다시 센다."""
+        import numpy as np
+        from PIL import Image as _I
+        a = np.asarray(tip.convert("L"), dtype=np.uint8)[48:]
+        m = _I.fromarray(((a > 170) * 255).astype(np.uint8)).resize((24, 40), _I.BOX)
+        return (box[0], box[1], tip.width, tip.height,
+                tuple((np.asarray(m, dtype=np.float32) / 255).round(3).flatten().tolist()))
+
+    @staticmethod
+    def tip_close(a: tuple, b: tuple) -> bool:
+        """같은 자리의 같은 툴팁: 위치·크기 4px 이내, 글자 지문 거리 0.02 미만(대고 있는 동안 실측 ≤0.009).
+        그림만으로는 숫자 하나 다른 매물을 못 가른다(재압축만으로 글자 픽셀 925개 어긋남, 숫자 하나 26개) —
+        그래서 위치(마우스를 옮기면 툴팁이 따라 움직인다)와 시간(HOLD_S)으로 '같은 hover'일 때만 재사용한다."""
+        if any(abs(x - y) > 4 for x, y in zip(a[:4], b[:4])):
+            return False
+        return sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) < 0.02
+
     def find(self, key: tuple):
-        return next((v for k, v in self.tips.items() if len(k) == len(key) and all(map(self.close, k, key))), None)
+        now = self.clock()
+        for k, (v, at) in list(self.tips.items()):
+            if now - at > self.HOLD_S:
+                del self.tips[k]
+            elif len(k) == len(key) and all(map(self.tip_close, k, key)):
+                self.tips[k] = (v, now)  # 대고 있는 동안은 계속 연장
+                return v
+        return None
 
     def claim(self, key: tuple, wait: float = 90.0):
         """(이전 판독, None) 또는 (None, 내가 읽을 표시). 같은 툴팁을 다른 요청이 읽는 중이면 끝날 때까지 기다린다."""
@@ -230,7 +261,7 @@ class FrameCache:
                 if hit is not None:
                     return hit, None
                 ev = next((e for k, e in self.pending
-                           if len(k) == len(key) and all(map(self.close, k, key))), None)
+                           if len(k) == len(key) and all(map(self.tip_close, k, key))), None)
                 if ev is None:
                     mine = (key, threading.Event())
                     self.pending.append(mine)
@@ -241,7 +272,7 @@ class FrameCache:
     def release(self, mine, data):
         with self.lock:
             if data is not None:
-                self.tips[mine[0]] = data
+                self.tips[mine[0]] = (data, self.clock())
                 while len(self.tips) > self.size:
                     self.tips.pop(next(iter(self.tips)))
             if mine in self.pending:
@@ -276,7 +307,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         tips = [crop(img, b) for b in boxes]
         stars = [stars_near(img, b) for b in boxes]
     except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
-        img, tips, stars = None, [], []
+        img, boxes, tips, stars = None, [], [], []
     if tooltips_only and img is not None and not tips:
         # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)
         return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
@@ -285,9 +316,14 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     mine = None
     if cache is not None and img is not None:
         if tips:
-            hit, mine = cache.claim(tuple(sorted(cache.fingerprint(t) for t in tips)))
+            hit, mine = cache.claim(tuple(cache.textprint(t, b) for t, b in zip(tips, boxes)))  # 왼쪽부터 순서대로
             if hit is not None:
-                return {**copy.deepcopy(hit), "cached": True}
+                out = {**copy.deepcopy(hit), "cached": True}
+                for x in out["listings"] + out.get("equipped_items", []):
+                    i = x.get("tooltip")
+                    if x.get("starforce_source") == "별 세기" and isinstance(i, int) and 0 <= i < len(stars)                             and stars[i] is not None:
+                        x["starforce"] = stars[i]  # 별은 지문에 없다 — 지금 화면에서 센 값
+                return out
         else:
             fp = cache.fingerprint(img, 32)
             if cache.plain and cache.close(cache.plain[0], fp):

@@ -170,12 +170,14 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
   // 0.25초마다 보고 두 번 연속 같으면 툴팁이 뜬 것으로 본다(0.5초 간격이면 1초 미만으로 훑은 템을 놓친다 — 실측 0.7초 8/20). 툴팁끼리 바뀌면 화면 일부만 바뀌므로 바뀐 칸 비율(3%)도 본다
   // (2026-10-06: 1~2초씩 훑은 착용 템 중 일부만 읽힘 — 평균 차이로는 툴팁 전환을 놓치고, 한 장씩 보내 줄이 넘쳤다)
   // 2026-10-06 2차: 이펙트가 움직이면 화면 전체 비교로는 툴팁을 띄워도 안 멈춘 것으로 봐서 거의 안 보냈다 → 툴팁 칸만 비교
-  const watcher = useRef(createWatcher({ stableFrames: 2, cooldownMs: 300, same: tipSame }));
-  const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 40장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
+  // 2026-10-06 3차: 별 반짝이 때문에 툴팁이 '멈춘' 적이 없어 별 있는 템을 거의 안 보냈다(25개 대고 5개 인식).
+  // 멈춤을 기다리지 않고 바뀌면 0.5초마다 보낸다 — 툴팁 찾기·같은 툴팁 재사용·툴팁 없는 화면 건너뛰기는 서버가 AI 없이 한다.
+  const watcher = useRef(createWatcher({ stableFrames: 1, cooldownMs: 500, same: tipSame }));
+  const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 120장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
   // 기본은 툴팁이 뜬 화면만 AI에 보낸다(실측: 툴팁 없는 화면 67%, 판독 0). 가격만 보이는 목록 화면도 읽으려면 켠다
   const [readLists, setReadLists] = useState(false);
   const seen = useRef(new Set());
-  const inflight = useRef(0); // AI 판독은 한 장 7~10초 — 동시에 3장까지 보낸다
+  const inflight = useRef(0); // AI 판독은 한 장 7~10초 — 동시에 6장까지 보낸다(건너뛸 화면이 AI 판독 뒤에 밀리지 않게)
 
   // 캐릭터 조회 전에 읽은 매물: 조회되면 이미 읽은 내용으로 다시 평가한다(비전 재호출 없음)
   useEffect(() => {
@@ -196,9 +198,9 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
     const timer = setInterval(() => {
       if (watcher.current.step(session.hash(), Date.now())) {
         queue.current.push(session.image());
-        if (queue.current.length > 40) queue.current.shift();
+        if (queue.current.length > 120) queue.current.shift();
       }
-      while (inflight.current < 3 && queue.current.length) send(queue.current.shift());
+      while (inflight.current < 6 && queue.current.length) send(queue.current.shift());
     }, intervalMs);
     const send = (image) => {
       inflight.current += 1;

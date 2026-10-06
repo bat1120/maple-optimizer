@@ -315,6 +315,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]
         kind = "건너뜀(툴팁 없음)" if data.get("skipped") else "재사용" if data.get("cached") else "판독"
         _log.info("화면 %s · 툴팁 %s개 · %s", kind, data.get("tooltips_found", 0), ", ".join(n or "?" for n in names) or "-")
+        if dataset:
+            dataset.log_frame({"kind": kind, "tooltips": data.get("tooltips_found", 0), "names": names})
         if dataset and data.get("skipped"):
             dataset.save_skipped(body.image, {"skipped": data["skipped"]})
         # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다

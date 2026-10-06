@@ -91,3 +91,12 @@ def test_skipped_frames_are_kept_separately_for_diagnosis(tmp_path):
         store.save_skipped(url, {"skipped": "툴팁 없음"})
     assert len(list((tmp_path / "ds" / "skipped").iterdir())) == MAX_SKIPPED
     assert store.stats()["frames"] == 0
+
+
+def test_every_frame_result_is_logged_in_utf8(tmp_path):
+    """화면마다 결과(판독·재사용·건너뜀)와 읽은 템 이름을 한 줄씩 남긴다 — 서버 로그는 한글이 깨져(2026-10-06) 원인을 못 봤다."""
+    import json
+    store = DatasetStore(str(tmp_path / "ds"), clock=lambda: 2.0)
+    store.log_frame({"kind": "재사용", "tooltips": 1, "names": ["카오스 벨룸 킬러"]})
+    rows = [json.loads(x) for x in (tmp_path / "ds" / "frames.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert rows == [{"at": 2.0, "kind": "재사용", "tooltips": 1, "names": ["카오스 벨룸 킬러"]}]

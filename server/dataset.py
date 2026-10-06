@@ -49,6 +49,11 @@ class DatasetStore:
         for old in sorted(root.iterdir())[:-MAX_SKIPPED]:
             shutil.rmtree(old, ignore_errors=True)
 
+    def log_frame(self, info: dict) -> None:
+        """화면 한 장의 처리 결과를 frames.jsonl에 한 줄로(UTF-8). 무엇이 판독·재사용·건너뜀이었는지 나중에 본다."""
+        with open(self.root / "frames.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": self._clock(), **info}, ensure_ascii=False) + "\n")
+
     def reading(self, frame_id: str) -> dict:
         return json.loads((self._dir(frame_id) / "reading.json").read_text(encoding="utf-8"))
 

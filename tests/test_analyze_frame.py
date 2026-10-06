@@ -129,7 +129,8 @@ def test_same_tooltip_again_reuses_previous_reading_without_ai():
     analyze_frame(fake, frame, cache=cache)
     again = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
     assert len(fake.calls) == 1 and again["cached"] is True
-    other = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=7, seed=9))])), cache=cache)
+    other = analyze_frame(fake, _url(_frame([((520, 120), _tip_with(["LUK +12%", "DEX +9%", "Crit Damage +8%"], lit=7, seed=9))])),
+                          cache=cache)  # 글자가 다른 툴팁(별만 다르면 재사용하고 별은 다시 센다 — 아래 테스트)
     assert len(fake.calls) == 2 and other.get("cached") is not True
 
 
@@ -171,3 +172,58 @@ def test_same_tooltip_arriving_concurrently_calls_ai_once():
     assert len(fake.calls) == 1
     assert sum(bool(o.get("cached")) for o in out) == 2
     assert all(o["listings"][0]["name"] == "에테르넬 나이트글러브" for o in out)
+
+
+def _tip_with(lines, lit=18, seed=1):
+    """별 줄은 _tooltip 그대로, 본문은 큰 글꼴(실제 툴팁 글자 크기)로 lines를 쓴다. 기본 몸통 12줄 + lines."""
+    from PIL import ImageDraw, ImageFont
+    t = _tooltip(lit=lit, seed=seed)
+    d = ImageDraw.Draw(t)
+    d.rectangle([2, 60, t.width - 3, t.height - 3], fill=(50, 57, 66))
+    font = ImageFont.load_default(size=15)
+    body = [f"STR +{100 + k * 7} ({k} +{k * 3})" for k in range(12)] + list(lines)
+    for k, line in enumerate(body):
+        d.text((16, 66 + k * 24), line, fill=(235, 235, 235), font=font)
+    return t
+
+
+def test_same_tooltip_on_changing_background_is_reused_by_text():
+    """툴팁은 반투명이라 뒤 배경이 비친다 — 대고 있는 동안 0.5초마다 보내도(2026-10-06) 글자가 같으면 AI를 다시 부르지 않는다.
+    별 줄(반짝이)은 지문에서 빼고, 재사용할 때 별은 지금 화면에서 다시 센다."""
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    tip = _tip_with(["INT +12%"])
+    analyze_frame(fake, _url(_frame([((520, 120), tip)])), cache=cache)
+    moved = _tip_with(["INT +12%"], lit=17, seed=5)            # 반짝이·별 바뀜, 1px 이동
+    again = analyze_frame(fake, _url(_frame([((521, 121), moved)])), cache=cache)
+    assert len(fake.calls) == 1 and again["cached"] is True
+    assert again["listings"][0]["starforce"] == 17
+
+
+def test_tooltip_at_another_position_is_read_again():
+    """마우스를 다른 매물·다른 장비 칸으로 옮기면 툴팁 위치가 바뀐다 — 글자가 거의 같아도(숫자 하나 차이) 다시 읽는다.
+    그림만으로는 숫자 하나 차이를 못 가른다(실측: 재압축만으로 글자 픽셀 925개 어긋남, 숫자 하나는 26개)."""
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    analyze_frame(fake, _url(_frame([((520, 120), _tip_with(["INT +12%", "INT +9%", "INT +9%"]))])), cache=cache)
+    analyze_frame(fake, _url(_frame([((520, 180), _tip_with(["INT +12%", "INT +12%", "INT +9%"]))])), cache=cache)
+    assert len(fake.calls) == 2
+
+
+def test_same_position_after_a_while_is_read_again():
+    """재사용은 '방금 대고 있던 툴팁'만(3초) — 목록을 넘긴 뒤 같은 자리에 온 다른 매물을 옛 판독으로 덮지 않는다."""
+    from server.vision import FrameCache
+    now = [100.0]
+    cache = FrameCache(clock=lambda: now[0])
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    frame = _url(_frame([((520, 120), _tip_with(["INT +12%"]))]))
+    analyze_frame(fake, frame, cache=cache)
+    now[0] += 2.0
+    assert analyze_frame(fake, frame, cache=cache)["cached"] is True    # 대고 있는 중(2초) → 재사용, 시간 연장
+    now[0] += 2.5
+    assert analyze_frame(fake, frame, cache=cache)["cached"] is True    # 마지막 재사용 2.5초 뒤 → 여전히 대고 있음
+    now[0] += 4.0
+    assert analyze_frame(fake, frame, cache=cache).get("cached") is not True
+    assert len(fake.calls) == 2
