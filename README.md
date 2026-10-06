@@ -46,6 +46,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
+| `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.
 
@@ -62,6 +63,13 @@ DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE
 - `Dockerfile`: 웹 빌드 → Python 런타임(uv). amd64·arm64 둘 다. 키는 이미지에 넣지 않고 실행 시 `.env`로 넣는다.
 - `docker-compose.yml`: `api`(FastAPI) + `caddy`(자동 HTTPS, `deploy/Caddyfile`).
 - `.github/workflows/deploy.yml`: 테스트 → arm64/amd64 이미지를 ghcr.io에 푸시 → (`DEPLOY_ENABLED=true`일 때) SSH로 VM 갱신.
+
+## PC가 꺼져도 Claude가 작업하기 (`.github/workflows/claude.yml`)
+
+- 이슈나 PR 댓글에 `@claude <할 일>` → 클라우드에서 작업하고 테스트 통과 시 main에 커밋·푸시(배포 워크플로가 이어서 돈다)
+- Actions 탭 → `claude` → Run workflow → 지시문 입력(비우면 GOALS.md의 남은 자동 목표)
+- 매일 09:00(KST) 남은 자동 목표가 있을 때만 이어서 진행한다. 없으면 Claude를 부르지 않는다
+- 작업 규칙: `.github/claude-rules.md` (한국어, 테스트 통과 후 커밋, 비밀값·사람 몫 목표·자동 수집 금지)
 
 ## 테스트와 게이트
 
