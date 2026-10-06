@@ -57,14 +57,13 @@ def test_password_hash_survives_docker_compose_interpolation():
     assert check_password("pw", legacy)
 
 
-def test_vision_evaluate_route_requires_admin_and_reevaluates(tmp_path):
+def test_vision_evaluate_route_reevaluates_without_login(tmp_path):
+    """2026-10-07: 화면 평가를 일반 유저에게 열면서 재평가(AI 호출 없음)도 로그인 없이 쓴다."""
     from fastapi.testclient import TestClient
     from server.app import create_app
     c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3"), agent_client=object(),
                               admin_password_hash=make_password_hash("pw", 1000), session_secret="s" * 40))
     body = {"name": "내신부레테", "listings": [{**_PEN, "category": "보조무기"}]}
-    assert c.post("/api/vision/evaluate", json=body).status_code == 401
-    c.post("/api/admin/login", json={"password": "pw"})
     items = c.post("/api/vision/evaluate", json=body).json()["items"]
     assert items[0]["evaluated"] and items[0]["slot"] == "보조무기"
 
