@@ -50,6 +50,14 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.
 
+## 데모 배포 (Render 무료, `render.yaml`)
+
+1. https://render.com 에 GitHub 계정으로 로그인 → **New → Blueprint** → 이 저장소 선택
+2. 비밀값 입력: `NEXON_API_KEY`, `OPENAI_API_KEY`(없으면 AI 기능만 꺼짐), `ADMIN_PASSWORD_HASH` — `SESSION_SECRET`은 자동 생성
+3. **Apply** → 빌드가 끝나면 `https://<이름>.onrender.com` 에서 열린다. 이후 main 푸시마다 자동 재배포
+
+무료 플랜은 15분 접속이 없으면 잠들고(다음 접속 30초~1분), 재시작하면 캐시가 비워진다. 운영(도메인·상시 가동)은 아래 VM 배포로 옮긴다.
+
 ## 배포 (Oracle Always Free ARM VM)
 
 ```bash

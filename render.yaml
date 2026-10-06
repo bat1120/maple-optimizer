@@ -1,0 +1,22 @@
+# 데모 배포(Render 무료): render.com → New → Blueprint → 이 저장소 → 비밀값 입력 → Apply.
+# 무료 플랜은 15분 접속이 없으면 잠들고(다음 접속 때 30초~1분), 재시작하면 캐시(.cache)가 비워진다 — 데모용.
+# 운영(도메인·상시 가동)은 README "배포"(VM + docker compose + Caddy)로 옮긴다.
+services:
+  - type: web
+    name: maple-optimizer
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NEXON_API_KEY        # 넥슨 Open API 키
+        sync: false
+      - key: OPENAI_API_KEY       # 관리자 AI 상담·화면 분석. 비우면 그 기능만 꺼진다
+        sync: false
+      - key: ADMIN_PASSWORD_HASH  # README 시크릿 표의 명령으로 만든 해시(비밀번호 원문 아님)
+        sync: false
+      - key: SESSION_SECRET       # 관리자 쿠키 서명 — Render가 임의 값으로 만든다
+        generateValue: true
+      - key: AGENT_DAILY_TOKEN_BUDGET
+        value: "200000"

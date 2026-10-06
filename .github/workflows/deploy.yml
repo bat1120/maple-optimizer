@@ -19,8 +19,25 @@ jobs:
       - run: npm --prefix web ci
       - run: npm --prefix web test
 
-  image:
+  smoke:
+    # 컨테이너가 실제로 뜨는지: 플랫폼이 주는 PORT(Render는 10000)로 /api/health 200 (2026-10-07)
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t maple-optimizer:smoke .
+      - run: docker run -d --name smoke -e PORT=10000 -e NEXON_API_KEY=dummy -p 10000:10000 maple-optimizer:smoke
+      - name: /api/health 200
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:10000/api/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs smoke
+          exit 1
+
+  image:
+    needs: [test, smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: read
