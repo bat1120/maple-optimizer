@@ -148,3 +148,27 @@ def test_yellowish_background_above_tooltip_does_not_hide_stars():
     for x, w in ((500, 30), (560, 9), (600, 50), (700, 14)):     # 툴팁 위 배경의 노란·주황 덩어리(크기·간격 제각각)
         d.rectangle([x, 126, x + w, 126 + max(8, w // 2)], fill=(250, 180, 40))
     assert stars_near(fr, find_tooltips(fr)[0]) == 18
+
+
+def test_short_medal_tooltip_cut_by_orange_name_plate_is_found():
+    """훈장 툴팁(2026-10-06 실측 321×250): 짧은 데다 주황 이름표가 가로로 지나가 어두운 열이 168px 두 토막으로 끊겼다.
+    짧은 끊김(3칸 이하)은 이어진 것으로 본다."""
+    tip = Image.new("RGB", (320, 250), PANEL)
+    d = ImageDraw.Draw(tip)
+    d.rectangle([0, 0, 319, 249], outline=(150, 160, 175))
+    d.rectangle([20, 50, 95, 125], fill=(200, 200, 205))        # 훈장 아이콘 칸(밝은 회색)
+    d.rectangle([0, 168, 319, 192], fill=(230, 140, 30))        # 주황 이름표(툴팁 폭 전체, 실측 약 24px)
+    for i in range(3):
+        d.text((20, 195 + i * 16), "보스 몬스터 데미지 +5%", fill=(230, 230, 230))
+    boxes = find_tooltips(_frame([((1000, 380), tip)]))
+    assert len(boxes) == 1
+    x0, y0, x1, y1 = boxes[0]
+    assert abs(x0 - 1000) <= 8 and abs(x1 - 1320) <= 8 and abs(y0 - 380) <= 16 and abs(y1 - 630) <= 16
+
+
+def test_extra_box_without_text_lines_is_not_a_tooltip():
+    """보충 방식이 잡은 어두운 상자라도 글자 줄이 없으면(게임 속 깃발, 2026-10-06 실측) 툴팁이 아니다 — AI 비용 방지."""
+    tip = Image.new("RGB", (320, 250), PANEL)
+    d = ImageDraw.Draw(tip)
+    d.rectangle([0, 168, 319, 192], fill=(230, 140, 30))
+    assert find_tooltips(_frame([((1000, 380), tip)])) == []

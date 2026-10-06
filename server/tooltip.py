@@ -97,24 +97,51 @@ def _split_columns(a: np.ndarray, box: tuple[int, int, int, int]) -> list[tuple[
     return [box]
 
 
-def _column_runs(grid: np.ndarray) -> list[tuple[int, int, int]]:
-    """열마다 가장 긴 세로 어두운 구간 (열, 시작 행, 끝 행)."""
+def _column_runs(grid: np.ndarray, max_gap: int = 0) -> list[tuple[int, int, int]]:
+    """열마다 가장 긴 세로 어두운 구간 (열, 시작 행, 끝 행). max_gap칸 이하로 끊긴 곳은 이어진 것으로 본다 —
+    훈장처럼 짧은 툴팁은 주황 이름표·아이콘 칸에 끊겨 기준 길이에 못 미친다(2026-10-06 실측: 168px 두 토막)."""
     out = []
     for x in range(grid.shape[1]):
-        best, start, cur = (0, 0, 0), None, 0
+        best, start, last = (0, 0, 0), None, None
         for y, v in enumerate(grid[:, x]):
-            if v:
-                start = y if start is None else start
-                cur = y - start + 1
-                if cur > best[0]:
-                    best = (cur, start, y)
-            else:
-                start = None
+            if not v:
+                continue
+            if start is None or y - last - 1 > max_gap:
+                start = y
+            last = y
+            if y - start + 1 > best[0]:
+                best = (y - start + 1, start, y)
         out.append((x, best[1], best[2]) if best[0] else (x, 0, -1))
     return out
 
 
 def find_tooltips(img: Image.Image) -> list[tuple[int, int, int, int]]:
+    """툴팁 상자 [(x0, y0, x1, y1)] 왼쪽부터. 기본 방식 결과는 그대로 두고, 짧게 끊긴 열을 잇는 방식(훈장처럼 짧은 툴팁)으로
+    찾은 상자 중 기존 상자와 겹치지 않는 것만 보탠다 — 바로 바꾸면 실제 화면 25/88장·수집본 74/174장의 상자가 달라졌다(2026-10-06)."""
+    base = _find(img, max_gap=0, widen=False)
+    a = np.asarray(img.convert("RGB")).astype(np.int16)
+    extra = [b for b in _find(img, max_gap=3, widen=True)
+             if not any(_overlap(b, o) for o in base) and _looks_like_text(a, b)]
+    return sorted(set(base + extra))
+
+
+def _looks_like_text(a: np.ndarray, box) -> bool:
+    """보충 상자는 글자 줄이 있어야 툴팁으로 본다 — 깃발·어두운 배경 같은 가짜를 AI에 보내지 않으려고.
+    실측(2026-10-06): 훈장 툴팁 글자 줄 12·밝은 글자 5%, 기존 방식이 찾은 툴팁 최소 6줄, 게임 속 가짜(깃발) 0줄."""
+    x0, y0, x1, y1 = box
+    sub = a[y0:y1, x0:x1]
+    luma = 0.299 * sub[..., 0] + 0.587 * sub[..., 1] + 0.114 * sub[..., 2]
+    bright = luma > 170
+    rows = bright.mean(axis=1) > 0.02
+    lines = int(rows[0]) + int(np.count_nonzero(rows[1:] & ~rows[:-1]))
+    return lines >= 8 and 0.03 <= bright.mean() <= 0.20
+
+
+def _overlap(a, b) -> bool:
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+def _find(img: Image.Image, max_gap: int, widen: bool) -> list[tuple[int, int, int, int]]:
     """툴팁 상자 [(x0, y0, x1, y1)] 왼쪽부터.
     툴팁은 경매장 창 위에 겹쳐 뜨고 창 테두리도 같은 남회색이라, 어두운 덩어리로는 둘이 붙는다(2026-10-04 실측).
     그래서 '위에서 아래로 길게 이어지는 어두운 열'을 모아 툴팁 폭을 잡는다 — 경매장 창 본문은 흰색이라 끊긴다."""
@@ -124,7 +151,7 @@ def find_tooltips(img: Image.Image) -> list[tuple[int, int, int, int]]:
     gh, gw = h // CELL, w // CELL
     grid = _close(dark[: gh * CELL, : gw * CELL].reshape(gh, CELL, gw, CELL).mean(axis=(1, 3)) > 0.45)
     need = MIN_H // CELL
-    runs = _column_runs(grid)
+    runs = _column_runs(grid, max_gap)
     groups, cur = [], []
     for x, y0, y1 in runs:
         if y1 - y0 + 1 >= need:
@@ -140,7 +167,14 @@ def find_tooltips(img: Image.Image) -> list[tuple[int, int, int, int]]:
             continue
         y0 = int(np.median([r[1] for r in g])) * CELL
         y1 = (int(np.median([r[2] for r in g])) + 1) * CELL
-        box = (g[0][0] * CELL, y0, (g[-1][0] + 1) * CELL, y1)
+        gx0, gx1 = g[0][0], g[-1][0]
+        # 아이콘 칸처럼 밝은 것에 막혀 짧아진 가장자리 열: 같은 높이에서 절반 이상 어두우면 툴팁에 넣는다(훈장 아이콘)
+        rows = slice(y0 // CELL, y1 // CELL)
+        while widen and gx0 > 0 and grid[rows, gx0 - 1].mean() >= 0.5:
+            gx0 -= 1
+        while widen and gx1 < gw - 1 and grid[rows, gx1 + 1].mean() >= 0.5:
+            gx1 += 1
+        box = (gx0 * CELL, y0, (gx1 + 1) * CELL, y1)
         for part in _split_columns(a, box):
             px0, py0, px1, py1 = _refine(dark, part)
             if MIN_W <= px1 - px0 <= MAX_W and py1 - py0 >= MIN_H:
