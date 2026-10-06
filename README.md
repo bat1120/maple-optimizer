@@ -41,7 +41,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `OPENAI_MODEL` | `.env` | 기본 `gpt-6-luna`(저가). `gpt-6.1-sol`(중간)·`gpt-6-astra`(상위)로 바꿀 수 있다 |
 | `ADMIN_PASSWORD_HASH` | `.env` | `uv run python -c "from server.admin import make_password_hash as h; print(h('비밀번호'))"` 결과. 비밀번호 원문은 저장하지 않는다 |
 | `SESSION_SECRET` | `.env` | 32자 이상 임의 문자열 (관리자 쿠키 서명) |
-| `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 Claude를 호출하지 않는다 |
+| `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 OpenAI를 호출하지 않는다(에이전트·화면 분석 공통) |
+| `VISION_DATASET_DIR` | `.env` | 화면 분석 학습·진단 데이터 폴더(선택). 로컬 `.data/vision`, VM은 캐시 볼륨 안 `/app/.cache/vision` 권장. 비우면 저장 안 함 |
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |

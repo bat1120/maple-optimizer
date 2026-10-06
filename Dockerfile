@@ -15,6 +15,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY engine/ engine/
 COPY nexon/ nexon/
 COPY server/ server/
+COPY agent/ agent/
 RUN uv sync --frozen --no-dev
 COPY --from=web /web/dist web/dist
 # NEXON_API_KEY는 실행 시 환경변수(.env → docker compose env_file)로 넣는다. 이미지에 넣지 않는다.
