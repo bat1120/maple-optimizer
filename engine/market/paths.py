@@ -37,7 +37,7 @@ class _Paths:
 
     def delta(self, slot: str, item: Item) -> tuple[float, list[dict]]:
         trial = dict(self.pl.items)
-        trial[slot] = _valued(item, self.pl.main, self.pl.per_sec)
+        trial[slot] = _valued(item, self.pl.mains, self.pl.per_sec)
         after = count_sets(trial.values(), self.branches, self.catalog)
         change = [{"set": k, "before": self.before.get(k, 0), "after": after.get(k, 0)}
                   for k in sorted(set(self.before) | set(after)) if self.before.get(k, 0) != after.get(k, 0)]

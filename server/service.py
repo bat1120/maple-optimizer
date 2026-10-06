@@ -231,9 +231,20 @@ def _total_key(total: dict | None) -> tuple:
     return tuple(sorted((k, v) for k, v in (total or {}).items() if v))
 
 
-def _cooldown_note(cooldown_main_pct: float | None) -> str:
-    return (f"쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요." if cooldown_main_pct
-            else "쿨감 효율은 실딜에 넣지 않았어요(쿨감 1초 = 주스탯 몇 %인지 정하면 넣어요).")
+def _cooldown(snap: CharacterSnapshot, cooldown_main_pct: float | None) -> tuple[dict, str]:
+    """쿨감을 어떻게 반영했는지(출처 포함)와 안내 문구."""
+    from engine.market.recommend import cooldown_valuer
+    _, src = cooldown_valuer(snap.character_class, cooldown_main_pct)
+    if src["kind"] == "manual":
+        return src, f"쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요(직접 입력)."
+    if src["kind"] == "table":
+        steps = "·".join(f"{s}초 {v:g}%" for s, v in sorted(src["cumulative"].items()))
+        return src, (f"{src['job']} 쿨감: {steps}({src['unit']}, 출처 {src['source']} · {src['date']}). "
+                     "표에 없는 초수는 반영하지 않아요(계단식이라 짐작하지 않아요).")
+    if src["kind"] == "reference":
+        return src, (f"{src['job']} 쿨감은 {src['unit']} 단위 자료만 있어 실딜에 넣지 않았어요({src['source']}). "
+                     "쿨감 1초 = 주스탯 몇 %인지 직접 입력하면 넣어요.")
+    return src, "이 직업은 출처 있는 쿨감 수치를 못 찾아 실딜에 넣지 않았어요 — 쿨감 1초 = 주스탯 몇 %인지 직접 입력하면 넣어요."
 
 
 def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_main_pct: float | None = None) -> dict:
@@ -250,11 +261,12 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                       "delta_pct": r.delta_pct, "probability": r.probability, "kept": r.kept,
                       "search": f"{category} · {r.kind} {r.grade} {' / '.join(r.target)} · {r.min_starforce}성 이상",
                       "current": {"name": r.current_name, "starforce": r.min_starforce, "potentials": r.current}})
+    cd, cd_note = _cooldown(snap, cooldown_main_pct)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
-            "cooldown_main_pct": cooldown_main_pct,
+            "cooldown_main_pct": cooldown_main_pct, "cooldown": cd,
             "note": ("부위·잠재/에디마다 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐어요. "
                      "줄 수치는 공식 큐브 확률표의 흔한 줄(확률 2% 이상, 이탈 제외)이고, 그 줄만 바꾼 같은 템 기준이에요. "
-                     "쿨감 줄은 유지해요 — " + _cooldown_note(cooldown_main_pct))}
+                     "쿨감 줄은 유지해요 — " + cd_note)}
 
 
 def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
@@ -282,8 +294,9 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
     rm = build(snap, chosen, b, CATALOG, cooldown_main_pct, observed)
     rows = [{"slot": slot, **row} for slot, row in rm.items()]
     value = [{**v, "cube_cost_text": meso_text(v["cube_cost"])} for v in value_ranking(rm)]
+    cd, cd_note = _cooldown(snap, cooldown_main_pct)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "cooldown_main_pct": cooldown_main_pct,
-            "slots": rows, "value_ranking": value,
+            "cooldown": cd, "slots": rows, "value_ranking": value,
             "value_note": ("가격 대비 순위: 메소 재설정(윗잠=블랙 큐브, 에디=화이트 에디셔널 큐브)으로 그 단계까지 가는 평균 비용 "
                            "(등급 상승·천장 포함)과 억당 실딜 상승률. 도달 확률은 줄별 기여를 더해 비교한 근사예요. "
                            "경매장에서 그 단계 템을 이보다 싸게 사면 그쪽이 이득이에요 — 화면 매물 평가로 비교하세요."),
@@ -292,4 +305,4 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
                             "다를 수 있어 참고용이에요."),
             "note": ("각 단계 = 그 등급에서 흔한 줄(확률 2% 이상, 이탈 제외)로 2줄·3줄을 맞춘 경우예요. probability는 큐브 한 번에 "
                      "그 조합이 나올 확률(참고)이에요. route가 '큐브'인 부위(제네시스 무기 등)는 경매장에서 살 수 없어요. "
-                     + _cooldown_note(cooldown_main_pct))}
+                     + cd_note)}

@@ -29,7 +29,7 @@ export default function RecommendPanel({ name, defense, autoLoad = false }) {
     <section className="panel">
       <h3>경매장 검색 추천</h3>
       <label>쿨감 1초 = 주스탯 %
-        <input inputMode="decimal" value={cooldown} placeholder="비우면 쿨감 미반영" onChange={(e) => setCooldown(e.target.value)} />
+        <input inputMode="decimal" value={cooldown} placeholder="비우면 직업 자료값(있을 때만)" onChange={(e) => setCooldown(e.target.value)} />
       </label>
       <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
         {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "검색 추천 받기"}
@@ -64,7 +64,7 @@ export default function RecommendPanel({ name, defense, autoLoad = false }) {
               ))}
             </ol>
           )}
-          <p className="muted">게임 경매장에서 이 조건으로 검색한 뒤, 아래 '경매장 화면 분석'에 게임 창을 연결하면 실제 매물을 평가해요.</p>
+          <p className="muted">게임 경매장에서 이 조건으로 검색해 보세요. PC에서는 아래 '경매장 화면 평가'에 게임 창을 연결하면 실제 매물을 내 캐릭터 기준으로 평가해요.</p>
         </>
       )}
     </section>

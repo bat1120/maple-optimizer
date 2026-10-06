@@ -1,5 +1,5 @@
 {
- "criterion1_server_tests_passed": 24,
+ "criterion1_server_tests_passed": 26,
  "criterion2_nexon_calls_for_two_lookups": 1,
  "criterion3_status_map": {
   "CharacterNotFound": 404,

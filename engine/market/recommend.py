@@ -107,30 +107,56 @@ def with_additional(it: Item, lines: list[str], level: int) -> Item:
 SWAP = {"잠재": with_potentials, "에디": with_additional}
 
 
-def _valued(it: Item, main: str, per_sec: float | None) -> Item:
-    """쿨감 환산: 쿨감 초 × N%를 주스탯%로 더한 사본(per_sec가 없거나 쿨감이 없으면 그대로)."""
+_COOLDOWN_DATA = pathlib.Path(__file__).resolve().parents[1] / "data" / "cooldown_value.json"
+
+
+def cooldown_valuer(character_class: str, manual_pct: float | None):
+    """(쿨감 총 초 → 주스탯 % 또는 None, 출처 정보). 직접 입력이 있으면 그 값 × 초.
+    없으면 직업 표(출처 원문 숫자, 누적·계단식) — 표에 없는 초수·직업은 None(반영 안 함, 사이를 짐작하지 않는다)."""
+    if manual_pct:
+        return (lambda s: s * manual_pct), {"kind": "manual", "pct_per_sec": manual_pct}
+    data = json.loads(_COOLDOWN_DATA.read_text(encoding="utf-8"))
+    e = data["jobs"].get(character_class)
+    if e:
+        table = {int(k): v for k, v in e["cumulative"].items()}
+        return (lambda s: table.get(int(s))), {"kind": "table", "job": character_class, **{k: e[k] for k in ("unit", "source", "date", "basis")},
+                                               "cumulative": table}
+    r = data["reference_only"].get(character_class)
+    if r:
+        return (lambda s: None), {"kind": "reference", "job": character_class, **{k: r[k] for k in ("unit", "source", "date", "why_not_applied")}}
+    return (lambda s: None), {"kind": "none", "job": character_class}
+
+
+def _valued(it: Item, mains, valuer) -> Item:
+    """쿨감 환산: 이 템의 쿨감 초를 주스탯%로 더한 사본(값이 없거나 쿨감이 없으면 그대로).
+    mains: 주스탯 하나 또는 여럿(제논은 STR·DEX·LUK 모두). valuer: 초 → % 함수, 또는 예전처럼 1초당 % 숫자."""
     sec = cooldown_seconds(it)
-    if not per_sec or not sec:
+    if not sec or not valuer:
+        return it
+    pct = valuer(sec) if callable(valuer) else sec * valuer
+    if not pct:
         return it
     out = copy.copy(it)
     out.stats = copy.deepcopy(it.stats)
-    out.stats.add(StatLine(main, sec * per_sec, True))
+    for m in ([mains] if isinstance(mains, str) else mains):
+        out.stats.add(StatLine(m, pct, True))
     return out
 
 
 class _Planner:
     def __init__(self, snap, setting, boss, catalog, cooldown_main_pct):
         job = job_profile(snap.character_class)
-        self.snap, self.main, self.per_sec = snap, job.mains[0], cooldown_main_pct
+        self.snap, self.main, self.mains = snap, job.mains[0], job.mains
+        self.per_sec, self.cooldown_source = cooldown_valuer(snap.character_class, cooldown_main_pct)
         self.useful = {self.main, job.attack, "BOSS", "IED", "CD", "DMG"}
         self.ev = Evaluator(snap, setting, boss, catalog)
         self.raw = self.ev.base_items()
-        self.items = {s: _valued(it, self.main, cooldown_main_pct) for s, it in self.raw.items()}
+        self.items = {s: _valued(it, self.mains, self.per_sec) for s, it in self.raw.items()}
         self.base = self.ev.index(self.items)
 
     def delta(self, slot: str, kind: str, lines: list[str]) -> float:
         trial = dict(self.items)
-        trial[slot] = _valued(SWAP[kind](self.raw[slot], lines, self.snap.level), self.main, self.per_sec)
+        trial[slot] = _valued(SWAP[kind](self.raw[slot], lines, self.snap.level), self.mains, self.per_sec)
         return (self.ev.index(trial) / self.base - 1) * 100
 
     def is_useful(self, option: str) -> bool:

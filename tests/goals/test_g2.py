@@ -54,8 +54,9 @@ def test_criterion3_per_100m_matches_hand_calculation_and_rejects_bad_price():
     hunt = Setting(1, 1, 1)
     ring = snap.equipment_presets[2]["반지4"]
     ev = evaluate_listing(snap, hunt, Listing("반지4", ring, price=3_000_000_000, resale=500_000_000), BOSS, CAT)
-    hand = ev.delta_pct / ((3_000_000_000 - 500_000_000) / 100_000_000)
+    # 판매 수수료(기본 5%)는 지금 템 판매 대금에서만 빠진다(2026-10-04 G13 후속에서 추가 — 이 수작업 계산이 따라가지 못했다)
+    hand = ev.delta_pct / ((3_000_000_000 - 500_000_000 * (1 - 0.05)) / 100_000_000)
     _record("criterion3_per_100m", ev.per_100m)
     assert abs(ev.per_100m - hand) < 1e-9
     with pytest.raises(InvalidPrice):
-        evaluate_listing(snap, hunt, Listing("반지4", ring, price=100, resale=100), BOSS, CAT)
+        evaluate_listing(snap, hunt, Listing("반지4", ring, price=90, resale=100), BOSS, CAT)  # 가격 ≤ 수수료 뺀 판매 대금(95)

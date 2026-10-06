@@ -100,9 +100,9 @@ def test_criterion5_auth_and_budget(tmp_path):
     payload = json.dumps({"tooltip_visible": False, "listings": []})
     fake = FakeVision(payload, payload)
     c = _app(tmp_path, fake, budget=500)
-    assert c.post("/api/vision/listings", json={"image": IMG}).status_code == 401
+    # 2026-10-07 사용자 결정(공개 + 한도): 로그인 없이도 판독된다 — 하루 토큰 한도는 누구에게나 그대로 걸린다
+    assert c.post("/api/vision/listings", json={"image": IMG}).status_code == 200   # 1000 토큰 사용(일반 유저)
     c.post("/api/admin/login", json={"password": "pw"})
-    assert c.post("/api/vision/listings", json={"image": IMG}).status_code == 200   # 1000 토큰 사용
     r = c.post("/api/vision/listings", json={"image": IMG})
     _record("criterion5", {"after_budget_status": r.status_code, "calls": len(fake.calls)})
     assert r.status_code == 429 and "토큰" in r.json()["message"] and len(fake.calls) == 1
