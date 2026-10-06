@@ -82,3 +82,35 @@ def test_screen_reads_are_logged_and_stats_public_export_admin(tmp_path, monkeyp
     c.post("/api/admin/login", json={"password": "pw"})
     r = c.get("/api/market/export.csv")
     assert r.status_code == 200 and "text/csv" in r.headers["content-type"] and "에테르넬 메이지글러브" in r.text
+
+
+def test_reconnects_once_when_connection_dropped(tmp_path):
+    """Neon 무료 DB는 쉬면 잠들며 연결을 끊는다(2026-10-07) — 끊긴 연결이면 다시 열고 한 번 더 시도한다."""
+    import sqlite3
+    path = str(tmp_path / "r.sqlite3")
+    opened = []
+
+    class Dropping:
+        """첫 연결은 표를 만든 뒤 끊긴 것처럼 동작한다."""
+        def __init__(self):
+            self.real = sqlite3.connect(path, check_same_thread=False)
+            self.dead = False
+        def cursor(self):
+            if self.dead:
+                raise ConnectionError("server closed the connection unexpectedly")
+            return self.real.cursor()
+        def commit(self):
+            self.real.commit()
+        def rollback(self):
+            pass
+
+    def connect():
+        c = Dropping()
+        opened.append(c)
+        return c
+
+    log = ObservationLog(connect(), "?", "sqlite", lambda: 1_800_000_000.0, "INTEGER PRIMARY KEY AUTOINCREMENT",
+                         reconnect=connect, retry_on=(ConnectionError,))
+    opened[0].dead = True
+    assert log.record(READ) is True and len(opened) == 2
+    assert log.count() == 1

@@ -33,15 +33,36 @@ def _row(read: dict, now: float) -> dict | None:
 
 
 class ObservationLog:
-    def __init__(self, conn, placeholder: str, backend: str, clock: Callable[[], float], serial: str):
+    def __init__(self, conn, placeholder: str, backend: str, clock: Callable[[], float], serial: str,
+                 reconnect: Callable | None = None, retry_on: tuple = ()):
         self._conn, self._ph, self.backend, self._clock = conn, placeholder, backend, clock
+        self._reconnect, self._retry_on = reconnect, retry_on
         self._lock = threading.Lock()
         cols = ", ".join(f"{c} {'DOUBLE PRECISION' if c == 'seen_at' else 'BIGINT' if c == 'price' else 'INTEGER' if c in ('starforce', 'level') else 'TEXT'}"
                          if c not in ("sold", "other_world") else f"{c} BOOLEAN" for c in COLUMNS)
+        self._run(lambda cur: cur.execute(f"CREATE TABLE IF NOT EXISTS observations (id {serial}, key TEXT UNIQUE, {cols})"),
+                  commit=True)
+
+    def _run(self, fn, commit: bool = False):
+        """fn(cursor)를 실행. Neon처럼 쉬다 연결을 끊는 DB면 한 번 다시 연결해 재시도한다."""
         with self._lock:
-            cur = self._conn.cursor()
-            cur.execute(f"CREATE TABLE IF NOT EXISTS observations (id {serial}, key TEXT UNIQUE, {cols})")
-            self._conn.commit()
+            for attempt in (0, 1):
+                try:
+                    cur = self._conn.cursor()
+                    out = fn(cur)
+                    if commit:
+                        self._conn.commit()
+                    return out
+                except self._retry_on:
+                    if attempt or self._reconnect is None:
+                        raise
+                    self._conn = self._reconnect()
+                except Exception:
+                    try:
+                        self._conn.rollback()
+                    except Exception:
+                        pass
+                    raise
 
     @classmethod
     def sqlite(cls, path: str, clock: Callable[[], float]):
@@ -51,7 +72,9 @@ class ObservationLog:
     @classmethod
     def postgres(cls, url: str, clock: Callable[[], float]):
         import psycopg  # Docker 이미지에서만 설치(Dockerfile) — DATABASE_URL이 있을 때만 필요
-        return cls(psycopg.connect(url, autocommit=False), "%s", "postgres", clock, "BIGSERIAL PRIMARY KEY")
+        return cls(psycopg.connect(url, autocommit=False), "%s", "postgres", clock, "BIGSERIAL PRIMARY KEY",
+                   reconnect=lambda: psycopg.connect(url, autocommit=False),
+                   retry_on=(psycopg.OperationalError, psycopg.InterfaceError))
 
     def record(self, read: dict) -> bool:
         """저장했으면 True. 가격·잠재/에디 줄·부위가 있어야 하고, 같은 날 같은 매물·가격은 한 번만."""
@@ -63,36 +86,31 @@ class ObservationLog:
         names = ("key",) + COLUMNS
         sql = (f"INSERT INTO observations ({', '.join(names)}) VALUES ({', '.join([self._ph] * len(names))}) "
                "ON CONFLICT (key) DO NOTHING")
-        with self._lock:
-            cur = self._conn.cursor()
-            try:
-                cur.execute(sql, (key, *(row[c] for c in COLUMNS)))
-                self._conn.commit()
-            except Exception:
-                self._conn.rollback()
-                raise
+        def ins(cur):
+            cur.execute(sql, (key, *(row[c] for c in COLUMNS)))
             return cur.rowcount == 1
+        return self._run(ins, commit=True)
 
     def count(self) -> int:
-        with self._lock:
-            cur = self._conn.cursor()
+        def q(cur):
             cur.execute("SELECT COUNT(*) FROM observations")
             return int(cur.fetchone()[0])
+        return self._run(q)
 
     def stats(self) -> dict:
-        with self._lock:
-            cur = self._conn.cursor()
+        def q(cur):
             cur.execute("SELECT category, COUNT(*) FROM observations GROUP BY category ORDER BY category")
             by = {c: int(n) for c, n in cur.fetchall()}
             cur.execute("SELECT MIN(day), MAX(day) FROM observations")
-            first, last = cur.fetchone()
+            return by, cur.fetchone()
+        by, (first, last) = self._run(q)
         return {"total": sum(by.values()), "by_category": by, "first_day": first, "last_day": last, "backend": self.backend}
 
     def export_csv(self) -> str:
-        with self._lock:
-            cur = self._conn.cursor()
+        def q(cur):
             cur.execute(f"SELECT {', '.join(COLUMNS)} FROM observations ORDER BY seen_at")
-            rows = cur.fetchall()
+            return cur.fetchall()
+        rows = self._run(q)
         buf = io.StringIO()
         w = csv.writer(buf)
         w.writerow(COLUMNS)
