@@ -117,6 +117,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
           {item.per_100m != null ? ` · 억당 ${formatPct(item.per_100m)}` : ""}
           {item.main_stat_gain != null ? ` · 환산 ${formatStat(item.main_stat_gain)}` : ""}
           {item.excluded?.length ? <span className="muted"> · 계산 제외: {item.excluded.join(", ")}</span> : null}
+          {item.special_ring_note ? <><br /><span className="error">{item.special_ring_note}</span></> : null}
         </span>
       ) : (
         <span className="muted">{item.reason || "목록만 보여요 — 툴팁을 띄우면 평가해요"}</span>

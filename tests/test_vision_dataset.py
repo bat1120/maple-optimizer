@@ -79,3 +79,15 @@ def test_dataset_is_off_by_default(tmp_path):
     assert c.get("/api/vision/dataset").json() == {"enabled": False, "frames": 0, "corrected": 0}
     bad = c.post("/api/vision/correct", json={"frame_id": "x", "signature": "s", "name": "내신부레테", "fields": {}})
     assert bad.status_code == 503
+
+
+def test_skipped_frames_are_kept_separately_for_diagnosis(tmp_path):
+    """'툴팁 없음'으로 건너뛴 화면도 따로 남긴다 — 마우스를 댔는데 안 읽힌 템(2026-10-06 망토·상의·하의)의 원인을 보려고.
+    학습 프레임 수에는 세지 않고, 따로 상한(MAX_SKIPPED)을 둔다."""
+    from server.dataset import MAX_SKIPPED
+    store = DatasetStore(str(tmp_path / "ds"), clock=lambda: 1.0)
+    url = "data:image/jpeg;base64," + base64.b64encode(b"jpg").decode()
+    for _ in range(MAX_SKIPPED + 3):
+        store.save_skipped(url, {"skipped": "툴팁 없음"})
+    assert len(list((tmp_path / "ds" / "skipped").iterdir())) == MAX_SKIPPED
+    assert store.stats()["frames"] == 0

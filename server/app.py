@@ -47,6 +47,10 @@ def _err(e: ApiError) -> JSONResponse:
     return JSONResponse(status_code=e.status, content={"code": e.code, "message": e.message})
 
 
+import logging
+_log = logging.getLogger("uvicorn.error")
+
+
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
@@ -308,6 +312,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
         if not data.get("cached"):
             session_reads.extend(data["listings"] + data.get("equipped_items", []))
+        names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]
+        kind = "건너뜀(툴팁 없음)" if data.get("skipped") else "재사용" if data.get("cached") else "판독"
+        _log.info("화면 %s · 툴팁 %s개 · %s", kind, data.get("tooltips_found", 0), ", ".join(n or "?" for n in names) or "-")
+        if dataset and data.get("skipped"):
+            dataset.save_skipped(body.image, {"skipped": data["skipped"]})
         # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다
         frame_id = (dataset.save_frame(body.image, data)
                     if dataset and not data.get("cached") and not data.get("skipped") else None)

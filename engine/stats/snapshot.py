@@ -30,6 +30,7 @@ class Item:
     level: int = 0
     potential_grade: str | None = None   # 레어·에픽·유니크·레전드리
     additional_grade: str | None = None  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
+    special_ring_level: int = 0  # 특수 반지 스킬 레벨(컨티뉴어스·리스트레인트 등). 0이면 특수 반지 아님. 효과는 실딜에 없다
 
 
 @dataclass

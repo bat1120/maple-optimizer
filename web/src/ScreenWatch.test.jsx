@@ -297,3 +297,14 @@ describe("screen watch tooltips only", () => {
     expect(JSON.parse(f.mock.calls.at(-1)[1].body).tooltips_only).toBe(false);
   });
 });
+
+describe("screen watch special ring", () => {
+  it("특수 반지 매물에는 효과 미반영·레벨 비교 안내를 보여준다", () => {
+    const row = { signature: "r", evaluated: true, slot: "반지3", delta_pct: -0.1, per_100m: null, main_stat_gain: -20, excluded: [],
+                  special_ring_note: "특수 반지 스킬 효과는 실딜 계산에 없어요 — 스탯만 계산했어요. 이 매물 4레벨 · 지금 낀 컨티뉴어스 링 3레벨",
+                  read: { name: "컨티뉴어스 링", total: { INT: 3 }, potentials: [], price: 5e9 } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} />);
+    expect(screen.getByText(/이 매물 4레벨 · 지금 낀 컨티뉴어스 링 3레벨/)).toBeInTheDocument();
+  });
+});
+

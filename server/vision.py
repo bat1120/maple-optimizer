@@ -28,7 +28,8 @@ _SCHEMA = {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
-                             "total", "breakdown", "potentials", "additional", "price", "equipped", "tooltip"],
+                             "total", "breakdown", "potentials", "additional", "price", "equipped", "tooltip",
+                             "special_ring_level"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
@@ -58,6 +59,8 @@ _SCHEMA = {
                     "additional": {"type": "array", "items": {"type": "string"},
                                    "description": "에디셔널 잠재능력 줄 원문 그대로 (예: '마력 +10')"},
                     "price": {"type": ["integer", "null"], "description": "판매 가격(메소). 보이지 않으면 null"},
+                    "special_ring_level": {"type": ["integer", "null"],
+                                           "description": "특수 반지(컨티뉴어스·리스트레인트·웨폰퍼프 등) 툴팁에 적힌 스킬 레벨. 특수 반지가 아니거나 안 보이면 null"},
                 },
             },
         },
@@ -180,7 +183,10 @@ def normalize_listing(item: dict) -> dict:
 def signature(item: dict) -> str:
     """같은 매물을 두 번 평가하지 않도록 쓰는 지문."""
     # 가격·총 옵션은 화면을 읽을 때마다 숫자가 조금씩 흔들려 같은 매물이 둘로 갈린다(2026-10-04 실사용) → 뺀다
-    key = json.dumps([item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])], ensure_ascii=False)
+    parts = [item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])]
+    if item.get("special_ring_level"):  # 이름이 같은 특수 반지도 레벨이 다르면 다른 매물
+        parts.append(item["special_ring_level"])
+    key = json.dumps(parts, ensure_ascii=False)
     return hashlib.sha1(key.encode()).hexdigest()[:16]
 
 

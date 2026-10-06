@@ -62,3 +62,22 @@ def test_score_uses_reads_remembered_by_server(tmp_path):
     assert r["matched"] == 1 and r["items"][0]["name"] == it.name
     assert c.post("/api/vision/score/reset").json() == {"cleared": True}
     assert c.post("/api/vision/score", json={"name": "내신부레테", "reads": []}).json()["matched"] == 0
+
+
+def _no_potential(snap, slot, preset=2):
+    return snap.equipment_presets[preset][slot]
+
+
+def test_items_without_potential_are_scored_too():
+    """포켓·특수 반지·훈장도 경매장 매물이 있다(2026-10-06 사용자) — 잠재가 없어도 채점한다."""
+    snap = snapshot(bundle("레테"))
+    reads = [expected_from_item(_no_potential(snap, s)) for s in ("반지3", "포켓 아이템", "훈장")]
+    r = score_reads(snap, reads)
+    assert r["matched"] == 3 and r["unmatched"] == [] and r["accuracy"] == 1.0
+
+
+def test_special_ring_level_comes_from_api():
+    snap = snapshot(bundle("레테"))
+    ring = _no_potential(snap, "반지3")
+    assert ring.name == "컨티뉴어스 링" and ring.special_ring_level >= 1
+    assert expected_from_item(ring)["special_ring_level"] == ring.special_ring_level

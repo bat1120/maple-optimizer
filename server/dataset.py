@@ -12,6 +12,7 @@ import uuid
 from collections.abc import Callable
 
 MAX_FRAMES = 2000  # 이보다 많으면 오래된 프레임부터 지운다
+MAX_SKIPPED = 300  # '툴팁 없음'으로 건너뛴 화면(진단용) 상한 — 학습 프레임과 따로 둔다
 _ID = re.compile(r"^[0-9]+-[0-9a-f]{8}$")
 
 
@@ -37,6 +38,16 @@ class DatasetStore:
         for old in frames[:-MAX_FRAMES]:
             shutil.rmtree(old, ignore_errors=True)
         return fid
+
+    def save_skipped(self, image_data_url: str, info: dict) -> None:
+        """AI에 안 보낸 화면(툴팁 못 찾음)을 진단용으로 남긴다. 마우스를 댔는데 안 읽힌 템을 찾는 데 쓴다."""
+        root = self.root / "skipped"
+        d = root / f"{int(self._clock() * 1000)}-{uuid.uuid4().hex[:8]}"
+        d.mkdir(parents=True)
+        (d / "frame.jpg").write_bytes(base64.b64decode(image_data_url.split(",", 1)[1]))
+        (d / "info.json").write_text(json.dumps(info, ensure_ascii=False), encoding="utf-8")
+        for old in sorted(root.iterdir())[:-MAX_SKIPPED]:
+            shutil.rmtree(old, ignore_errors=True)
 
     def reading(self, frame_id: str) -> dict:
         return json.loads((self._dir(frame_id) / "reading.json").read_text(encoding="utf-8"))

@@ -156,8 +156,13 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     b = boss(defense)
     chosen = (setting or rank_settings(snap, b, CATALOG)[0][0]) if snap else None
     base = evaluate_setting(snap, chosen, b, CATALOG) if snap else None
-    own = {(it.name, tuple(sorted(it.potentials))) for preset in (snap.equipment_presets.values() if snap else [])
-           for it in preset.values() if it.potentials}
+    from server.score import expected_from_item
+    worn = [it for preset in (snap.equipment_presets.values() if snap else []) for it in preset.values()]
+    own = {(it.name, tuple(sorted(it.potentials))) for it in worn if it.potentials}
+    # 잠재 없는 착용 템(포켓·훈장·특수 반지)은 이름 + 총 옵션으로 알아본다
+    own_plain = {(it.name, _total_key(expected_from_item(it)["total"])) for it in worn
+                 if not it.potentials and it.core is not None}
+    own_rings = [it for it in worn if it.special_ring_level]
     for x in listings:
         sig = signature(x)
         from server.vision import checksum_failures, unverified_lines
@@ -174,7 +179,8 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
             out.append(row)
             continue
         main_lines = sorted(x.get("potential_lines") or x.get("potentials") or [])
-        if main_lines and (x.get("name"), tuple(main_lines)) in own:
+        if (main_lines and (x.get("name"), tuple(main_lines)) in own) or (
+                not main_lines and (x.get("name"), _total_key(x.get("total"))) in own_plain):
             # 넥슨 API의 착용 템과 이름·윗잠이 같다 = 옆에 뜬 '현재 장착 중인 장비' 비교 툴팁(AI가 놓쳐도 잡는다)
             row["equipped"] = True
             row["reason"] = "지금 착용 중인 템이에요(비교 툴팁) — 매물로 평가하지 않아요"
@@ -201,11 +207,24 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
         gain = equivalent_main_stat(predict_setting(snap, chosen, CATALOG), job_profile(snap.character_class),
                                     new / base) if base else None
         price = x.get("price")
+        ring = next((it for it in own_rings if it.name == x.get("name")), None) or (
+            own_rings[0] if own_rings and x.get("special_ring_level") else None)
+        if ring is not None or x.get("special_ring_level"):
+            lv = x.get("special_ring_level")
+            row["special_ring_note"] = (
+                "특수 반지 스킬 효과는 실딜 계산에 없어요 — 스탯만 계산했어요. "
+                f"이 매물 {f'{lv}레벨' if lv else '레벨 못 읽음'}"
+                + (f" · 지금 낀 {ring.name} {ring.special_ring_level}레벨" if ring else ""))
         row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
                     "main_stat_gain": gain, "excluded": item.excluded,
                     "per_100m": (delta / (price / 1e8)) if (delta is not None and price) else None})
         out.append(row)
     return out
+
+
+def _total_key(total: dict | None) -> tuple:
+    """총 옵션 비교용: 값이 있는 칸만, 정렬해서."""
+    return tuple(sorted((k, v) for k, v in (total or {}).items() if v))
 
 
 def _cooldown_note(cooldown_main_pct: float | None) -> str:

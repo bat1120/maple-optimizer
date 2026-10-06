@@ -35,6 +35,8 @@ def compare(label: dict, read: dict) -> tuple[int, int, list[str]]:
     lp, rp = label.get("potential_lines") or [], read.get("potential_lines") or []
     for i in range(len(lp)):
         chk(f"윗잠 {i + 1}", lp[i], rp[i] if i < len(rp) else None)
+    if label.get("special_ring_level"):
+        chk("특수 반지 레벨", label.get("special_ring_level"), read.get("special_ring_level"))
     chk("에디 등급", label.get("additional_grade"), read.get("additional_grade"))
     la, ra = label.get("additional") or [], read.get("additional") or []
     for i in range(len(la)):
@@ -54,15 +56,17 @@ def expected_from_item(it: Item) -> dict:
             total[key] = v
     return {"name": it.name, "level": it.level, "starforce": it.starforce, "starforce_source": "별 세기",
             "total": total, "potential_grade": it.potential_grade, "potential_lines": list(it.potentials),
-            "additional_grade": it.additional_grade, "additional": list(it.additional)}
+            "additional_grade": it.additional_grade, "additional": list(it.additional),
+            "special_ring_level": it.special_ring_level or None}
 
 
 def score_reads(snap: CharacterSnapshot, reads: list[dict]) -> dict:
-    """읽은 툴팁들을 착용 템(모든 장비 프리셋)과 이름으로 맞춰 채점. 같은 템을 여러 번 읽었으면 마지막 판독만."""
+    """읽은 툴팁들을 착용 템(모든 장비 프리셋)과 이름으로 맞춰 채점. 같은 템을 여러 번 읽었으면 마지막 판독만.
+    잠재가 없는 템(포켓·특수 반지·훈장)도 경매장 매물이 있으니 채점한다(2026-10-06)."""
     own = {}
     for preset in snap.equipment_presets.values():
         for it in preset.values():
-            if it.core is not None and it.potentials:
+            if it.core is not None:
                 own.setdefault(it.name, it)
     latest = {}
     unmatched = []

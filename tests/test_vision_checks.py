@@ -105,3 +105,34 @@ def test_response_includes_equipped_tooltip_reads(tmp_path):
     r = _app_with(payload, tmp_path, rate_limit=30).post(
         "/api/vision/listings", json={"image": "data:image/jpeg;base64,AAA"}).json()
     assert [x["name"] for x in r["equipped_items"]] == ["카오스 링"]
+
+
+def _read_of(it, category):
+    from server.score import expected_from_item
+    e = expected_from_item(it)
+    return {**e, "category": category, "part": category, "price": 1_000_000_000, "potentials": [],
+            "breakdown": {}, "equipped": False, "tooltip": 0}
+
+
+def test_equipped_item_without_potential_is_not_treated_as_listing():
+    """잠재 없는 착용 템(성배·훈장·특수 반지)도 이름+총 옵션이 같으면 '지금 착용 중' 비교 툴팁이다."""
+    from helpers import bundle
+    from nexon.convert import snapshot
+    from server.service import vision_items
+    snap = snapshot(bundle("레테"))
+    p = snap.equipment_presets[2]
+    rows = vision_items(snap, None, 300, [_read_of(p["포켓 아이템"], "포켓 아이템")], set())
+    assert rows[0].get("equipped") is True and rows[0]["evaluated"] is False
+
+
+def test_special_ring_listing_says_effect_not_valued_and_compares_level():
+    from helpers import bundle
+    from nexon.convert import snapshot
+    from server.service import vision_items
+    snap = snapshot(bundle("레테"))
+    ring = snap.equipment_presets[2]["반지3"]
+    listing = {**_read_of(ring, "반지"), "total": {"INT": 3}, "special_ring_level": 4}
+    row = vision_items(snap, None, 300, [listing], set())[0]
+    assert row["evaluated"] is True
+    note = row["special_ring_note"]
+    assert "효과" in note and "4레벨" in note and f"{ring.special_ring_level}레벨" in note

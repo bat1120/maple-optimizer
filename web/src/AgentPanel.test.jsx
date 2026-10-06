@@ -112,4 +112,14 @@ describe("agent panel character context", () => {
     const sent = withScreenItems("q", "x", [item]);
     expect(sent).toContain('"unverified_lines":["HP 회복 아이템 및 회복 스킬 +30%"]');
   });
+
+  it("특수 반지 매물은 레벨과 '효과 미반영' 안내를 함께 보낸다", async () => {
+    const { withScreenItems } = await import("./AgentPanel.jsx");
+    const ring = { signature: "r", evaluated: true, slot: "반지3", special_ring_note: "특수 반지 스킬 효과는 실딜 계산에 없어요",
+                   read: { name: "컨티뉴어스 링", category: "반지", total: { INT: 3 }, potentials: [], price: 5e9, special_ring_level: 4 } };
+    const sent = withScreenItems("어때", "x", [ring]);
+    expect(sent).toContain('"special_ring_level":4');
+    expect(sent).toContain("효과는 실딜 계산에 없어요");
+  });
 });
+

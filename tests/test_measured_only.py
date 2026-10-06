@@ -47,3 +47,8 @@ def test_lines_irrelevant_to_damage_are_not_flagged():
     """실딜 계산에 안 쓰는 줄(공격 시 HP 회복 등)은 레벨마다 숫자가 달라 표 대조에서 뺀다."""
     assert unverified_lines(["공격 시 3% 확률로 47의 HP 회복"]) == []
     assert unverified_lines(["STR +1즈%"]) == ["STR +1즈%"]
+
+
+def test_system_prompt_says_special_ring_effect_is_not_in_damage():
+    from agent.loop import SYSTEM
+    assert "special_ring_note" in SYSTEM and "레벨" in SYSTEM
