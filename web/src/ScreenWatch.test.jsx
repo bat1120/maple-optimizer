@@ -330,3 +330,32 @@ describe("screen watch twinkling tooltip", () => {
   });
 });
 
+
+describe("screen watch public mode (일반 유저, 2026-10-07)", () => {
+  it("관리자 기능(채점·학습 데이터·목록 읽기)은 숨기고 오늘 남은 분석 횟수를 보여준다", async () => {
+    vi.useFakeTimers();
+    let k = 0;
+    const capture = { start: async () => ({ hash: () => tipFrame(k++ < 2 ? 10 : 90), image: () => "data:image/jpeg;base64,AAAA", stop: vi.fn() }) };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: true, items: [], ai_remaining: 19 }));
+    render(<ScreenWatch name="x" defense={300} capture={capture} admin={false} />);
+    expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 4; i++) await act(async () => { vi.advanceTimersByTime(250); });
+    expect(screen.getByText(/오늘 남은 분석 19회/)).toBeInTheDocument();
+    const urls = f.mock.calls.map((c) => c[0]);
+    expect(urls.every((u) => u === "/api/vision/listings")).toBe(true);   // 학습 데이터 조회(관리자 API)를 부르지 않는다
+  });
+
+  it("한도가 끝나면 서버 문구를 그대로 보여준다", async () => {
+    vi.useFakeTimers();
+    let k = 0;
+    const capture = { start: async () => ({ hash: () => tipFrame(k++ < 2 ? 10 : 90), image: () => "data:image/jpeg;base64,AAAA", stop: vi.fn() }) };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 429, json: async () => ({ code: "VISION_QUOTA", message: "오늘 화면 분석 한도(20회)를 다 썼어요. 내일 다시 써 주세요." }) });
+    render(<ScreenWatch name="x" defense={300} capture={capture} admin={false} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 4; i++) await act(async () => { vi.advanceTimersByTime(250); });
+    expect(screen.getByRole("alert")).toHaveTextContent("오늘 화면 분석 한도(20회)를 다 썼어요");
+  });
+});

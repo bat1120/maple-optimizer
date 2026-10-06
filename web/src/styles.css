@@ -116,6 +116,7 @@ ol.plain > li { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .tabs a { padding: 10px 16px; color: var(--muted); border-bottom: 2px solid transparent; font-weight: 600; }
 .tabs a[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
 .bottom-tabs { display: none; }
+.mobile-only { display: none; }
 
 .summary-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
 .summary-grid > * { margin: 12px 0 0; }
@@ -192,6 +193,8 @@ td.eff .bar { display: block; height: 8px; border-radius: 4px; background: linea
   .stats-row { gap: 14px; }
   .stat strong { font-size: 1.1rem; }
   .tabs { display: none; }
+  .pc-only { display: none; }
+  .mobile-only { display: block; }
   .bottom-tabs { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
   .bottom-tabs a { flex: 1; text-align: center; padding: 12px 0; color: var(--muted); font-weight: 600; }

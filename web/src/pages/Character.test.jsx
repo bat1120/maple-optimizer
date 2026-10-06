@@ -107,4 +107,13 @@ describe("character page", () => {
     await screen.findByRole("heading", { name: "내신부레테" });
     expect(screen.getByTestId("avatar-fallback")).toHaveTextContent("아");
   });
+
+  it("업그레이드 탭: PC용 경매장 화면 평가(일반 유저 모드)와 휴대폰 안내", async () => {
+    mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+    expect(await screen.findByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
+    expect(screen.getByText(/PC에서 열면 경매장 화면을 바로 평가/)).toBeInTheDocument();
+  });
 });
+

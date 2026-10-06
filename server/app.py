@@ -55,7 +55,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
-               vision_dataset_dir: str | None = None) -> FastAPI:
+               vision_dataset_dir: str | None = None, vision_public_daily: int = 20,
+               vision_frames_per_min: int = 240) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
@@ -72,6 +73,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
             raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
     limiter = SlidingWindow(rate_limit, window, clock)
+    # 일반 유저 화면 분석(2026-10-07 공개): 화면은 0.5초마다 오니 분당 상한을 따로 두고(툴팁 찾기는 AI 비용 0),
+    # AI를 실제로 부른 판독만 IP당 하루 vision_public_daily회로 센다(메모리 — 서버가 다시 뜨면 0부터)
+    vision_limiter = SlidingWindow(vision_frames_per_min, 60.0, clock)
+    public_ai: dict = {}
 
     @app.middleware("http")
     async def limit(request: Request, call_next):
@@ -79,8 +84,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         # 관리자 화면 분석은 0.5초마다 들어온다 — IP당 제한 대신 하루 토큰 한도로 묶는다(2026-10-05: 23번 중 5번 거절)
         admin_vision = path.startswith("/api/vision/") and bool(session_secret) and admin.valid_session(
             request.cookies.get(admin.COOKIE), session_secret, clock())
-        if path.startswith("/api/") and not admin_vision:
-            ip = request.client.host if request.client else "unknown"
+        ip = request.client.host if request.client else "unknown"
+        if path == "/api/vision/listings" and not admin_vision:
+            if not vision_limiter.allow(ip):
+                return _err(ApiError(429, "RATE_LIMIT", "화면이 너무 자주 들어와요. 잠시 뒤 다시 시도해 주세요."))
+        elif path.startswith("/api/") and not admin_vision:
             if not limiter.allow(ip):
                 return _err(ApiError(429, "RATE_LIMIT", "요청이 너무 많습니다. 1분 뒤 다시 시도해 주세요."))
         return await call_next(request)
@@ -283,51 +291,60 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.post("/api/vision/evaluate")
     def vision_evaluate(body: VisionEvalIn, request: Request):
-        """이미 화면에서 읽은 매물을 다시 평가한다(캐릭터 조회 전에 읽은 줄). 비전 호출 없음."""
-        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
-            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        """이미 화면에서 읽은 매물을 다시 평가한다(캐릭터 조회 전에 읽은 줄). 비전 호출 없음 — 일반 유저도 쓴다."""
         return {"items": service.vision_items(load(body.name, None), None, body.boss_defense, body.listings[:50], [])}
 
     @app.post("/api/vision/listings")
     def vision_listings(body: VisionIn, request: Request):
-        """공유된 경매장 탭 캡처 → 매물 추출·평가. 넥슨 서버에는 요청하지 않는다(화면 픽셀만 읽는다)."""
-        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
-            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        """공유된 경매장 탭 캡처 → 매물 추출·평가. 넥슨 서버에는 요청하지 않는다(화면 픽셀만 읽는다).
+        일반 유저도 쓴다(AI 판독 IP당 하루 상한). 학습 데이터 저장·장비창 채점 기록은 관리자 화면만."""
+        is_admin = bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())
+        if len(body.image) > 6_000_000:
+            raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(최대 약 4MB).")
         if agent_client is None:
             raise ApiError(503, "AGENT_DISABLED", "AI 기능이 설정되지 않았습니다(OPENAI_API_KEY).")
         if usage.used() >= agent_daily_token_budget:
             raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요.")
         if not body.image.startswith("data:image/"):
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
-        from server.vision import VisionError, analyze_frame
+        from server.vision import VisionError, VisionQuota, analyze_frame
+        ip = request.client.host if request.client else "unknown"
+        quota_key = (int(clock() // 86400), ip)
+        allow_ai = None if is_admin else (lambda: public_ai.get(quota_key, 0) < vision_public_daily)
         try:
             data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
-                                 tooltips_only=body.tooltips_only)
+                                 tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai)
+        except VisionQuota:
+            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 분석 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
+        if not is_admin and not data.get("cached") and not data.get("skipped"):
+            public_ai[quota_key] = public_ai.get(quota_key, 0) + 1
         snap = load(body.name, None) if body.name else None
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
         for x in data["listings"]:
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
-        if not data.get("cached"):
+        if is_admin and not data.get("cached"):
             session_reads.extend(data["listings"] + data.get("equipped_items", []))
         names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]
         kind = "건너뜀(툴팁 없음)" if data.get("skipped") else "재사용" if data.get("cached") else "판독"
         _log.info("화면 %s · 툴팁 %s개 · %s", kind, data.get("tooltips_found", 0), ", ".join(n or "?" for n in names) or "-")
-        if dataset:
+        dataset_on = dataset if is_admin else None  # 일반 유저 화면은 저장하지 않는다
+        if dataset_on:
             dataset.log_frame({"kind": kind, "tooltips": data.get("tooltips_found", 0), "names": names})
-        if dataset and data.get("skipped"):
+        if dataset_on and data.get("skipped"):
             dataset.save_skipped(body.image, {"skipped": data["skipped"]})
         # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다
         frame_id = (dataset.save_frame(body.image, data)
-                    if dataset and not data.get("cached") and not data.get("skipped") else None)
+                    if dataset_on and not data.get("cached") and not data.get("skipped") else None)
         items = service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))
         for it in items:
             it["frame_id"] = frame_id
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
                 "frame_id": frame_id, "items": items,
-                "equipped_items": data.get("equipped_items", [])}  # 착용 템 판독(장비창 채점용, 매물 아님)
+                "equipped_items": data.get("equipped_items", []),  # 착용 템 판독(장비창 채점용, 매물 아님)
+                "ai_remaining": None if is_admin else max(0, vision_public_daily - public_ai.get(quota_key, 0))}
 
     class VisionCorrectIn(BaseModel):
         frame_id: str
@@ -418,7 +435,9 @@ def default_app() -> FastAPI:
                       agent_client=agent_client, admin_password_hash=admin_hash, session_secret=secret,
                       agent_daily_token_budget=int(_env("AGENT_DAILY_TOKEN_BUDGET") or 200_000),
                       auction_mcp_command=_env("AUCTION_MCP_CMD"),
-                      vision_dataset_dir=_env("VISION_DATASET_DIR"))
+                      vision_dataset_dir=_env("VISION_DATASET_DIR"),
+                      vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
+                      vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240))
 
 
 def _env(key: str) -> str | None:

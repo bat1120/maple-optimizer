@@ -138,14 +138,16 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
   );
 }
 
-export default function ScreenWatch({ name, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate }) {
+// admin=false: 일반 유저 화면(2026-10-07) — 채점·학습 데이터·목록 읽기 같은 관리자 기능을 숨기고 오늘 남은 분석 횟수를 보여준다
+export default function ScreenWatch({ name, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate, admin = true }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
   useEffect(() => { onItems?.(items); }, [items, onItems]);
   const [count, setCount] = useState(0);
   const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
-  const refreshStats = () => getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {});
+  const refreshStats = () => (admin ? getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {}) : null);
+  const [remaining, setRemaining] = useState(null); // 일반 유저: 오늘 남은 AI 분석 횟수(서버가 센다)
   const [error, setError] = useState(null);
   const [score, setScore] = useState(null); // 장비창 훑기 채점 결과(정답 = 넥슨 API 착용 템)
   // 장비창 툴팁은 '착용 템'으로 분류돼 매물 목록에서 빠진다 — 채점용으로 이름별 마지막 판독을 따로 모은다
@@ -210,6 +212,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
                                        tooltips_only: !readLists });
           setCount((c) => c + 1);
           if (r.frame_id) refreshStats();
+          if (r.ai_remaining != null) setRemaining(r.ai_remaining);
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
           if (r.equipped_items?.length) {
             setEquipped((prev) => {
@@ -259,23 +262,29 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
 
   return (
     <section className="panel">
-      <h3>경매장 화면 분석 (관리자)</h3>
+      <h3>{admin ? "경매장 화면 분석 (관리자)" : "경매장 화면 평가"}</h3>
       <p className="muted">
         공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
         화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.
       </p>
+      {!admin && (
+        <p className="muted small">
+          게임 경매장(또는 장비창)에서 매물에 마우스를 0.5초씩 대면, 툴팁을 읽어 내 캐릭터 기준 실딜·억당 효율로 평가해요.
+          {remaining != null ? <strong> 오늘 남은 분석 {remaining}회</strong> : null}
+        </p>
+      )}
       {session ? (
         <p>연결됨 · 분석 {count}회 <button type="button" onClick={disconnect}>연결 끊기</button></p>
       ) : (
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}
-      <label className="muted">
+      {admin && <label className="muted">
         <input type="checkbox" checked={readLists} onChange={(e) => setReadLists(e.target.checked)} />
         {" "}목록 화면도 읽기 (툴팁 없이 가격만 보이는 화면 — AI 토큰을 더 써요)
-      </label>
+      </label>}
       {error && <p role="alert" className="error">{error.message}</p>}
       {stats && <p className="muted">학습 데이터: 프레임 {stats.frames}장 · 고친 것 {stats.corrected}건</p>}
-      {name && (
+      {admin && name && (
         <p className="muted">
           장비창 채점: 게임에서 장비창을 열고 착용 템 위로 마우스를 한 칸에 1초씩 훑은 뒤 누르면, 읽은 값을 넥슨 API의 착용 템(정답)과 비교해요.
           {reads.length ? ` (이 화면에서 읽은 툴팁 ${reads.length}개 — 서버가 기억한 판독도 함께 채점해요)` : " (서버가 기억한 판독으로 채점해요)"}{" "}

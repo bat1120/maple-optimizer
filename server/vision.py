@@ -290,8 +290,12 @@ class FrameCache:
         return sum(x != y for x, y in zip(a, b)) <= len(a) * 0.03
 
 
+class VisionQuota(Exception):
+    """AI 판독이 필요한데 한도가 끝났다(일반 유저 하루 상한). 건너뛰기·재사용은 한도와 무관하게 된다."""
+
+
 def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None,
-                  cache: FrameCache | None = None, tooltips_only: bool = False) -> dict:
+                  cache: FrameCache | None = None, tooltips_only: bool = False, allow_ai=None) -> dict:
     """화면 공유 프레임 분석: 툴팁을 찾아 원래 크기로 잘라 함께 보내고, AI 판독값 중 코드로 확인할 수 있는 것은 바꾼다.
     - 스타포스: 툴팁 별을 코드로 센 값(로컬 실측 15/15, AI 판독 1/9 — 2026-10-04)
     - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)"""
@@ -330,6 +334,8 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                 return {**copy.deepcopy(cache.plain[1]), "cached": True}
     data = None
     try:
+        if allow_ai is not None and not allow_ai():
+            raise VisionQuota()
         data = _read_frame(client, image_data_url, model, on_usage, tips, stars)
     finally:
         if mine is not None:
