@@ -62,6 +62,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     cache = BundleCache(db_path, clock)
     from server.market import PriceStore
     prices = PriceStore(db_path, clock)
+    from server.observations import open_log
+    observations = open_log(db_path, clock)  # 지우지 않는 관측 기록 — DATABASE_URL(Neon)이면 Postgres
     from server.dataset import DatasetStore
     dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
     from server.vision import FrameCache
@@ -289,6 +291,19 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         boss_defense: float = 300.0
         listings: list[dict]
 
+    @app.get("/api/market/stats")
+    def market_stats():
+        """쌓인 경매장 관측 기록 수(부위별, 첫·마지막 날짜). 공개."""
+        return observations.stats()
+
+    @app.get("/api/market/export.csv")
+    def market_export(request: Request):
+        """관측 기록 전체 CSV(관리자)."""
+        _require_admin(request)
+        from fastapi.responses import Response
+        return Response(observations.export_csv(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": "attachment; filename=observations.csv"})
+
     @app.post("/api/vision/evaluate")
     def vision_evaluate(body: VisionEvalIn, request: Request):
         """이미 화면에서 읽은 매물을 다시 평가한다(캐릭터 조회 전에 읽은 줄). 비전 호출 없음 — 일반 유저도 쓴다."""
@@ -325,6 +340,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from server.vision import normalize_fee
         for x in data["listings"]:
             prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
+            try:
+                observations.record(x)  # 영구 관측 기록(IP·이미지 없음)
+            except Exception as e:  # DB가 잠깐 안 돼도 평가는 계속한다
+                _log.warning("관측 기록 실패: %s", type(e).__name__)
         if is_admin and not data.get("cached"):
             session_reads.extend(data["listings"] + data.get("equipped_items", []))
         names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]

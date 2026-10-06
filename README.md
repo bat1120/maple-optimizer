@@ -46,6 +46,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
+| `DATABASE_URL` | Render 환경변수 (`.env`도 가능) | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite(Render는 재시작 때 사라짐) |
+| `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | 환경변수 | 일반 유저 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.

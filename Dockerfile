@@ -17,6 +17,8 @@ COPY nexon/ nexon/
 COPY server/ server/
 COPY agent/ agent/
 RUN uv sync --frozen --no-dev
+# 관측 기록 Postgres(Neon) 드라이버. 2026-10-07 로컬 PC에서 PyPI 접속이 안 돼 잠금 파일에 못 넣었다 — 이미지에서 고정 버전으로 설치하고 확인한다
+RUN uv pip install --python /app/.venv/bin/python "psycopg[binary]==3.3.6" && /app/.venv/bin/python -c "import psycopg"
 COPY --from=web /web/dist web/dist
 # NEXON_API_KEY는 실행 시 환경변수(.env → docker compose env_file)로 넣는다. 이미지에 넣지 않는다.
 VOLUME ["/app/.cache"]

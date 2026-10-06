@@ -270,6 +270,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
       {!admin && (
         <p className="muted small">
           게임 경매장(또는 장비창)에서 매물에 마우스를 0.5초씩 대면, 툴팁을 읽어 내 캐릭터 기준 실딜·억당 효율로 평가해요.
+          {" "}읽은 매물의 가격·옵션은 익명 시세 데이터로 쌓여요(IP·화면 이미지는 저장하지 않아요).
           {remaining != null ? <strong> 오늘 남은 분석 {remaining}회</strong> : null}
         </p>
       )}

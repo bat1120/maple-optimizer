@@ -18,5 +18,7 @@ services:
         sync: false
       - key: SESSION_SECRET       # 관리자 쿠키 서명 — Render가 임의 값으로 만든다
         generateValue: true
+      - key: DATABASE_URL         # 관측 기록 영구 저장(Neon 무료 Postgres 연결 문자열). 비우면 서버 안 SQLite(재시작 때 사라짐)
+        sync: false
       - key: AGENT_DAILY_TOKEN_BUDGET
         value: "200000"

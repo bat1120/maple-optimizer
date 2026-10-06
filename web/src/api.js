@@ -52,6 +52,7 @@ export function getPaths(name, bossDefense = 300) {
 }
 
 export const postMarketRefresh = (body) => post("/api/market/refresh", body);
+export const getMarketStats = () => request("/api/market/stats");
 
 export function postListings(name, body) {
   return request(`${base(name)}/listings`, {

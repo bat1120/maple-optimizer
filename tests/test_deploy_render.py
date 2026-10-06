@@ -21,7 +21,7 @@ def test_render_blueprint_builds_dockerfile_with_health_check():
 
 def test_render_secrets_are_entered_in_dashboard_not_committed():
     env = {e["key"]: e for e in _service()["envVars"]}
-    for key in ("NEXON_API_KEY", "OPENAI_API_KEY", "ADMIN_PASSWORD_HASH"):
+    for key in ("NEXON_API_KEY", "OPENAI_API_KEY", "ADMIN_PASSWORD_HASH", "DATABASE_URL"):
         assert env[key].get("sync") is False and "value" not in env[key]
     assert env["SESSION_SECRET"].get("generateValue") is True
 
@@ -29,3 +29,9 @@ def test_render_secrets_are_entered_in_dashboard_not_committed():
 def test_container_listens_on_platform_port():
     cmd = re.search(r"^CMD (.+)$", (ROOT / "Dockerfile").read_text(encoding="utf-8"), re.M).group(1)
     assert "${PORT:-8000}" in cmd
+
+
+def test_image_installs_postgres_driver_for_observation_log():
+    """server/observations.py가 DATABASE_URL이 있으면 psycopg를 쓴다 — 이미지에 있어야 한다."""
+    docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert re.search(r'uv pip install .*psycopg\[binary\]==\d', docker) and 'import psycopg' in docker

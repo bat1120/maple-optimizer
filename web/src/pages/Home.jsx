@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { hashFor, navigate } from "../router.js";
 import { addRecent, loadRecent } from "../recent.js";
+import { getMarketStats } from "../api.js";
 
 export default function Home() {
   const [q, setQ] = useState("");
   const [recent] = useState(loadRecent);
   const box = useRef(null);
+  const [stats, setStats] = useState(null); // 모인 경매장 관측 수(공개 통계) — 못 불러와도 화면은 그대로
+  useEffect(() => { getMarketStats().then(setStats).catch(() => {}); }, []);
   useEffect(() => {
     const on = (e) => {
       if (e.key === "/" && document.activeElement !== box.current) { e.preventDefault(); box.current?.focus(); }
@@ -45,6 +48,9 @@ export default function Home() {
         <div className="card">
           <strong>계산 기준</strong>
           <span className="muted">넥슨 Open API(약 15분 지연) · 보스 세팅 기준 실딜 · 공식 큐브 확률표</span>
+          {stats?.total > 0 && (
+            <span className="muted">지금까지 모인 경매장 관측 {stats.total.toLocaleString("ko-KR")}건{stats.first_day ? ` (${stats.first_day}부터)` : ""}</span>
+          )}
         </div>
       </section>
     </div>

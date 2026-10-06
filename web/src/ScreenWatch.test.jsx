@@ -339,6 +339,7 @@ describe("screen watch public mode (일반 유저, 2026-10-07)", () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: true, items: [], ai_remaining: 19 }));
     render(<ScreenWatch name="x" defense={300} capture={capture} admin={false} />);
     expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
+    expect(screen.getByText(/익명 시세 데이터로 쌓여요/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
     expect(screen.queryByRole("checkbox")).toBeNull();
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
