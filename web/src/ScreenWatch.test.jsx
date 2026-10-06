@@ -96,7 +96,7 @@ describe("screen watch pending rows", () => {
       read: { name: "미트라의 분노 : 마법사", total: {}, potentials: [], price } });
     render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[listOnly("a", 9e9), listOnly("b", 1e10)]} />);
     expect(screen.getByText("목록에서 본 매물 2개 (툴팁을 띄우면 평가해요)")).toBeInTheDocument();
-    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+    expect(screen.queryAllByRole("listitem").filter((li) => !li.closest(".howto"))).toHaveLength(0); // 사용 방법 단계는 빼고 센다
   });
 });
 
@@ -360,3 +360,15 @@ describe("screen watch public mode (일반 유저, 2026-10-07)", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("오늘 화면 분석 한도(20회)를 다 썼어요");
   });
 });
+
+describe("screen watch how-to", () => {
+  it("사용 방법을 펼쳐 볼 수 있다(PC 브라우저·창 공유·마우스 0.5초·문제 해결)", () => {
+    render(<ScreenWatch name="x" defense={300} capture={null} admin={false} />);
+    const how = screen.getByText("사용 방법").closest("details");
+    expect(how).toHaveTextContent("크롬");
+    expect(how).toHaveTextContent("창");
+    expect(how).toHaveTextContent("0.5초");
+    expect(how).toHaveTextContent("검게");
+  });
+});
+

@@ -274,6 +274,21 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
           {remaining != null ? <strong> 오늘 남은 분석 {remaining}회</strong> : null}
         </p>
       )}
+      <details className="howto">
+        <summary>사용 방법</summary>
+        <ol>
+          <li><strong>PC 크롬·엣지</strong>로 이 화면을 여세요. 휴대폰 브라우저는 화면 공유를 지원하지 않아요.</li>
+          <li>메이플을 <strong>창 모드</strong>(또는 창 모드 전체화면)로 두세요. 전체화면이면 공유 화면이 검게 잡힐 수 있어요.</li>
+          <li>[경매장 화면 연결]을 누르고, 뜨는 창에서 <strong>'창' 탭 → MapleStory</strong>를 골라 [공유]를 누르세요. 다른 창·전체 화면은 고르지 마세요(개인 정보가 같이 전송돼요).</li>
+          <li>게임에서 경매장(또는 장비창)을 열고, 볼 매물에 <strong>마우스를 0.5초쯤</strong> 대세요. 툴팁이 뜬 화면만 읽고, 같은 툴팁은 다시 읽지 않아요.</li>
+          <li>아래 목록에 매물이 쌓여요: 내 캐릭터 기준 <strong>실딜 상승·억당 효율</strong>, 들어갈 자리. 위에서 캐릭터를 조회해 둬야 평가돼요.</li>
+          <li>다 봤으면 [연결 끊기]. 브라우저 위쪽의 '공유 중지'를 눌러도 돼요.</li>
+        </ol>
+        <p className="muted small">
+          잘 안 될 때: 화면이 검게 나오면 창 모드로 · 툴팁이 화면 밖으로 잘리면 매물 위치를 바꿔서 · 숫자가 틀려 보이면 게임 해상도를 1366×768 이상으로 ·
+          스타포스는 툴팁 위 별을 세서 맞추고, 못 세면 '확인 필요'로 표시돼요. 공유한 화면은 판독을 위해 OpenAI로 전송되고 저장하지 않아요.
+        </p>
+      </details>
       {session ? (
         <p>연결됨 · 분석 {count}회 <button type="button" onClick={disconnect}>연결 끊기</button></p>
       ) : (

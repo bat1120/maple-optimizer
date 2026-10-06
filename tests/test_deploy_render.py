@@ -32,6 +32,6 @@ def test_container_listens_on_platform_port():
 
 
 def test_image_installs_postgres_driver_for_observation_log():
-    """server/observations.py가 DATABASE_URL이 있으면 psycopg를 쓴다 — 이미지에 있어야 한다."""
-    docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert re.search(r'uv pip install .*psycopg\[binary\]==\d', docker) and 'import psycopg' in docker
+    """server/observations.py가 DATABASE_URL이 있으면 psycopg를 쓴다 — 의존성에 있고 이미지 빌드가 확인한다."""
+    assert "psycopg[binary]" in (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'import psycopg' in (ROOT / "Dockerfile").read_text(encoding="utf-8")

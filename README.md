@@ -52,6 +52,27 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.
 
+## 경매장 화면 평가 — 사용 방법 (일반 유저)
+
+캐릭터를 검색한 뒤 **업그레이드 탭 → 경매장 화면 평가**(PC 전용, 화면 안 '사용 방법'에도 같은 내용).
+
+1. **PC 크롬·엣지**로 연다(휴대폰 브라우저는 화면 공유를 지원하지 않는다)
+2. 메이플을 **창 모드**로 둔다(전체화면은 검게 잡힐 수 있다)
+3. [경매장 화면 연결] → **'창' 탭 → MapleStory** → 공유. 다른 창·전체 화면은 고르지 않는다
+4. 경매장(또는 장비창)에서 매물에 **마우스를 0.5초쯤** 댄다 — 툴팁이 뜬 화면만 읽고 같은 툴팁은 다시 읽지 않는다
+5. 목록에 내 캐릭터 기준 실딜 상승·억당 효율·들어갈 자리가 쌓인다. 다 보면 [연결 끊기]
+
+- 한도: AI 판독 IP당 하루 `VISION_PUBLIC_DAILY`(기본 20)회. 툴팁 없는 화면·같은 툴팁은 세지 않는다
+- 개인정보: 공유 화면은 판독을 위해 OpenAI로 전송되고 저장하지 않는다. 읽은 매물의 가격·옵션만 익명 관측 기록으로 쌓인다(IP·이미지 없음)
+- 잘 안 될 때: 검은 화면 → 창 모드 · 툴팁이 화면 밖으로 잘림 → 매물 위치를 바꿔서 · 숫자 오독 → 해상도 1366×768 이상
+
+## 경매장 관측 기록 (`server/observations.py`)
+
+- 화면에서 읽은 매물(가격·잠재·에디·스타포스·총 옵션)을 **지우지 않고** 쌓는다. 같은 매물·같은 가격은 하루 한 번
+- 저장 위치: `DATABASE_URL`(Neon 무료 Postgres) — 없으면 SQLite. 공개 통계 `GET /api/market/stats`, 관리자 CSV `GET /api/market/export.csv`
+- Postgres 시험: `docker run -d --name pgtest -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:16-alpine` 후
+  `TEST_DATABASE_URL=postgresql://postgres:test@127.0.0.1:55432/postgres uv run pytest tests/test_observation_pg.py`
+
 ## 데모 배포 (Render 무료, `render.yaml`)
 
 1. https://render.com 에 GitHub 계정으로 로그인 → **New → Blueprint** → 이 저장소 선택

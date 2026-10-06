@@ -8,6 +8,7 @@ dependencies = [
     "numpy>=2",
     "openai>=3.24.0",
     "pillow>=11",
+    "psycopg[binary]>=3.2",
     "uvicorn[standard]>=0.54.0",
 ]
 
