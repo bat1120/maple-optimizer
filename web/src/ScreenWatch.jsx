@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
-import { createWatcher, frameHash } from "./watch.js";
+import { createWatcher, tipHash, tipSame } from "./watch.js";
 
 // 공유한 게임 창(또는 웹 경매장 탭)을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
 // 넥슨 서버에는 아무 요청도 하지 않는다 — 사용자 화면에 보이는 픽셀만 읽는다.
@@ -16,13 +16,14 @@ export const browserCapture =
           video.muted = true;
           await video.play();
           const small = document.createElement("canvas");
-          small.width = small.height = 128;
+          small.width = 256; // 툴팁 칸 비교용(32×32 칸에 가로 8px·세로 4.5px)
+          small.height = 144;
           const big = document.createElement("canvas");
           return {
             hash() {
               const c = small.getContext("2d");
-              c.drawImage(video, 0, 0, 128, 128);
-              return frameHash(c.getImageData(0, 0, 128, 128), 32); // 32×32: 비슷한 툴팁끼리도 바뀐 걸 알아챈다
+              c.drawImage(video, 0, 0, 256, 144);
+              return tipHash(c.getImageData(0, 0, 256, 144)); // 남회색(툴팁) 칸만 비교 — 소환수·이펙트 움직임은 무시
             },
             image() {
               // 1920(FHD)까지는 줄이지 않는다 — 줄이면 툴팁 숫자를 잘못 읽는다(2026-10-04 측정: 255→2550)
@@ -168,7 +169,8 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
   };
   // 0.25초마다 보고 두 번 연속 같으면 툴팁이 뜬 것으로 본다(0.5초 간격이면 1초 미만으로 훑은 템을 놓친다 — 실측 0.7초 8/20). 툴팁끼리 바뀌면 화면 일부만 바뀌므로 바뀐 칸 비율(3%)도 본다
   // (2026-10-06: 1~2초씩 훑은 착용 템 중 일부만 읽힘 — 평균 차이로는 툴팁 전환을 놓치고, 한 장씩 보내 줄이 넘쳤다)
-  const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 300, minChanged: 0.03 }));
+  // 2026-10-06 2차: 이펙트가 움직이면 화면 전체 비교로는 툴팁을 띄워도 안 멈춘 것으로 봐서 거의 안 보냈다 → 툴팁 칸만 비교
+  const watcher = useRef(createWatcher({ stableFrames: 2, cooldownMs: 300, same: tipSame }));
   const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 40장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
   // 기본은 툴팁이 뜬 화면만 AI에 보낸다(실측: 툴팁 없는 화면 67%, 판독 0). 가격만 보이는 목록 화면도 읽으려면 켠다
   const [readLists, setReadLists] = useState(false);

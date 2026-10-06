@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { changedFraction, createWatcher, frameDiff, frameHash } from "./watch.js";
+import { changedFraction, createWatcher, frameDiff, frameHash, tipHash, tipSame } from "./watch.js";
 
 // 16×16 회색조 프레임 흉내: 값 하나로 채운 배열
 const frame = (v, n = 256) => new Array(n).fill(v);
@@ -57,4 +57,42 @@ describe("screen watch", () => {
   it("changedFraction은 크게 바뀐 칸의 비율", () => {
     expect(changedFraction(frame(100, 100), frame(100, 100).map((v, i) => (i < 5 ? 200 : v)))).toBe(0.05);
   });
+
 });
+
+// 256×144 RGBA 화면 흉내: 배경색 bg, (x0,y0)-(x1,y1)에 남회색 툴팁, 툴팁 안 글자 줄은 textRows(행 번호 집합)
+function screenData({ bg = [200, 60, 220], tip = null, text = new Set(), effect = null } = {}) {
+  const w = 256, h = 144, data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let c = bg;
+    if (effect && x >= effect[0] && x < effect[2] && y >= effect[1] && y < effect[3]) c = effect[4];
+    if (tip && x >= tip[0] && x < tip[2] && y >= tip[1] && y < tip[3]) c = text.has(y) && x % 3 ? [235, 235, 235] : [50, 57, 66];
+    const i = (y * w + x) * 4; data[i] = c[0]; data[i + 1] = c[1]; data[i + 2] = c[2]; data[i + 3] = 255;
+  }
+  return { width: w, height: h, data };
+}
+
+describe("tooltip-aware watch (2026-10-06: 소환수·이펙트가 움직이면 툴팁을 띄워도 '안 멈춤' — 실측 0/12)", () => {
+  const box = [150, 20, 230, 120];
+  it("툴팁을 띄운 채 배경 이펙트만 움직이면 같은 화면으로 본다", () => {
+    const a = tipHash(screenData({ tip: box, text: new Set([30, 40]), effect: [0, 0, 100, 140, [250, 200, 30]] }));
+    const b = tipHash(screenData({ tip: box, text: new Set([30, 40]), effect: [40, 10, 140, 140, [20, 240, 90]] }));
+    expect(tipSame(a, b)).toBe(true);
+  });
+  it("툴팁 글자가 바뀌면(다른 템) 다른 화면으로 본다", () => {
+    const a = tipHash(screenData({ tip: box, text: new Set([30, 40, 50]) }));
+    const b = tipHash(screenData({ tip: box, text: new Set([35, 60, 70, 80, 90]) }));
+    expect(tipSame(a, b)).toBe(false);
+  });
+  it("툴팁이 새로 뜨면 다른 화면으로 본다", () => {
+    expect(tipSame(tipHash(screenData()), tipHash(screenData({ tip: box })))).toBe(false);
+  });
+  it("watcher에 same을 주면 그 기준으로 안정·변화를 판단한다", () => {
+    const w = createWatcher({ stableFrames: 2, cooldownMs: 0, same: tipSame });
+    const t1 = (eff) => tipHash(screenData({ tip: box, text: new Set([30]), effect: eff }));
+    w.step(t1(null), 0);
+    expect(w.step(t1([0, 0, 90, 140, [250, 200, 30]]), 250)).toBe(true);   // 이펙트가 움직여도 안정 → 보냄
+    expect(w.step(t1([50, 0, 140, 140, [20, 240, 90]]), 500)).toBe(false); // 같은 툴팁 → 다시 안 보냄
+  });
+});
+

@@ -5,6 +5,8 @@ import ScreenWatch from "./ScreenWatch.jsx";
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 const ok = (body) => ({ ok: true, status: 200, json: async () => body });
+// 툴팁 칸 해시 흉내: 화면 전체가 툴팁 칸이고 밝기만 v
+const tipFrame = (v) => ({ dark: new Array(1024).fill(1), lum: new Array(1024).fill(v) });
 
 describe("screen watch panel", () => {
   it("화면 공유를 지원하지 않으면 안내한다", async () => {
@@ -18,7 +20,7 @@ describe("screen watch panel", () => {
     const hashes = [100, 100, 100, 180, 180];
     let k = 0;
     const capture = { start: async () => ({
-      hash: () => new Array(256).fill(hashes[Math.min(k++, hashes.length - 1)]),
+      hash: () => tipFrame(hashes[Math.min(k++, hashes.length - 1)]),
       image: () => "data:image/jpeg;base64,AAA",
       stop: vi.fn(),
     }) };
@@ -103,7 +105,7 @@ describe("screen watch fee", () => {
     vi.useFakeTimers();
     const hashes = [100, 100, 100];
     let k = 0;
-    const capture = { start: async () => ({ hash: () => new Array(256).fill(hashes[Math.min(k++, 2)]),
+    const capture = { start: async () => ({ hash: () => tipFrame(hashes[Math.min(k++, 2)]),
                                             image: () => "data:image/jpeg;base64,AAA", stop: vi.fn() }) };
     vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: false, fee_rate: 0.03, items: [] }));
     const onFeeRate = vi.fn();
@@ -160,7 +162,7 @@ describe("screen watch queue", () => {
     const seq = [10, 10, 60, 60, 120, 120, 180, 180, 240, 240, 240, 240];
     let k = 0;
     const capture = { start: async () => ({
-      hash: () => new Array(256).fill(seq[Math.min(k++, seq.length - 1)]),
+      hash: () => tipFrame(seq[Math.min(k++, seq.length - 1)]),
       image: () => `data:image/jpeg;base64,${k}`,
       stop: vi.fn(),
     }) };
@@ -183,7 +185,7 @@ describe("screen watch queue", () => {
     for (let v = 0; v < 10; v++) seq.push(20 * v + 10, 20 * v + 10);
     let k = 0;
     const capture = { start: async () => ({
-      hash: () => new Array(256).fill(seq[Math.min(k++, seq.length - 1)]),
+      hash: () => tipFrame(seq[Math.min(k++, seq.length - 1)]),
       image: () => `data:image/jpeg;base64,${Math.min(k, seq.length)}`,
       stop: vi.fn(),
     }) };
@@ -205,7 +207,7 @@ describe("screen watch quick hover", () => {
     vi.useFakeTimers();
     const t0 = Date.now();
     const capture = { start: async () => ({
-      hash: () => new Array(256).fill(10 + 20 * (Math.floor((Date.now() - t0) / 500) % 10)), // 0.5초마다 다른 템
+      hash: () => tipFrame(10 + 20 * (Math.floor((Date.now() - t0) / 500) % 10)), // 0.5초마다 다른 템
       image: () => `data:image/jpeg;base64,${Math.floor((Date.now() - t0) / 500)}`,
       stop: vi.fn(),
     }) };
@@ -261,7 +263,7 @@ describe("screen watch equipped reads", () => {
     vi.useFakeTimers();
     const seq = [10, 10, 60, 60, 60, 60];
     let k = 0;
-    const capture = { start: async () => ({ hash: () => new Array(256).fill(seq[Math.min(k++, 5)]),
+    const capture = { start: async () => ({ hash: () => tipFrame(seq[Math.min(k++, 5)]),
                                             image: () => `data:image/jpeg;base64,${k}`, stop: vi.fn() }) };
     const ring = { name: "여명의 가디언 엔젤 링", starforce: 18, potential_lines: ["INT +9%"], additional: [], total: { INT: 50 } };
     const pendant = { name: "데이브레이크 펜던트", starforce: 22, potential_lines: ["INT +9%"], additional: [], total: { INT: 80 } };
@@ -285,7 +287,7 @@ describe("screen watch tooltips only", () => {
     vi.useFakeTimers();
     let k = 0;
     const seq = [10, 10, 60, 60, 60];
-    const capture = { start: async () => ({ hash: () => new Array(256).fill(seq[Math.min(k++, 4)]),
+    const capture = { start: async () => ({ hash: () => tipFrame(seq[Math.min(k++, 4)]),
                                             image: () => "data:image/jpeg;base64,A", stop: vi.fn() }) };
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: false, items: [] }));
     render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
