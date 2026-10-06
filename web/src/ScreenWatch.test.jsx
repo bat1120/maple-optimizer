@@ -200,6 +200,24 @@ describe("screen watch queue", () => {
   });
 });
 
+describe("screen watch quick hover", () => {
+  it("템마다 0.5초만 마우스를 대도 전부 보낸다(기본 0.25초 간격) — 2026-10-06 실측 재현: 0.5초 간격이면 0/20", async () => {
+    vi.useFakeTimers();
+    const t0 = Date.now();
+    const capture = { start: async () => ({
+      hash: () => new Array(256).fill(10 + 20 * (Math.floor((Date.now() - t0) / 500) % 10)), // 0.5초마다 다른 템
+      image: () => `data:image/jpeg;base64,${Math.floor((Date.now() - t0) / 500)}`,
+      stop: vi.fn(),
+    }) };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ tooltip_visible: true, items: [] }));
+    render(<ScreenWatch name="x" defense={300} capture={capture} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 20; i++) await act(async () => { vi.advanceTimersByTime(250); });   // 5초 = 템 10개
+    const sent = new Set(f.mock.calls.filter((c) => c[0] === "/api/vision/listings").map((c) => JSON.parse(c[1].body).image));
+    expect(sent.size).toBeGreaterThanOrEqual(9);
+  });
+});
+
 describe("screen watch equipment scoring", () => {
   it("읽은 툴팁을 넥슨 API 착용 템과 채점해 정확도와 틀린 항목을 보여준다", async () => {
     const row = { signature: "e1", evaluated: false, read: { name: "에테르넬 메이지글러브", starforce: 22, total: { INT: 100 },

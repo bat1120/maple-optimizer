@@ -136,7 +136,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
   );
 }
 
-export default function ScreenWatch({ name, defense, capture, intervalMs = 500, initialItems = [], onItems, onFeeRate }) {
+export default function ScreenWatch({ name, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
@@ -165,7 +165,7 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 500, 
       setError(e);
     }
   };
-  // 0.5초마다 보고 0.5초 멈추면 툴팁이 뜬 것으로 본다. 툴팁끼리 바뀌면 화면 일부만 바뀌므로 바뀐 칸 비율(3%)도 본다
+  // 0.25초마다 보고 두 번 연속 같으면 툴팁이 뜬 것으로 본다(0.5초 간격이면 1초 미만으로 훑은 템을 놓친다 — 실측 0.7초 8/20). 툴팁끼리 바뀌면 화면 일부만 바뀌므로 바뀐 칸 비율(3%)도 본다
   // (2026-10-06: 1~2초씩 훑은 착용 템 중 일부만 읽힘 — 평균 차이로는 툴팁 전환을 놓치고, 한 장씩 보내 줄이 넘쳤다)
   const watcher = useRef(createWatcher({ threshold: 6, stableFrames: 2, cooldownMs: 300, minChanged: 0.03 }));
   const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 40장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
