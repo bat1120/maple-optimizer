@@ -68,6 +68,31 @@ describe("paths panel", () => {
     expect(url).toContain("miracle=true");
     expect(url).toContain("spare_price=1200000000");
   });
+  it("썬데이 스타포스 이벤트를 하나씩 고를 수 있고, 넷 다 고르면 샤이닝 스타포스로 묶인다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    const box = (name) => screen.getByRole("checkbox", { name });
+    const calc = () => act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    await act(async () => { fireEvent.click(box(/^30% 할인/)); });
+    await act(async () => { fireEvent.click(box(/^21성 이하 파괴 30% 감소/)); });
+    await calc();
+    expect(f.mock.calls.at(-1)[0]).toContain("sf=discount30%2Cdestroy_down30");
+    expect(box(/샤이닝 스타포스/)).not.toBeChecked();
+
+    await act(async () => { fireEvent.click(box(/^5·10·15성 100%/)); });
+    await act(async () => { fireEvent.click(box(/^흔적 복구 메소 20% 할인/)); });
+    expect(box(/샤이닝 스타포스/)).toBeChecked();
+    await calc();
+    expect(f.mock.calls.at(-1)[0]).toContain("sf=shining");
+
+    await act(async () => { fireEvent.click(box(/샤이닝 스타포스/)); });  // 묶음 끄기 = 넷 다 끄기
+    for (const n of [/^30% 할인/, /^21성 이하 파괴 30% 감소/, /^5·10·15성 100%/, /^흔적 복구 메소 20% 할인/]) expect(box(n)).not.toBeChecked();
+    await calc();
+    expect(f.mock.calls.at(-1)[0]).not.toContain("sf=");
+
+    await act(async () => { fireEvent.click(box(/샤이닝 스타포스/)); });  // 묶음 켜기 = 넷 다 켜기
+    expect(box(/^흔적 복구 메소 20% 할인/)).toBeChecked();
+  });
   it("HEXA: 조각 값(만 메소)·HEXA 스탯 썬데이를 보내고, 헥사 행에 조각·솔 에르다·딜 지분 출처를 보여 준다", async () => {
     const hx = { slot: "HEXA 코어", path: "HEXA 코어", name: "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨",
                  delta_pct: 0.25, cost: 5.95e8, cost_text: "5억 9500만", per_100m: 0.042, fragments: 85, erda: 3,

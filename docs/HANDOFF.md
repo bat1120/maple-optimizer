@@ -16,9 +16,9 @@
 | 강화 이벤트 | 샤이닝 스타포스·파괴 방지·미라클 타임 | `engine/market/events.py` |
 | HEXA | HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨, 연무장 딜 지분) | `engine/stats/hexa.py`, `engine/market/hexa_paths.py`, `engine/market/hexa_core_paths.py` |
 | 경로 비교 | 구매·직작·큐브·스타포스·HEXA를 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
+| 썬데이 이벤트 개별 선택 | 30% 할인·21성 이하 파괴 감소·5/10/15성 100%·복구 메소 할인을 하나씩(넷 다 = 샤이닝 묶음) | `web/src/PathsPanel.jsx`, `web/src/api.js` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
-- 경로 비교: 30% 할인·파괴 감소 등 썬데이 이벤트를 하나씩 고르기(API는 `sf=discount30,destroy_down30,…` 지원, 화면은 샤이닝 묶음만)
 - 스페어 값을 부위마다 다르게 넣기(지금은 모든 부위에 같은 값)
 - HEXA: 3rd 스킬 코어를 오리진과 구분(지금은 둘 다 비싼 '스킬' 비용표), 여러 스킬에 걸치는 강화 코어(체인 커맨드 강화) 반영
 - 추옵(환생의 불꽃) 재설정 경로 — 불꽃 등급별 확률표(공식 자료)가 먼저 필요

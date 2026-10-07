@@ -47,10 +47,13 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
   return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
 }
 
-// events: { shining, protect, miracle, spareEok, fragmentMan, hexaSunday } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
+// events: { discount30, destroy_down30, guarantee_5_10_15, restore_discount20 (넷 다 = shining, 또는 shining: true),
+//           protect, miracle, spareEok, fragmentMan, hexaSunday } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
+const SUNDAY_SF_KEYS = ["discount30", "destroy_down30", "guarantee_5_10_15", "restore_discount20"];
 export function getPaths(name, bossDefense = 300, events = {}) {
   const q = new URLSearchParams({ boss_defense: String(bossDefense) });
-  const sf = [events.shining && "shining", events.protect && "protect"].filter(Boolean).join(",");
+  const sunday = events.shining || SUNDAY_SF_KEYS.every((k) => events[k]) ? ["shining"] : SUNDAY_SF_KEYS.filter((k) => events[k]);
+  const sf = [...sunday, events.protect && "protect"].filter(Boolean).join(",");
   if (sf) q.set("sf", sf);
   if (events.miracle) q.set("miracle", "true");
   const spare = Number(events.spareEok);

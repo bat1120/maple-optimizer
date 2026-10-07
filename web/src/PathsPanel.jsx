@@ -5,6 +5,14 @@ import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
 // 업그레이드 경로 비교: 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브를 억당 실딜로. 세트 효과 변화는 실딜에 들어가 있고 따로 표시한다.
 // '경매장 시세 갱신'은 로컬에 연결된 maple-auction-mcp로 웹 경매장을 검색한다(일일 검색 한도 소진).
+// 썬데이 스타포스 이벤트(넷 다 = 샤이닝 스타포스). 이름은 서버 sf 조건과 같다.
+export const SUNDAY_SF = [
+  ["discount30", "30% 할인", "방지 추가금은 제외"],
+  ["destroy_down30", "21성 이하 파괴 30% 감소", ""],
+  ["guarantee_5_10_15", "5·10·15성 100%", ""],
+  ["restore_discount20", "흔적 복구 메소 20% 할인", ""],
+];
+
 function pathLabel(p) {
   if (p.path === "구매") return `구매 · ${p.name}${p.sold ? " (체결가)" : " (호가)"}`;
   if (p.path === "스타포스") return `스타포스 · ${p.name} ${p.from_star}→${p.to_star}성`;
@@ -30,8 +38,10 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       setBusy(false);
     }
   };
-  const [events, setEvents] = useState({ shining: false, protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false });
+  const [events, setEvents] = useState({ ...Object.fromEntries(SUNDAY_SF.map(([k]) => [k, false])), protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false });
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
+  const shining = SUNDAY_SF.every(([k]) => events[k]);
+  const toggleShining = () => setEvents((e) => ({ ...e, ...Object.fromEntries(SUNDAY_SF.map(([k]) => [k, !shining])) }));
   const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
     setRefresh(await postMarketRefresh({ name, boss_defense: defense, max_searches: 15 }));
@@ -58,7 +68,10 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       ]} />
       <fieldset className="events">
         <legend className="muted small">강화 이벤트·파괴 비용</legend>
-        <label className="chip"><input type="checkbox" checked={events.shining} onChange={() => toggle("shining")} /> 샤이닝 스타포스<span className="muted small">(30% 할인·21성 이하 파괴 30%↓·5/10/15성 100%·복구 메소 20%↓)</span></label>
+        <label className="chip"><input type="checkbox" checked={shining} onChange={toggleShining} /> 샤이닝 스타포스<span className="muted small">(아래 넷 한 번에)</span></label>
+        {SUNDAY_SF.map(([k, text, note]) => (
+          <label key={k} className="chip"><input type="checkbox" checked={events[k]} onChange={() => toggle(k)} /> {text}{note && <span className="muted small">({note})</span>}</label>
+        ))}
         <label className="chip"><input type="checkbox" checked={events.protect} onChange={() => toggle("protect")} /> 파괴 방지<span className="muted small">(15~17성)</span></label>
         <label className="chip"><input type="checkbox" checked={events.miracle} onChange={() => toggle("miracle")} /> 미라클 타임<span className="muted small">(큐브 등급 상승 2배)</span></label>
         <label className="inline">스페어 1개 값(억) <input aria-label="스페어 1개 값(억)" inputMode="decimal" value={events.spareEok} placeholder="비우면 미포함"
