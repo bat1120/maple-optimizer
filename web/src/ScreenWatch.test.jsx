@@ -390,3 +390,17 @@ describe("screen watch scouter copy", () => {
   });
 });
 
+
+describe("screen watch test item (임시: 경매장 없이 환산 채우기 시험)", () => {
+  it("[테스트 템 복사] — 내 캐릭터 이름·직업·레벨이 붙은 견본을 복사하고, 그 캐릭터 MapleScouter 화면 링크를 띄운다", async () => {
+    const writeText = vi.fn().mockResolvedValue();
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} admin={false} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "테스트 템 복사" })); });
+    const line = writeText.mock.calls[0][0].split("\n").find((l) => l.startsWith("MAPLEOPT1 "));
+    const p = JSON.parse(line.slice(10));
+    expect(p).toMatchObject({ name: "내신부레테", job: "레테", level: 288, fields: { "보스 데미지": 10, "크리 데미지": 5 } });
+    expect(screen.getByRole("link", { name: /MapleScouter 열기/ }))
+      .toHaveAttribute("href", "https://maplescouter.com/ko/info?name=%EB%82%B4%EC%8B%A0%EB%B6%80%EB%A0%88%ED%85%8C");
+  });
+});

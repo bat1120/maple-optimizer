@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { SCOUTER_INPUT_URL, bookmarkletHref, clipboardText } from "../scouter.js";
+import { SCOUTER_INPUT_URL, bookmarkletHref, clipboardText, sampleScouter } from "../scouter.js";
 
-// 경매장 데이터 없이 시험하는 견본: 직업과 상관없이 모든 캐릭터에 있는 칸만(보스 데미지·크리 데미지)
-const SAMPLE = { v: 1, slot: "견본", from: "지금 템", to: "테스트 템(보스 +10%, 크뎀 +5%)",
-  rows: { main: [], sub: [], attack: "마력" }, fields: { "보스 데미지": 10, "크리 데미지": 5 }, ied_add: [], ied_remove: [] };
+const SAMPLE = sampleScouter();
 
 // 환산 계산기(MapleScouter) 연동 안내 + '환산 채우기' 북마클릿. 주소는 렌더 뒤에 넣는다(React의 javascript: 주소 경고를 피하려고).
 export default function Scouter() {

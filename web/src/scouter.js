@@ -4,6 +4,12 @@
 export const PREFIX = "MAPLEOPT1 ";
 export const SCOUTER_INPUT_URL = "https://maplescouter.com/ko/input";
 
+// 경매장 데이터 없이 시험하는 견본: 직업과 상관없이 모든 캐릭터에 있는 칸만(보스 데미지·크리 데미지). who로 캐릭터를 붙이면 자동 교체까지 시험된다.
+export function sampleScouter(who = {}) {
+  return { v: 1, slot: "견본", from: "지금 템", to: "테스트 템(보스 +10%, 크뎀 +5%)", ...who,
+    rows: { main: [], sub: [], attack: "마력" }, fields: { "보스 데미지": 10, "크리 데미지": 5 }, ied_add: [], ied_remove: [] };
+}
+
 // 채우기 코드 — 북마클릿과 테스트가 이 문자열 하나를 같이 쓴다(브라우저 그대로 실행되도록 외부 참조 없음).
 export const FILL_SOURCE = `(function (doc, p) {
   var setter = Object.getOwnPropertyDescriptor(doc.defaultView.HTMLInputElement.prototype, "value").set;

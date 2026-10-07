@@ -81,7 +81,7 @@ export default function Character({ route }) {
               <RoadmapPanel name={name} defense={defense} autoLoad />
               <PathsPanel name={name} defense={defense} autoLoad showRefresh={false} />
               <RecommendPanel name={name} defense={defense} autoLoad />
-              <div className="pc-only"><ScreenWatch name={name} defense={defense} admin={false} /></div>
+              <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} /></div>
               <p className="card mobile-only muted">
                 PC에서 열면 경매장 화면을 바로 평가할 수 있어요 — 게임 창을 공유하면 툴팁을 읽어 내 캐릭터 기준으로 계산해요(휴대폰 브라우저는 화면 공유를 지원하지 않아요).
               </p>
