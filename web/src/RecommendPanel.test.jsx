@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import RecommendPanel from "./RecommendPanel.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -24,7 +24,7 @@ describe("recommend panel", () => {
     render(<RecommendPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
     expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/recommend?boss_defense=300&top=5`);
-    const cards = screen.getAllByRole("listitem");
+    const cards = within(screen.getByRole("list", { name: "추천 검색 조건" })).getAllByRole("listitem");
     expect(cards).toHaveLength(2);
     expect(cards[0]).toHaveTextContent("보조무기");
     expect(cards[0]).toHaveTextContent("에디 유니크 3줄");
@@ -53,7 +53,7 @@ describe("recommend panel", () => {
     fireEvent.change(screen.getByLabelText("쿨감 1초 = 주스탯 %"), { target: { value: "8" } });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
     expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/recommend?boss_defense=300&top=5&cooldown_main_pct=8`);
-    const cards = screen.getAllByRole("listitem");
+    const cards = within(screen.getByRole("list", { name: "추천 검색 조건" })).getAllByRole("listitem");
     expect(cards[1]).toHaveTextContent("잠재 레전드리 3줄");
     expect(cards[1]).toHaveTextContent("유지: 스킬 재사용 대기시간 -2초");
   });

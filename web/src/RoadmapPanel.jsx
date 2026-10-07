@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRoadmap } from "./api.js";
 import { formatMeso, formatPct, settingLabel } from "./format.js";
+import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
@@ -37,10 +38,18 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
 
   return (
     <section className="panel">
-      <h3>전체 부위 로드맵</h3>
-      <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
-        {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "전체 부위 로드맵"}
-      </button>
+      <PanelHead title="전체 부위 로드맵" icon="trend"
+                 subtitle="부위마다 잠재·에디를 몇 단계 올리면 보스 실딜이 얼마나 오르는지, 가격 대비 순서로 보여 드려요.">
+        <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
+          {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "전체 부위 로드맵"}
+        </button>
+      </PanelHead>
+      <HowTo steps={[
+        <><strong>가격 대비 순위</strong>: 억당 효율 막대가 길수록 같은 메소로 실딜이 많이 올라요. 1위부터 보세요.</>,
+        <><strong>부위별 다음 단계</strong>: 실딜이 처음 0.1% 이상 오르는 잠재·에디 등급과 줄 수예요.</>,
+        <>표 아래 <strong>'○○ 모든 단계'</strong>를 펼치면 단계별 실딜·한 번에 나올 확률·관측 시세를 볼 수 있어요.</>,
+      ]} />
+      {busy && !data && <RowsSkeleton rows={5} />}
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
         <>
@@ -67,6 +76,10 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
               </table>
             </>
           )}
+          {data.value_ranking?.length === 0 && data.slots.length === 0 && (
+            <EmptyState icon="trend" title="올릴 수 있는 단계를 찾지 못했어요">지금 장비 기준으로 계산된 단계가 없어요.</EmptyState>
+          )}
+          <h4>부위별 다음 단계</h4>
           <table aria-label="부위별 다음 단계">
             <thead><tr><th>부위</th><th>지금</th><th>잠재 다음 단계</th><th>에디 다음 단계</th></tr></thead>
             <tbody>

@@ -115,5 +115,24 @@ describe("character page", () => {
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
     expect(screen.getByText(/PC에서 열면 경매장 화면을 바로 평가/)).toBeInTheDocument();
   });
-});
 
+  it("탭마다 할 수 있는 것 한 줄과 사용 방법이 붙는다", async () => {
+    mockApi();
+    const { rerender } = render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    expect(screen.getByText(/프리셋 조합별 보스 실딜 순위/)).toBeInTheDocument();
+    expect(screen.getAllByText("사용 방법").length).toBeGreaterThan(0);
+    expect(screen.getByText(/칸을 누르면 잠재·에디 옵션이 열려요/)).toBeInTheDocument();
+    await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
+    expect(screen.getByText(/무엇을 바꾸면 보스 실딜이 오르는지/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "업그레이드 경로 비교" })).toBeInTheDocument();
+    await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
+    expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();
+  });
+
+  it("장비가 없으면 빈 상태 안내", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => (String(url).includes("/settings") ? ok(SETTINGS) : ok({ ...SUMMARY, equipment_presets: {} })));
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    expect(await screen.findByText("불러온 장비가 없어요")).toBeInTheDocument();
+  });
+});
