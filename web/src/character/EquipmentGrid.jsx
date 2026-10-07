@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { gradeClass } from "./grades.js";
+import { EmptyState } from "../ui/Guide.jsx";
 
 // 장비창(PC 5열: 좌 액세서리 2열 · 가운데 캐릭터 · 우 방어구 2열). 인게임 칸 위치는 확인 못 해 이 구성으로 정했다(설계 Ruling).
 // 휴대폰(≤720px)에서는 CSS가 같은 칸을 한 줄 목록으로 바꾼다.
@@ -48,13 +49,23 @@ export default function EquipmentGrid({ presets, active, image, name }) {
   const keys = Object.keys(presets || {});
   const [preset, setPreset] = useState(keys.includes(String(active)) ? String(active) : keys[0]);
   const [openSlot, setOpenSlot] = useState(null);
-  if (!keys.length) return null;
+  if (!keys.length) {
+    return (
+      <section className="card equipment">
+        <h3 className="panel-title">장비</h3>
+        <EmptyState title="불러온 장비가 없어요">넥슨 Open API가 장비 정보를 주지 않았어요. [정보 갱신]으로 다시 불러와 보세요.</EmptyState>
+      </section>
+    );
+  }
   const bySlot = Object.fromEntries((presets[preset] || []).map((it) => [it.slot, it]));
   const opened = openSlot && bySlot[openSlot];
   return (
     <section className="card equipment">
       <div className="equipment-head">
-        <h3>장비</h3>
+        <div className="panel-head-text">
+          <h3 className="panel-title">장비</h3>
+          <p className="panel-sub">칸을 누르면 잠재·에디 옵션이 열려요. 테두리 색 = 잠재 등급</p>
+        </div>
         <div className="seg" role="group" aria-label="장비 프리셋">
           {keys.map((k) => (
             <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
@@ -70,6 +81,9 @@ export default function EquipmentGrid({ presets, active, image, name }) {
         <div className="equip-avatar" style={{ gridColumn: 3, gridRow: "1 / span 4" }}>
           {image ? <img src={image} alt={`${name} 캐릭터`} /> : <span className="muted small">캐릭터</span>}
         </div>
+      </div>
+      <div className="grade-legend muted small" aria-label="잠재 등급 색">
+        {["레어", "에픽", "유니크", "레전드리"].map((g) => <span key={g}><i className={`swatch ${gradeClass(g)}`} />{g}</span>)}
       </div>
       {opened && <Detail item={opened} />}
     </section>
