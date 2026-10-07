@@ -2,6 +2,8 @@
 
 2026-10-04 실사용 피드백: 고점 한 번에 추천 X, 쿨감 줄 유지, 에디 추천, 제네시스 무기는 경매장 대상 아님, 전체 부위 로드맵.
 """
+import pytest
+
 from engine.market.recommend import (cooldown_seconds, line_tables, recommend_searches, roadmap, with_additional,
                                      with_potentials)
 from engine.stats.evaluate import Evaluator, rank_settings
@@ -129,3 +131,33 @@ def test_astra_secondary_is_cube_route_not_auction():
     recs = {(r.slot, r.kind) for r in recommend_searches(snap, setting, BOSS, CAT, top=60)}
     assert ("보조무기", "잠재") not in recs and ("보조무기", "에디") not in recs
     assert roadmap(snap, setting, BOSS, CAT)["보조무기"]["route"] == "큐브"
+
+
+@pytest.mark.parametrize("cls", ["카이저", "엔젤릭버스터", "제논"])
+def test_jobs_with_untradeable_secondary_get_cube_route(cls):
+    """보조무기가 교환 불가인 직업(2025-12 기준 엔젤릭버스터·카이저·제논) — 경매장에서 살 수 없다."""
+    import dataclasses
+    snap = snapshot(bundle(cls))
+    for slots in snap.equipment_presets.values():  # 픽스처는 아스트라를 끼고 있어 직업 규칙만 보려고 이름에서 '아스트라'를 뗀다
+        if "보조무기" in slots:
+            slots["보조무기"] = dataclasses.replace(slots["보조무기"], name=slots["보조무기"].name.replace("아스트라 ", ""))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    rm = roadmap(snap, setting, BOSS, CAT)
+    assert not rm["보조무기"]["name"].startswith("아스트라")
+    assert rm["보조무기"]["route"] == "큐브"
+    recs = {(r.slot, r.kind) for r in recommend_searches(snap, setting, BOSS, CAT, top=60)}
+    assert ("보조무기", "잠재") not in recs and ("보조무기", "에디") not in recs
+
+
+def test_tradeable_secondary_job_keeps_auction_route():
+    snap, setting = _setup()  # 레테 보조무기(녹스 마법깃펜)는 경매장에서 살 수 있다(2026-10-07 사용자 확인)
+    assert roadmap(snap, setting, BOSS, CAT)["보조무기"]["route"] == "경매장"
+
+
+def test_mitra_emblem_is_untradeable():
+    """미트라의 분노 엠블렘은 교환 불가(2025-12 커뮤니티 정리) — 경매장 검색 추천에서 뺀다."""
+    snap = snapshot(bundle("카이저"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    assert roadmap(snap, setting, BOSS, CAT)["엠블렘"]["route"] == "큐브"
+    recs = {(r.slot, r.kind) for r in recommend_searches(snap, setting, BOSS, CAT, top=60)}
+    assert ("엠블렘", "잠재") not in recs and ("엠블렘", "에디") not in recs

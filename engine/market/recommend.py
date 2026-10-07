@@ -7,7 +7,7 @@
 
 - 줄 수치·확률: engine/data/cube_tables.json (공식 큐브 확률표, tools/fetch_cube_tables.py). 201레벨부터 수치 +1.
 - 쿨감(스킬 재사용 대기시간 -N초) 줄은 실딜 공식으로 값을 매길 수 없어 유지한다. '쿨감 1초 = 주스탯 N%'를 주면 환산해 넣는다.
-- 제네시스·데스티니 무기와 아스트라 보조무기(교환 불가)는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
+- 제네시스·데스티니 무기, 아스트라 보조무기, 미트라 엠블렘, 엔버·카이저·제논의 보조무기는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
 """
 import copy
 import functools
@@ -276,12 +276,21 @@ def _market(observed: list[dict], slot: str, kind: str, it: Item, tier: dict, le
             "per_100m": tier["delta_pct"] / (med / 1e8)}
 
 
-UNTRADEABLE_PREFIX = SPECIAL_WEAPON + ("아스트라",)  # 아스트라 보조무기: 200제 교환 불가(2026-01-15 출시, 나무위키 '아스트라 보조무기')
+# 경매장에서 살 수 없는 템 — 근거(2026-10-07 조사):
+# - 아스트라 보조무기: 200제 교환 불가(2026-01-15 출시, 공식 '아스트라 보조무기 사양 및 전승 규칙 사전 안내', 2025-12-13)
+# - 미트라의 분노 엠블렘: 교환 불가(인벤 2025-12-16 '엔버, 카이저, 제논 보조를 교가로 바꿔주세요' 등 커뮤니티 정리)
+# - 보조무기 자체가 교환 불가인 직업: 엔젤릭버스터·카이저·제논(같은 글, 2025-12-16 기준). 레테 등 나머지는 교환 가능
+UNTRADEABLE_PREFIX = SPECIAL_WEAPON + ("아스트라", "미트라의 분노")
+UNTRADEABLE_SECONDARY_JOBS = ("엔젤릭버스터", "카이저", "제논")
 
 
-def _route(it: Item) -> str:
-    """경매장에서 살 수 없는 템(제네시스·데스티니 무기, 아스트라 보조무기)은 지금 템에 큐브만."""
-    return "큐브" if it.name.startswith(UNTRADEABLE_PREFIX) else "경매장"
+def _route(it: Item, character_class: str = "") -> str:
+    """경매장에서 살 수 없는 템은 지금 템에 큐브만."""
+    if it.name.startswith(UNTRADEABLE_PREFIX):
+        return "큐브"
+    if _part(it.slot) == "보조무기" and character_class in UNTRADEABLE_SECONDARY_JOBS:
+        return "큐브"
+    return "경매장"
 
 
 def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
@@ -290,7 +299,7 @@ def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
     pl = planner or _Planner(snap, setting, boss, catalog, cooldown_main_pct)
     out = {}
     for slot, it in pl.slots():
-        row = {"name": it.name, "starforce": it.starforce, "level": it.level, "route": _route(it),
+        row = {"name": it.name, "starforce": it.starforce, "level": it.level, "route": _route(it, snap.character_class),
                "current": {"잠재": list(it.potentials), "에디": list(it.additional)}, "next": {}}
         for kind in KINDS:
             tiers = pl.tiers(slot, kind)

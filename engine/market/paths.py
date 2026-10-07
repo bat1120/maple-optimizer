@@ -8,7 +8,7 @@
 """
 from engine.market.cube_value import expected_cost
 from engine.market.listing import item_from_input
-from engine.market.recommend import KINDS, MIN_GAIN, SWAP, _part, _Planner, _valued, roadmap
+from engine.market.recommend import KINDS, MIN_GAIN, SWAP, UNTRADEABLE_SECONDARY_JOBS, _part, _Planner, _valued, roadmap
 from engine.stats.jobs import job_profile
 from engine.stats.metrics import BossProfile
 from engine.stats.sets import SetCatalog, count_sets
@@ -65,7 +65,8 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
     for obs in observed or []:
         if not obs.get("price") or not obs.get("total"):
             continue
-        slots = [s for s in SLOTS_BY_CATEGORY.get(obs["category"], (obs["category"],)) if s in pl.raw]
+        slots = [s for s in SLOTS_BY_CATEGORY.get(obs["category"], (obs["category"],)) if s in pl.raw
+                 and not (_part(s) == "보조무기" and snap.character_class in UNTRADEABLE_SECONDARY_JOBS)]  # 그 직업은 보조무기를 살 수 없다
         if not slots:
             continue
         price = obs["price"] * (1 + OTHER_WORLD_FEE if obs.get("other_world") else 1)

@@ -105,3 +105,15 @@ def test_weak_listing_that_breaks_a_set_is_not_recommended():
     assert d < 0 and any(c["set"].startswith("도전자") and c["after"] < c["before"] for c in change)
     _, _, paths = _paths([weak])
     assert not [p for p in paths["all"] if p["path"] == "구매"]
+
+
+def test_untradeable_secondary_job_gets_no_buy_path_for_secondary():
+    """카이저는 보조무기를 경매장에서 살 수 없다(2025-12 기준) — 관측된 보조무기 매물을 구매 경로로 세우지 않는다."""
+    snap = snapshot(bundle("카이저"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    sub = {"category": "보조무기", "part": "보조무기", "name": "노바의 정수", "starforce": 22, "level": 200,
+           "potential_grade": "레전드리", "additional_grade": "레전드리", "total": {"STR": 300, "DEX": 300, "ATK": 300},
+           "potential_lines": ["보스 몬스터 데미지 +40%", "공격력 +12%", "공격력 +12%"], "additional": ["공격력 +12%"],
+           "price": 1_000_000_000, "seen_at": 1.0}
+    r = upgrade_paths(snap, setting, BOSS, CAT, observed=[sub])
+    assert not [p for p in r["all"] if p["slot"] == "보조무기" and p["path"] != "큐브"]
