@@ -8,6 +8,7 @@
 """
 from engine.market.cube_value import expected_cost
 from engine.market.listing import item_from_input
+from engine.market.secondary import secondary_fits
 from engine.market.recommend import KINDS, MIN_GAIN, SWAP, UNTRADEABLE_SECONDARY_JOBS, _part, _Planner, _valued, roadmap
 from engine.stats.jobs import job_profile
 from engine.stats.metrics import BossProfile
@@ -67,6 +68,9 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
             continue
         slots = [s for s in SLOTS_BY_CATEGORY.get(obs["category"], (obs["category"],)) if s in pl.raw
                  and not (_part(s) == "보조무기" and snap.character_class in UNTRADEABLE_SECONDARY_JOBS)]  # 그 직업은 보조무기를 살 수 없다
+        # 보조무기는 그 직업이 낄 수 있는 종류로 확인된 매물만(engine/market/secondary.py)
+        slots = [s for s in slots if _part(s) != "보조무기" or secondary_fits(
+            pl.raw[s].part, job_profile(snap.character_class).branches, obs.get("equip_type"), obs.get("job_groups")) is True]
         if not slots:
             continue
         price = obs["price"] * (1 + OTHER_WORLD_FEE if obs.get("other_world") else 1)

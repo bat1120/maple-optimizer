@@ -202,6 +202,25 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
             out.append(row)
             continue
         cat = x.get("category") or "기타"
+        if cat == "보조무기":
+            # 보조무기는 직업마다 종류가 다르다(engine/market/secondary.py) — 낄 수 없는 종류는 평가하지 않는다
+            from engine.market.recommend import UNTRADEABLE_SECONDARY_JOBS
+            from engine.market.secondary import secondary_fits
+            if snap.character_class in UNTRADEABLE_SECONDARY_JOBS:
+                row["reason"] = f"{snap.character_class}는 보조무기를 경매장에서 살 수 없어요(교환 불가) — 지금 보조무기에 큐브만 가능해요"
+                out.append(row)
+                continue
+            mine = snap.equipment_presets.get(chosen.equipment, {}).get("보조무기")
+            fits = secondary_fits(mine.part if mine else None, job_profile(snap.character_class).branches,
+                                  x.get("equip_type"), x.get("job_groups"))
+            if fits is False:
+                row["reason"] = (f"이 캐릭터가 낄 수 없는 보조무기로 보여요(매물 {x.get('equip_type')}"
+                                 + (f"·{'/'.join(x.get('job_groups') or [])}" if x.get("job_groups") else "")
+                                 + f", 지금 낀 보조무기는 {mine.part if mine else '없음'}) — 평가하지 않아요")
+                out.append(row)
+                continue
+            if fits is None:
+                row["secondary_note"] = "툴팁의 장비분류(보조무기 종류)를 못 읽어서, 이 캐릭터가 낄 수 있는 보조무기인지 확인이 필요해요"
         slots = SLOTS_BY_CATEGORY.get(cat, (cat,))
         item = item_from_input(slots[0], x.get("part") or cat, x.get("name") or "?", x.get("total") or {},
                                x.get("potentials") or [], snap.level, x.get("starforce") or 0)

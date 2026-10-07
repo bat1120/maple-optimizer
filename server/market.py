@@ -28,7 +28,8 @@ class PriceStore:
                 "potential_grade": read.get("potential_grade"), "additional_grade": read.get("additional_grade"),
                 "total": read.get("total") or {}, "potential_lines": lines[0], "additional": lines[1],
                 "price": int(price), "sold": bool(read.get("sold")), "other_world": bool(read.get("other_world")),
-                "source": read.get("source") or "화면"}
+                "source": read.get("source") or "화면",
+                "equip_type": read.get("equip_type"), "job_groups": read.get("job_groups")}  # 보조무기 착용 가능 판정용
         key = json.dumps([body["category"], body["name"], body["starforce"], sorted(lines[0]), sorted(lines[1]),
                           body["price"], body["sold"]], ensure_ascii=False)
         now = self._clock()

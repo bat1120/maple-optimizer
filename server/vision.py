@@ -29,7 +29,7 @@ _SCHEMA = {
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
                              "total", "breakdown", "potentials", "additional", "price", "equipped", "tooltip",
-                             "special_ring_level"],
+                             "special_ring_level", "equip_type", "job_groups"],
                 "properties": {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": list(CATEGORIES)},
@@ -59,6 +59,10 @@ _SCHEMA = {
                     "additional": {"type": "array", "items": {"type": "string"},
                                    "description": "에디셔널 잠재능력 줄 원문 그대로 (예: '마력 +10')"},
                     "price": {"type": ["integer", "null"], "description": "판매 가격(메소). 보이지 않으면 null"},
+                    "equip_type": {"type": ["string", "null"],
+                                   "description": "툴팁의 '장비분류' 값 그대로(예: 마법깃펜, 포스실드, 방패, 화살깃, 한손검). 안 보이면 null"},
+                    "job_groups": {"type": ["array", "null"], "items": {"type": "string", "enum": ["전사", "마법사", "궁수", "도적", "해적"]},
+                                   "description": "툴팁 아래 착용 가능 직업군 중 착용 가능으로 표시된 것(초보자 제외). 확실하지 않으면 null"},
                     "special_ring_level": {"type": ["integer", "null"],
                                            "description": "특수 반지(컨티뉴어스·리스트레인트·웨폰퍼프 등) 툴팁에 적힌 스킬 레벨. 특수 반지가 아니거나 안 보이면 null"},
                 },
@@ -76,6 +80,7 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
 - 가격은 매물 목록 행(또는 구매 창)의 판매 가격이다. 툴팁 아이템의 가격은 마우스가 올라가 있거나 선택(강조)된 행의 가격이다. 툴팁에 없더라도 같은 아이템 행의 가격을 찾아 넣는다.
 - 총 수치는 툴팁 윗부분의 STR/DEX/INT/LUK/최대 HP/공격력/마력/보스/방무/올스탯% 줄(괄호 안 세부 합이 아니라 맨 앞 합계)이다.
 - 보조무기(깃펜·포스실드·소울링·오브 등)는 category를 보조무기로. 무기는 캐릭터가 휘두르는 주무기만.
+- equip_type은 툴팁의 '장비분류 :' 뒤 글자 그대로, job_groups는 툴팁 아래 직업군(전사 마법사 궁수 도적 해적) 중 착용 가능으로 밝게 표시된 것만. 애매하면 null.
 - 잠재·에디 줄은 "에디셔널 잠재능력:" 같은 머리말 없이 옵션 문장만, 숫자(예: "캐릭터 기준 10레벨 당")는 빠짐없이 옮긴다.
 - 판매 등록 창 등에 판매 수수료 비율이 보이면 fee_rate에 그 퍼센트 숫자를 넣는다. 보이지 않으면 null(추측 금지).
 - 첫 이미지는 화면 전체, 그다음 '툴팁 0', '툴팁 1'… 이미지는 화면에서 찾은 툴팁을 원래 크기로 자른 것이다.
