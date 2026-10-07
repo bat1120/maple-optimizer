@@ -1,10 +1,18 @@
-import { useEffect, useRef } from "react";
-import { bookmarkletHref } from "../scouter.js";
+import { useEffect, useRef, useState } from "react";
+import { bookmarkletHref, clipboardText } from "../scouter.js";
+
+// 경매장 데이터 없이 시험하는 견본: 직업과 상관없이 모든 캐릭터에 있는 칸만(보스 데미지·크리 데미지)
+const SAMPLE = { v: 1, slot: "견본", from: "지금 템", to: "테스트 템(보스 +10%, 크뎀 +5%)",
+  rows: { main: [], sub: [], attack: "마력" }, fields: { "보스 데미지": 10, "크리 데미지": 5 }, ied_add: [], ied_remove: [] };
 
 // 환산 계산기(MapleScouter) 연동 안내 + '환산 채우기' 북마클릿. 주소는 렌더 뒤에 넣는다(React의 javascript: 주소 경고를 피하려고).
 export default function Scouter() {
   const link = useRef(null);
   useEffect(() => { link.current?.setAttribute("href", bookmarkletHref()); }, []);
+  const [copied, setCopied] = useState(false);
+  const copySample = async () => {
+    try { await navigator.clipboard.writeText(clipboardText(SAMPLE)); setCopied(true); } catch { setCopied(false); }
+  };
   return (
     <div className="scouter-page">
       <h1>환산 주스탯 계산기에 템 넣기</h1>
@@ -15,6 +23,14 @@ export default function Scouter() {
         <h3>1. 한 번만: 북마크 버튼 설치</h3>
         <p>아래 버튼을 브라우저 <strong>즐겨찾기(북마크) 막대로 끌어다 놓으세요.</strong> 즐겨찾기 막대가 안 보이면 Ctrl+Shift+B.</p>
         <p><a ref={link} className="bookmarklet" href="#/scouter" onClick={(e) => e.preventDefault()}>환산 채우기</a></p>
+      </section>
+      <section className="card">
+        <h3>먼저 시험해 보기</h3>
+        <p>경매장 데이터 없이 견본(보스 데미지 +10%, 크리 데미지 +5%)으로 북마크가 되는지 볼 수 있어요.</p>
+        <p>
+          <button type="button" onClick={copySample}>테스트용 복사</button>{" "}
+          {copied && <span className="muted small">견본을 복사했어요 — MapleScouter 입력 화면에서 '환산 채우기'를 누르면 보스·크뎀 칸이 그만큼 올라가요(확인 뒤 같은 값을 빼거나 새로고침 전 검색 캐릭터 다시 불러오기)</span>}
+        </p>
       </section>
       <section className="card">
         <h3>2. 쓸 때마다</h3>

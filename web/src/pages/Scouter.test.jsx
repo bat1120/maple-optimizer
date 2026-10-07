@@ -12,4 +12,17 @@ describe("scouter guide page", () => {
     expect(screen.getByText(/검색 캐릭터 불러오기/)).toBeInTheDocument();
     expect(screen.getByText(/환산용 복사/)).toBeInTheDocument();
   });
+
+  it("[테스트용 복사]: 경매장 데이터 없이 견본(보스 +10%, 크뎀 +5%)을 복사한다", async () => {
+    const { act, fireEvent } = await import("@testing-library/react");
+    const writeText = (await import("vitest")).vi.fn().mockResolvedValue();
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<Scouter />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "테스트용 복사" })); });
+    const text = writeText.mock.calls[0][0];
+    const json = JSON.parse(text.split("\n").find((l) => l.startsWith("MAPLEOPT1 ")).slice(10));
+    expect(json.fields).toEqual({ "보스 데미지": 10, "크리 데미지": 5 });
+    expect(screen.getByText(/견본을 복사했어요/)).toBeInTheDocument();
+  });
 });
+
