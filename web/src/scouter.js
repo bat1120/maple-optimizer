@@ -173,6 +173,7 @@ function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cs
 if(!line){toast("복사한 매물 정보가 없어요 — [환산용 복사]를 먼저 눌러 주세요");return;}
 var p=JSON.parse(line.slice(P.length));var s=await (${PREP_SOURCE})(document,p);var r=(${FILL_SOURCE})(document,p);
 if(r.cancelled){toast("환산 채우기를 취소했어요 — "+r.note);return;}
+if(!r.changed&&r.missing.length){toast("입력칸을 못 찾았어요 — MapleScouter 내 캐릭터 화면이나 입력 화면에서 눌러 주세요. 계속 이러면 '환산 채우기' 북마크를 새로 설치해 주세요(메이플 장비 최적화 #/scouter)");return;}
 toast((s.switched?p.name+" 스탯으로 교체 후 ":"")+"환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;
   return `javascript:${encodeURIComponent(body)}`;
 }

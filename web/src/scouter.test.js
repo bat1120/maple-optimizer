@@ -143,6 +143,15 @@ describe("scouter prep (내 캐릭터로 교체)", () => {
     document.body.insertAdjacentHTML("beforeend", replaceDialog("내신부레테"));
     expect((await runPrep(document, PAYLOAD, fast)).switched).toBe(false);
   });
+  it("입력칸을 하나도 못 찾으면(입력 화면이 아님) 어디서 누르는지 알려 준다", async () => {
+    window.history.pushState({}, "", "/ko/info?name=x");
+    document.body.innerHTML = `<main><span>보스 데미지</span> 448</main>`; // info 화면: 이름은 있어도 입력칸이 없다, 직접입력 링크도 없음
+    Object.assign(navigator, { clipboard: { readText: async () => clipboardText(ME) } });
+    await eval(decodeURIComponent(bookmarkletHref().slice(11))); // eslint-disable-line no-eval
+    const t = document.body.lastElementChild.textContent;
+    expect(t).toContain("입력칸을 못 찾았어요");
+    expect(t).toContain("새로 설치");
+  });
   it("북마클릿은 전환 코드도 담는다", () => {
     expect(decodeURIComponent(bookmarkletHref())).toContain(PREP_SOURCE.slice(0, 40));
   });
