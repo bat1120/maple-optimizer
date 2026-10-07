@@ -122,7 +122,24 @@ def item(item_json: dict, level: int) -> Item:
         special_ring_level=int(num(item_json.get("special_ring_level"))),
         icon=item_json.get("item_icon") or None,
         excluded=excluded,
+        sf_option=_sf_option(item_json.get("item_starforce_option") or {}),
+        scroll_attack=_scroll_attack(item_json),
+        amazing=item_json.get("starforce_scroll_flag") == "사용",
     )
+
+
+_SF_KEYS = {"str": "STR", "dex": "DEX", "int": "INT", "luk": "LUK", "attack_power": "ATK", "magic_power": "MATK"}
+
+
+def _sf_option(opt: dict) -> dict[str, float]:
+    return {k: num(opt.get(src)) for src, k in _SF_KEYS.items() if num(opt.get(src))}
+
+
+def _scroll_attack(item_json: dict) -> dict[str, float]:
+    """무기 1~15성 공격력 상승의 기준: 순수(기본) + 주문서 공격력·마력. 순수 값이 0인 쪽은 스타포스로 오르지 않는다."""
+    base, etc = item_json.get("item_base_option") or {}, item_json.get("item_etc_option") or {}
+    return {k: num(base.get(src)) + num(etc.get(src)) for src, k in (("attack_power", "ATK"), ("magic_power", "MATK"))
+            if num(base.get(src))}
 
 
 _PLUS_NUMBER = re.compile(r"[+-]\s*\d")

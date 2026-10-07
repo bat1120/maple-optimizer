@@ -4,8 +4,18 @@
   다른 월드 매물은 메이플포인트 수수료 10%를 더한다.
 - 직작: 매물 가격 + 매물의 지금 등급에서 로드맵 단계까지 메소 재설정 평균 비용. 스타포스는 매물 그대로 본다.
 - 큐브: 지금 템에 메소 재설정(로드맵의 cube_cost).
+- 스타포스: 지금 템을 목표 성까지(성별 스탯 표 engine/enhance/starforce_stats.py). 비용은 메소 기대값만이고 파괴 시 스페어 비용은
+  빼고 평균 파괴 횟수(expected_destroys)를 따로 준다.
 가격이 없거나 총 옵션을 모르는 매물은 실딜을 계산할 수 없어 뺀다.
 """
+import copy
+import dataclasses
+
+from engine.enhance.starforce import StarforceConditions
+from engine.enhance.starforce import expected_cost as sf_expected_cost
+from engine.enhance.starforce import max_star as sf_max_star
+from engine.enhance.starforce_stats import eligible
+from engine.enhance.starforce_stats import gain as sf_gain
 from engine.market.cube_value import expected_cost
 from engine.market.listing import item_from_input
 from engine.market.secondary import secondary_fits
@@ -49,6 +59,53 @@ def _entry(slot, path, cost, delta, **kw) -> dict:
     return {"slot": slot, "path": path, "cost": cost, "delta_pct": delta, "per_100m": delta / (cost / 1e8), **kw}
 
 
+SF_TARGETS = (17, 18, 19, 20, 21, 22, 23, 24, 25)  # 목표 성 후보(지금 성보다 높고 최대 성 이하만)
+SF_PER_SLOT = 2  # 부위마다 억당 효율 상위 목표 성만(목록이 스타포스로 넘치지 않게)
+
+
+def _starforce_paths(pl, px) -> list[dict]:
+    """지금 템을 목표 성까지 강화: 실딜은 성별 스탯 표(engine/enhance/starforce_stats.py), 비용은 메소 기대값
+    (engine/enhance/starforce.py, 이벤트·파괴 방지 없음, 파괴 시 스페어·복구 비용 제외)."""
+    out = []
+    for slot, it in pl.raw.items():
+        if not eligible(it):
+            continue
+        cap = sf_max_star(it.level)
+        mine = []
+        for target in (t for t in SF_TARGETS if it.starforce < t <= cap):
+            g = sf_gain(it, target)
+            if not g:
+                continue
+            stats = copy.deepcopy(it.stats)
+            core = copy.deepcopy(it.core) if it.core is not None else None
+            for k, v in g.items():
+                stats.flat[k] = stats.flat.get(k, 0.0) + v
+                if core is not None:
+                    core.flat[k] = core.flat.get(k, 0.0) + v
+            new = dataclasses.replace(it, starforce=target, stats=stats, core=core)
+            d, change = px.delta(slot, new)
+            cond = StarforceConditions()
+            cost = sf_expected_cost(it.level, it.starforce, target, 0.0, cond)
+            # 평균 파괴 횟수 = 파괴 1회 비용을 1로 둔 기대 비용 − 0으로 둔 기대 비용(스페어 값은 몰라서 비용에 넣지 않는다)
+            destroys = sf_expected_cost(it.level, it.starforce, target, 1.0, cond) - cost
+            if d >= MIN_GAIN and cost > 0:
+                mine.append(_entry(slot, "스타포스", cost, d, kind=None, name=it.name, from_star=it.starforce,
+                                   to_star=target, gain=g, expected_destroys=destroys, set_change=change))
+        out += sorted(mine, key=lambda p: p["per_100m"], reverse=True)[:SF_PER_SLOT]
+    return out
+
+
+def balanced(paths: list[dict], per_path: int) -> list[dict]:
+    """경로 종류(구매·직작·큐브·스타포스)마다 억당 상위 per_path개씩 모아 다시 억당 순으로(한 종류가 목록을 다 채우지 않게)."""
+    count: dict[str, int] = {}
+    keep = []
+    for p in sorted(paths, key=lambda p: p["per_100m"], reverse=True):
+        if count.get(p["path"], 0) < per_path:
+            count[p["path"]] = count.get(p["path"], 0) + 1
+            keep.append(p)
+    return keep
+
+
 def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
                   observed: list[dict] | None = None, cooldown_main_pct: float | None = None) -> dict:
     pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
@@ -63,6 +120,7 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
                                       grade=t["grade"], lines_good=t["lines_good"], target=t["target"],
                                       cube_cost=t["cube_cost"], reach_probability=t["reach_probability"],
                                       set_change=[]))
+    out += _starforce_paths(pl, px)  # 지금 템 스타포스 강화
     for obs in observed or []:
         if not obs.get("price") or not obs.get("total"):
             continue

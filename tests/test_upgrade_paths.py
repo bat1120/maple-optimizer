@@ -82,7 +82,9 @@ def test_all_paths_are_meaningful_and_sorted_by_value_and_include_cube_on_curren
 
 def test_paths_without_observations_still_rank_cube_routes():
     _, _, paths = _paths([])
-    assert paths["all"] and all(p["path"] == "큐브" for p in paths["all"])
+    # 관측 매물이 없으면 지금 템을 올리는 경로(큐브·스타포스 — 2026-10-07 스타포스 추가)만
+    assert paths["all"] and all(p["path"] in ("큐브", "스타포스") for p in paths["all"])
+    assert any(p["path"] == "큐브" for p in paths["all"])
 
 
 def test_agent_tool_returns_paths_with_cost_text():
@@ -117,3 +119,13 @@ def test_untradeable_secondary_job_gets_no_buy_path_for_secondary():
            "price": 1_000_000_000, "seen_at": 1.0}
     r = upgrade_paths(snap, setting, BOSS, CAT, observed=[sub])
     assert not [p for p in r["all"] if p["slot"] == "보조무기" and p["path"] != "큐브"]
+
+
+def test_paths_list_keeps_every_path_kind_when_starforce_is_plentiful():
+    """스타포스 경로가 많아도 구매·큐브 경로가 목록에서 밀려나지 않는다(경로 종류별 상위 묶음)."""
+    from server.service import paths as service_paths
+    r = service_paths(snapshot(bundle("레테")), 300.0, [ROBE])
+    kinds = {p["path"] for p in r["all"]}
+    assert {"구매", "큐브", "스타포스"} <= kinds
+    per = [p["per_100m"] for p in r["all"]]
+    assert per == sorted(per, reverse=True)

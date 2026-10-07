@@ -32,6 +32,10 @@ class Item:
     additional_grade: str | None = None  # 착용 레벨(item_base_option.base_equipment_level). 잠재 줄 수치 구간을 정한다
     special_ring_level: int = 0  # 특수 반지 스킬 레벨(컨티뉴어스·리스트레인트 등). 0이면 특수 반지 아님. 효과는 실딜에 없다
     icon: str | None = None      # 넥슨 Open API item_icon 주소(화면 표시용, 저장하지 않는다)
+    # 스타포스 강화 경로용(2026-10-07): 지금 스타포스 옵션(STR DEX INT LUK ATK MATK), 순수+주문서 공격력, 놀장 사용 여부
+    sf_option: dict[str, float] = field(default_factory=dict)
+    scroll_attack: dict[str, float] = field(default_factory=dict)
+    amazing: bool = False
 
 
 @dataclass

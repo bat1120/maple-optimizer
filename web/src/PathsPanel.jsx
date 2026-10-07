@@ -7,6 +7,7 @@ import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 // '경매장 시세 갱신'은 로컬에 연결된 maple-auction-mcp로 웹 경매장을 검색한다(일일 검색 한도 소진).
 function pathLabel(p) {
   if (p.path === "구매") return `구매 · ${p.name}${p.sold ? " (체결가)" : " (호가)"}`;
+  if (p.path === "스타포스") return `스타포스 · ${p.name} ${p.from_star}→${p.to_star}성`;
   const step = `${p.kind} ${p.grade} ${p.lines_good}줄`;
   return p.path === "직작" ? `직작 · ${p.name} + 큐브 ${step}` : `큐브 ${step}`;
 }
@@ -39,7 +40,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
   return (
     <section className="panel">
       <PanelHead title="업그레이드 경로 비교" icon="layers"
-                 subtitle="같은 부위를 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브 중 어떤 방법으로 올리는 게 억당 실딜이 높은지 비교해요.">
+                 subtitle="같은 부위를 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스 중 어떤 방법으로 올리는 게 억당 실딜이 높은지 비교해요.">
         <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
           {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "업그레이드 경로 비교"}
         </button>
@@ -49,6 +50,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <><strong>억당</strong> 열이 높을수록 같은 메소로 실딜이 많이 올라요.</>,
         <>구매 경로는 경매장 화면 평가로 쌓인 <strong>관측 매물</strong>로만 계산해요. 관측이 없으면 큐브 경로만 나와요.</>,
         <>세트 효과가 바뀌는 경우 실딜에 이미 들어가 있고, <strong>세트 변화</strong> 열에 따로 적어요.</>,
+        <><strong>스타포스</strong> 비용은 메소 기대값만이에요(이벤트·파괴 방지 없음). 파괴되면 스페어 비용이 더 드니 <strong>평균 파괴</strong> 횟수를 같이 보세요.</>,
       ]} />
       {busy && !data && <RowsSkeleton rows={4} />}
       {refresh && (
@@ -71,7 +73,8 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
               {data.all.map((p, i) => (
                 <tr key={i}>
                   <td>{p.slot}</td>
-                  <td>{pathLabel(p)}{p.target ? <><br /><span className="muted">{p.target.join(" / ")}</span></> : null}</td>
+                  <td>{pathLabel(p)}{p.target ? <><br /><span className="muted">{p.target.join(" / ")}</span></> : null}
+                    {p.path === "스타포스" ? <><br /><span className="muted">평균 파괴 {p.expected_destroys.toFixed(2)}회(스페어 비용 별도)</span></> : null}</td>
                   <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num">{formatPct(p.per_100m)}</td>
                   <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>
                 </tr>
