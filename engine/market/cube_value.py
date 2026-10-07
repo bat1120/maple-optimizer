@@ -26,8 +26,10 @@ def reset_cost_for(kind: str, level: int, grade: str) -> int:
     return costs[str(bracket)][grade]
 
 
-def expected_cost(kind: str, level: int, current_grade: str | None, target_grade: str, p_success: float) -> float | None:
-    """평균 메소. 목표 등급이 지금보다 낮거나 잠재가 없으면(None) 큐브로는 갈 수 없다."""
+def expected_cost(kind: str, level: int, current_grade: str | None, target_grade: str, p_success: float,
+                  miracle: bool = False) -> float | None:
+    """평균 메소. 목표 등급이 지금보다 낮거나 잠재가 없으면(None) 큐브로는 갈 수 없다.
+    miracle: 미라클 타임(등급 상승 확률 2배, 천장은 그대로)."""
     if current_grade not in GRADE_ORDER or p_success <= 0:
         return None
     cur, tgt = GRADE_ORDER.index(current_grade), GRADE_ORDER.index(target_grade)
@@ -36,5 +38,5 @@ def expected_cost(kind: str, level: int, current_grade: str | None, target_grade
     cost = 0.0
     for g in GRADE_ORDER[cur:tgt]:
         p, ceiling = _data(kind)["tier_up"][g]
-        cost += tier_up_tries(p, ceiling).mean * reset_cost_for(kind, level, g)
+        cost += tier_up_tries(min(1.0, p * 2) if miracle else p, ceiling).mean * reset_cost_for(kind, level, g)
     return cost + reset_cost_for(kind, level, target_grade) / p_success

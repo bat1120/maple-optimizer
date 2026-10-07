@@ -47,8 +47,15 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
   return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
 }
 
-export function getPaths(name, bossDefense = 300) {
-  return request(`${base(name)}/paths?boss_defense=${bossDefense}`);
+// events: { shining, protect, miracle, spareEok } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
+export function getPaths(name, bossDefense = 300, events = {}) {
+  const q = new URLSearchParams({ boss_defense: String(bossDefense) });
+  const sf = [events.shining && "shining", events.protect && "protect"].filter(Boolean).join(",");
+  if (sf) q.set("sf", sf);
+  if (events.miracle) q.set("miracle", "true");
+  const spare = Number(events.spareEok);
+  if (spare > 0) q.set("spare_price", String(Math.round(spare * 1e8)));
+  return request(`${base(name)}/paths?${q}`);
 }
 
 export const postMarketRefresh = (body) => post("/api/market/refresh", body);

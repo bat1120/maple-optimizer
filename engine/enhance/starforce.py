@@ -24,6 +24,7 @@ class StarforceConditions:
     guarantee_5_10_15: bool = False   # 5·10·15성 100% 성공 이벤트
     protect: bool = False             # 파괴 방지 (15~17성 시도)
     restore: str = "full"             # "full"(같은 성으로) | "basic"(12성)
+    restore_discount20: bool = False  # 흔적 복구 메소 20% 할인 (샤이닝 스타포스)
 
 
 def max_star(level: int) -> int:
@@ -82,8 +83,37 @@ def _check(level: int, start: int, target: int) -> None:
         raise ValueError(f"{level}레벨 장비는 {max_star(level)}성까지입니다")
 
 
+def restore_spares(star: int) -> int:
+    """파괴 직전 성(23성 이상은 22성)으로 흔적 복구할 때 필요한 같은 장비 개수(공식 가이드)."""
+    return next(n for upto, n in _DATA["restore_spares"] if star <= upto)
+
+
+def restore_meso(level: int, star: int, cond: StarforceConditions) -> float:
+    """흔적 복구 메소: 복구되는 성의 강화 1회 기본 비용 × 배수(engine/data/starforce.json restore_meso_ratio)."""
+    star = min(star, _DATA["trace_cap_star"])
+    meso = base_cost(level, star) * _DATA["restore_meso_ratio"][str(star)]
+    return meso * (1 - _DATA["shining_restore_discount"]) if cond.restore_discount20 else meso
+
+
+def expected_totals(level: int, start: int, target: int, cond: StarforceConditions, spare_price: float = 0.0) -> dict:
+    """평균 메소(강화 + 흔적 복구 메소), 평균 파괴 횟수, 평균 스페어 소모 개수, 비용(메소 + 스페어 × spare_price).
+    흔적 복구(full)로 파괴 직전 성에 돌아간다고 본다."""
+    def restored(st):
+        return destroy_return(st, cond)
+    meso = _solve(level, start, target, cond, lambda st, d: attempt_cost(level, st, cond)
+                  + d * restore_meso(level, restored(st), cond))
+    destroys = _solve(level, start, target, cond, lambda st, d: d)
+    spares = _solve(level, start, target, cond, lambda st, d: d * restore_spares(restored(st)))
+    return {"meso": meso, "destroys": destroys, "spares": spares, "cost": meso + spares * spare_price}
+
+
 def expected_cost(level: int, start: int, target: int, destroy_cost: float, cond: StarforceConditions) -> float:
     """정확한 기대 비용: E[s] = c + p·E[s+1] + k·E[s] + d·(D + E[r(s)]), E[target] = 0 을 푼다."""
+    return _solve(level, start, target, cond, lambda st, d: attempt_cost(level, st, cond) + d * destroy_cost)
+
+
+def _solve(level: int, start: int, target: int, cond: StarforceConditions, rhs) -> float:
+    """E[s] = rhs(s, d) + p·E[s+1] + k·E[s] + d·E[r(s)], E[target] = 0 — rhs가 한 번 시도의 비용(파괴분 포함)."""
     _check(level, start, target)
     lo = min([start] + [destroy_return(s, cond) for s in range(start, target) if transition(s, cond)[2] > 0])
     states = list(range(lo, target))
@@ -96,7 +126,7 @@ def expected_cost(level: int, start: int, target: int, destroy_cost: float, cond
             a[i][i + 1] -= p
         if d > 0:
             a[i][destroy_return(st, cond) - lo] -= d
-        a[i][n] = attempt_cost(level, st, cond) + d * destroy_cost
+        a[i][n] = rhs(st, d)
     for col in range(n):  # 가우스 소거 (부분 피벗)
         piv = max(range(col, n), key=lambda r: abs(a[r][col]))
         a[col], a[piv] = a[piv], a[col]

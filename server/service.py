@@ -293,29 +293,33 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
 
 
 def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
-          cooldown_main_pct: float | None = None, top: int = 30) -> dict:
+          cooldown_main_pct: float | None = None, top: int = 30, events=None) -> dict:
     """업그레이드 경로 비교: 구매·직작·지금 템 큐브를 억당 실딜로(세트 효과 반영)."""
     from engine.market.paths import balanced, upgrade_paths
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
-    r = upgrade_paths(snap, chosen, b, CATALOG, observed, cooldown_main_pct)
+    from engine.market.events import Events
+    events = events or Events()
+    r = upgrade_paths(snap, chosen, b, CATALOG, observed, cooldown_main_pct, events)
     fmt = lambda ps: [{**p, "cost_text": meso_text(p["cost"])} for p in ps]  # noqa: E731
-    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "all": fmt(balanced(r["all"], max(1, top // 4))),
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "events": {**asdict(events), "label": events.label()},
+            "all": fmt(balanced(r["all"], max(1, top // 4))),
             "best_by_slot": fmt(r["best_by_slot"]), "observed_count": len(observed or []),
             "note": ("구매 = 관측 매물을 그대로 끼운 실딜(세트 개수를 다시 세서 세트 효과 변화 포함, set_change), 다른 월드 매물은 +10%. "
                      "직작 = 관측 매물 가격 + 그 매물 등급에서 단계까지 메소 재설정 평균. 큐브 = 지금 템에 메소 재설정 평균. "
-                     "스타포스 = 지금 템을 목표 성까지 메소 기대값(이벤트·파괴 방지 없음, 파괴 시 스페어 비용 제외 — expected_destroys가 평균 파괴 횟수). "
+                     "스타포스 = 지금 템을 목표 성까지 메소 기대값(강화 + 흔적 복구 메소, 고른 이벤트 반영). 파괴되면 같은 장비가 복구에 필요해요"
+                     "(18성 이하 1개·19~20성 2개·21성 3개·22성 이상 4개) — expected_spares가 평균 스페어 개수, 스페어 값을 넣으면 비용에 더해요. "
                      "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
 
 
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
-            observed: list[dict] | None = None) -> dict:
+            observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""
     from engine.market.recommend import roadmap as build
     from engine.market.recommend import value_ranking
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
-    rm = build(snap, chosen, b, CATALOG, cooldown_main_pct, observed)
+    rm = build(snap, chosen, b, CATALOG, cooldown_main_pct, observed, miracle=miracle)
     rows = [{"slot": slot, **row} for slot, row in rm.items()]
     value = [{**v, "cube_cost_text": meso_text(v["cube_cost"])} for v in value_ranking(rm)]
     cd, cd_note = _cooldown(snap, cooldown_main_pct)

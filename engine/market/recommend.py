@@ -144,7 +144,8 @@ def _valued(it: Item, mains, valuer) -> Item:
 
 
 class _Planner:
-    def __init__(self, snap, setting, boss, catalog, cooldown_main_pct):
+    def __init__(self, snap, setting, boss, catalog, cooldown_main_pct, miracle: bool = False):
+        self.miracle = miracle  # 미라클 타임: 큐브 등급 상승 확률 2배
         job = job_profile(snap.character_class)
         self.snap, self.main, self.mains = snap, job.mains[0], job.mains
         self.per_sec, self.cooldown_source = cooldown_valuer(snap.character_class, cooldown_main_pct)
@@ -190,7 +191,7 @@ class _Planner:
                 target = kept + chosen
                 reach = self.reach(slot, kind, tables, kept, chosen, single)
                 cur = it.potential_grade if kind == "잠재" else it.additional_grade
-                cost = expected_cost(kind, it.level, cur, grade, reach)
+                cost = expected_cost(kind, it.level, cur, grade, reach, miracle=self.miracle)
                 delta = self.delta(slot, kind, target)
                 out.append({"grade": grade, "lines_good": len(chosen), "target": target, "probability": prob,
                             "reach_probability": reach, "delta_pct": delta, "cube_cost": cost,
@@ -294,9 +295,10 @@ def _route(it: Item, character_class: str = "") -> str:
 
 
 def roadmap(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-            cooldown_main_pct: float | None = None, observed: list[dict] | None = None, planner=None) -> dict:
+            cooldown_main_pct: float | None = None, observed: list[dict] | None = None, planner=None,
+            miracle: bool = False) -> dict:
     """부위 → {name, starforce, route, current, 잠재/에디: [단계…], next: {종류: 처음 오르는 단계 번호|None}}."""
-    pl = planner or _Planner(snap, setting, boss, catalog, cooldown_main_pct)
+    pl = planner or _Planner(snap, setting, boss, catalog, cooldown_main_pct, miracle)
     out = {}
     for slot, it in pl.slots():
         row = {"name": it.name, "starforce": it.starforce, "level": it.level, "route": _route(it, snap.character_class),

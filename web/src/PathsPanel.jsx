@@ -29,10 +29,12 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       setBusy(false);
     }
   };
-  const load = () => run(async () => setData(await getPaths(name, defense)));
+  const [events, setEvents] = useState({ shining: false, protect: false, miracle: false, spareEok: "" });
+  const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
+  const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
     setRefresh(await postMarketRefresh({ name, boss_defense: defense, max_searches: 15 }));
-    setData(await getPaths(name, defense));
+    setData(await getPaths(name, defense, events));
   });
 
   useEffect(() => { if (autoLoad && name) load(); }, [autoLoad, name, defense]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,8 +52,17 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <><strong>억당</strong> 열이 높을수록 같은 메소로 실딜이 많이 올라요.</>,
         <>구매 경로는 경매장 화면 평가로 쌓인 <strong>관측 매물</strong>로만 계산해요. 관측이 없으면 큐브 경로만 나와요.</>,
         <>세트 효과가 바뀌는 경우 실딜에 이미 들어가 있고, <strong>세트 변화</strong> 열에 따로 적어요.</>,
-        <><strong>스타포스</strong> 비용은 메소 기대값만이에요(이벤트·파괴 방지 없음). 파괴되면 스페어 비용이 더 드니 <strong>평균 파괴</strong> 횟수를 같이 보세요.</>,
+        <><strong>스타포스</strong> 비용은 강화 + 흔적 복구 메소 기대값이에요. 위에서 이벤트를 고르고, <strong>스페어 1개 값</strong>을 넣으면 파괴 시 스페어 비용까지 더해요.</>,
       ]} />
+      <fieldset className="events">
+        <legend className="muted small">강화 이벤트·파괴 비용</legend>
+        <label className="chip"><input type="checkbox" checked={events.shining} onChange={() => toggle("shining")} /> 샤이닝 스타포스<span className="muted small">(30% 할인·21성 이하 파괴 30%↓·5/10/15성 100%·복구 메소 20%↓)</span></label>
+        <label className="chip"><input type="checkbox" checked={events.protect} onChange={() => toggle("protect")} /> 파괴 방지<span className="muted small">(15~17성)</span></label>
+        <label className="chip"><input type="checkbox" checked={events.miracle} onChange={() => toggle("miracle")} /> 미라클 타임<span className="muted small">(큐브 등급 상승 2배)</span></label>
+        <label className="inline">스페어 1개 값(억) <input aria-label="스페어 1개 값(억)" inputMode="decimal" value={events.spareEok} placeholder="비우면 미포함"
+          onChange={(e) => setEvents((v) => ({ ...v, spareEok: e.target.value }))} style={{ width: "7em" }} /></label>
+        <button type="button" className="ghost small" onClick={load} disabled={!name || busy}>이 조건으로 계산</button>
+      </fieldset>
       {busy && !data && <RowsSkeleton rows={4} />}
       {refresh && (
         <p className="muted">
@@ -62,7 +73,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
         <>
-          <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · 관측 매물 {data.observed_count}건</p>
+          <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · 관측 매물 {data.observed_count}건{data.events ? ` · ${data.events.label}` : ""}</p>
           {data.note && <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>}
           {data.all.length === 0 && (
             <EmptyState icon="layers" title="비교할 경로가 아직 없어요">관측 매물이 쌓이거나 큐브로 오를 단계가 있으면 여기에 나와요.</EmptyState>
@@ -74,7 +85,8 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
                 <tr key={i}>
                   <td>{p.slot}</td>
                   <td>{pathLabel(p)}{p.target ? <><br /><span className="muted">{p.target.join(" / ")}</span></> : null}
-                    {p.path === "스타포스" ? <><br /><span className="muted">평균 파괴 {p.expected_destroys.toFixed(2)}회(스페어 비용 별도)</span></> : null}</td>
+                    {p.path === "스타포스" ? <><br /><span className="muted">평균 파괴 {p.expected_destroys.toFixed(2)}회 · 스페어 {(p.expected_spares ?? 0).toFixed(2)}개
+                      {p.spare_price ? "(비용에 포함)" : "(스페어 값 미포함 — 흔적 복구 메소만)"}</span></> : null}</td>
                   <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num">{formatPct(p.per_100m)}</td>
                   <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>
                 </tr>

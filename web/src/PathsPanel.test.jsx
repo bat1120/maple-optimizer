@@ -43,12 +43,29 @@ describe("paths panel", () => {
   });
   it("스타포스 경로: 지금 성 → 목표 성과 평균 파괴 횟수(스페어 비용 별도)를 보여 준다", async () => {
     const sf = { slot: "벨트", path: "스타포스", name: "분노한 자쿰의 벨트", from_star: 17, to_star: 22, delta_pct: 2.1,
-                 cost: 3e9, cost_text: "30억", per_100m: 0.07, expected_destroys: 0.42, gain: { INT: 55 }, set_change: [] };
+                 cost: 3e9, cost_text: "30억", per_100m: 0.07, expected_destroys: 0.42, expected_spares: 0.5, spare_price: 0,
+                 gain: { INT: 55 }, set_change: [] };
     vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [sf] }));
     render(<PathsPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
     const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
     expect(row).toHaveTextContent("스타포스 · 분노한 자쿰의 벨트 17→22성");
     expect(row).toHaveTextContent("평균 파괴 0.42회");
+    expect(row).toHaveTextContent("스페어 0.50개");
+    expect(row).toHaveTextContent("스페어 값 미포함");
+  });
+  it("이벤트·스페어 값: 고르면 그 조건으로 다시 계산한다(샤이닝 스타포스·파괴 방지·미라클 타임·스페어 억)", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /샤이닝 스타포스/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /미라클 타임/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /파괴 방지/ })); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("스페어 1개 값(억)"), { target: { value: "12" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = f.mock.calls.at(-1)[0];
+    expect(url).toContain("sf=shining%2Cprotect");
+    expect(url).toContain("miracle=true");
+    expect(url).toContain("spare_price=1200000000");
   });
 });
