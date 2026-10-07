@@ -29,6 +29,33 @@ export const FILL_SOURCE = `(function (doc, p) {
     }
     return null;
   }
+  // 안전장치: MapleScouter에 불러와진 캐릭터의 직업·레벨이 복사한 캐릭터와 같은지(2026-10-07 — 다른 캐릭터에 더하는 실수 방지)
+  function near(label, sel) {
+    var spans = Array.prototype.filter.call(doc.querySelectorAll("span"), function (s) {
+      return s.children.length === 0 && s.textContent.trim() === label;
+    });
+    for (var i = 0; i < spans.length; i++) {
+      var el = spans[i];
+      for (var k = 0; k < 5 && el; k++) { el = el.parentElement; if (el && el.querySelector(sel)) return el.querySelector(sel); }
+    }
+    return null;
+  }
+  function norm(x) { return String(x || "").replace(/[\\s()（）]/g, ""); }
+  var note = "";
+  if (p.job) {
+    var jobEl = near("직업", "[role=combobox], select, button");
+    var pageJob = jobEl ? (jobEl.value || jobEl.textContent || "").trim() : "";
+    var lvEl = near("레벨", "input");
+    var pageLv = lvEl ? parseInt(lvEl.value, 10) : NaN;
+    if (pageJob && norm(pageJob) !== norm(p.job)) {
+      var who = (p.name ? p.name + "(" : "(") + p.job + (p.level ? " Lv." + p.level : "") + ")";
+      var ok = doc.defaultView.confirm("MapleScouter에 " + pageJob + (isNaN(pageLv) ? "" : " Lv." + pageLv) +
+        "이(가) 불러와져 있어요. 복사한 템은 " + who + " 기준이에요.\\n먼저 [검색 캐릭터 불러오기]로 그 캐릭터를 불러오는 게 맞아요. 그래도 지금 칸에 더할까요?");
+      if (!ok) return { changed: 0, missing: [], cancelled: true, note: "직업이 달라 채우지 않았어요" };
+    } else if (p.level && !isNaN(pageLv) && pageLv !== p.level) {
+      note = "레벨이 달라요(MapleScouter Lv." + pageLv + " / 복사 Lv." + p.level + ") — 같은 캐릭터인지 확인해 주세요";
+    }
+  }
   var f = p.fields, changed = 0, missing = [];
   function add(el, d) { if (d) { put(el, num(el) + d); changed++; } }
   function statRow(name, key) {
@@ -62,7 +89,7 @@ export const FILL_SOURCE = `(function (doc, p) {
       put(ied[0], 100 - remain); changed++;
     }
   }
-  return { changed: changed, missing: missing };
+  return { changed: changed, missing: missing, note: note };
 })`;
 
 export function runFill(doc, payload) {
@@ -98,6 +125,7 @@ var line=t.split("\\n").filter(function(l){return l.indexOf(P)===0;})[0];
 function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;z-index:99999;left:50%;top:16px;transform:translateX(-50%);background:#1b1f2a;color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},6000);}
 if(!line){toast("복사한 매물 정보가 없어요 — [환산용 복사]를 먼저 눌러 주세요");return;}
 var p=JSON.parse(line.slice(P.length));var r=(${FILL_SOURCE})(document,p);
-toast("환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+" (되돌리려면 '되돌리기')");})();`;
+if(r.cancelled){toast("환산 채우기를 취소했어요 — "+r.note);return;}
+toast("환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;
   return `javascript:${encodeURIComponent(body)}`;
 }

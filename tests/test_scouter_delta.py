@@ -56,3 +56,10 @@ def test_vision_rows_carry_scouter_delta_for_the_chosen_slot():
     row = vision_items(snap, None, 300, [listing], set())[0]
     assert row["evaluated"] and row["scouter"]["slot"] == row["slot"] and row["scouter"]["to"] == "에테르넬 메이지글러브"
     assert "INT|%" in row["scouter"]["fields"]
+
+
+def test_delta_carries_character_for_safety_check():
+    """북마크가 MapleScouter에 불러와진 캐릭터와 비교한다 — 직업·레벨·이름을 같이 담는다."""
+    snap, setting, glove = _snap_and_glove()
+    d = scouter_delta(snap, setting, "장갑", glove)
+    assert d["job"] == snap.character_class and d["level"] == snap.level and "name" in d

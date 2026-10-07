@@ -5,14 +5,18 @@ import { FILL_SOURCE, PREFIX, bookmarkletHref, clipboardText, runFill } from "./
 function row(label, values) {
   return `<div class="flex w-full"><div><div><span class="text-sm">${label}</span></div></div>${values.map((v) => `<input type="text" value="${v}">`).join("")}</div>`;
 }
-function page() {
-  document.body.innerHTML = `<main>
+function jobRows(job, level) {
+  return `<div><div><div><span>레벨</span></div></div><input type="text" value="${level}"></div>
+    <div><div><div><span>직업</span></div></div><button type="button" role="combobox">${job}</button></div>`;
+}
+function page(job = "레테", level = 288) {
+  document.body.innerHTML = `<main>${jobRows(job, level)}
     ${row("INT", [5503, 423, 27310])}${row("LUK", [2633, 132, 660])}${row("마력", [3074, 63, 0])}
     ${row("데미지", [91])}${row("최종 데미지", [188.93])}${row("보스 데미지", [438])}${row("방어율 무시", [95.2782])}
     ${row("크리티컬 확률", [103])}${row("마력", [5010])}${row("크리 데미지", [87])}${row("초", [2])}
   </main>`;
 }
-const vals = () => [...document.querySelectorAll("input")].map((i) => i.value);
+const vals = () => [...document.querySelectorAll("input")].slice(1).map((i) => i.value); // 0번은 레벨
 afterEach(() => { document.body.innerHTML = ""; });
 
 const PAYLOAD = {
@@ -43,7 +47,7 @@ describe("scouter fill (MapleScouter 입력칸 채우기)", () => {
     expect(Number(vals()[12])).toBeCloseTo(100 - (100 - 95.2782) * 0.6, 4);
   });
   it("칸을 못 찾으면 그 칸만 건너뛰고 알려 준다", () => {
-    document.body.innerHTML = `<main>${row("INT", [1, 2, 3])}</main>`;
+    document.body.innerHTML = `<main>${jobRows("레테", 288)}${row("INT", [1, 2, 3])}</main>`;
     const r = runFill(document, PAYLOAD);
     expect(vals()).toEqual(["31", "11", "3"]);
     expect(r.missing).toContain("보스 데미지");
@@ -60,4 +64,30 @@ describe("scouter fill (MapleScouter 입력칸 채우기)", () => {
     expect(href.startsWith("javascript:")).toBe(true);
     expect(decodeURIComponent(href)).toContain(FILL_SOURCE.slice(0, 40));
   });
+
+  it("MapleScouter에 다른 직업이 불러와져 있으면 묻고, 취소하면 아무 칸도 바꾸지 않는다", () => {
+    page("메르세데스", 286);
+    let asked = "";
+    window.confirm = (m) => { asked = m; return false; };
+    const r = runFill(document, { ...PAYLOAD, job: "레테", level: 288, name: "내신부레테" });
+    expect(asked).toContain("메르세데스");
+    expect(asked).toContain("내신부레테");
+    expect(r.changed).toBe(0) ;
+    expect(r.cancelled).toBe(true);
+    expect(vals().slice(0, 3)).toEqual(["5503", "423", "27310"]);
+  });
+  it("직업 표기 차이(괄호·띄어쓰기)는 같은 직업으로 본다", () => {
+    page("아크메이지 (불,독)", 288);
+    window.confirm = () => { throw new Error("묻지 않아야 한다"); };
+    const r = runFill(document, { ...PAYLOAD, job: "아크메이지(불,독)", level: 288 });
+    expect(r.changed).toBeGreaterThan(0);
+  });
+  it("레벨만 다르면 막지 않고 알려 준다", () => {
+    page("레테", 287);
+    window.confirm = () => { throw new Error("묻지 않아야 한다"); };
+    const r = runFill(document, { ...PAYLOAD, job: "레테", level: 288 });
+    expect(r.changed).toBeGreaterThan(0);
+    expect(r.note).toContain("레벨");
+  });
 });
+

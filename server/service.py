@@ -343,5 +343,6 @@ def scouter_delta(snap: CharacterSnapshot, setting, slot: str, new_item) -> dict
     fields["초"] = (cooldown_seconds(new_item) - (cooldown_seconds(old) if old else 0))
     ca, cb = Counter(a.ied), Counter(b.ied)
     return {"slot": slot, "from": old.name if old else None, "to": new_item.name, "fields": fields,
+            "job": snap.character_class, "level": snap.level, "name": (snap.profile or {}).get("name"),
             "ied_add": sorted((ca - cb).elements()), "ied_remove": sorted((cb - ca).elements()),
             "rows": {"main": list(job.mains), "sub": list(job.subs), "attack": atk}}
