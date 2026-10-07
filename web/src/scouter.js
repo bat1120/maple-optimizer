@@ -96,6 +96,45 @@ export function runFill(doc, payload) {
   return new Function(`return ${FILL_SOURCE}`)()(doc, payload); // eslint-disable-line no-new-func
 }
 
+// 내 캐릭터로 자동 전환(2026-10-07 실사이트 확인): MapleScouter는 /ko/info?name=<닉네임>을 열면 그 캐릭터가 '최근 검색'이 되고,
+// 입력 화면으로 가면 "최근에 검색한 [KMS] 월드@닉네임 의 스탯으로 교체할까요?" 창을 띄운다.
+// 그래서 우리 링크는 info 화면을 열고, 북마크는 ① info 화면이면 '직접입력' 링크로 이동(같은 페이지 안 이동이라 북마크가 계속 돈다)
+// ② 교체 창의 닉네임이 복사한 캐릭터와 같을 때만 [교체] ③ 그다음 FILL_SOURCE로 채운다. 다른 닉네임이면 누르지 않는다.
+export const scouterInfoUrl = (name) => (name ? `https://maplescouter.com/ko/info?name=${encodeURIComponent(name)}` : SCOUTER_INPUT_URL);
+
+export const PREP_SOURCE = `(async function (doc, p, sleep) {
+  sleep = sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  function dialog() {
+    return Array.prototype.filter.call(doc.querySelectorAll("[role=dialog]"), function (d) { return d.textContent.indexOf("교체할까요") >= 0; })[0] || null;
+  }
+  function mine(d) {
+    if (!p.name) return false;
+    var t = d.textContent, i = t.indexOf("@" + p.name);
+    if (i < 0) return false;
+    var next = t.charAt(i + 1 + p.name.length);
+    return next === "" || next === " " || next === "(";
+  }
+  var moved = false;
+  if (doc.defaultView.location.pathname.indexOf("/info") >= 0) { // info 화면에도 '직업' 글자가 있어서 주소로 판단(2026-10-07 실사이트)
+    var a = doc.querySelector('a[href$="/input"]');
+    if (!a) return { switched: false, moved: false };
+    a.click(); moved = true;
+  }
+  var d = null;
+  for (var i = 0; i < (moved ? 40 : 4) && !d; i++) { d = dialog(); if (!d) await sleep(250); }
+  if (!d || !mine(d)) return { switched: false, moved: moved };
+  var btn = Array.prototype.filter.call(d.querySelectorAll("button"), function (b) { return b.textContent.trim() === "교체"; })[0];
+  if (!btn) return { switched: false, moved: moved };
+  btn.click();
+  for (var k = 0; k < 20 && dialog(); k++) await sleep(250);
+  await sleep(500);
+  return { switched: true, moved: moved };
+})`;
+
+export function runPrep(doc, payload, sleep) {
+  return new Function(`return ${PREP_SOURCE}`)()(doc, payload, sleep); // eslint-disable-line no-new-func
+}
+
 const LABEL = { "기본": "", "%": "%", "% 미적용": "(%미적용)" };
 const sign = (x) => (x > 0 ? `+${x}` : `${x}`);
 
@@ -112,7 +151,9 @@ export function clipboardText(payload, info = {}) {
     parts.length ? parts.join(" · ") : "스탯 변화 없음",
   ];
   if (info.price) lines.push(`가격 ${Math.round(info.price / 1e8).toLocaleString("ko-KR")}억 · 우리 계산 실딜 ${info.delta_pct >= 0 ? "+" : ""}${info.delta_pct?.toFixed?.(3)}%`);
-  lines.push("MapleScouter 입력 화면에서 [검색 캐릭터 불러오기] 후 '환산 채우기' 북마크를 누르면 칸에 더해져요.");
+  lines.push(payload.name
+    ? `MapleScouter에서 ${payload.name} 화면을 연 뒤 '환산 채우기' 북마크를 누르면 내 캐릭터로 교체하고 칸에 더해요.`
+    : "MapleScouter 입력 화면에서 [검색 캐릭터 불러오기] 후 '환산 채우기' 북마크를 누르면 칸에 더해져요.");
   lines.push(PREFIX + JSON.stringify(payload));
   return lines.join("\n");
 }
@@ -124,8 +165,8 @@ if(t.indexOf(P)<0){t=prompt("메이플 장비 최적화에서 [환산용 복사]
 var line=t.split("\\n").filter(function(l){return l.indexOf(P)===0;})[0];
 function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;z-index:99999;left:50%;top:16px;transform:translateX(-50%);background:#1b1f2a;color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},6000);}
 if(!line){toast("복사한 매물 정보가 없어요 — [환산용 복사]를 먼저 눌러 주세요");return;}
-var p=JSON.parse(line.slice(P.length));var r=(${FILL_SOURCE})(document,p);
+var p=JSON.parse(line.slice(P.length));var s=await (${PREP_SOURCE})(document,p);var r=(${FILL_SOURCE})(document,p);
 if(r.cancelled){toast("환산 채우기를 취소했어요 — "+r.note);return;}
-toast("환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;
+toast((s.switched?p.name+" 스탯으로 교체 후 ":"")+"환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;
   return `javascript:${encodeURIComponent(body)}`;
 }

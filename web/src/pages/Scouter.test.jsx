@@ -9,7 +9,7 @@ describe("scouter guide page", () => {
     render(<Scouter />);
     const link = screen.getByRole("link", { name: "환산 채우기" });
     expect(link.getAttribute("href").startsWith("javascript:")).toBe(true);
-    expect(screen.getByText(/검색 캐릭터 불러오기/)).toBeInTheDocument();
+    expect(screen.getByText(/내 캐릭터 스탯으로 교체/)).toBeInTheDocument();
     expect(screen.getByText(/환산용 복사/)).toBeInTheDocument();
   });
 

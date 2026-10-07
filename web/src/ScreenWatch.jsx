@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
-import { SCOUTER_INPUT_URL, clipboardText } from "./scouter.js";
+import { clipboardText, scouterInfoUrl } from "./scouter.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
 
@@ -98,7 +98,7 @@ function CopyScouter({ item }) {
   return (
     <span className="inline">
       <button type="button" className="ghost small" onClick={copy}>환산용 복사</button>
-      {done && <span className="muted small">복사했어요 — <a href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a>에서 '환산 채우기'</span>}
+      {done && <span className="muted small">복사했어요 — <a href={scouterInfoUrl(item.scouter.name)} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a>에서 '환산 채우기'(내 캐릭터로 교체 후 채워요)</span>}
     </span>
   );
 }

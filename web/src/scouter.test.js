@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { FILL_SOURCE, PREFIX, bookmarkletHref, clipboardText, runFill } from "./scouter.js";
+import { FILL_SOURCE, PREFIX, PREP_SOURCE, bookmarkletHref, clipboardText, runFill, runPrep, scouterInfoUrl } from "./scouter.js";
 
 // MapleScouter 입력 화면 흉내(2026-10-07 실제 구조): <span>라벨</span> → 세 단계 위 div 안에 input
 function row(label, values) {
@@ -91,3 +91,59 @@ describe("scouter fill (MapleScouter 입력칸 채우기)", () => {
   });
 });
 
+
+// 내 캐릭터로 자동 전환(2026-10-07 실사이트 구조): info 화면의 '직접입력' 링크 → 입력 화면 + "…@닉네임 (live) 의 스탯으로 교체할까요?" 창
+function replaceDialog(who) {
+  return `<div role="dialog">검색 캐릭터 스탯으로 교체 최근에 검색한 [KMS] 크로아@${who} (live) 의 스탯으로 교체할까요?
+    <button type="button">유지</button><button type="button">교체</button></div>`;
+}
+function infoPage(who) {
+  window.history.pushState({}, "", "/ko/info?name=x");
+  document.body.innerHTML = `<main><h1>${who}</h1>${jobRows("레테", 288)}<a href="/ko/input">직접입력</a></main>`; // info 화면에도 '직업' 칸이 있다
+  document.querySelector("a").addEventListener("click", (e) => {
+    e.preventDefault();
+    window.history.pushState({}, "", "/ko/input");
+    page("메르세데스", 286);
+    document.body.insertAdjacentHTML("beforeend", replaceDialog(who));
+    const [keep, swap] = document.querySelectorAll("[role=dialog] button");
+    keep.onclick = () => document.querySelector("[role=dialog]").remove();
+    swap.onclick = () => { document.querySelector("[role=dialog]").remove(); page("레테", 288); };
+  });
+}
+const fast = () => Promise.resolve();
+const ME = { ...PAYLOAD, job: "레테", level: 288, name: "내신부레테" };
+
+describe("scouter prep (내 캐릭터로 교체)", () => {
+  it("우리 링크는 그 캐릭터의 info 화면(이름 없으면 입력 화면)", () => {
+    expect(scouterInfoUrl("내신부레테")).toBe("https://maplescouter.com/ko/info?name=%EB%82%B4%EC%8B%A0%EB%B6%80%EB%A0%88%ED%85%8C");
+    expect(scouterInfoUrl(undefined)).toBe("https://maplescouter.com/ko/input");
+  });
+  it("info 화면에서: 입력 화면으로 가서 같은 닉네임이면 [교체] → 채우기는 교체된 캐릭터에", async () => {
+    infoPage("내신부레테");
+    let asked = false;
+    window.confirm = () => { asked = true; return false; };
+    expect(await runPrep(document, ME, fast)).toEqual({ switched: true, moved: true });
+    expect(document.querySelector("[role=dialog]")).toBeNull();
+    const r = runFill(document, ME);
+    expect(asked).toBe(false);                   // 직업이 맞으니 묻지 않는다
+    expect(r.changed).toBeGreaterThan(0);
+  });
+  it("교체 창의 닉네임이 다르면(이름이 앞부분만 같아도) 누르지 않는다", async () => {
+    infoPage("내신부레테2");
+    expect(await runPrep(document, ME, fast)).toEqual({ switched: false, moved: true });
+    expect(document.querySelector("[role=dialog]")).not.toBeNull();
+  });
+  it("이미 입력 화면이고 교체 창이 없으면 아무것도 누르지 않는다", async () => {
+    window.history.pushState({}, "", "/ko/input");
+    page("레테", 288);
+    expect(await runPrep(document, ME, fast)).toEqual({ switched: false, moved: false });
+  });
+  it("복사 글에 이름이 없으면 교체 창이 떠 있어도 누르지 않는다", async () => {
+    page("메르세데스", 286);
+    document.body.insertAdjacentHTML("beforeend", replaceDialog("내신부레테"));
+    expect((await runPrep(document, PAYLOAD, fast)).switched).toBe(false);
+  });
+  it("북마클릿은 전환 코드도 담는다", () => {
+    expect(decodeURIComponent(bookmarkletHref())).toContain(PREP_SOURCE.slice(0, 40));
+  });
+});

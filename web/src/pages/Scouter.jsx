@@ -39,8 +39,8 @@ export default function Scouter() {
         <h3>2. 쓸 때마다</h3>
         <ol>
           <li>캐릭터 화면 → 업그레이드 탭 → 경매장 화면 평가에서 매물 옆 <strong>[환산용 복사]</strong></li>
-          <li><a href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>에서 <strong>[검색 캐릭터 불러오기]</strong>로 지금 스펙을 채우기</li>
-          <li>즐겨찾기 막대의 <strong>환산 채우기</strong>를 누르기 — 처음엔 클립보드 읽기 허용을 물어요(허용 또는 붙여넣기 창에 Ctrl+V)</li>
+          <li>복사 옆 <strong>MapleScouter 열기 ↗</strong> — 내 캐릭터 정보 화면이 열려요</li>
+          <li>즐겨찾기 막대의 <strong>환산 채우기</strong>를 누르기 — 입력 화면으로 넘어가 내 캐릭터 스탯으로 교체한 뒤 칸에 더해요. 처음엔 클립보드 읽기 허용을 물어요(허용 또는 붙여넣기 창에 Ctrl+V)</li>
           <li>위쪽에 "N칸 변경"이 뜨면 MapleScouter의 결과 보기를 누르세요. 되돌리려면 MapleScouter의 [되돌리기]</li>
         </ol>
         <p className="muted small">
