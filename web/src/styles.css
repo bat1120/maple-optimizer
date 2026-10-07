@@ -62,6 +62,8 @@ th { color: var(--muted); font-weight: 500; font-size: 0.82rem; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 details { margin: 6px 0; }
 .howto { margin: 8px 0; }
+.bookmarklet { display: inline-block; padding: 8px 14px; border-radius: 8px; background: var(--gold); color: #3a2a00; font-weight: 700; cursor: grab; }
+.scouter-page ol { padding-left: 20px; line-height: 1.7; }
 .howto summary { cursor: pointer; font-weight: 600; color: var(--accent); }
 .howto ol { padding-left: 20px; line-height: 1.6; }
 details.note summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }

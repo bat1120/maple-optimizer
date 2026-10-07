@@ -372,3 +372,20 @@ describe("screen watch how-to", () => {
   });
 });
 
+describe("screen watch scouter copy", () => {
+  it("평가된 매물에 [환산용 복사] — 누르면 클립보드에 요약과 북마클릿용 줄을 넣는다", async () => {
+    const writeText = vi.fn().mockResolvedValue();
+    Object.assign(navigator, { clipboard: { writeText } });
+    const row = { signature: "s1", evaluated: true, slot: "장갑", delta_pct: 0.84, per_100m: 0.084, main_stat_gain: 480, excluded: [],
+                  read: { name: "에테르넬 메이지글러브", total: { INT: 100 }, potentials: ["INT +12%"], price: 1e10 },
+                  scouter: { v: 1, slot: "장갑", from: "도전자의 장갑", to: "에테르넬 메이지글러브",
+                             rows: { main: ["INT"], sub: ["LUK"], attack: "마력" }, fields: { "INT|기본": 30 }, ied_add: [], ied_remove: [] } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} admin={false} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "환산용 복사" })); });
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText.mock.calls[0][0]).toContain("MAPLEOPT1 ");
+    expect(screen.getByText(/복사했어요/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /환산 채우기 설치/ })).toHaveAttribute("href", "#/scouter");
+  });
+});
+

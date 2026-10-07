@@ -12,6 +12,7 @@ describe("hash router", () => {
   it("계산기·관리자·첫 화면, 모르는 주소는 첫 화면", () => {
     expect(parseHash("#/calc").page).toBe("calc");
     expect(parseHash("#/admin").page).toBe("admin");
+    expect(parseHash("#/scouter").page).toBe("scouter");
     expect(parseHash("").page).toBe("home");
     expect(parseHash("#/what").page).toBe("home");
     expect(parseHash("#/c/").page).toBe("home");

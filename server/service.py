@@ -219,6 +219,10 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
                 "특수 반지 스킬 효과는 실딜 계산에 없어요 — 스탯만 계산했어요. "
                 f"이 매물 {f'{lv}레벨' if lv else '레벨 못 읽음'}"
                 + (f" · 지금 낀 {ring.name} {ring.special_ring_level}레벨" if ring else ""))
+        try:
+            row["scouter"] = scouter_delta(snap, chosen, slot, item)  # 환산 계산기에 옮길 변화량(복사 버튼)
+        except Exception:  # 변화량을 못 구해도 평가는 보여 준다
+            row["scouter"] = None
         row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
                     "main_stat_gain": gain, "excluded": item.excluded,
                     "per_100m": (delta / (price / 1e8)) if (delta is not None and price) else None})
@@ -306,3 +310,38 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             "note": ("각 단계 = 그 등급에서 흔한 줄(확률 2% 이상, 이탈 제외)로 2줄·3줄을 맞춘 경우예요. probability는 큐브 한 번에 "
                      "그 조합이 나올 확률(참고)이에요. route가 '큐브'인 부위(제네시스 무기 등)는 경매장에서 살 수 없어요. "
                      + cd_note)}
+
+
+_SCOUTER_ATTACK = {"MATK": "마력", "ATK": "공격력"}
+
+
+def scouter_delta(snap: CharacterSnapshot, setting, slot: str, new_item) -> dict:
+    """환산 계산기(MapleScouter) 입력칸 기준 변화량: slot을 new_item으로 바꿨을 때 스탯 출처 합(장비·세트 등)의 차이.
+    칸 이름 그대로(INT|기본, INT|%, 마력|기본, 보스 데미지 …). 방무는 곱연산이라 더해진·빠진 줄을 따로(ied_add/ied_remove)."""
+    from collections import Counter
+    from engine.market.recommend import cooldown_seconds
+    from engine.stats.residual import preset_items, sources_for
+    job = job_profile(snap.character_class)
+    before = preset_items(snap, setting.equipment)
+    after = {**before, slot: new_item}
+    sa, sb = sources_for(snap, setting, CATALOG, after), sources_for(snap, setting, CATALOG, before)
+    a, b = sa.pct, sb.pct  # % 적용 출처(장비·세트·칭호·링크·유니온) — 템 교체는 여기만 바뀐다
+    flat = lambda blk, k: blk.flat.get(k, 0.0)  # noqa: E731
+    pct = lambda blk, k: blk.pct.get(k, 0.0)  # noqa: E731
+    r = lambda x: round(x, 4)  # noqa: E731
+    fields = {}
+    for m in list(job.mains) + list(job.subs):
+        fields[f"{m}|기본"] = r(flat(a, m) - flat(b, m))
+        fields[f"{m}|%"] = r(pct(a, m) - pct(b, m))
+        fields[f"{m}|% 미적용"] = r(flat(sa.nopct, m) - flat(sb.nopct, m))  # 하이퍼·어빌·심볼(템 교체로는 0)
+    atk = _SCOUTER_ATTACK[job.attack]
+    fields[f"{atk}|기본"] = r(flat(a, job.attack) - flat(b, job.attack))
+    fields[f"{atk}|%"] = r(pct(a, job.attack) - pct(b, job.attack))
+    fields.update({"데미지": r(a.dmg - b.dmg), "보스 데미지": r(a.boss - b.boss), "최종 데미지": r(a.fd - b.fd),
+                   "크리티컬 확률": r(a.cr - b.cr), "크리 데미지": r(a.cd - b.cd)})
+    old = before.get(slot)
+    fields["초"] = (cooldown_seconds(new_item) - (cooldown_seconds(old) if old else 0))
+    ca, cb = Counter(a.ied), Counter(b.ied)
+    return {"slot": slot, "from": old.name if old else None, "to": new_item.name, "fields": fields,
+            "ied_add": sorted((ca - cb).elements()), "ied_remove": sorted((cb - ca).elements()),
+            "rows": {"main": list(job.mains), "sub": list(job.subs), "attack": atk}}

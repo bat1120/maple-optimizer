@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
+import { clipboardText } from "./scouter.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
 
@@ -83,6 +84,25 @@ function EditForm({ item, name, defense, onSaved, onCancel }) {
 }
 
 // 화면에서 읽은 내용을 그대로 보여 준다(잘못 읽었는지 사용자가 확인할 수 있게). 가격을 못 읽었으면 직접 넣는다.
+// 환산 계산기(MapleScouter)에 옮길 변화량 복사 — 그쪽 화면에서 '환산 채우기' 북마크를 누르면 칸에 더해진다(#/scouter)
+function CopyScouter({ item }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(clipboardText(item.scouter, { price: item.read?.price, delta_pct: item.delta_pct }));
+      setDone(true);
+    } catch {
+      setDone(false);
+    }
+  };
+  return (
+    <span className="inline">
+      <button type="button" className="ghost small" onClick={copy}>환산용 복사</button>
+      {done && <span className="muted small">복사했어요 — MapleScouter에서 '환산 채우기'</span>}
+    </span>
+  );
+}
+
 function Row({ item, name, defense, onUpdate, onReplace }) {
   const r = item.read || {};
   const [price, setPrice] = useState("");
@@ -129,6 +149,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
           <button type="button" onClick={calc}>억당 계산</button>
         </span>
       )}
+      {item.evaluated && item.scouter && <CopyScouter item={item} />}
       {r.corrected && <span className="muted"> · 고친 값</span>}
       {item.frame_id && name && !editing && <> <button type="button" onClick={() => setEditing(true)}>고치기</button></>}
       {editing && <EditForm item={item} name={name} defense={defense} onCancel={() => setEditing(false)}
@@ -266,6 +287,9 @@ export default function ScreenWatch({ name, defense, capture, intervalMs = 250, 
       <p className="muted">
         공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
         화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.
+      </p>
+      <p className="muted small">
+        매물 옆 [환산용 복사] → MapleScouter에서 북마크 한 번으로 칸에 넣기: <a href="#/scouter">환산 채우기 설치·사용법</a>
       </p>
       {!admin && (
         <p className="muted small">
