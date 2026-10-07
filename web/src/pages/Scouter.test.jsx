@@ -24,5 +24,13 @@ describe("scouter guide page", () => {
     expect(json.fields).toEqual({ "보스 데미지": 10, "크리 데미지": 5 });
     expect(screen.getByText(/견본을 복사했어요/)).toBeInTheDocument();
   });
+
+  it("MapleScouter 입력 화면으로 가는 링크(새 탭)", () => {
+    render(<Scouter />);
+    const a = screen.getAllByRole("link", { name: /MapleScouter 입력 화면 열기/ })[0];
+    expect(a).toHaveAttribute("href", "https://maplescouter.com/ko/input");
+    expect(a).toHaveAttribute("target", "_blank");
+    expect(a.getAttribute("rel")).toContain("noopener");
+  });
 });
 

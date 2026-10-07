@@ -2,6 +2,7 @@
 // 북마클릿은 MapleScouter 화면의 칸을 '이름'으로 찾아(라벨 <span> → 위로 올라가 input) 지금 값에 템 교체 변화량을 더한다.
 // 서버로 아무것도 보내지 않고, 그 페이지의 입력칸만 바꾼다(결과 보기·저장은 사용자가 누른다).
 export const PREFIX = "MAPLEOPT1 ";
+export const SCOUTER_INPUT_URL = "https://maplescouter.com/ko/input";
 
 // 채우기 코드 — 북마클릿과 테스트가 이 문자열 하나를 같이 쓴다(브라우저 그대로 실행되도록 외부 참조 없음).
 export const FILL_SOURCE = `(function (doc, p) {

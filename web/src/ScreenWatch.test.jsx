@@ -385,6 +385,7 @@ describe("screen watch scouter copy", () => {
     expect(writeText).toHaveBeenCalledTimes(1);
     expect(writeText.mock.calls[0][0]).toContain("MAPLEOPT1 ");
     expect(screen.getByText(/복사했어요/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /MapleScouter 열기/ })).toHaveAttribute("href", "https://maplescouter.com/ko/input");
     expect(screen.getByRole("link", { name: /환산 채우기 설치/ })).toHaveAttribute("href", "#/scouter");
   });
 });

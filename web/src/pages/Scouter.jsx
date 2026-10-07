@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { bookmarkletHref, clipboardText } from "../scouter.js";
+import { SCOUTER_INPUT_URL, bookmarkletHref, clipboardText } from "../scouter.js";
 
 // 경매장 데이터 없이 시험하는 견본: 직업과 상관없이 모든 캐릭터에 있는 칸만(보스 데미지·크리 데미지)
 const SAMPLE = { v: 1, slot: "견본", from: "지금 템", to: "테스트 템(보스 +10%, 크뎀 +5%)",
@@ -19,6 +19,9 @@ export default function Scouter() {
       <p className="muted">
         경매장 화면 평가에서 읽은 매물을, MapleScouter 입력 화면에 클릭 두 번으로 옮겨요. 템을 바꿨을 때 달라지는 스탯(세트 효과 포함)만 지금 칸 값에 더해요.
       </p>
+      <p>
+        <a className="button-link" href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>
+      </p>
       <section className="card">
         <h3>1. 한 번만: 북마크 버튼 설치</h3>
         <p>아래 버튼을 브라우저 <strong>즐겨찾기(북마크) 막대로 끌어다 놓으세요.</strong> 즐겨찾기 막대가 안 보이면 Ctrl+Shift+B.</p>
@@ -36,7 +39,7 @@ export default function Scouter() {
         <h3>2. 쓸 때마다</h3>
         <ol>
           <li>캐릭터 화면 → 업그레이드 탭 → 경매장 화면 평가에서 매물 옆 <strong>[환산용 복사]</strong></li>
-          <li>MapleScouter(maplescouter.com) 입력 화면에서 <strong>[검색 캐릭터 불러오기]</strong>로 지금 스펙을 채우기</li>
+          <li><a href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>에서 <strong>[검색 캐릭터 불러오기]</strong>로 지금 스펙을 채우기</li>
           <li>즐겨찾기 막대의 <strong>환산 채우기</strong>를 누르기 — 처음엔 클립보드 읽기 허용을 물어요(허용 또는 붙여넣기 창에 Ctrl+V)</li>
           <li>위쪽에 "N칸 변경"이 뜨면 MapleScouter의 결과 보기를 누르세요. 되돌리려면 MapleScouter의 [되돌리기]</li>
         </ol>
