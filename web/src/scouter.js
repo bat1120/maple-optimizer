@@ -110,6 +110,7 @@ export const scouterInfoUrl = (name) => (name ? `https://maplescouter.com/ko/inf
 
 export const PREP_SOURCE = `(async function (doc, p, sleep) {
   sleep = sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var win = doc.defaultView;
   function dialog() {
     return Array.prototype.filter.call(doc.querySelectorAll("[role=dialog]"), function (d) { return d.textContent.indexOf("교체할까요") >= 0; })[0] || null;
   }
@@ -120,21 +121,44 @@ export const PREP_SOURCE = `(async function (doc, p, sleep) {
     var next = t.charAt(i + 1 + p.name.length);
     return next === "" || next === " " || next === "(";
   }
-  var moved = false;
-  if (doc.defaultView.location.pathname.indexOf("/info") >= 0) { // info 화면에도 '직업' 글자가 있어서 주소로 판단(2026-10-07 실사이트)
-    var a = doc.querySelector('a[href$="/input"]');
-    if (!a) return { switched: false, moved: false };
-    a.click(); moved = true;
+  function levelInput() { // 입력 화면이 그려졌는지: '레벨' 라벨 근처의 input
+    var spans = Array.prototype.filter.call(doc.querySelectorAll("span"), function (s) { return s.children.length === 0 && s.textContent.trim() === "레벨"; });
+    for (var i = 0; i < spans.length; i++) {
+      var el = spans[i];
+      for (var k = 0; k < 5 && el; k++) { el = el.parentElement; if (el && el.querySelector("input")) return el.querySelector("input"); }
+    }
+    return null;
   }
-  var d = null;
-  for (var i = 0; i < (moved ? 40 : 4) && !d; i++) { d = dialog(); if (!d) await sleep(250); }
-  if (!d || !mine(d)) return { switched: false, moved: moved };
-  var btn = Array.prototype.filter.call(d.querySelectorAll("button"), function (b) { return b.textContent.trim() === "교체"; })[0];
-  if (!btn) return { switched: false, moved: moved };
-  btn.click();
-  for (var k = 0; k < 20 && dialog(); k++) await sleep(250);
-  await sleep(500);
-  return { switched: true, moved: moved };
+  var moved = false;
+  if (win.location.pathname.indexOf("/info") >= 0) { // info 화면에도 '직업' 글자가 있어서 주소로 판단(2026-10-07 실사이트)
+    var a = doc.querySelector('a[href$="/input"]');
+    var to = win.location.pathname.slice(0, win.location.pathname.indexOf("/info")) + "/input"; // 정규식은 이 템플릿 문자열 안에서 역슬래시가 사라져 쓰지 않는다
+    if (a) a.click();
+    else if (win.next && win.next.router && win.next.router.push) win.next.router.push(to); // 링크가 안 보이는 화면 배치 대비 — 페이지를 다시 읽지 않는 이동
+    else return { switched: false, moved: false };
+    moved = true;
+  }
+  // 교체 창을 기다린다. 입력칸이 2초 넘게 떠 있는데 창이 없으면 이미 그 캐릭터이거나 창이 안 뜨는 경우
+  var d = null, seen = 0;
+  for (var i = 0; i < (moved ? 60 : 4) && !d; i++) {
+    d = dialog();
+    if (d) break;
+    if (levelInput() && ++seen >= 8) break;
+    await sleep(250);
+  }
+  var switched = false;
+  if (d && mine(d)) {
+    var btn = Array.prototype.filter.call(d.querySelectorAll("button"), function (b) { return b.textContent.trim() === "교체"; })[0];
+    if (btn) { btn.click(); switched = true; }
+  }
+  // 교체 뒤 스탯을 불러오는 동안 입력칸이 잠깐 사라진다(2026-10-07 사용자 PC에서 '입력칸을 못 찾았어요') — 다시 나타나고 레벨이 맞을 때까지
+  for (var k = 0; k < 60; k++) {
+    var lv = levelInput();
+    if (!dialog() && lv && (!switched || !p.level || parseInt(lv.value, 10) === p.level)) break;
+    await sleep(250);
+  }
+  if (switched) await sleep(300);
+  return { switched: switched, moved: moved };
 })`;
 
 export function runPrep(doc, payload, sleep) {

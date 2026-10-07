@@ -143,6 +143,33 @@ describe("scouter prep (내 캐릭터로 교체)", () => {
     document.body.insertAdjacentHTML("beforeend", replaceDialog("내신부레테"));
     expect((await runPrep(document, PAYLOAD, fast)).switched).toBe(false);
   });
+  it("교체 뒤 스탯을 불러오는 동안 입력칸이 잠깐 사라져도, 다시 나타나고 레벨이 맞을 때까지 기다렸다 채운다", async () => {
+    window.history.pushState({}, "", "/ko/info?name=x");
+    document.body.innerHTML = `<main><a href="/ko/input">직접입력</a></main>`;
+    document.querySelector("a").addEventListener("click", (e) => {
+      e.preventDefault();
+      window.history.pushState({}, "", "/ko/input");
+      page("메르세데스", 286);
+      document.body.insertAdjacentHTML("beforeend", replaceDialog("내신부레테"));
+      document.querySelectorAll("[role=dialog] button")[1].onclick = () => {
+        document.body.innerHTML = "<main>불러오는 중</main>"; // 교체 창이 닫히고 입력칸이 잠깐 사라진다
+        setTimeout(() => page("레테", 288), 30);
+      };
+    });
+    const tick = () => new Promise((r) => setTimeout(r, 2));
+    expect((await runPrep(document, ME, tick)).switched).toBe(true);
+    expect(runFill(document, ME).changed).toBeGreaterThan(0);
+  });
+  it("info 화면에 '직접입력' 링크가 없으면 사이트 라우터(next.router.push)로 입력 화면에 간다", async () => {
+    window.history.pushState({}, "", "/ko/info?name=x");
+    document.body.innerHTML = "<main>정보</main>";
+    const pushed = [];
+    window.next = { router: { push: (u) => { pushed.push(u); window.history.pushState({}, "", u); page("레테", 288); } } };
+    const s = await runPrep(document, ME, fast);
+    delete window.next;
+    expect(pushed).toEqual(["/ko/input"]);
+    expect(s.moved).toBe(true);
+  });
   it("입력칸을 하나도 못 찾으면(입력 화면이 아님) 어디서 누르는지 알려 준다", async () => {
     window.history.pushState({}, "", "/ko/info?name=x");
     document.body.innerHTML = `<main><span>보스 데미지</span> 448</main>`; // info 화면: 이름은 있어도 입력칸이 없다, 직접입력 링크도 없음
