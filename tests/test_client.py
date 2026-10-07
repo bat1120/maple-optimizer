@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from nexon.client import (
-    ENDPOINTS, CharacterNotFound, InvalidKey, NexonClient, NexonError, RateLimited, Unavailable, load_api_key,
+    ENDPOINTS, OPTIONAL_ENDPOINTS, CharacterNotFound, InvalidKey, NexonClient, NexonError, RateLimited, Unavailable, load_api_key,
 )
 
 
@@ -103,8 +103,10 @@ def test_fetch_bundle_calls_all_endpoints():
         return httpx.Response(200, json={"date": None, "x": 1})
 
     b = make_client(handler).fetch_bundle("내신부레테")
-    assert list(b) == list(ENDPOINTS)
-    assert len(paths) == 1 + len(ENDPOINTS)
+    # 기본 + 선택(HEXA 스탯·코어) + 6차 스킬 + 연무장(기록이 없으면 결과는 None) — 2026-10-07 HEXA 경로
+    assert list(b) == list(ENDPOINTS) + list(OPTIONAL_ENDPOINTS) + ["character/skill_6", "battle-practice/result"]
+    assert b["battle-practice/result"] is None
+    assert len(paths) == 1 + len(ENDPOINTS) + len(OPTIONAL_ENDPOINTS) + 2  # 6차 스킬 + 연무장 리플레이 목록
 
 
 def test_load_api_key_prefers_env(tmp_path, monkeypatch):

@@ -20,9 +20,12 @@ class Events:
     protect: bool = False
     miracle: bool = False
     spare_price: float = 0.0
+    fragment_price: float = 0.0  # 솔 에르다 조각 1개 시세(메소) — 있어야 HEXA 경로를 억당으로 비교한다
+    hexa_sunday: bool = False    # HEXA 스탯: 메인 5레벨 이상일 때 메인 강화 확률 ×1.2
 
     @classmethod
-    def parse(cls, sf: str | None = None, miracle: bool = False, spare_price: float | None = None) -> "Events":
+    def parse(cls, sf: str | None = None, miracle: bool = False, spare_price: float | None = None,
+              fragment_price: float | None = None, hexa_sunday: bool = False) -> "Events":
         """sf: 쉼표로 이은 스타포스 조건(SF_FLAGS 이름, 'shining' = 앞의 넷)."""
         names = {n.strip() for n in (sf or "").split(",") if n.strip()}
         if "shining" in names:
@@ -30,7 +33,8 @@ class Events:
         unknown = names - set(SF_FLAGS) - {"shining"}
         if unknown:
             raise ValueError(f"알 수 없는 스타포스 조건: {', '.join(sorted(unknown))}")
-        return cls(**{n: True for n in names if n in SF_FLAGS}, miracle=miracle, spare_price=max(0.0, spare_price or 0.0))
+        return cls(**{n: True for n in names if n in SF_FLAGS}, miracle=miracle, spare_price=max(0.0, spare_price or 0.0),
+                   fragment_price=max(0.0, fragment_price or 0.0), hexa_sunday=hexa_sunday)
 
     def starforce(self) -> StarforceConditions:
         return StarforceConditions(discount30=self.discount30, destroy_down30=self.destroy_down30,
@@ -40,5 +44,6 @@ class Events:
     def label(self) -> str:
         on = [t for f, t in (("discount30", "스타포스 30% 할인"), ("destroy_down30", "파괴 30% 감소"),
                              ("guarantee_5_10_15", "5·10·15성 100%"), ("restore_discount20", "복구 메소 20% 할인"),
-                             ("protect", "파괴 방지"), ("miracle", "미라클 타임")) if getattr(self, f)]
+                             ("protect", "파괴 방지"), ("miracle", "미라클 타임"),
+                             ("hexa_sunday", "HEXA 스탯 확률 ×1.2")) if getattr(self, f)]
         return " · ".join(on) if on else "이벤트 없음"

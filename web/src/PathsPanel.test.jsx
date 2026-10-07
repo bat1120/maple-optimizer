@@ -68,4 +68,22 @@ describe("paths panel", () => {
     expect(url).toContain("miracle=true");
     expect(url).toContain("spare_price=1200000000");
   });
+  it("HEXA: 조각 값(만 메소)·HEXA 스탯 썬데이를 보내고, 헥사 행에 조각·솔 에르다·딜 지분 출처를 보여 준다", async () => {
+    const hx = { slot: "HEXA 코어", path: "HEXA 코어", name: "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨",
+                 delta_pct: 0.25, cost: 5.95e8, cost_text: "5억 9500만", per_100m: 0.042, fragments: 85, erda: 3,
+                 share_source: "직업 기준값(연무장 상위 기록 중앙값)", set_change: [] };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [hx], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("조각 1개 값(만 메소)"), { target: { value: "700" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /HEXA 스탯 썬데이/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = f.mock.calls.at(-1)[0];
+    expect(url).toContain("fragment_price=7000000");
+    expect(url).toContain("hexa_sunday=true");
+    const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("HEXA 코어 · 인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨");
+    expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
+    expect(row).toHaveTextContent("직업 기준값");
+  });
 });

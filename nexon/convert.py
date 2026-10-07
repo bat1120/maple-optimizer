@@ -301,7 +301,35 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         link_presets=link_presets,
         active_link_preset=active_link,
         profile=profile,
+        hexa_stat=_hexa_stat(bundle.get("character/hexamatrix-stat")),
+        hexa_cores=_hexa_cores(bundle.get("character/hexamatrix")),
+        hexa_skills={s["skill_name"]: {"level": int(num(s.get("skill_level"))), "effect": s.get("skill_effect"),
+                                       "next": s.get("skill_effect_next"), "description": s.get("skill_description")}
+                     for s in (bundle.get("character/skill_6") or {}).get("character_skill") or []},
+        own_shares={s["skill_name"]: float(s["damage_percent"])
+                    for s in (bundle.get("battle-practice/result") or {}).get("skill_statistic") or []
+                    if s.get("skill_name") and s.get("damage_percent") not in (None, "")},
     )
+
+
+def _hexa_stat(j: dict | None) -> list:
+    """적용 중인 HEXA 스탯 코어(character_hexa_stat_core, _2, _3)."""
+    out = []
+    for n, key in ((1, "character_hexa_stat_core"), (2, "character_hexa_stat_core_2"), (3, "character_hexa_stat_core_3")):
+        for c in (j or {}).get(key) or []:
+            if not c.get("main_stat_name"):
+                continue
+            lines = [(c["main_stat_name"], int(num(c.get("main_stat_level"))), True),
+                     (c.get("sub_stat_name_1"), int(num(c.get("sub_stat_level_1"))), False),
+                     (c.get("sub_stat_name_2"), int(num(c.get("sub_stat_level_2"))), False)]
+            out.append({"core": n, "grade": int(num(c.get("stat_grade"))), "lines": [ln for ln in lines if ln[0]]})
+    return out
+
+
+def _hexa_cores(j: dict | None) -> list:
+    return [{"name": c.get("hexa_core_name"), "level": int(num(c.get("hexa_core_level"))), "type": c.get("hexa_core_type"),
+             "skills": [s.get("hexa_skill_id") for s in c.get("linked_skill") or []]}
+            for c in (j or {}).get("character_hexa_core_equipment") or []]
 
 
 def cube_attempts(potential_rows: list[dict], cube_rows: list[dict]) -> list:

@@ -247,12 +247,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
                       date: str | None = None, sf: str | None = None, miracle: bool = False,
-                      spare_price: float | None = None):
+                      spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False):
         """sf: 스타포스 이벤트(쉼표: shining, discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect),
-        miracle: 미라클 타임, spare_price: 파괴 시 스페어 1개 값(메소)."""
+        miracle: 미라클 타임, spare_price: 파괴 시 스페어 1개 값(메소), fragment_price: 솔 에르다 조각 1개 값(메소, HEXA 경로),
+        hexa_sunday: HEXA 스탯 썬데이(메인 5레벨 이상 확률 ×1.2)."""
         from engine.market.events import Events
         try:
-            events = Events.parse(sf, miracle, spare_price)
+            events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday)
         except ValueError as e:
             raise ApiError(400, "BAD_EVENTS", str(e))
         return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct, events=events)

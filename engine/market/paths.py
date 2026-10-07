@@ -17,6 +17,8 @@ from engine.enhance.starforce_stats import eligible
 from engine.enhance.starforce_stats import gain as sf_gain
 from engine.market.cube_value import expected_cost
 from engine.market.events import Events
+from engine.market.hexa_core_paths import core_paths, job_shares
+from engine.market.hexa_paths import hexa_stat_paths
 from engine.market.listing import item_from_input
 from engine.market.secondary import secondary_fits
 from engine.market.recommend import KINDS, MIN_GAIN, SWAP, UNTRADEABLE_SECONDARY_JOBS, _part, _Planner, _valued, roadmap
@@ -122,6 +124,10 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
                                       cube_cost=t["cube_cost"], reach_probability=t["reach_probability"],
                                       set_change=[]))
     out += _starforce_paths(pl, px, events)  # 지금 템 스타포스 강화
+    out += hexa_stat_paths(pl, events.fragment_price, events.hexa_sunday)  # HEXA 스탯(조각 시세가 있을 때)
+    shares, source = (snap.own_shares, "내 연무장 기록") if snap.own_shares else (
+        (job_shares(snap.character_class) or {}).get("shares") or {}, "직업 기준값(연무장 상위 기록 중앙값)")
+    out += core_paths(snap, shares, events.fragment_price, boss.defense, source)  # HEXA 스킬 코어
     for obs in observed or []:
         if not obs.get("price") or not obs.get("total"):
             continue

@@ -8,6 +8,7 @@ import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 function pathLabel(p) {
   if (p.path === "구매") return `구매 · ${p.name}${p.sold ? " (체결가)" : " (호가)"}`;
   if (p.path === "스타포스") return `스타포스 · ${p.name} ${p.from_star}→${p.to_star}성`;
+  if (p.path === "HEXA 코어" || p.path === "HEXA 스탯") return `${p.path} · ${p.name}`;
   const step = `${p.kind} ${p.grade} ${p.lines_good}줄`;
   return p.path === "직작" ? `직작 · ${p.name} + 큐브 ${step}` : `큐브 ${step}`;
 }
@@ -29,7 +30,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       setBusy(false);
     }
   };
-  const [events, setEvents] = useState({ shining: false, protect: false, miracle: false, spareEok: "" });
+  const [events, setEvents] = useState({ shining: false, protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false });
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
   const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
@@ -42,7 +43,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
   return (
     <section className="panel">
       <PanelHead title="업그레이드 경로 비교" icon="layers"
-                 subtitle="같은 부위를 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스 중 어떤 방법으로 올리는 게 억당 실딜이 높은지 비교해요.">
+                 subtitle="구매(관측 매물)·직작(매물+큐브)·큐브·스타포스·HEXA 중 어떤 방법이 억당 실딜이 높은지 비교해요.">
         <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
           {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "업그레이드 경로 비교"}
         </button>
@@ -52,6 +53,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <><strong>억당</strong> 열이 높을수록 같은 메소로 실딜이 많이 올라요.</>,
         <>구매 경로는 경매장 화면 평가로 쌓인 <strong>관측 매물</strong>로만 계산해요. 관측이 없으면 큐브 경로만 나와요.</>,
         <>세트 효과가 바뀌는 경우 실딜에 이미 들어가 있고, <strong>세트 변화</strong> 열에 따로 적어요.</>,
+        <><strong>조각 1개 값</strong>을 넣으면 HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨) 경로도 같은 억당으로 비교해요. 코어 딜 지분은 내 연무장 기록, 없으면 직업 상위 기록 중앙값이에요.</>,
         <><strong>스타포스</strong> 비용은 강화 + 흔적 복구 메소 기대값이에요. 위에서 이벤트를 고르고, <strong>스페어 1개 값</strong>을 넣으면 파괴 시 스페어 비용까지 더해요.</>,
       ]} />
       <fieldset className="events">
@@ -61,6 +63,9 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <label className="chip"><input type="checkbox" checked={events.miracle} onChange={() => toggle("miracle")} /> 미라클 타임<span className="muted small">(큐브 등급 상승 2배)</span></label>
         <label className="inline">스페어 1개 값(억) <input aria-label="스페어 1개 값(억)" inputMode="decimal" value={events.spareEok} placeholder="비우면 미포함"
           onChange={(e) => setEvents((v) => ({ ...v, spareEok: e.target.value }))} style={{ width: "7em" }} /></label>
+        <label className="inline">조각 1개 값(만 메소) <input aria-label="조각 1개 값(만 메소)" inputMode="decimal" value={events.fragmentMan}
+          placeholder="넣으면 HEXA 경로" onChange={(e) => setEvents((v) => ({ ...v, fragmentMan: e.target.value }))} style={{ width: "8em" }} /></label>
+        <label className="chip"><input type="checkbox" checked={events.hexaSunday} onChange={() => toggle("hexaSunday")} /> HEXA 스탯 썬데이<span className="muted small">(메인 5레벨 이상 확률 ×1.2)</span></label>
         <button type="button" className="ghost small" onClick={load} disabled={!name || busy}>이 조건으로 계산</button>
       </fieldset>
       {busy && !data && <RowsSkeleton rows={4} />}
@@ -86,7 +91,9 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
                   <td>{p.slot}</td>
                   <td>{pathLabel(p)}{p.target ? <><br /><span className="muted">{p.target.join(" / ")}</span></> : null}
                     {p.path === "스타포스" ? <><br /><span className="muted">평균 파괴 {p.expected_destroys.toFixed(2)}회 · 스페어 {(p.expected_spares ?? 0).toFixed(2)}개
-                      {p.spare_price ? "(비용에 포함)" : "(스페어 값 미포함 — 흔적 복구 메소만)"}</span></> : null}</td>
+                      {p.spare_price ? "(비용에 포함)" : "(스페어 값 미포함 — 흔적 복구 메소만)"}</span></> : null}
+                    {p.path === "HEXA 코어" ? <><br /><span className="muted">조각 {p.fragments}개 · 솔 에르다 {p.erda}개 · 딜 지분: {p.share_source}</span></> : null}
+                    {p.path === "HEXA 스탯" ? <><br /><span className="muted">조각 평균 {Math.round(p.fragments).toLocaleString("ko-KR")}개(초기화 메소 포함)</span></> : null}</td>
                   <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num">{formatPct(p.per_100m)}</td>
                   <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>
                 </tr>

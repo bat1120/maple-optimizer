@@ -26,7 +26,8 @@ def load(cls: str, endpoint: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-OPTIONAL = ("character/link-skill",)  # 2026-10-04 이후 수집분에만 있다
+OPTIONAL = ("character/link-skill", "character/hexamatrix-stat", "character/hexamatrix", "character/skill_6",
+            "battle-practice/result")  # 나중에 수집한 것만 있다
 
 
 def _with_optional(base: pathlib.Path, out: dict) -> dict:

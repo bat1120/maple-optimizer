@@ -22,6 +22,8 @@ ENDPOINTS = (
     "user/union-raider",
     "character/link-skill",
 )
+# 2026-10-07: HEXA 스탯·HEXA 코어(헥사 경로용) — 실패해도 나머지 계산은 한다
+OPTIONAL_ENDPOINTS = ("character/hexamatrix-stat", "character/hexamatrix")
 
 
 class NexonError(Exception):
@@ -107,7 +109,27 @@ class NexonClient:
 
     def fetch_bundle(self, name: str, day: dt.date | None = None) -> dict[str, dict | None]:
         ocid = self.get_ocid(name)
-        return {ep: self.get(ep, ocid, day) for ep in ENDPOINTS}
+        out = {ep: self.get(ep, ocid, day) for ep in ENDPOINTS}
+        for ep in OPTIONAL_ENDPOINTS:  # 없어도 계산은 된다(헥사 경로만 빠진다)
+            try:
+                out[ep] = self.get(ep, ocid, day)
+            except NexonError:
+                out[ep] = None
+        try:  # 6차 스킬(레벨별 효과 문장) — HEXA 코어 경로용
+            out["character/skill_6"] = self._request("character/skill", {"ocid": ocid, "character_skill_grade": "6"})
+        except NexonError:
+            out["character/skill_6"] = None
+        out["battle-practice/result"] = None
+        if day is None:  # 본인 최신 연무장 기록(있으면 딜 지분으로 쓴다). 기록이 없으면 넥슨이 400을 준다
+            try:
+                reps = (self._request("battle-practice/replay-id", {"ocid": ocid}) or {}).get("replay_list") or []
+                if reps:
+                    latest = max(reps, key=lambda r: (r.get("period_no") or 0, r.get("register_date") or ""))
+                    out["battle-practice/result"] = self._request("battle-practice/result",
+                                                                  {"replay_id": latest["replay_id"]})
+            except NexonError:
+                pass
+        return out
 
 
 def load_api_key(root: pathlib.Path) -> str:

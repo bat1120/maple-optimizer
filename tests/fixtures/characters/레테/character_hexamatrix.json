@@ -1,0 +1,183 @@
+{
+ "date": null,
+ "character_hexa_core_equipment": [
+  {
+   "hexa_core_name": "오버로드 : 이터널 게이즈",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "스킬 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "오버로드 : 이터널 게이즈"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "앱솔루트 레인",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "스킬 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "앱솔루트 레인"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "보이드 오리진",
+   "hexa_core_level": 3,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "스킬 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "보이드 오리진"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "임프린트 VI/이딕트 : 펠 스톰 VI",
+   "hexa_core_level": 19,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "마스터리 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "임프린트 VI"
+    },
+    {
+     "hexa_skill_id": "이딕트 : 펠 스톰 VI"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "인보크 : 바르가르 VI/이딕트 : 램페이지 VI",
+   "hexa_core_level": 19,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "마스터리 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "인보크 : 바르가르 VI"
+    },
+    {
+     "hexa_skill_id": "이딕트 : 램페이지 VI"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI",
+   "hexa_core_level": 20,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "마스터리 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "인보크 : 템플러 VI"
+    },
+    {
+     "hexa_skill_id": "이딕트 : 템플러 아츠 VI"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "임펠 VI/팩트 매니페스트",
+   "hexa_core_level": 9,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "마스터리 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "임펠 VI"
+    },
+    {
+     "hexa_skill_id": "팩트 매니페스트"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "오버로드 : 템플러 온슬로트",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "강화 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "오버로드 : 템플러 온슬로트 강화"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "오버로드 : 바르가르 트라이던트",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "강화 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "오버로드 : 바르가르 트라이던트 강화"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "인보크/오버로드 : 아즈라스",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "강화 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "인보크/오버로드 : 아즈라스 강화"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "체인 커맨드",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "강화 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "체인 커맨드 강화"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "솔 야누스",
+   "hexa_core_level": 20,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "공용 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "솔 야누스"
+    },
+    {
+     "hexa_skill_id": "솔 야누스 : 새벽"
+    },
+    {
+     "hexa_skill_id": "솔 야누스 : 황혼"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "솔 헤카테",
+   "hexa_core_level": 2,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "공용 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "솔 헤카테"
+    },
+    {
+     "hexa_skill_id": "솔 헤카테 : 스틱스"
+    },
+    {
+     "hexa_skill_id": "솔 헤카테 : 팩텀"
+    }
+   ]
+  },
+  {
+   "hexa_core_name": "프라이멀 퓨리 VI",
+   "hexa_core_level": 1,
+   "hexa_core_event_level": 0,
+   "hexa_core_type": "공용 코어",
+   "linked_skill": [
+    {
+     "hexa_skill_id": "프라이멀 퓨리 VI"
+    }
+   ]
+  }
+ ]
+}

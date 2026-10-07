@@ -3,7 +3,8 @@ import itertools
 
 from engine.stats.jobs import job_profile
 from engine.stats.metrics import BossProfile, boss_index
-from engine.stats.residual import calibrate, predict, preset_items, sources_for
+from engine.stats.model import StatBlock
+from engine.stats.residual import Sources, calibrate, predict, preset_items, sources_for
 from engine.stats.sets import SetCatalog
 from engine.stats.snapshot import CharacterSnapshot, Item, Setting
 
@@ -54,6 +55,10 @@ class Evaluator:
     def base_items(self) -> dict[str, Item]:
         return preset_items(self.snap, self.setting.equipment)
 
-    def index(self, items: dict[str, Item]) -> float:
-        pred = predict(self._cal, sources_for(self.snap, self.setting, self.catalog, items))
+    def index(self, items: dict[str, Item], extra: dict | None = None) -> float:
+        """extra: 장비 밖 스탯 변화 {'pct': StatBlock, 'nopct': StatBlock}(예: HEXA 스탯 바꾸기)."""
+        src = sources_for(self.snap, self.setting, self.catalog, items)
+        if extra:
+            src = Sources(src.pct + extra.get("pct", StatBlock()), src.nopct + extra.get("nopct", StatBlock()), src.excluded)
+        pred = predict(self._cal, src)
         return boss_index(pred, self._job, items["무기"].part, self.boss)

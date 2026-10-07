@@ -59,6 +59,11 @@ class CharacterSnapshot:
     link_presets: dict[int, StatBlock] = field(default_factory=dict)  # 링크 스킬 프리셋 (조건 없는 효과만)
     active_link_preset: int = 0
     profile: dict = field(default_factory=dict)  # 화면 표시용: 이름·월드·길드·캐릭터 이미지(넥슨 basic 그대로)
+    # HEXA 스탯 코어(2026-10-07): [{"core": 1|2|3, "grade": n, "lines": [(이름, 레벨, 메인인가), …]}] — 적용 중인 것
+    hexa_stat: list = field(default_factory=list)
+    hexa_cores: list = field(default_factory=list)  # HEXA 코어 레벨: [{"name", "level", "type", "skills"}]
+    hexa_skills: dict = field(default_factory=dict)  # 6차 스킬 이름 → {level, effect, next, description}
+    own_shares: dict = field(default_factory=dict)   # 본인 최신 연무장 기록의 스킬별 딜 지분(%) — 없으면 비어 있다
 
     @property
     def active_setting(self) -> Setting:

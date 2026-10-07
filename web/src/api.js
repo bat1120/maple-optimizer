@@ -47,7 +47,7 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
   return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
 }
 
-// events: { shining, protect, miracle, spareEok } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
+// events: { shining, protect, miracle, spareEok, fragmentMan, hexaSunday } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
 export function getPaths(name, bossDefense = 300, events = {}) {
   const q = new URLSearchParams({ boss_defense: String(bossDefense) });
   const sf = [events.shining && "shining", events.protect && "protect"].filter(Boolean).join(",");
@@ -55,6 +55,9 @@ export function getPaths(name, bossDefense = 300, events = {}) {
   if (events.miracle) q.set("miracle", "true");
   const spare = Number(events.spareEok);
   if (spare > 0) q.set("spare_price", String(Math.round(spare * 1e8)));
+  const frag = Number(events.fragmentMan);  // 솔 에르다 조각 1개 값(만 메소)
+  if (frag > 0) q.set("fragment_price", String(Math.round(frag * 1e4)));
+  if (events.hexaSunday) q.set("hexa_sunday", "true");
   return request(`${base(name)}/paths?${q}`);
 }
 
