@@ -195,7 +195,9 @@ if(t.indexOf(P)<0){t=prompt("메이플 장비 최적화에서 [환산용 복사]
 var line=t.split("\\n").filter(function(l){return l.indexOf(P)===0;})[0];
 function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;z-index:99999;left:50%;top:16px;transform:translateX(-50%);background:#1b1f2a;color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},6000);}
 if(!line){toast("복사한 매물 정보가 없어요 — [환산용 복사]를 먼저 눌러 주세요");return;}
-var p=JSON.parse(line.slice(P.length));var s=await (${PREP_SOURCE})(document,p);var r=(${FILL_SOURCE})(document,p);
+var p=JSON.parse(line.slice(P.length));
+if(location.hostname.indexOf("maplescouter.com")<0){var u=${JSON.stringify("https://maplescouter.com/ko/info?name=")}+encodeURIComponent(p.name||"");if(!p.name)u=${JSON.stringify(SCOUTER_INPUT_URL)};if(!window.open(u,"_blank"))location.href=u;toast("MapleScouter "+(p.name||"입력")+" 화면을 열었어요 — 그 탭에서 '환산 채우기'를 한 번 더 눌러 주세요");return;}
+var s=await (${PREP_SOURCE})(document,p);var r=(${FILL_SOURCE})(document,p);
 if(r.cancelled){toast("환산 채우기를 취소했어요 — "+r.note);return;}
 if(!r.changed&&r.missing.length){toast("입력칸을 못 찾았어요 — MapleScouter 내 캐릭터 화면이나 입력 화면에서 눌러 주세요. 계속 이러면 '환산 채우기' 북마크를 새로 설치해 주세요(메이플 장비 최적화 #/scouter)");return;}
 toast((s.switched?p.name+" 스탯으로 교체 후 ":"")+"환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;

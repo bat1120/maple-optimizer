@@ -1,3 +1,4 @@
+// @vitest-environment-options {"url": "https://maplescouter.com/ko/input"}
 import { afterEach, describe, expect, it } from "vitest";
 import { FILL_SOURCE, PREFIX, PREP_SOURCE, bookmarkletHref, clipboardText, runFill, runPrep, scouterInfoUrl } from "./scouter.js";
 

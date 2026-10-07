@@ -98,7 +98,7 @@ function CopyScouter({ item, label = "환산용 복사" }) {
   return (
     <span className="inline">
       <button type="button" className="ghost small" onClick={copy}>{label}</button>
-      {done && <span className="muted small">복사했어요 — <a href={scouterInfoUrl(item.scouter.name)} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a>에서 '환산 채우기'(내 캐릭터로 교체 후 채워요)</span>}
+      {done && <span className="muted small">복사했어요 — <a href={scouterInfoUrl(item.scouter.name)} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a> → 새로 열린 MapleScouter 탭에서 즐겨찾기 막대의 '환산 채우기'(내 캐릭터로 교체 후 채워요)</span>}
     </span>
   );
 }
