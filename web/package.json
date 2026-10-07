@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "ext": "node scripts/build-extension.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

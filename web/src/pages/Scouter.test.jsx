@@ -32,5 +32,9 @@ describe("scouter guide page", () => {
     expect(a).toHaveAttribute("target", "_blank");
     expect(a.getAttribute("rel")).toContain("noopener");
   });
+  it("크롬 확장 설치 안내(개발자 모드 · extension 폴더)", () => {
+    render(<Scouter />);
+    expect(screen.getByRole("heading", { name: /크롬 확장 프로그램/ })).toBeInTheDocument();
+    expect(screen.getByText("chrome://extensions")).toBeInTheDocument();
+  });
 });
-

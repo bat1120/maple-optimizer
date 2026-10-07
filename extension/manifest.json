@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "메이플 장비 최적화 — 환산 채우기",
+  "version": "0.1.0",
+  "description": "메이플 장비 최적화에서 고른 템을 MapleScouter 환산 계산기에 클릭 한 번으로 넣어요(내 캐릭터로 교체 후 칸 채우기).",
+  "permissions": ["scripting", "storage"],
+  "host_permissions": ["https://maplescouter.com/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["https://maple-optimizer.onrender.com/*", "http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

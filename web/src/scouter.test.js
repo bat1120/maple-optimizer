@@ -179,8 +179,60 @@ describe("scouter prep (내 캐릭터로 교체)", () => {
     const t = document.body.lastElementChild.textContent;
     expect(t).toContain("입력칸을 못 찾았어요");
     expect(t).toContain("새로 설치");
-  });
+  }, 10000); // 라우터를 실제 시간으로 5초 기다린 뒤 포기한다
   it("북마클릿은 전환 코드도 담는다", () => {
     expect(decodeURIComponent(bookmarkletHref())).toContain(PREP_SOURCE.slice(0, 40));
+  });
+});
+
+// 2026-10-07 실사이트: 확장은 정보 화면이 열리자마자 돌아, 정보 화면이 '최근 검색'을 저장하기 전에 넘어가면 교체 창이 안 뜬다.
+// 최근 검색은 localStorage character-store의 searchResult.userApiData.info.character_name
+function setRecent(name, loading = false) {
+  localStorage.setItem("character-store", JSON.stringify({ state: { searchResult: { userApiData: { info: { character_name: name } } }, isLoading: loading } }));
+}
+function loadButton(onClick) {
+  document.querySelector("main").insertAdjacentHTML("afterbegin", `<button type="button">검색 캐릭터 불러오기 <svg></svg></button>`);
+  document.querySelector("main button").onclick = onClick;
+}
+
+describe("scouter prep — 교체 창이 안 뜰 때", () => {
+  afterEach(() => localStorage.removeItem("character-store"));
+  it("정보 화면은 최근 검색이 그 캐릭터로 바뀔 때까지 기다렸다가 넘어간다", async () => {
+    setRecent("다른캐릭");
+    window.history.pushState({}, "", "/ko/info?name=x");
+    document.body.innerHTML = "<main>정보</main>";
+    let pushedWhileOld = null;
+    window.next = { router: { push: () => { pushedWhileOld = JSON.parse(localStorage.getItem("character-store")).state.searchResult.userApiData.info.character_name;
+      window.history.pushState({}, "", "/ko/input"); page("레테", 288); } } };
+    let n = 0;
+    const sleep = async () => { if (++n === 3) setRecent("내신부레테"); };
+    try { await runPrep(document, ME, sleep); } finally { delete window.next; }
+    expect(pushedWhileOld).toBe("내신부레테");
+  });
+  it("창이 없고 최근 검색이 그 캐릭터인데 칸은 다른 캐릭터면 [검색 캐릭터 불러오기]를 누른다", async () => {
+    setRecent("내신부레테");
+    window.history.pushState({}, "", "/ko/input");
+    page("레테", 287);
+    loadButton(() => { page("레테", 288); });
+    expect(await runPrep(document, ME, fast)).toEqual({ switched: true, moved: false });
+    expect(document.querySelector("input").value).toBe("288");
+  });
+  it("최근 검색이 다른 캐릭터면 불러오기를 누르지 않는다(엉뚱한 캐릭터를 불러오지 않게)", async () => {
+    setRecent("다른캐릭");
+    window.history.pushState({}, "", "/ko/input");
+    page("레테", 287);
+    let clicked = false;
+    loadButton(() => { clicked = true; });
+    expect((await runPrep(document, ME, fast)).switched).toBe(false);
+    expect(clicked).toBe(false);
+  });
+  it("이미 그 캐릭터(레벨·직업 같음)면 누르지 않는다", async () => {
+    setRecent("내신부레테");
+    window.history.pushState({}, "", "/ko/input");
+    page("레테", 288);
+    let clicked = false;
+    loadButton(() => { clicked = true; });
+    expect((await runPrep(document, ME, fast)).switched).toBe(false);
+    expect(clicked).toBe(false);
   });
 });

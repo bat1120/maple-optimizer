@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
 import { clipboardText, sampleScouter, scouterInfoUrl } from "./scouter.js";
+import { hasExtension, sendToExtension } from "./extension.js";
 import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
 
@@ -87,6 +88,8 @@ function EditForm({ item, name, defense, onSaved, onCancel }) {
 // 환산 계산기(MapleScouter)에 옮길 변화량 복사 — 그쪽 화면에서 '환산 채우기' 북마크를 누르면 칸에 더해진다(#/scouter)
 function CopyScouter({ item, label = "환산용 복사" }) {
   const [done, setDone] = useState(false);
+  const [sent, setSent] = useState(null); // 확장으로 보낸 결과 { ok, error }
+  const ext = hasExtension();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(clipboardText(item.scouter, { price: item.read?.price, delta_pct: item.delta_pct }));
@@ -95,9 +98,14 @@ function CopyScouter({ item, label = "환산용 복사" }) {
       setDone(false);
     }
   };
+  // 확장 프로그램이 있으면 클릭 한 번: MapleScouter 탭을 열어 내 캐릭터로 교체하고 칸을 채운다(2026-10-07)
+  const send = async () => setSent(await sendToExtension(item.scouter));
   return (
     <span className="inline">
+      {ext && <button type="button" className="small" onClick={send}>MapleScouter에 넣기</button>}{" "}
       <button type="button" className="ghost small" onClick={copy}>{label}</button>
+      {sent?.ok && <span className="muted small">MapleScouter 탭을 열었어요 — 내 캐릭터로 교체하고 칸을 채우는 중이에요(몇 초)</span>}
+      {sent && !sent.ok && <span className="error small">{sent.error}</span>}
       {done && <span className="muted small">복사했어요 — <a href={scouterInfoUrl(item.scouter.name)} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a> → 새로 열린 MapleScouter 탭에서 즐겨찾기 막대의 '환산 채우기'(내 캐릭터로 교체 후 채워요)</span>}
     </span>
   );

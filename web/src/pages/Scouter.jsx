@@ -21,6 +21,16 @@ export default function Scouter() {
         <a className="button-link" href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>
       </p>
       <section className="card">
+        <h3>추천: 크롬 확장 프로그램 (버튼 한 번)</h3>
+        <p>확장을 깔면 매물 옆 <strong>[MapleScouter에 넣기]</strong> 한 번으로 MapleScouter 탭이 열리고, 내 캐릭터로 교체한 뒤 칸까지 채워요. 북마크·복사가 필요 없어요.</p>
+        <ol>
+          <li>크롬 주소창에 <code>chrome://extensions</code> 열기 → 오른쪽 위 <strong>개발자 모드</strong> 켜기</li>
+          <li><strong>압축해제된 확장 프로그램을 로드합니다</strong> → 프로젝트의 <code>extension</code> 폴더 고르기</li>
+          <li>이 사이트를 새로고침 → 캐릭터 화면 업그레이드 탭의 매물(또는 테스트 템) 옆 <strong>[MapleScouter에 넣기]</strong></li>
+        </ol>
+        <p className="muted small">PC 크롬 전용이에요(휴대폰 브라우저는 확장을 지원하지 않아요). 아직 웹 스토어에는 없어서 개발자 모드로 설치해요. 확장이 없으면 아래 북마크 방식을 쓰세요.</p>
+      </section>
+      <section className="card">
         <h3>1. 한 번만: 북마크 버튼 설치</h3>
         <p>아래 버튼을 브라우저 <strong>즐겨찾기(북마크) 막대로 끌어다 놓으세요.</strong> 즐겨찾기 막대가 안 보이면 Ctrl+Shift+B.</p>
         <p><a ref={link} className="bookmarklet" href="#/scouter" onClick={(e) => e.preventDefault()}>환산 채우기</a></p>

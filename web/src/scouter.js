@@ -129,12 +129,36 @@ export const PREP_SOURCE = `(async function (doc, p, sleep) {
     }
     return null;
   }
+  // MapleScouter의 '최근 검색' 캐릭터 이름(localStorage character-store). 읽을 수 없으면 null — 그때는 기다리거나 불러오지 않는다
+  function recent() {
+    try {
+      var st = JSON.parse(win.localStorage.getItem("character-store") || "null");
+      st = st && st.state;
+      if (!st) return null;
+      var info = st.searchResult && st.searchResult.userApiData && st.searchResult.userApiData.info;
+      return { name: info ? info.character_name : "", loading: !!st.isLoading };
+    } catch (e) { return null; }
+  }
+  function isMine() { var r = recent(); return !!(r && p.name && !r.loading && r.name === p.name); }
+  function jobText() {
+    var spans = Array.prototype.filter.call(doc.querySelectorAll("span"), function (s) { return s.children.length === 0 && s.textContent.trim() === "직업"; });
+    for (var i = 0; i < spans.length; i++) {
+      var el = spans[i];
+      for (var k = 0; k < 5 && el; k++) { el = el.parentElement; var c = el && el.querySelector("[role=combobox], select, button"); if (c) return (c.value || c.textContent || "").replace(/[ ()（）]/g, ""); }
+    }
+    return "";
+  }
   var moved = false;
-  if (win.location.pathname.indexOf("/info") >= 0) { // info 화면에도 '직업' 글자가 있어서 주소로 판단(2026-10-07 실사이트)
-    var a = doc.querySelector('a[href$="/input"]');
+  if (win.location.pathname.indexOf("/info") >= 0) {
+    // 정보 화면이 그 캐릭터를 '최근 검색'으로 저장할 때까지(2026-10-07: 너무 일찍 넘어가면 교체 창이 안 뜬다)
+    if (p.name && recent()) for (var q = 0; q < 60 && !isMine(); q++) await sleep(250); // info 화면에도 '직업' 글자가 있어서 주소로 판단(2026-10-07 실사이트)
     var to = win.location.pathname.slice(0, win.location.pathname.indexOf("/info")) + "/input"; // 정규식은 이 템플릿 문자열 안에서 역슬래시가 사라져 쓰지 않는다
-    if (a) a.click();
-    else if (win.next && win.next.router && win.next.router.push) win.next.router.push(to); // 링크가 안 보이는 화면 배치 대비 — 페이지를 다시 읽지 않는 이동
+    // 확장은 탭이 막 열렸을 때 돈다 — 사이트 라우터가 준비되기 전에 링크를 누르면 페이지를 통째로 다시 읽어 이 코드가 끊긴다
+    function router() { return win.next && win.next.router && win.next.router.push ? win.next.router : null; }
+    for (var w = 0; w < 20 && !router(); w++) await sleep(250);
+    var a = doc.querySelector('a[href$="/input"]');
+    if (router()) router().push(to); // 페이지를 다시 읽지 않는 이동
+    else if (a) a.click();
     else return { switched: false, moved: false };
     moved = true;
   }
@@ -150,6 +174,12 @@ export const PREP_SOURCE = `(async function (doc, p, sleep) {
   if (d && mine(d)) {
     var btn = Array.prototype.filter.call(d.querySelectorAll("button"), function (b) { return b.textContent.trim() === "교체"; })[0];
     if (btn) { btn.click(); switched = true; }
+  } else if (!d && isMine()) {
+    // 교체 창이 안 떴다: 최근 검색이 그 캐릭터인데 칸은 다른 캐릭터(레벨·직업이 다름)면 [검색 캐릭터 불러오기]
+    var lv0 = levelInput();
+    var other = lv0 && ((p.level && parseInt(lv0.value, 10) !== p.level) || (p.job && jobText() && jobText() !== String(p.job).replace(/[ ()（）]/g, "")));
+    var load = Array.prototype.filter.call(doc.querySelectorAll("button"), function (b) { return b.textContent.trim().indexOf("검색 캐릭터 불러오기") === 0; })[0];
+    if (other && load) { load.click(); switched = true; }
   }
   // 교체 뒤 스탯을 불러오는 동안 입력칸이 잠깐 사라진다(2026-10-07 사용자 PC에서 '입력칸을 못 찾았어요') — 다시 나타나고 레벨이 맞을 때까지
   for (var k = 0; k < 60; k++) {
@@ -188,18 +218,50 @@ export function clipboardText(payload, info = {}) {
   return lines.join("\n");
 }
 
-// 북마크 주소: 클립보드(못 읽으면 붙여넣기 창)에서 PREFIX 줄을 찾아 채우고, 결과를 화면 위에 잠깐 띄운다
+// 화면 위 알림(북마크·확장 공용)
+export const TOAST_SOURCE = `(function (doc) {
+  return function (m) {
+    var d = doc.createElement("div");
+    d.textContent = m;
+    d.style.cssText = "position:fixed;z-index:99999;left:50%;top:16px;transform:translateX(-50%);max-width:min(92vw,720px);background:#1b1f2a;color:#fff;padding:10px 14px;border-radius:10px;font:14px/1.5 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)";
+    doc.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 6000);
+  };
+})`;
+
+// MapleScouter 화면에서: 내 캐릭터로 교체 → 칸 채우기 → 결과 알림. 북마크와 확장 프로그램이 이 문자열 하나를 같이 쓴다.
+export const RUN_SOURCE = `(async function (doc, p) {
+  var toast = (${TOAST_SOURCE})(doc);
+  var s = await (${PREP_SOURCE})(doc, p);
+  var r = (${FILL_SOURCE})(doc, p);
+  if (r.cancelled) { toast("환산 채우기를 취소했어요 — " + r.note); return { s: s, r: r }; }
+  if (!r.changed && r.missing.length) {
+    toast("입력칸을 못 찾았어요 — MapleScouter 내 캐릭터 화면이나 입력 화면에서 눌러 주세요. 계속 이러면 '환산 채우기'를 새로 설치해 주세요(메이플 장비 최적화 #/scouter)");
+    return { s: s, r: r };
+  }
+  toast((s.switched ? p.name + " 스탯으로 교체 후 " : "") + "환산 채우기: " + p.slot + " " + (p.from || "") + " → " + p.to + " · " + r.changed + "칸 변경" +
+    (r.missing.length ? " · 못 찾은 칸: " + r.missing.join(", ") : "") + (r.note ? " · " + r.note : "") + " (되돌리려면 '되돌리기')");
+  return { s: s, r: r };
+})`;
+
+// 북마크 주소: 클립보드(못 읽으면 붙여넣기 창)에서 PREFIX 줄을 찾아 RUN_SOURCE로 채운다. MapleScouter가 아닌 곳에서 누르면 그 캐릭터 화면을 연다.
 export function bookmarkletHref() {
   const body = `(async function(){var P=${JSON.stringify(PREFIX)};var t="";try{t=await navigator.clipboard.readText();}catch(e){}
 if(t.indexOf(P)<0){t=prompt("메이플 장비 최적화에서 [환산용 복사]한 내용을 붙여넣어 주세요(Ctrl+V)")||"";}
 var line=t.split("\\n").filter(function(l){return l.indexOf(P)===0;})[0];
-function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;z-index:99999;left:50%;top:16px;transform:translateX(-50%);background:#1b1f2a;color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},6000);}
+var toast=(${TOAST_SOURCE})(document);
 if(!line){toast("복사한 매물 정보가 없어요 — [환산용 복사]를 먼저 눌러 주세요");return;}
 var p=JSON.parse(line.slice(P.length));
 if(location.hostname.indexOf("maplescouter.com")<0){var u=${JSON.stringify("https://maplescouter.com/ko/info?name=")}+encodeURIComponent(p.name||"");if(!p.name)u=${JSON.stringify(SCOUTER_INPUT_URL)};if(!window.open(u,"_blank"))location.href=u;toast("MapleScouter "+(p.name||"입력")+" 화면을 열었어요 — 그 탭에서 '환산 채우기'를 한 번 더 눌러 주세요");return;}
-var s=await (${PREP_SOURCE})(document,p);var r=(${FILL_SOURCE})(document,p);
-if(r.cancelled){toast("환산 채우기를 취소했어요 — "+r.note);return;}
-if(!r.changed&&r.missing.length){toast("입력칸을 못 찾았어요 — MapleScouter 내 캐릭터 화면이나 입력 화면에서 눌러 주세요. 계속 이러면 '환산 채우기' 북마크를 새로 설치해 주세요(메이플 장비 최적화 #/scouter)");return;}
-toast((s.switched?p.name+" 스탯으로 교체 후 ":"")+"환산 채우기: "+p.slot+" "+(p.from||"")+" → "+p.to+" · "+r.changed+"칸 변경"+(r.missing.length?" · 못 찾은 칸: "+r.missing.join(", "):"")+(r.note?" · "+r.note:"")+" (되돌리려면 '되돌리기')");})();`;
+await (${RUN_SOURCE})(document,p);})();`;
   return `javascript:${encodeURIComponent(body)}`;
+}
+
+// 확장 프로그램(extension/)이 MapleScouter 탭에 넣어 실행할 코드 — npm run ext 로 extension/generated/run.js를 만든다
+export function extensionRunModule() {
+  return `// 자동 생성 파일 — web/src/scouter.js 에서 만든다(web 폴더에서 npm run ext). 직접 고치지 마세요.
+export function mapleoptRun(p) {
+  return (${RUN_SOURCE})(document, p);
+}
+`;
 }
