@@ -86,7 +86,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
               {data.slots.map((row) => (
                 <tr key={row.slot}>
                   <td>
-                    <strong>{row.slot}</strong>{row.route === "큐브" ? <span className="muted"> · 큐브(경매장 구매 불가)</span> : null}
+                    <strong>{row.slot}</strong>{row.route === "큐브" ? <span className="muted"> · 큐브(경매장 구매 불가 템)</span> : null}
                     <br /><span className="muted">{row.name}{row.starforce ? ` ${row.starforce}성` : ""}</span>
                   </td>
                   <td className="muted">{row.current["잠재"].join(" / ") || "—"}<br />{row.current["에디"].join(" / ") || "—"}</td>

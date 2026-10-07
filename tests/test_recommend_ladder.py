@@ -117,3 +117,15 @@ def test_roadmap_route_and_tool():
     cards = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("recommend_searches", {"name": "x", "top": 40})
     assert all(c["slot"] != "무기" for c in cards["recommendations"])
     assert {c["kind"] for c in cards["recommendations"]} == {"잠재", "에디"}
+
+
+def test_astra_secondary_is_cube_route_not_auction():
+    """아스트라 보조무기(2026-01 출시)는 교환 불가 — 경매장 검색 추천에서 빼고 로드맵은 '큐브' 경로(2026-10-07 사용자 지적)."""
+    import dataclasses
+    snap, setting = _setup()
+    for slots in snap.equipment_presets.values():
+        if "보조무기" in slots:
+            slots["보조무기"] = dataclasses.replace(slots["보조무기"], name="아스트라 아케인 실드")
+    recs = {(r.slot, r.kind) for r in recommend_searches(snap, setting, BOSS, CAT, top=60)}
+    assert ("보조무기", "잠재") not in recs and ("보조무기", "에디") not in recs
+    assert roadmap(snap, setting, BOSS, CAT)["보조무기"]["route"] == "큐브"
