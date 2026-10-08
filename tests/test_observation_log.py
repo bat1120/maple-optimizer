@@ -114,3 +114,41 @@ def test_reconnects_once_when_connection_dropped(tmp_path):
     opened[0].dead = True
     assert log.record(READ) is True and len(opened) == 2
     assert log.count() == 1
+
+
+def test_rows_are_last_30_days_deduped_like_price_store(tmp_path):
+    """지금 시세는 관측 기록(DB)에서 최근 30일만 꺼내 쓴다(2026-10-08 사용자: DB에서 30일로 나눠 보면 된다).
+    같은 매물·같은 가격은 여러 날 봤어도 한 번(가장 최근 본 시각), 보조무기 판정용 equip_type·job_groups도 돌려준다."""
+    now = [1_800_000_000.0]
+    log = _log(tmp_path, now)
+    old = {**READ, "name": "오래된 장갑"}
+    assert log.record(old)
+    now[0] += 31 * 86400                                       # 31일 뒤
+    sec = {**READ, "category": "보조무기", "name": "녹스 마법깃펜", "part": "마법깃펜", "equip_type": "마법깃펜",
+           "job_groups": ["마법사"]}
+    assert log.record(READ) and log.record(sec)
+    now[0] += 86400
+    assert log.record(READ)                                    # 다음 날 같은 매물·같은 가격 → 기록은 쌓이지만
+    rows = log.rows()
+    assert log.count() == 4
+    assert [r["name"] for r in rows] == ["녹스 마법깃펜", "에테르넬 메이지글러브"]  # 30일 지난 것 빠짐, 같은 매물 한 번
+    glove = rows[1]
+    assert glove["seen_at"] == now[0] and glove["price"] == 12_300_000_000 and glove["total"] == {"INT": 100}
+    assert glove["potential_lines"] == ["크리티컬 데미지 +8%", "INT +9%"] and glove["additional"] == ["마력 +10"]
+    assert glove["sold"] is False and glove["starforce"] == 22
+    assert rows[0]["equip_type"] == "마법깃펜" and rows[0]["job_groups"] == ["마법사"]
+
+
+def test_old_table_without_new_columns_is_upgraded(tmp_path):
+    """이미 Neon에 있는 표(equip_type·job_groups 칸 없음)에도 칸을 더해 그대로 쓴다."""
+    import sqlite3
+    path = tmp_path / "old.sqlite3"
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE observations (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, seen_at DOUBLE PRECISION, "
+                "day TEXT, category TEXT, name TEXT, part TEXT, starforce INTEGER, level INTEGER, potential_grade TEXT, "
+                "additional_grade TEXT, potential_lines TEXT, additional TEXT, total TEXT, price BIGINT, sold BOOLEAN, "
+                "other_world BOOLEAN, source TEXT)")
+    con.commit()
+    con.close()
+    log = ObservationLog.sqlite(str(path), clock=lambda: 1_800_000_000.0)
+    assert log.record({**READ, "equip_type": "장갑"}) and log.rows()[0]["equip_type"] == "장갑"

@@ -48,3 +48,23 @@ def test_postgres_vision_quota_counts_per_day():
     assert log.quota_add("a") == 1 and log.quota_add("a") == 2 and log.quota_add("b") == 1
     now[0] += 86400
     assert log.quota_used("a") == 0 and log.quota_add("a") == 1
+
+
+def test_postgres_rows_last_30_days_and_adds_new_columns_to_old_table():
+    import psycopg
+    with psycopg.connect(URL) as c:
+        c.execute("DROP TABLE IF EXISTS observations")
+        c.execute("CREATE TABLE observations (id BIGSERIAL PRIMARY KEY, key TEXT UNIQUE, seen_at DOUBLE PRECISION, day TEXT, "
+                  "category TEXT, name TEXT, part TEXT, starforce INTEGER, level INTEGER, potential_grade TEXT, "
+                  "additional_grade TEXT, potential_lines TEXT, additional TEXT, total TEXT, price BIGINT, sold BOOLEAN, "
+                  "other_world BOOLEAN, source TEXT)")  # 2026-10-07 표(새 칸 없음)
+    now = [1_800_000_000.0]
+    log = ObservationLog.postgres(URL, clock=lambda: now[0])
+    assert log.record({**READ, "name": "오래된"})
+    now[0] += 31 * 86400
+    assert log.record({**READ, "equip_type": "장갑", "job_groups": ["마법사"]})
+    now[0] += 86400
+    assert log.record(READ)
+    rows = log.rows()
+    assert [r["name"] for r in rows] == ["에테르넬 메이지글러브"] and rows[0]["seen_at"] == now[0]
+    assert ObservationLog.postgres(URL, clock=lambda: now[0]).count() == 3  # 다시 열어도(칸 더하기 반복) 된다

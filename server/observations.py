@@ -3,6 +3,7 @@
 - 지금 시세(server/market.py, 30일)와 별개. 같은 매물·같은 가격은 하루 한 번, 날짜가 다르면 새 줄 → 시세 흐름
 - IP·화면 이미지는 저장하지 않는다. 경매장을 자동 조회하지 않는다 — 사용자가 공유한 화면에서 읽은 것만
 - DATABASE_URL(예: Neon 무료 Postgres)이 있으면 Postgres, 없으면 SQLite 파일(로컬·테스트)
+- 지금 시세(경로 비교·로드맵)는 이 기록에서 최근 30일을 읽는다(rows, 2026-10-08) — 같은 매물·같은 가격은 한 번
 - 일반 유저 화면 분석 하루 한도(vision_quota)도 같은 DB에 둔다(2026-10-08) — 서버가 다시 떠도 0으로 돌아가지 않는다.
   사람은 IP 대신 서버 비밀값으로 만든 해시(who)로만 구분하고, 지난 날짜 줄은 지운다
 """
@@ -17,7 +18,9 @@ import threading
 from collections.abc import Callable
 
 COLUMNS = ("seen_at", "day", "category", "name", "part", "starforce", "level", "potential_grade", "additional_grade",
-           "potential_lines", "additional", "total", "price", "sold", "other_world", "source")
+           "potential_lines", "additional", "total", "price", "sold", "other_world", "source", "equip_type", "job_groups")
+NEW_COLUMNS = ("equip_type", "job_groups")  # 2026-10-08 추가(보조무기 착용 판정) — 이미 있는 표에는 칸을 더한다
+RECENT_SECONDS = 30 * 86400  # 지금 시세로 쓰는 기간
 
 
 def _row(read: dict, now: float) -> dict | None:
@@ -31,7 +34,9 @@ def _row(read: dict, now: float) -> dict | None:
             "potential_grade": read.get("potential_grade"), "additional_grade": read.get("additional_grade"),
             "potential_lines": json.dumps(lines[0], ensure_ascii=False), "additional": json.dumps(lines[1], ensure_ascii=False),
             "total": json.dumps(read.get("total") or {}, ensure_ascii=False), "price": int(price),
-            "sold": bool(read.get("sold")), "other_world": bool(read.get("other_world")), "source": read.get("source") or "화면"}
+            "sold": bool(read.get("sold")), "other_world": bool(read.get("other_world")), "source": read.get("source") or "화면",
+            "equip_type": read.get("equip_type"),
+            "job_groups": json.dumps(read["job_groups"], ensure_ascii=False) if read.get("job_groups") is not None else None}
 
 
 class ObservationLog:
@@ -44,8 +49,41 @@ class ObservationLog:
                          if c not in ("sold", "other_world") else f"{c} BOOLEAN" for c in COLUMNS)
         self._run(lambda cur: cur.execute(f"CREATE TABLE IF NOT EXISTS observations (id {serial}, key TEXT UNIQUE, {cols})"),
                   commit=True)
+        for c in NEW_COLUMNS:
+            self._add_column(c)
         self._run(lambda cur: cur.execute("CREATE TABLE IF NOT EXISTS vision_quota "
                                           "(day TEXT, who TEXT, n INTEGER, PRIMARY KEY (day, who))"), commit=True)
+
+    def _add_column(self, name: str) -> None:
+        if self.backend == "postgres":
+            self._run(lambda cur: cur.execute(f"ALTER TABLE observations ADD COLUMN IF NOT EXISTS {name} TEXT"), commit=True)
+            return
+        def has(cur):
+            cur.execute("PRAGMA table_info(observations)")
+            return any(r[1] == name for r in cur.fetchall())
+        if not self._run(has):
+            self._run(lambda cur: cur.execute(f"ALTER TABLE observations ADD COLUMN {name} TEXT"), commit=True)
+
+    def rows(self, seconds: float = RECENT_SECONDS) -> list[dict]:
+        """지금 시세: 최근 seconds 안의 관측. 같은 매물·같은 가격(·판매 여부)은 가장 최근 본 한 줄만, 오래된 것부터."""
+        def q(cur):
+            cur.execute(f"SELECT {', '.join(COLUMNS)} FROM observations WHERE seen_at > {self._ph} ORDER BY seen_at",
+                        (self._clock() - seconds,))
+            return cur.fetchall()
+        latest: dict[str, dict] = {}
+        for values in self._run(q):
+            r = dict(zip(COLUMNS, values))
+            body = {"category": r["category"], "name": r["name"], "part": r["part"], "starforce": r["starforce"] or 0,
+                    "level": r["level"], "potential_grade": r["potential_grade"], "additional_grade": r["additional_grade"],
+                    "total": json.loads(r["total"] or "{}"), "potential_lines": json.loads(r["potential_lines"] or "[]"),
+                    "additional": json.loads(r["additional"] or "[]"), "price": int(r["price"]), "sold": bool(r["sold"]),
+                    "other_world": bool(r["other_world"]), "source": r["source"], "equip_type": r["equip_type"],
+                    "job_groups": json.loads(r["job_groups"]) if r["job_groups"] else None, "seen_at": r["seen_at"]}
+            key = json.dumps([body["category"], body["name"], body["starforce"], sorted(body["potential_lines"]),
+                              sorted(body["additional"]), body["price"], body["sold"]], ensure_ascii=False)
+            latest.pop(key, None)
+            latest[key] = body  # 다시 넣어 '가장 최근 본 순서'를 유지
+        return list(latest.values())
 
     def _today(self) -> str:
         return dt.datetime.fromtimestamp(self._clock(), dt.timezone(dt.timedelta(hours=9))).date().isoformat()  # KST
@@ -76,8 +114,8 @@ class ObservationLog:
                 try:
                     cur = self._conn.cursor()
                     out = fn(cur)
-                    if commit:
-                        self._conn.commit()
+                    # 읽기도 트랜잭션을 닫는다 — Postgres에서 'idle in transaction'으로 잠금을 쥐고 있으면 칸 더하기(ALTER)가 멈춘다
+                    self._conn.commit()
                     return out
                 except self._retry_on:
                     if attempt or self._reconnect is None:

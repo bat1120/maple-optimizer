@@ -20,6 +20,7 @@
 | 화면 분석 하루 한도 DB | `vision_quota` 표(관측 기록과 같은 DB — Neon이면 Postgres), KST 날짜, IP는 HMAC 해시로만 | `server/observations.py`, `server/app.py` |
 | 강화 코어 줄별 대상 | 체인 커맨드 강화: '오버로드 스킬의' → 오버로드 스킬 모두, '… 중' 버프 줄은 미반영으로 표시 | `engine/market/hexa_core_paths.py` |
 | 테스트 템 정리 | 업그레이드 탭 임시 줄 삭제(견본은 `#/scouter` 설치 화면에만 남김) | `web/src/ScreenWatch.jsx` |
+| 지금 시세 = DB 30일 | 경로 비교·로드맵·관리자 목록이 관측 기록(Neon)의 최근 30일을 읽는다(같은 매물·가격은 한 번), 재시작해도 남음. 보조무기 판정 칸 equip_type·job_groups 추가(기존 표에 자동으로 칸 더함) | `server/observations.py`, `server/app.py` |
 | 추옵 재설정 경로 | 단계 확률(공식표 요약)·수치 공식(실측 564개 검산, 250레벨 단일 상수 12)·정확한 도달 확률 계산, `flame_price` 입력 | `engine/market/flame.py`, `engine/data/flame.json` |
 | 썬데이 이벤트 개별 선택 | 30% 할인·21성 이하 파괴 감소·5/10/15성 100%·복구 메소 할인을 하나씩(넷 다 = 샤이닝 묶음) | `web/src/PathsPanel.jsx`, `web/src/api.js` |
 

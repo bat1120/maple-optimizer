@@ -60,10 +60,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
     cache = BundleCache(db_path, clock)
-    from server.market import PriceStore
-    prices = PriceStore(db_path, clock)
     from server.observations import open_log
     observations = open_log(db_path, clock)  # 지우지 않는 관측 기록 — DATABASE_URL(Neon)이면 Postgres
+    prices = observations  # 지금 시세 = 관측 기록의 최근 30일(rows) — 재시작해도 남는다(2026-10-08)
     from server.dataset import DatasetStore
     dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
     from server.vision import FrameCache
@@ -365,9 +364,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
         for x in data["listings"]:
-            prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
             try:
-                observations.record(x)  # 영구 관측 기록(IP·이미지 없음)
+                observations.record(x)  # 영구 관측 기록(IP·이미지 없음) — 지금 시세도 여기서 최근 30일을 읽는다
             except Exception as e:  # DB가 잠깐 안 돼도 평가는 계속한다
                 _log.warning("관측 기록 실패: %s", type(e).__name__)
         if is_admin and not data.get("cached"):
