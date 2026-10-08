@@ -1,4 +1,4 @@
-# 인수인계 (2026-10-08) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
+# 인수인계 (2026-10-08, 오후 갱신) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
 
 ## 지금 상태
 - 데모: https://maple-optimizer.onrender.com (Render 무료, `main` 푸시마다 자동 배포, 15분 쉬면 잠든다)
@@ -16,14 +16,17 @@
 | 강화 이벤트 | 샤이닝 스타포스·파괴 방지·미라클 타임 | `engine/market/events.py` |
 | HEXA | HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨, 연무장 딜 지분) | `engine/stats/hexa.py`, `engine/market/hexa_paths.py`, `engine/market/hexa_core_paths.py` |
 | 경로 비교 | 구매·직작·큐브·스타포스·HEXA를 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
+| 부위별 스페어 값 | `spare_slots=벨트:300000000,…`, 화면은 계산 뒤 스타포스 경로가 있는 부위마다 칸 | `engine/market/events.py`, `web/src/PathsPanel.jsx` |
+| 화면 분석 하루 한도 DB | `vision_quota` 표(관측 기록과 같은 DB — Neon이면 Postgres), KST 날짜, IP는 HMAC 해시로만 | `server/observations.py`, `server/app.py` |
+| 강화 코어 줄별 대상 | 체인 커맨드 강화: '오버로드 스킬의' → 오버로드 스킬 모두, '… 중' 버프 줄은 미반영으로 표시 | `engine/market/hexa_core_paths.py` |
+| 테스트 템 정리 | 업그레이드 탭 임시 줄 삭제(견본은 `#/scouter` 설치 화면에만 남김) | `web/src/ScreenWatch.jsx` |
 | 썬데이 이벤트 개별 선택 | 30% 할인·21성 이하 파괴 감소·5/10/15성 100%·복구 메소 할인을 하나씩(넷 다 = 샤이닝 묶음) | `web/src/PathsPanel.jsx`, `web/src/api.js` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
-- 스페어 값을 부위마다 다르게 넣기(지금은 모든 부위에 같은 값)
-- HEXA: 3rd 스킬 코어를 오리진과 구분(지금은 둘 다 비싼 '스킬' 비용표), 여러 스킬에 걸치는 강화 코어(체인 커맨드 강화) 반영
+- HEXA: 3rd 스킬 코어를 오리진·어센트와 구분 — **막힘**. API는 셋 다 '스킬 코어'이고 문장에 구분 표시가 없다.
+  인벤(2025-07)은 어센트 = 오리진 비용('스킬' 열). '3rd 스킬' 열을 쓰는 스킬이 무엇인지(직업별 이름) 공식·위키 출처가 있어야 한다
+  (클라우드에서는 namu.wiki·maplestory.nexon.com·inven 접속이 막힘). 그 전까지 모든 스킬 코어는 '스킬' 열(비싼 쪽)
 - 추옵(환생의 불꽃) 재설정 경로 — 불꽃 등급별 확률표(공식 자료)가 먼저 필요
-- 업그레이드 탭의 임시 '테스트 템' 줄 정리(사용자 확인 뒤)
-- 화면 평가 하루 한도가 서버 메모리에만 있음(재시작하면 0) — DB로 옮길지 결정
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
 - 넥슨 API가 필요한 일: 실제 캐릭터 조회, `tools/collect_skill_shares.py`(직업별 딜 지분 수집 — 지금은 레테만 있음),
