@@ -37,9 +37,10 @@ jobs:
         name: 남은 자동 목표 찾기
         run: |
           goals=$(python3 - <<'PY'
-          import re
+          import os, re
           out = []
-          for line in open("GOALS.md", encoding="utf-8"):
+          # GOALS.md는 저장소에서 뺐다(2026-10-08, 로컬 전용) — 없으면 남은 목표 없음
+          for line in (open("GOALS.md", encoding="utf-8") if os.path.exists("GOALS.md") else []):
               cells = [c.strip() for c in line.strip().strip("|").split("|")]
               if len(cells) >= 5 and re.fullmatch(r"G\d+", cells[0]) and cells[-2] == "자동":
                   if cells[-1].split()[0] in ("TODO", "DOING"):

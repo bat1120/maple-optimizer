@@ -2,8 +2,7 @@
 
 메이플스토리(KMS) 캐릭터 닉네임으로 현재 스펙을 불러와 **보스 실딜 기준**으로 장비 교체·경매장 매물·강화 비용·예산 최적화를 계산하는 웹 서비스.
 
-- 설계: `docs/superpowers/specs/2026-10-03-maple-optimizer-design.md`
-- 진행 상황: `GOALS.md`, 기록: `goal-log.md`
+- 설계·진행 기록(`docs/`, `GOALS.md`, `goal-log.md`)과 `CLAUDE.md`는 로컬 전용이다(저장소에 없음, .gitignore)
 
 ## 무엇을 계산하나
 
@@ -98,7 +97,7 @@ DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE
 ## PC가 꺼져도 Claude가 작업하기 (`.github/workflows/claude.yml`)
 
 - 이슈나 PR 댓글에 `@claude <할 일>` → 클라우드에서 작업하고 테스트 통과 시 main에 커밋·푸시(배포 워크플로가 이어서 돈다)
-- Actions 탭 → `claude` → Run workflow → 지시문 입력(비우면 GOALS.md의 남은 자동 목표)
+- Actions 탭 → `claude` → Run workflow → 지시문 입력(비우면 로컬 GOALS.md가 저장소에 없으므로 실행하지 않음)
 - 매일 09:00(KST) 남은 자동 목표가 있을 때만 이어서 진행한다. 없으면 Claude를 부르지 않는다
 - 작업 규칙: `.github/claude-rules.md` (한국어, 테스트 통과 후 커밋, 비밀값·사람 몫 목표·자동 수집 금지)
 

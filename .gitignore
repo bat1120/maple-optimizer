@@ -18,3 +18,10 @@ web/dist/
 
 # 화면 분석 학습 데이터(내 PC 전용)
 .data/
+
+# 작업 기록·지시 문서(로컬 전용, 2026-10-08) — 코드 실행·배포에 필요 없음
+CLAUDE.md
+GOALS.md
+goal-log.md
+docs/
+goals/results/
