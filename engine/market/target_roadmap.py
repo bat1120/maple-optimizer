@@ -5,6 +5,7 @@
 - 후보: 큐브(부위·잠재/에디마다 효율이 가장 좋은 단계 1개), HEXA 코어(다음 1레벨), HEXA 스탯(코어마다 1개),
   스타포스(같은 부위를 한 성씩 이어서 — 고를 때마다 지금 상태 기준으로 실딜·비용을 다시 계산)
 - 큐브·HEXA 실딜은 처음 상태 기준값을 그대로 곱한다(근사). 경매장 구매·직작은 넣지 않는다(관측 매물에 따라 크게 바뀐다)
+- 크확을 깎는 큐브는 기본으로 빼고(keep_crit), 실딜 평가 자체도 크확이 줄면 손해로 잡는다(engine/stats/evaluate.py)
 """
 import copy
 import dataclasses
@@ -32,7 +33,9 @@ def apply_star(it, target: int):
 
 
 def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed, current_ratio: float,
-                   target_ratio: float, max_steps: int = 120) -> dict:
+                   target_ratio: float, max_steps: int = 120, keep_crit: bool = True) -> dict:
+    """keep_crit: 크확을 깎는 큐브는 고르지 않는다(기본). MapleScouter는 크확 100% 미만이면 결과를 안 보여 주고,
+    넥슨 스탯창 크확에는 직업 스킬 크확이 빠져 있어 여유분을 알 수 없다(2026-10-09)."""
     events = events or Events()
     need = target_ratio / current_ratio if current_ratio > 0 else float("inf")
     out = {"current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": need, "steps": [],
@@ -49,6 +52,10 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
     for p in upgrade_paths(snap, setting, boss, catalog, observed, None, events)["all"]:
         if p["path"] == "큐브":
             key = ("큐브", p["slot"], p["kind"])
+            if keep_crit:
+                new = SWAP[p["kind"]](raw[p["slot"]], p["target"], snap.level)
+                if new.stats.cr < raw[p["slot"]].stats.cr:
+                    continue
         elif p["path"] == "HEXA 코어":
             key = ("HEXA 코어", p["name"].rsplit(" ", 1)[0])
         elif p["path"] == "HEXA 스탯":

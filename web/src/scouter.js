@@ -239,10 +239,20 @@ export const CHECK_SOURCE = `(async function (doc, boss, sleep) {
   if (!go) return null;
   go.click();
   var detail = null;
-  for (var i = 0; i < 60 && !detail; i++) { detail = button("상세조회"); if (!detail) await sleep(250); }
+  for (var i = 0; i < 60 && !detail; i++) {
+    detail = button("상세조회");
+    // MapleScouter는 크확 100% 미만이면 경고 창만 띄우고 결과를 안 보여 준다(2026-10-09)
+    if (!detail && Array.prototype.some.call(doc.querySelectorAll("[role=dialog]"), function (d) { return d.textContent.indexOf("크확 100%") >= 0; })) {
+      doc.defaultView.__mapleoptWarn = "크확 100% 미만";
+      return null;
+    }
+    if (!detail) await sleep(250);
+  }
   if (!detail) return null;
   detail.click();
   for (var w = 0; w < 160; w++) {
+    var warn = Array.prototype.filter.call(doc.querySelectorAll("[role=dialog]"), function (d) { return d.textContent.indexOf("크확 100%") >= 0; })[0];
+    if (warn) return null;
     if (doc.defaultView.location.pathname.indexOf("/result") >= 0) {
       var c = card();
       if (c) {
@@ -305,7 +315,7 @@ export const RUN_SOURCE = `(async function (doc, p) {
   if (check) {
     toast("변화량을 넣었어요(" + r.changed + "칸) — " + (p.check.label || "보스") + " 배율을 다시 읽는 중…");
     var after = await check(doc, p.check.boss);
-    var f = function (v) { return v == null ? "못 읽음" : v + "%"; };
+    var f = function (v) { return v == null ? (win.__mapleoptWarn ? "못 읽음(MapleScouter: " + win.__mapleoptWarn + ")" : "못 읽음") : v + "%"; };
     toast((p.check.label || "보스") + " 배율: 지금 " + f(before) + " → 적용 후 " + f(after) +
       (p.check.expected ? " (우리 추정 " + Math.round(p.check.expected * 100) / 100 + "%)" : "") +
       (r.missing.length ? " · 못 찾은 칸: " + r.missing.join(", ") : "") + " — 입력 화면 '되돌리기'로 원래대로");

@@ -27,3 +27,13 @@ describe("MapleScouter 보스 배율 읽기", () => {
     expect(await runCheck(document, "extreme_nothing", tick)).toBeNull();
   });
 });
+
+describe("MapleScouter 크확 경고", () => {
+  it("'크확 100%미만!!' 창이 뜨면 기다리지 않고 null + 이유를 남긴다", async () => {
+    window.history.pushState({}, "", "/ko/input");
+    document.body.innerHTML = `<main><button type="button">결과</button></main>`;
+    document.querySelector("button").onclick = () => document.body.insertAdjacentHTML("beforeend", `<div role="dialog">크확 100%미만!!<button>Close</button></div>`);
+    expect(await runCheck(document, "extreme_lotus", tick)).toBeNull();
+    expect(window.__mapleoptWarn).toBe("크확 100% 미만");
+  });
+});

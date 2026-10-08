@@ -51,6 +51,7 @@ class Evaluator:
         self.snap, self.setting, self.boss, self.catalog = snap, setting, boss, catalog
         self._cal = calibrate(snap, catalog)
         self._job = job_profile(snap.character_class)
+        self._base_cr = None
 
     def base_items(self) -> dict[str, Item]:
         return preset_items(self.snap, self.setting.equipment)
@@ -61,4 +62,8 @@ class Evaluator:
         if extra:
             src = Sources(src.pct + extra.get("pct", StatBlock()), src.nopct + extra.get("nopct", StatBlock()), src.excluded)
         pred = predict(self._cal, src)
-        return boss_index(pred, self._job, items["무기"].part, self.boss)
+        # 실효 크확: 지금 상태를 딱 100%(여유 없음)로 보고 변경으로 줄어든 만큼만 뺀다 — 크확을 깎는 큐브·교체가 손해로 잡힌다
+        if self._base_cr is None:
+            self._base_cr = predict(self._cal, sources_for(self.snap, self.setting, self.catalog, self.base_items())).cr
+        crit_rate = min(100.0, 100.0 + pred.cr - self._base_cr)
+        return boss_index(pred, self._job, items["무기"].part, self.boss, crit_rate)
