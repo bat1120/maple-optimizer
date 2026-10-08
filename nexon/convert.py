@@ -125,6 +125,7 @@ def item(item_json: dict, level: int) -> Item:
         sf_option=_sf_option(item_json.get("item_starforce_option") or {}),
         scroll_attack=_scroll_attack(item_json),
         amazing=item_json.get("starforce_scroll_flag") == "사용",
+        add_option={k: num(v) for k, v in (item_json.get("item_add_option") or {}).items() if num(v)},
     )
 
 

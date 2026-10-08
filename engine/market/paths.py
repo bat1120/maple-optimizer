@@ -4,6 +4,8 @@
   다른 월드 매물은 메이플포인트 수수료 10%를 더한다.
 - 직작: 매물 가격 + 매물의 지금 등급에서 로드맵 단계까지 메소 재설정 평균 비용. 스타포스는 매물 그대로 본다.
 - 큐브: 지금 템에 메소 재설정(로드맵의 cube_cost).
+- 추옵: 지금 템 추옵을 메소 재설정으로 다시 돌려 목표 점수 이상(engine/market/flame.py). 재설정 1회 값(flame_price)이 있을 때만.
+  옵션 고르기 모델이 미확인이라 unverified=True
 - 스타포스: 지금 템을 목표 성까지(성별 스탯 표 engine/enhance/starforce_stats.py). 비용은 메소 기대값만이고 파괴 시 스페어 비용은
   빼고 평균 파괴 횟수(expected_destroys)를 따로 준다.
 가격이 없거나 총 옵션을 모르는 매물은 실딜을 계산할 수 없어 뺀다.
@@ -17,6 +19,8 @@ from engine.enhance.starforce_stats import eligible
 from engine.enhance.starforce_stats import gain as sf_gain
 from engine.market.cube_value import expected_cost
 from engine.market.events import Events
+from engine.market import flame as fl
+from engine.options import StatLine
 from engine.market.hexa_core_paths import core_paths, job_shares
 from engine.market.hexa_paths import hexa_stat_paths
 from engine.market.listing import item_from_input
@@ -96,6 +100,50 @@ def _starforce_paths(pl, px, events: Events) -> list[dict]:
     return out
 
 
+_BUMP = {"STR": 100.0, "DEX": 100.0, "INT": 100.0, "LUK": 100.0, "ATK": 10.0, "MATK": 10.0, "ALL%": 10.0}
+
+
+def _bumped(it: Item, key: str, v: float) -> Item:
+    stats = copy.deepcopy(it.stats)
+    core = copy.deepcopy(it.core) if it.core is not None else None
+    lines = [StatLine(k, v, True) for k in ("STR", "DEX", "INT", "LUK")] if key == "ALL%" else [StatLine(key, v, False)]
+    for blk in (stats, core):
+        if blk is not None:
+            for ln in lines:
+                blk.add(ln)
+    return dataclasses.replace(it, stats=stats, core=core)
+
+
+def _flame_paths(pl, px, events: Events) -> list[dict]:
+    """지금 템 추옵 재설정: 실딜 기울기(%/단위)로 점수를 매기고, 한 번에 상위 20·5·1·0.2% 확률로 나오는 점수를 목표로."""
+    if not events.flame_price:
+        return []
+    out = []
+    for slot, it in pl.raw.items():
+        if not fl.flame_eligible(it):
+            continue
+        weights = {}
+        for key, step in _BUMP.items():
+            d, _ = px.delta(slot, _bumped(it, key, step))
+            if d > 0:
+                weights[key] = d / step
+        if not weights:
+            continue
+        now = fl.score_of(fl.current_lines(it.add_option, it.level), weights)
+        table = fl.reach_table(weights, it.level)
+        mine = []
+        for t in fl.targets(table, now):
+            delta = t["score"] - now
+            tries = 1 / t["reach_probability"]
+            if delta >= MIN_GAIN:
+                mine.append(_entry(slot, "추옵", tries * events.flame_price, delta, kind=None, name=it.name,
+                                   quantile=t["quantile"], reach_probability=t["reach_probability"],
+                                   expected_tries=tries, flame_price=events.flame_price, unverified=True,
+                                   set_change=[]))
+        out += sorted(mine, key=lambda p: p["per_100m"], reverse=True)[:fl.PER_SLOT]
+    return out
+
+
 def balanced(paths: list[dict], per_path: int) -> list[dict]:
     """경로 종류(구매·직작·큐브·스타포스)마다 억당 상위 per_path개씩 모아 다시 억당 순으로(한 종류가 목록을 다 채우지 않게)."""
     count: dict[str, int] = {}
@@ -124,6 +172,7 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
                                       cube_cost=t["cube_cost"], reach_probability=t["reach_probability"],
                                       set_change=[]))
     out += _starforce_paths(pl, px, events)  # 지금 템 스타포스 강화
+    out += _flame_paths(pl, px, events)  # 지금 템 추옵 재설정(재설정 1회 값이 있을 때)
     out += hexa_stat_paths(pl, events.fragment_price, events.hexa_sunday)  # HEXA 스탯(조각 시세가 있을 때)
     shares, source = (snap.own_shares, "내 연무장 기록") if snap.own_shares else (
         (job_shares(snap.character_class) or {}).get("shares") or {}, "직업 기준값(연무장 상위 기록 중앙값)")

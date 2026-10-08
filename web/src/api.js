@@ -66,6 +66,8 @@ export function getPaths(name, bossDefense = 300, events = {}) {
   const frag = Number(events.fragmentMan);  // 솔 에르다 조각 1개 값(만 메소)
   if (frag > 0) q.set("fragment_price", String(Math.round(frag * 1e4)));
   if (events.hexaSunday) q.set("hexa_sunday", "true");
+  const flame = Number(events.flameMan);  // 추옵 재설정 1회 값(만 메소)
+  if (flame > 0) q.set("flame_price", String(Math.round(flame * 1e4)));
   return request(`${base(name)}/paths?${q}`);
 }
 

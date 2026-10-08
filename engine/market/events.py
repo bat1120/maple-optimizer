@@ -23,6 +23,7 @@ class Events:
     spare_price: float = 0.0
     fragment_price: float = 0.0  # 솔 에르다 조각 1개 시세(메소) — 있어야 HEXA 경로를 억당으로 비교한다
     hexa_sunday: bool = False    # HEXA 스탯: 메인 5레벨 이상일 때 메인 강화 확률 ×1.2
+    flame_price: float = 0.0     # 추옵 메소 재설정(또는 환생의 불꽃) 1회 값(메소) — 있어야 추옵 경로를 만든다
     spare_slots: dict = field(default_factory=dict)  # 부위 → 스페어 1개 값(메소). 없는 부위는 spare_price
 
     def spare_for(self, slot: str) -> float:
@@ -30,7 +31,8 @@ class Events:
 
     @classmethod
     def parse(cls, sf: str | None = None, miracle: bool = False, spare_price: float | None = None,
-              fragment_price: float | None = None, hexa_sunday: bool = False, spare_slots: str | None = None) -> "Events":
+              fragment_price: float | None = None, hexa_sunday: bool = False, spare_slots: str | None = None,
+              flame_price: float | None = None) -> "Events":
         """sf: 쉼표로 이은 스타포스 조건(SF_FLAGS 이름, 'shining' = 앞의 넷).
         spare_slots: '부위:메소'를 쉼표로 이은 것(예: '벨트:300000000,장갑:5e8')."""
         names = {n.strip() for n in (sf or "").split(",") if n.strip()}
@@ -41,7 +43,7 @@ class Events:
             raise ValueError(f"알 수 없는 스타포스 조건: {', '.join(sorted(unknown))}")
         return cls(**{n: True for n in names if n in SF_FLAGS}, miracle=miracle, spare_price=max(0.0, spare_price or 0.0),
                    fragment_price=max(0.0, fragment_price or 0.0), hexa_sunday=hexa_sunday,
-                   spare_slots=_parse_spare_slots(spare_slots))
+                   spare_slots=_parse_spare_slots(spare_slots), flame_price=max(0.0, flame_price or 0.0))
 
     def starforce(self) -> StarforceConditions:
         return StarforceConditions(discount30=self.discount30, destroy_down30=self.destroy_down30,

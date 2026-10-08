@@ -20,13 +20,16 @@
 | 화면 분석 하루 한도 DB | `vision_quota` 표(관측 기록과 같은 DB — Neon이면 Postgres), KST 날짜, IP는 HMAC 해시로만 | `server/observations.py`, `server/app.py` |
 | 강화 코어 줄별 대상 | 체인 커맨드 강화: '오버로드 스킬의' → 오버로드 스킬 모두, '… 중' 버프 줄은 미반영으로 표시 | `engine/market/hexa_core_paths.py` |
 | 테스트 템 정리 | 업그레이드 탭 임시 줄 삭제(견본은 `#/scouter` 설치 화면에만 남김) | `web/src/ScreenWatch.jsx` |
+| 추옵 재설정 경로 | 단계 확률(공식표 요약)·수치 공식(실측 564개 검산, 250레벨 단일 상수 12)·정확한 도달 확률 계산, `flame_price` 입력 | `engine/market/flame.py`, `engine/data/flame.json` |
 | 썬데이 이벤트 개별 선택 | 30% 할인·21성 이하 파괴 감소·5/10/15성 100%·복구 메소 할인을 하나씩(넷 다 = 샤이닝 묶음) | `web/src/PathsPanel.jsx`, `web/src/api.js` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
 - HEXA: 3rd 스킬 코어를 오리진·어센트와 구분 — **막힘**. API는 셋 다 '스킬 코어'이고 문장에 구분 표시가 없다.
   인벤(2025-07)은 어센트 = 오리진 비용('스킬' 열). '3rd 스킬' 열을 쓰는 스킬이 무엇인지(직업별 이름) 공식·위키 출처가 있어야 한다
   (클라우드에서는 namu.wiki·maplestory.nexon.com·inven 접속이 막힘). 그 전까지 모든 스킬 코어는 '스킬' 열(비싼 쪽)
-- 추옵(환생의 불꽃) 재설정 경로 — 불꽃 등급별 확률표(공식 자료)가 먼저 필요
+- 추옵 경로 확인(이 PC에서): 공식 확률 페이지(maplestory.nexon.com/Guide/OtherProbability/game/gameAddOption)의
+  ① 옵션별 등장 확률(지금은 방어구 19종 중 4개 균등 가정 — `engine/data/flame.json`의 armor_pool), ② 단계 확률(4~7단계 29/45/25/1%),
+  ③ 지금 메소 재설정 1회 값을 대조. ①이 맞으면 `paths.py`의 unverified를 끄고, 무기 공·마 공식도 실측 검산해 무기를 넣는다
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
 - 넥슨 API가 필요한 일: 실제 캐릭터 조회, `tools/collect_skill_shares.py`(직업별 딜 지분 수집 — 지금은 레테만 있음),

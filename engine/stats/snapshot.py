@@ -36,6 +36,7 @@ class Item:
     sf_option: dict[str, float] = field(default_factory=dict)
     scroll_attack: dict[str, float] = field(default_factory=dict)
     amazing: bool = False
+    add_option: dict[str, float] = field(default_factory=dict)  # 추옵 원본(넥슨 API item_add_option, 0 아닌 값만)
 
 
 @dataclass

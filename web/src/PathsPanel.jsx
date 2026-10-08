@@ -17,6 +17,7 @@ function pathLabel(p) {
   if (p.path === "구매") return `구매 · ${p.name}${p.sold ? " (체결가)" : " (호가)"}`;
   if (p.path === "스타포스") return `스타포스 · ${p.name} ${p.from_star}→${p.to_star}성`;
   if (p.path === "HEXA 코어" || p.path === "HEXA 스탯") return `${p.path} · ${p.name}`;
+  if (p.path === "추옵") return `추옵 · ${p.name} 상위 ${+(p.quantile * 100).toFixed(1)}%`;
   const step = `${p.kind} ${p.grade} ${p.lines_good}줄`;
   return p.path === "직작" ? `직작 · ${p.name} + 큐브 ${step}` : `큐브 ${step}`;
 }
@@ -38,7 +39,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       setBusy(false);
     }
   };
-  const [events, setEvents] = useState({ ...Object.fromEntries(SUNDAY_SF.map(([k]) => [k, false])), protect: false, miracle: false, spareEok: "", spareSlots: {}, fragmentMan: "", hexaSunday: false });
+  const [events, setEvents] = useState({ ...Object.fromEntries(SUNDAY_SF.map(([k]) => [k, false])), protect: false, miracle: false, spareEok: "", spareSlots: {}, fragmentMan: "", flameMan: "", hexaSunday: false });
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
   const shining = SUNDAY_SF.every(([k]) => events[k]);
   const toggleShining = () => setEvents((e) => ({ ...e, ...Object.fromEntries(SUNDAY_SF.map(([k]) => [k, !shining])) }));
@@ -66,6 +67,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <>구매 경로는 경매장 화면 평가로 쌓인 <strong>관측 매물</strong>로만 계산해요. 관측이 없으면 큐브 경로만 나와요.</>,
         <>세트 효과가 바뀌는 경우 실딜에 이미 들어가 있고, <strong>세트 변화</strong> 열에 따로 적어요.</>,
         <><strong>조각 1개 값</strong>을 넣으면 HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨) 경로도 같은 억당으로 비교해요. 코어 딜 지분은 내 연무장 기록, 없으면 직업 상위 기록 중앙값이에요.</>,
+        <><strong>추옵 재설정 1회 값</strong>을 넣으면 지금 추옵을 다시 돌려 상위 20·5·1·0.2% 결과에 닿는 평균 비용을 비교해요(보스 장비 4줄 기준, 무기 제외).</>,
         <><strong>스타포스</strong> 비용은 강화 + 흔적 복구 메소 기대값이에요. 위에서 이벤트를 고르고, <strong>스페어 1개 값</strong>을 넣으면 파괴 시 스페어 비용까지 더해요. 부위마다 값이 다르면 계산 뒤 <strong>부위별 스페어 값</strong>을 펼쳐 넣으세요.</>,
       ]} />
       <fieldset className="events">
@@ -90,6 +92,8 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         )}
         <label className="inline">조각 1개 값(만 메소) <input aria-label="조각 1개 값(만 메소)" inputMode="decimal" value={events.fragmentMan}
           placeholder="넣으면 HEXA 경로" onChange={(e) => setEvents((v) => ({ ...v, fragmentMan: e.target.value }))} style={{ width: "8em" }} /></label>
+        <label className="inline">추옵 재설정 1회 값(만 메소) <input aria-label="추옵 재설정 1회 값(만 메소)" inputMode="decimal" value={events.flameMan}
+          placeholder="넣으면 추옵 경로" onChange={(e) => setEvents((v) => ({ ...v, flameMan: e.target.value }))} style={{ width: "8em" }} /></label>
         <label className="chip"><input type="checkbox" checked={events.hexaSunday} onChange={() => toggle("hexaSunday")} /> HEXA 스탯 썬데이<span className="muted small">(메인 5레벨 이상 확률 ×1.2)</span></label>
         <button type="button" className="ghost small" onClick={load} disabled={!name || busy}>이 조건으로 계산</button>
       </fieldset>
@@ -119,6 +123,8 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
                       {p.spare_price ? "(비용에 포함)" : "(스페어 값 미포함 — 흔적 복구 메소만)"}</span></> : null}
                     {p.path === "HEXA 코어" ? <><br /><span className="muted">조각 {p.fragments}개 · 솔 에르다 {p.erda}개 · 딜 지분: {p.share_source}</span>
                       {p.skipped?.length ? <><br /><span className="muted">미반영(켜진 시간 측정값 없음): {p.skipped.join(" / ")}</span></> : null}</> : null}
+                    {p.path === "추옵" ? <><br /><span className="muted">한 번에 {(p.reach_probability * 100).toFixed(2)}% · 평균 {Math.round(p.expected_tries).toLocaleString("ko-KR")}회
+                      {p.unverified ? " · 옵션 고르기 확률 미확인(19종 중 4개 균등 가정)" : ""}</span></> : null}
                     {p.path === "HEXA 스탯" ? <><br /><span className="muted">조각 평균 {Math.round(p.fragments).toLocaleString("ko-KR")}개(초기화 메소 포함)</span></> : null}</td>
                   <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num">{formatPct(p.per_100m)}</td>
                   <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>

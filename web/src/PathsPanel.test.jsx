@@ -109,6 +109,20 @@ describe("paths panel", () => {
     expect(url).toContain("spare_price=1000000000");
     expect(url).toContain(`spare_slots=${encodeURIComponent("벨트:300000000")}`);
   });
+  it("추옵: 재설정 1회 값(만 메소)을 보내고, 행에 목표 확률·평균 횟수·미확인 표시를 보여 준다", async () => {
+    const row = { slot: "벨트", path: "추옵", name: "분노한 자쿰의 벨트", quantile: 0.01, reach_probability: 0.01002,
+                  expected_tries: 99.8, flame_price: 5e6, unverified: true, delta_pct: 0.137, cost: 4.99e8, cost_text: "4억 9900만",
+                  per_100m: 0.027, set_change: [] };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [row], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.change(screen.getByLabelText("추옵 재설정 1회 값(만 메소)"), { target: { value: "500" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    expect(f.mock.calls.at(-1)[0]).toContain("flame_price=5000000");
+    const tr = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
+    expect(tr).toHaveTextContent("추옵 · 분노한 자쿰의 벨트 상위 1%");
+    expect(tr).toHaveTextContent("한 번에 1.00% · 평균 100회");
+    expect(tr).toHaveTextContent("옵션 고르기 확률 미확인");
+  });
   it("HEXA: 조각 값(만 메소)·HEXA 스탯 썬데이를 보내고, 헥사 행에 조각·솔 에르다·딜 지분 출처를 보여 준다", async () => {
     const hx = { slot: "HEXA 코어", path: "HEXA 코어", name: "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨",
                  delta_pct: 0.25, cost: 5.95e8, cost_text: "5억 9500만", per_100m: 0.042, fragments: 85, erda: 3,
