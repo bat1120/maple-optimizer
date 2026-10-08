@@ -55,3 +55,25 @@ def test_paths_api_includes_hexa_cores_with_fragment_price(tmp_path):
     assert {"HEXA 코어", "HEXA 스탯"} <= kinds
     hx = [p for p in r["all"] if p["path"] == "HEXA 코어"]
     assert all(p["cost_text"] and p["erda"] >= 1 for p in hx)
+
+
+def test_enhance_core_lines_apply_to_their_own_targets():
+    """체인 커맨드 강화(2026-10-08): 효과 문장 줄마다 대상이 다르다.
+    '오버로드 스킬의 최종 데미지 증가량' → 이름에 '오버로드'가 든 스킬 모두, '맹약 완성의 최종 데미지' → 체인 커맨드,
+    '맹약 실체화 중 데미지 증가량' → 켜져 있는 시간(측정값 없음)을 몰라 빼고 skipped에 적는다."""
+    import dataclasses
+    snap = snapshot(bundle("레테"))
+    sk = dict(snap.hexa_skills)
+    cc = dict(sk["체인 커맨드 강화"])
+    cc["next"] = cc["next"].replace("오버로드 스킬의 최종 데미지 증가량 16%로", "오버로드 스킬의 최종 데미지 증가량 17%로")
+    sk["체인 커맨드 강화"] = cc
+    snap = dataclasses.replace(snap, hexa_skills=sk)
+    shares = job_shares("레테")["shares"]
+    p = {x["name"]: x for x in core_paths(snap, shares, 7_000_000, 300.0, "직업 기준값")}["체인 커맨드 1→2레벨"]
+    overload = [n for n in shares if "오버로드" in n]
+    assert set(overload) == {"오버로드 : 이터널 게이즈", "오버로드 : 템플러 온슬로트", "인보크/오버로드 : 아즈라스",
+                             "오버로드 : 바르가르 트라이던트"}
+    want = sum(shares[n] for n in overload) * (117 / 116 - 1) + shares["체인 커맨드"] * (112 / 111 - 1)
+    assert p["delta_pct"] == pytest.approx(want)
+    assert {s["skill"] for s in p["skills"]} == set(overload) | {"체인 커맨드"}
+    assert p["skipped"] == ["맹약 실체화 중 데미지 증가량 11%로 증가"]

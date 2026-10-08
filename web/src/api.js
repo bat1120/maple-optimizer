@@ -48,7 +48,7 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
 }
 
 // events: { discount30, destroy_down30, guarantee_5_10_15, restore_discount20 (넷 다 = shining, 또는 shining: true),
-//           protect, miracle, spareEok, fragmentMan, hexaSunday } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
+//           protect, miracle, spareEok, spareSlots: { 부위: 억 }, fragmentMan, hexaSunday } — 스타포스 이벤트·파괴 방지·미라클 타임·스페어 1개 값(억)
 const SUNDAY_SF_KEYS = ["discount30", "destroy_down30", "guarantee_5_10_15", "restore_discount20"];
 export function getPaths(name, bossDefense = 300, events = {}) {
   const q = new URLSearchParams({ boss_defense: String(bossDefense) });
@@ -58,6 +58,11 @@ export function getPaths(name, bossDefense = 300, events = {}) {
   if (events.miracle) q.set("miracle", "true");
   const spare = Number(events.spareEok);
   if (spare > 0) q.set("spare_price", String(Math.round(spare * 1e8)));
+  // 부위별 스페어 값(억) — 비운 부위는 보내지 않는다(서버가 spare_price를 쓴다)
+  const slots = Object.entries(events.spareSlots ?? {})
+    .filter(([, v]) => String(v).trim() !== "" && Number(v) >= 0)
+    .map(([slot, v]) => `${slot}:${Math.round(Number(v) * 1e8)}`);
+  if (slots.length) q.set("spare_slots", slots.join(","));
   const frag = Number(events.fragmentMan);  // 솔 에르다 조각 1개 값(만 메소)
   if (frag > 0) q.set("fragment_price", String(Math.round(frag * 1e4)));
   if (events.hexaSunday) q.set("hexa_sunday", "true");

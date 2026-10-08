@@ -93,6 +93,22 @@ describe("paths panel", () => {
     await act(async () => { fireEvent.click(box(/샤이닝 스타포스/)); });  // 묶음 켜기 = 넷 다 켜기
     expect(box(/^흔적 복구 메소 20% 할인/)).toBeChecked();
   });
+  it("부위별 스페어 값: 스타포스 경로가 있는 부위마다 칸이 생기고, 넣은 값(억)을 부위:메소로 보낸다", async () => {
+    const sf = (slot) => ({ slot, path: "스타포스", name: slot, from_star: 17, to_star: 22, delta_pct: 1, cost: 3e9, cost_text: "30억",
+                            per_100m: 0.03, expected_destroys: 0.4, expected_spares: 0.5, spare_price: 0, set_change: [] });
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [sf("벨트"), sf("장갑"), sf("벨트")], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    expect(screen.queryByLabelText("벨트 스페어 1개 값(억)")).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    expect(screen.getAllByLabelText("벨트 스페어 1개 값(억)")).toHaveLength(1);
+    await act(async () => { fireEvent.change(screen.getByLabelText("벨트 스페어 1개 값(억)"), { target: { value: "3" } }); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("장갑 스페어 1개 값(억)"), { target: { value: "" } }); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("스페어 1개 값(억)"), { target: { value: "10" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = f.mock.calls.at(-1)[0];
+    expect(url).toContain("spare_price=1000000000");
+    expect(url).toContain(`spare_slots=${encodeURIComponent("벨트:300000000")}`);
+  });
   it("HEXA: 조각 값(만 메소)·HEXA 스탯 썬데이를 보내고, 헥사 행에 조각·솔 에르다·딜 지분 출처를 보여 준다", async () => {
     const hx = { slot: "HEXA 코어", path: "HEXA 코어", name: "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨",
                  delta_pct: 0.25, cost: 5.95e8, cost_text: "5억 9500만", per_100m: 0.042, fragments: 85, erda: 3,
@@ -110,5 +126,15 @@ describe("paths panel", () => {
     expect(row).toHaveTextContent("HEXA 코어 · 인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨");
     expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
     expect(row).toHaveTextContent("직업 기준값");
+    expect(row).not.toHaveTextContent("미반영");
+  });
+  it("HEXA 강화 코어: 켜진 시간을 몰라 뺀 효과 줄을 '미반영'으로 적는다", async () => {
+    const hx = { slot: "HEXA 코어", path: "HEXA 코어", name: "체인 커맨드 1→2레벨", delta_pct: 0.03, cost: 1.6e8, cost_text: "1억 6100만",
+                 per_100m: 0.02, fragments: 23, erda: 1, share_source: "직업 기준값", skipped: ["맹약 실체화 중 데미지 증가량 11%로 증가"], set_change: [] };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [hx] }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("미반영(켜진 시간 측정값 없음): 맹약 실체화 중 데미지 증가량 11%로 증가");
   });
 });
