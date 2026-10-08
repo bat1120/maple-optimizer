@@ -75,3 +75,25 @@ def test_roadmap_api_miracle_lowers_cube_cost(tmp_path):
     c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
     cost = lambda r: sum(t["cube_cost"] or 0 for row in r["slots"] for k in ("잠재", "에디") for t in row[k])  # noqa: E731
     assert cost(c.get("/api/character/x/roadmap?miracle=true").json()) < cost(c.get("/api/character/x/roadmap").json())
+
+
+def test_spare_price_per_slot_overrides_default(tmp_path):
+    """스페어 값은 부위마다 다르다(2026-10-08): spare_slots='벨트:300000000'이면 벨트만 3억, 나머지는 spare_price."""
+    from fastapi.testclient import TestClient
+    from helpers import bundle
+    from server.app import create_app
+    from engine.market.events import Events
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
+    ev = c.get("/api/character/x/paths?spare_price=1000000000&spare_slots=" + "벨트:300000000").json()
+    sf = [p for p in ev["all"] if p["path"] == "스타포스"]
+    belt = [p for p in sf if p["slot"] == "벨트"]
+    rest = [p for p in sf if p["slot"] != "벨트"]
+    assert belt and rest
+    assert all(p["spare_price"] == 3e8 and p["cost"] == pytest.approx(p["meso"] + p["expected_spares"] * 3e8) for p in belt)
+    assert all(p["spare_price"] == 1e9 and p["cost"] == pytest.approx(p["meso"] + p["expected_spares"] * 1e9) for p in rest)
+    assert ev["events"]["spare_slots"] == {"벨트": 3e8}
+    # 기본값 없이 한 부위만 줘도 된다 / 잘못된 형식은 400
+    only = Events.parse(spare_slots="장갑:5e8, 반지4:0")
+    assert only.spare_for("장갑") == 5e8 and only.spare_for("반지4") == 0 and only.spare_for("벨트") == 0
+    assert c.get("/api/character/x/paths?spare_slots=벨트").status_code == 400
+    assert c.get("/api/character/x/paths?spare_slots=벨트:-1").status_code == 400
