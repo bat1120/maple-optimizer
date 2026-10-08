@@ -218,6 +218,50 @@ export function clipboardText(payload, info = {}) {
   return lines.join("\n");
 }
 
+// MapleScouter 직접입력 → [결과] → [상세조회] → 효율·보스컷 카드에서 그 보스(이미지 이름, 예: extreme_lotus)의 배율 %를 읽는다(2026-10-09).
+// 템플릿 문자열 안이라 정규식에 역슬래시를 쓰지 않는다.
+export const CHECK_SOURCE = `(async function (doc, boss, sleep) {
+  sleep = sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  function button(text) { return Array.prototype.filter.call(doc.querySelectorAll("button"), function (b) { return b.textContent.trim() === text; })[0] || null; }
+  function card() {
+    var im = Array.prototype.filter.call(doc.querySelectorAll("img"), function (x) { return (x.getAttribute("src") || "").indexOf(boss) >= 0; })[0];
+    var el = im;
+    for (var k = 0; k < 6 && el; k++) { el = el.parentElement; if (el && el.textContent.indexOf("%") >= 0 && el.textContent.length < 200) return el; }
+    return null;
+  }
+  function pct(text) {
+    var i = text.lastIndexOf("%"), j = i;
+    while (j > 0 && "0123456789.,".indexOf(text.charAt(j - 1)) >= 0) j--;
+    var v = parseFloat(text.slice(j, i).replace(/,/g, ""));
+    return isNaN(v) ? null : v;
+  }
+  var go = button("결과");
+  if (!go) return null;
+  go.click();
+  var detail = null;
+  for (var i = 0; i < 60 && !detail; i++) { detail = button("상세조회"); if (!detail) await sleep(250); }
+  if (!detail) return null;
+  detail.click();
+  for (var w = 0; w < 160; w++) {
+    if (doc.defaultView.location.pathname.indexOf("/result") >= 0) {
+      var c = card();
+      if (c) {
+        await sleep(300); c = card();
+        if (!c) return null;
+        var leaf = Array.prototype.filter.call(c.querySelectorAll("*"), function (x) { return x.children.length === 0 && x.textContent.indexOf("%") >= 0; }).pop();
+        return pct((leaf || c).textContent);  // 칸끼리 붙으면 환산 숫자와 %가 이어진다 — %가 든 가장 안쪽 칸만
+      }
+      if (doc.querySelectorAll("img[alt=boss]").length > 3) return null;  // 카드는 그려졌는데 그 보스가 없다
+    }
+    await sleep(250);
+  }
+  return null;
+})`;
+
+export function runCheck(doc, boss, sleep) {
+  return new Function(`return ${CHECK_SOURCE}`)()(doc, boss, sleep); // eslint-disable-line no-new-func
+}
+
 // 화면 위 알림(북마크·확장 공용)
 export const TOAST_SOURCE = `(function (doc) {
   return function (m) {
@@ -232,12 +276,40 @@ export const TOAST_SOURCE = `(function (doc) {
 // MapleScouter 화면에서: 내 캐릭터로 교체 → 칸 채우기 → 결과 알림. 북마크와 확장 프로그램이 이 문자열 하나를 같이 쓴다.
 export const RUN_SOURCE = `(async function (doc, p) {
   var toast = (${TOAST_SOURCE})(doc);
+  var win = doc.defaultView;
   var s = await (${PREP_SOURCE})(doc, p);
+  var check = p.check && p.check.boss ? (${CHECK_SOURCE}) : null;
+  var before = null;
+  async function backToInput() {  // 보스컷 화면 → 직접입력(넣던 값은 MapleScouter 초안에 남는다)
+    var to = win.location.pathname.slice(0, win.location.pathname.indexOf("/result")) + "/input";
+    if (win.next && win.next.router) win.next.router.push(to);
+    for (var i = 0; i < 60; i++) {
+      var keep = Array.prototype.filter.call(doc.querySelectorAll("[role=dialog] button"), function (b) { return b.textContent.trim() === "유지"; })[0];
+      if (keep) { keep.click(); await new Promise(function (r) { setTimeout(r, 500); }); }
+      if (win.location.pathname.indexOf("/input") >= 0 && Array.prototype.some.call(doc.querySelectorAll("span"), function (x) { return x.textContent.trim() === "레벨"; })) break;
+      await new Promise(function (r) { setTimeout(r, 250); });
+    }
+    await new Promise(function (r) { setTimeout(r, 800); });
+  }
+  if (check) {
+    toast((p.check.label || "보스") + " 지금 배율을 읽는 중…");
+    before = await check(doc, p.check.boss);
+    await backToInput();
+  }
   var r = (${FILL_SOURCE})(doc, p);
   if (r.cancelled) { toast("환산 채우기를 취소했어요 — " + r.note); return { s: s, r: r }; }
   if (!r.changed && r.missing.length) {
     toast("입력칸을 못 찾았어요 — MapleScouter 내 캐릭터 화면이나 입력 화면에서 눌러 주세요. 계속 이러면 '환산 채우기'를 새로 설치해 주세요(메이플 장비 최적화 #/scouter)");
     return { s: s, r: r };
+  }
+  if (check) {
+    toast("변화량을 넣었어요(" + r.changed + "칸) — " + (p.check.label || "보스") + " 배율을 다시 읽는 중…");
+    var after = await check(doc, p.check.boss);
+    var f = function (v) { return v == null ? "못 읽음" : v + "%"; };
+    toast((p.check.label || "보스") + " 배율: 지금 " + f(before) + " → 적용 후 " + f(after) +
+      (p.check.expected ? " (우리 추정 " + Math.round(p.check.expected * 100) / 100 + "%)" : "") +
+      (r.missing.length ? " · 못 찾은 칸: " + r.missing.join(", ") : "") + " — 입력 화면 '되돌리기'로 원래대로");
+    return { s: s, r: r, before: before, after: after };
   }
   toast((s.switched ? p.name + " 스탯으로 교체 후 " : "") + "환산 채우기: " + p.slot + " " + (p.from || "") + " → " + p.to + " · " + r.changed + "칸 변경" +
     (r.missing.length ? " · 못 찾은 칸: " + r.missing.join(", ") : "") + (r.note ? " · " + r.note : "") + " (되돌리려면 '되돌리기')");

@@ -249,6 +249,43 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     return out
 
 
+def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, current_ratio: float,
+                   target_ratio: float, events=None) -> dict:
+    """목표 배율 로드맵 + MapleScouter에 한꺼번에 넣을 변화량(큐브·스타포스·HEXA 스탯. HEXA 코어는 칸이 없어 빠진다)."""
+    from engine.market.events import Events
+    from engine.market.hexa_paths import _block, _lines
+    from engine.market.target_roadmap import target_roadmap as build
+    from engine.stats import hexa as H
+    events = events or Events()
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    r = build(snap, chosen, b, CATALOG, events, observed or [], current_ratio, target_ratio)
+    job = job_profile(snap.character_class)
+    extra = None
+    for core in snap.hexa_stat:
+        lv = r["hexa_stat"].get(core["core"])
+        if lv:
+            sub_lv = (H.MAX_G - lv) / 2
+            d = H.delta(_block(_lines(core, lv, (sub_lv, sub_lv)), job), _block(core["lines"], job))
+            extra = d if extra is None else {k: extra[k] + d[k] for k in ("pct", "nopct")}
+    steps = [{**s, "cost_text": meso_text(s["cost"]), "total_cost_text": meso_text(s["total_cost"])} for s in r["steps"]]
+    eq = sum(1 for s in r["steps"] if s["path"] in ("큐브", "스타포스", "HEXA 스탯"))
+    scouter = (scouter_delta_multi(snap, chosen, r["changed"], extra, label=f"목표 {target_ratio:g}% 로드맵")
+               if (r["changed"] or extra) else None)
+    hexa_core = [s for s in r["steps"] if s["path"] == "HEXA 코어"]
+    mult_core = 1.0
+    for s in hexa_core:
+        mult_core *= 1 + s["delta_pct"] / 100
+    return {"evaluation_setting": asdict(chosen), "events": {**asdict(events), "label": events.label()},
+            "current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": r["needed_multiplier"],
+            "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
+            "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
+            "scouter": scouter, "hexa_core_multiplier": mult_core,
+            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨·포스 보정은 그대로). 스타포스는 한 성씩 이어서, "
+                     "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. MapleScouter에 넣는 변화량에는 HEXA 코어가 빠져요"
+                     "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
+
+
 def _total_key(total: dict | None) -> tuple:
     """총 옵션 비교용: 값이 있는 칸만, 정렬해서."""
     return tuple(sorted((k, v) for k, v in (total or {}).items() if v))
@@ -342,13 +379,22 @@ _SCOUTER_ATTACK = {"MATK": "마력", "ATK": "공격력"}
 def scouter_delta(snap: CharacterSnapshot, setting, slot: str, new_item) -> dict:
     """환산 계산기(MapleScouter) 입력칸 기준 변화량: slot을 new_item으로 바꿨을 때 스탯 출처 합(장비·세트 등)의 차이.
     칸 이름 그대로(INT|기본, INT|%, 마력|기본, 보스 데미지 …). 방무는 곱연산이라 더해진·빠진 줄을 따로(ied_add/ied_remove)."""
+    return scouter_delta_multi(snap, setting, {slot: new_item})
+
+
+def scouter_delta_multi(snap: CharacterSnapshot, setting, changes: dict, extra: dict | None = None,
+                        label: str | None = None) -> dict:
+    """여러 부위를 한꺼번에 바꾼 변화량(changes: 부위 → 새 템) + 장비 밖 변화(extra: HEXA 스탯 등 {'pct','nopct'})."""
     from collections import Counter
     from engine.market.recommend import cooldown_seconds
-    from engine.stats.residual import preset_items, sources_for
+    from engine.stats.model import StatBlock
+    from engine.stats.residual import Sources, preset_items, sources_for
     job = job_profile(snap.character_class)
     before = preset_items(snap, setting.equipment)
-    after = {**before, slot: new_item}
+    after = {**before, **changes}
     sa, sb = sources_for(snap, setting, CATALOG, after), sources_for(snap, setting, CATALOG, before)
+    if extra:
+        sa = Sources(sa.pct + extra.get("pct", StatBlock()), sa.nopct + extra.get("nopct", StatBlock()), sa.excluded)
     a, b = sa.pct, sb.pct  # % 적용 출처(장비·세트·칭호·링크·유니온) — 템 교체는 여기만 바뀐다
     flat = lambda blk, k: blk.flat.get(k, 0.0)  # noqa: E731
     pct = lambda blk, k: blk.pct.get(k, 0.0)  # noqa: E731
@@ -363,10 +409,13 @@ def scouter_delta(snap: CharacterSnapshot, setting, slot: str, new_item) -> dict
     fields[f"{atk}|%"] = r(pct(a, job.attack) - pct(b, job.attack))
     fields.update({"데미지": r(a.dmg - b.dmg), "보스 데미지": r(a.boss - b.boss), "최종 데미지": r(a.fd - b.fd),
                    "크리티컬 확률": r(a.cr - b.cr), "크리 데미지": r(a.cd - b.cd)})
-    old = before.get(slot)
-    fields["초"] = (cooldown_seconds(new_item) - (cooldown_seconds(old) if old else 0))
+    fields["초"] = sum(cooldown_seconds(it) - (cooldown_seconds(before[s]) if s in before else 0) for s, it in changes.items())
     ca, cb = Counter(a.ied), Counter(b.ied)
-    return {"slot": slot, "from": old.name if old else None, "to": new_item.name, "fields": fields,
+    one = len(changes) == 1 and not extra and not label
+    slot, new_item = next(iter(changes.items())) if changes else (None, None)
+    old = before.get(slot) if one else None
+    return {"slot": slot if one else "로드맵", "from": old.name if old else (None if one else "지금 템"),
+            "to": new_item.name if one else (label or f"로드맵 {len(changes)}개 부위"), "fields": fields,
             "job": snap.character_class, "level": snap.level, "name": (snap.profile or {}).get("name"),
             "ied_add": sorted((ca - cb).elements()), "ied_remove": sorted((cb - ca).elements()),
             "rows": {"main": list(job.mains), "sub": list(job.subs), "attack": atk}}

@@ -50,6 +50,11 @@ TOOL_DEFS = [
     {"name": "upgrade_paths", "description": "업그레이드 경로 비교(추천의 기본 근거): 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스(from_star→to_star, 파괴 시 스페어 비용 제외, expected_destroys=평균 파괴 횟수)를 억당 실딜(per_100m)로 정렬한다. 세트 효과 변화(set_change)가 실딜에 들어가 있다. best_by_slot은 부위별 최선 경로. cost_text를 그대로 인용.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
+    {"name": "target_roadmap", "description": "목표 보스 배율 로드맵: 지금 배율(current_ratio, 예: MapleScouter 효율·보스컷의 익스트림 스우 34.52)에서 목표(target_ratio, 예: 50)까지 억당 효율 순으로 쌓은 업그레이드 단계(스타포스는 한 성씩, 큐브·HEXA). 단계마다 ratio_after·total_cost_text. 배율은 실딜 비례 추정 — 숫자는 결과에서만 인용.",
+     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "current_ratio": {"type": "number"},
+                                                       "target_ratio": {"type": "number"},
+                                                       "fragment_price": {"type": "number", "description": "솔 에르다 조각 1개 메소(넣으면 HEXA 포함)"}},
+                      "required": ["name", "current_ratio", "target_ratio"]}},
     {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10). 갱신 뒤 upgrade_paths를 다시 부른다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"},
                                                          "slots": {"type": "array", "items": {"type": "string"}},
@@ -132,6 +137,13 @@ class ToolBox:
     def _upgrade_paths(self, name, boss_defense=300.0, cooldown_main_pct=None):
         return service.paths(self._load(name), boss_defense, self._market() if self._market else None,
                              cooldown_main_pct)
+
+    def _target_roadmap(self, name, current_ratio, target_ratio, fragment_price=None):
+        from engine.market.events import Events
+        r = service.target_roadmap(self._load(name), 300.0, self._market() if self._market else None, current_ratio,
+                                   target_ratio, Events(fragment_price=fragment_price or 0.0))
+        r.pop("scouter", None)
+        return r
 
     def _refresh_market(self, name, slots=None, max_searches=10):
         if not self._refresh:

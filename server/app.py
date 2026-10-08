@@ -259,6 +259,20 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(400, "BAD_EVENTS", str(e))
         return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct, events=events)
 
+    @app.get("/api/character/{name}/target-roadmap")
+    def target_roadmap(name: str, current_ratio: float, target_ratio: float = 50.0, boss_defense: float = 300.0,
+                       date: str | None = None, sf: str | None = None, miracle: bool = False,
+                       spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False):
+        """목표 배율 로드맵: current_ratio(지금 보스 배율 %, 예: MapleScouter 효율·보스컷) → target_ratio."""
+        from engine.market.events import Events
+        if current_ratio <= 0 or target_ratio <= 0:
+            raise ApiError(400, "BAD_RATIO", "배율은 0보다 커야 해요.")
+        try:
+            events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday)
+        except ValueError as e:
+            raise ApiError(400, "BAD_EVENTS", str(e))
+        return service.target_roadmap(load(name, date), boss_defense, prices.rows(), current_ratio, target_ratio, events)
+
     class MarketRefreshIn(BaseModel):
         name: str
         slots: list[str] | None = None

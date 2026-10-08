@@ -8,6 +8,7 @@ import EquipmentGrid from "../character/EquipmentGrid.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
 import PathsPanel from "../PathsPanel.jsx";
+import TargetRoadmapPanel from "../TargetRoadmapPanel.jsx";
 import RecommendPanel from "../RecommendPanel.jsx";
 import CalcPanels, { CALC_STEPS } from "../calc/CalcPanels.jsx";
 import ScreenWatch from "../ScreenWatch.jsx";
@@ -132,6 +133,7 @@ export default function Character({ route }) {
             <div className="stack">
               <RoadmapPanel name={name} defense={defense} autoLoad />
               <PathsPanel name={name} defense={defense} autoLoad showRefresh={false} />
+              <TargetRoadmapPanel name={name} defense={defense} />
               <RecommendPanel name={name} defense={defense} autoLoad />
               <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} /></div>
               <p className="card mobile-only muted note-box">

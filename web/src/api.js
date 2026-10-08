@@ -115,3 +115,11 @@ export const postVisionCorrect = (body) => post("/api/vision/correct", body);
 export const getVisionDataset = () => request("/api/vision/dataset");
 export const postVisionScore = (body) => post("/api/vision/score", body);
 export const postVisionScoreReset = () => post("/api/vision/score/reset", {});
+
+// 목표 보스 배율 로드맵: { current, target, fragmentMan }
+export function getTargetRoadmap(name, bossDefense = 300, { current, target, fragmentMan } = {}) {
+  const q = new URLSearchParams({ boss_defense: String(bossDefense), current_ratio: String(current), target_ratio: String(target) });
+  const frag = Number(fragmentMan);
+  if (frag > 0) q.set("fragment_price", String(Math.round(frag * 1e4)));
+  return request(`${base(name)}/target-roadmap?${q}`);
+}
