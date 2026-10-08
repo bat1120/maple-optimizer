@@ -82,7 +82,8 @@ describe("paths panel", () => {
     expect(url).toContain("fragment_price=7000000");
     expect(url).toContain("hexa_sunday=true");
     const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
-    expect(row).toHaveTextContent("HEXA 코어 · 인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨");
+    expect(row).toHaveTextContent("다음 1레벨 · 인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨");
+    expect(row.textContent).not.toContain("HEXA 코어 · ");  // 부위 칸과 겹치지 않게
     expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
     expect(row).toHaveTextContent("직업 기준값");
   });

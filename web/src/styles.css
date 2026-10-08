@@ -482,3 +482,6 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .page-icon { width: 40px; height: 40px; }
 }
 fieldset.events { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+fieldset.events .chip { flex-direction: row; text-align: left; }
+fieldset.events input[type="checkbox"] { flex: none; }
+fieldset.events .chip .muted { display: inline; }

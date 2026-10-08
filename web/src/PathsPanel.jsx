@@ -8,7 +8,8 @@ import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 function pathLabel(p) {
   if (p.path === "구매") return `구매 · ${p.name}${p.sold ? " (체결가)" : " (호가)"}`;
   if (p.path === "스타포스") return `스타포스 · ${p.name} ${p.from_star}→${p.to_star}성`;
-  if (p.path === "HEXA 코어" || p.path === "HEXA 스탯") return `${p.path} · ${p.name}`;
+  if (p.path === "HEXA 코어") return `다음 1레벨 · ${p.name}`;  // 부위 칸에 'HEXA 코어'가 이미 있다
+  if (p.path === "HEXA 스탯") return p.name;
   const step = `${p.kind} ${p.grade} ${p.lines_good}줄`;
   return p.path === "직작" ? `직작 · ${p.name} + 큐브 ${step}` : `큐브 ${step}`;
 }
