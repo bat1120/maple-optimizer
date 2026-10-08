@@ -15,7 +15,7 @@ from engine.market.listing import InvalidPrice, NoDamage
 from engine.stats.jobs import UnsupportedJob
 from engine.stats.snapshot import Setting
 from engine.stats.weapons import UnknownWeapon
-from nexon.client import CharacterNotFound, InvalidKey, NexonError, RateLimited, Unavailable
+from nexon.client import ENDPOINTS, CharacterNotFound, InvalidKey, NexonError, RateLimited, Unavailable
 from nexon.convert import snapshot
 from server import service
 from server.cache import BundleCache
@@ -123,7 +123,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             except NexonError as e:
                 status, code, msg = next((s, c, m) for cls, s, c, m in _NEXON if isinstance(e, cls))
                 raise ApiError(status, code, msg) from None
-            if any(v is None for v in body.values()):
+            # 필수 데이터만 '없음' 판정 — 연무장 기록·HEXA·6차 스킬은 비어 있어도 된다(2026-10-08 회귀: 기록 없는 캐릭터가 전부 404)
+            if any(body[ep] is None for ep in ENDPOINTS if ep in body):
                 raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
             cache.put(name, day, body)
         return snapshot(body)

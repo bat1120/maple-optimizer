@@ -213,3 +213,23 @@ def test_index_page_is_not_cached_but_hashed_assets_are(tmp_path, clock):
     c = make(tmp_path, clock, static_dir=str(web))
     assert c.get("/").headers.get("cache-control") == "no-cache"
     assert "no-cache" not in (c.get("/assets/index-abc.js").headers.get("cache-control") or "")
+
+
+def test_optional_endpoints_may_be_empty(tmp_path, clock):
+    """2026-10-08 회귀: 연무장 기록·HEXA 같은 선택 데이터가 비어 있어도(None) 조회는 된다 — 필수 데이터만 '없음' 판정."""
+    def src(_):
+        b = bundle("레테")
+        b.update({"battle-practice/result": None, "character/hexamatrix": None, "character/hexamatrix-stat": None,
+                  "character/skill_6": None})
+        return b
+    r = make(tmp_path, clock, source=src).get("/api/character/x")
+    assert r.status_code == 200 and r.json()["character_class"] == "레테"
+
+
+def test_required_endpoint_missing_is_no_data(tmp_path, clock):
+    def src(_):
+        b = bundle("레테")
+        b["character/stat"] = None
+        return b
+    r = make(tmp_path, clock, source=src).get("/api/character/x")
+    assert r.status_code == 404 and r.json()["code"] == "NO_DATA"
