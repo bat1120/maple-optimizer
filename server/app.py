@@ -76,9 +76,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
     limiter = SlidingWindow(rate_limit, window, clock)
     # 일반 유저 화면 분석(2026-10-07 공개): 화면은 0.5초마다 오니 분당 상한을 따로 두고(툴팁 찾기는 AI 비용 0),
-    # AI를 실제로 부른 판독만 IP당 하루 vision_public_daily회로 센다(메모리 — 서버가 다시 뜨면 0부터)
+    # AI를 실제로 부른 판독만 IP당 하루(KST) vision_public_daily회로 센다 — 관측 기록과 같은 DB(재시작해도 유지)
     vision_limiter = SlidingWindow(vision_frames_per_min, 60.0, clock)
-    public_ai: dict = {}
+    import hashlib
+    import hmac as _hmac
+    quota_salt = (session_secret or db_path).encode()
+
+    def _quota_who(ip: str) -> str:  # IP를 그대로 저장하지 않는다
+        return _hmac.new(quota_salt, ip.encode(), hashlib.sha256).hexdigest()[:32]
 
     @app.middleware("http")
     async def limit(request: Request, call_next):
@@ -247,13 +252,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
                       date: str | None = None, sf: str | None = None, miracle: bool = False,
-                      spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False):
+                      spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False,
+                      spare_slots: str | None = None):
         """sf: 스타포스 이벤트(쉼표: shining, discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect),
         miracle: 미라클 타임, spare_price: 파괴 시 스페어 1개 값(메소), fragment_price: 솔 에르다 조각 1개 값(메소, HEXA 경로),
-        hexa_sunday: HEXA 스탯 썬데이(메인 5레벨 이상 확률 ×1.2)."""
+        hexa_sunday: HEXA 스탯 썬데이(메인 5레벨 이상 확률 ×1.2), spare_slots: 부위별 스페어 값('벨트:300000000,장갑:5e8')."""
         from engine.market.events import Events
         try:
-            events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday)
+            events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday, spare_slots)
         except ValueError as e:
             raise ApiError(400, "BAD_EVENTS", str(e))
         return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct, events=events)
@@ -334,8 +340,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
         from server.vision import VisionError, VisionQuota, analyze_frame
         ip = request.client.host if request.client else "unknown"
-        quota_key = (int(clock() // 86400), ip)
-        allow_ai = None if is_admin else (lambda: public_ai.get(quota_key, 0) < vision_public_daily)
+        who = _quota_who(ip)
+        try:
+            used = 0 if is_admin else observations.quota_used(who)
+        except Exception as e:  # DB가 잠깐 안 돼도 판독은 된다 — 비용은 하루 토큰 한도가 막는다
+            _log.warning("화면 한도 조회 실패: %s", type(e).__name__)
+            used = 0
+        allow_ai = None if is_admin else (lambda: used < vision_public_daily)
         try:
             data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
                                  tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai)
@@ -344,7 +355,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         if not is_admin and not data.get("cached") and not data.get("skipped"):
-            public_ai[quota_key] = public_ai.get(quota_key, 0) + 1
+            try:
+                used = observations.quota_add(who)
+            except Exception as e:
+                _log.warning("화면 한도 기록 실패: %s", type(e).__name__)
+                used += 1
         snap = load(body.name, None) if body.name else None
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
@@ -373,7 +388,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
                 "frame_id": frame_id, "items": items,
                 "equipped_items": data.get("equipped_items", []),  # 착용 템 판독(장비창 채점용, 매물 아님)
-                "ai_remaining": None if is_admin else max(0, vision_public_daily - public_ai.get(quota_key, 0))}
+                "ai_remaining": None if is_admin else max(0, vision_public_daily - used)}
 
     class VisionCorrectIn(BaseModel):
         frame_id: str

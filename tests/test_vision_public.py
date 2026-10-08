@@ -105,3 +105,22 @@ def test_admin_has_no_public_quota(tmp_path):
     for _ in range(3):
         assert c.post("/api/vision/listings", json={"image": AI_FRAME}).status_code == 200
     assert fake.calls == 3
+
+
+def test_public_quota_survives_server_restart_and_resets_on_kst_midnight(tmp_path):
+    """하루 한도는 관측 기록과 같은 DB에 둔다(2026-10-08) — 서버가 다시 떠도(Render 재시작) 0으로 돌아가지 않는다.
+    날짜는 KST 자정에 바뀐다(UsageStore·관측 기록과 같은 기준)."""
+    import sqlite3
+    now = [1_800_000_000.0 - (1_800_000_000 + 9 * 3600) % 86400 + 86400 - 60]  # KST 23:59
+    fake = Fake()
+    mk = lambda: _app(tmp_path, fake, vision_public_daily=2, clock=lambda: now[0])
+    c = mk()
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).json()["ai_remaining"] == 1
+    c = mk()                                                     # 재시작
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).json()["ai_remaining"] == 0
+    c = mk()
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).status_code == 429
+    now[0] += 120                                                # KST 자정 지남
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).json()["ai_remaining"] == 1
+    rows = sqlite3.connect(tmp_path / "c.sqlite3").execute("SELECT * FROM vision_quota").fetchall()
+    assert rows and not any("testclient" in str(r) for r in rows)  # IP는 그대로 저장하지 않는다

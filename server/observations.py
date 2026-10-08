@@ -3,6 +3,8 @@
 - 지금 시세(server/market.py, 30일)와 별개. 같은 매물·같은 가격은 하루 한 번, 날짜가 다르면 새 줄 → 시세 흐름
 - IP·화면 이미지는 저장하지 않는다. 경매장을 자동 조회하지 않는다 — 사용자가 공유한 화면에서 읽은 것만
 - DATABASE_URL(예: Neon 무료 Postgres)이 있으면 Postgres, 없으면 SQLite 파일(로컬·테스트)
+- 일반 유저 화면 분석 하루 한도(vision_quota)도 같은 DB에 둔다(2026-10-08) — 서버가 다시 떠도 0으로 돌아가지 않는다.
+  사람은 IP 대신 서버 비밀값으로 만든 해시(who)로만 구분하고, 지난 날짜 줄은 지운다
 """
 import csv
 import datetime as dt
@@ -42,6 +44,30 @@ class ObservationLog:
                          if c not in ("sold", "other_world") else f"{c} BOOLEAN" for c in COLUMNS)
         self._run(lambda cur: cur.execute(f"CREATE TABLE IF NOT EXISTS observations (id {serial}, key TEXT UNIQUE, {cols})"),
                   commit=True)
+        self._run(lambda cur: cur.execute("CREATE TABLE IF NOT EXISTS vision_quota "
+                                          "(day TEXT, who TEXT, n INTEGER, PRIMARY KEY (day, who))"), commit=True)
+
+    def _today(self) -> str:
+        return dt.datetime.fromtimestamp(self._clock(), dt.timezone(dt.timedelta(hours=9))).date().isoformat()  # KST
+
+    def quota_used(self, who: str) -> int:
+        """오늘(KST) who가 AI 판독을 쓴 횟수."""
+        def q(cur):
+            cur.execute(f"SELECT n FROM vision_quota WHERE day = {self._ph} AND who = {self._ph}", (self._today(), who))
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
+        return self._run(q)
+
+    def quota_add(self, who: str) -> int:
+        """오늘 횟수 +1 하고 새 값을 돌려준다. 지난 날짜 줄은 이때 지운다."""
+        day, ph = self._today(), self._ph
+        def q(cur):
+            cur.execute(f"DELETE FROM vision_quota WHERE day < {ph}", (day,))
+            cur.execute(f"INSERT INTO vision_quota (day, who, n) VALUES ({ph}, {ph}, 1) "
+                        "ON CONFLICT (day, who) DO UPDATE SET n = vision_quota.n + 1", (day, who))
+            cur.execute(f"SELECT n FROM vision_quota WHERE day = {ph} AND who = {ph}", (day, who))
+            return int(cur.fetchone()[0])
+        return self._run(q, commit=True)
 
     def _run(self, fn, commit: bool = False):
         """fn(cursor)를 실행. Neon처럼 쉬다 연결을 끊는 DB면 한 번 다시 연결해 재시도한다."""

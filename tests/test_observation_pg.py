@@ -36,3 +36,15 @@ def test_postgres_reconnects_after_server_drops_connection():
     log = ObservationLog.postgres(URL, clock=lambda: 1_900_000_000.0)
     log._conn.close()                       # 쉬는 동안 끊긴 것처럼
     assert log.count() >= 0                 # 다시 연결해서 된다
+
+
+def test_postgres_vision_quota_counts_per_day():
+    import psycopg
+    with psycopg.connect(URL) as c:
+        c.execute("DROP TABLE IF EXISTS vision_quota")
+    now = [1_800_000_000.0]
+    log = ObservationLog.postgres(URL, clock=lambda: now[0])
+    assert log.quota_used("a") == 0
+    assert log.quota_add("a") == 1 and log.quota_add("a") == 2 and log.quota_add("b") == 1
+    now[0] += 86400
+    assert log.quota_used("a") == 0 and log.quota_add("a") == 1
