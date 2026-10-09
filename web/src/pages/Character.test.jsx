@@ -67,6 +67,16 @@ describe("character page", () => {
     expect(d).toHaveTextContent("마력 +10");
   });
 
+  it("상세 툴팁은 강화된 별만 5개씩 묶어 보여 준다(빈 별은 그리지 않는다)", async () => {
+    mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: /모자 프리셋2 모자/ }));
+    const d = screen.getByRole("region", { name: "프리셋2 모자 상세" });
+    const groups = [...d.querySelectorAll(".tip-stars [aria-hidden]")].map((s) => s.textContent);
+    expect(groups).toEqual(["★★★★★", "★★★★★", "★★★★★", "★★★★★", "★★"]);
+    expect(d).toHaveTextContent("스타포스 22성");
+  });
+
   it("세팅 순위: 1위 메달", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);

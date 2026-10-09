@@ -18,7 +18,7 @@ function Slot({ slot, col, row, item, open, onOpen }) {
   return (
     <button type="button" className={`slot ${gradeClass(item.potential_grade)}${open ? " open" : ""}`} style={style}
             aria-label={`${slot} ${item.name}`} aria-expanded={open} onClick={onOpen} title={`${slot} · ${item.name}`}>
-      {item.icon ? <img src={item.icon} alt="" /> : <span className="slot-abbr" aria-hidden="true">{item.name.slice(0, 2)}</span>}
+      {item.icon ? <img src={item.icon} alt="" width={38} height={38} /> : <span className="slot-abbr" aria-hidden="true">{item.name.slice(0, 2)}</span>}
       {item.starforce > 0 && <span className="star-badge">★{item.starforce}</span>}
       {item.special_ring_level > 0 && <span className="ring-badge">Lv.{item.special_ring_level}</span>}
       <span className="slot-name">{item.name}</span>
@@ -27,16 +27,31 @@ function Slot({ slot, col, row, item, open, onOpen }) {
   );
 }
 
+// 별 줄: 강화된 별만 5개씩 묶는다(아이템별 최대 성 수는 API에 없어 빈 별은 그리지 않는다)
+function StarRow({ count }) {
+  if (!count) return null;
+  const groups = Array.from({ length: Math.ceil(count / 5) }, (_, g) => "★".repeat(Math.min(5, count - g * 5)));
+  return (
+    <p className="tip-stars">
+      <span className="sr-only">스타포스 {count}성</span>
+      {groups.map((s, i) => <span key={i} aria-hidden="true">{s}</span>)}
+    </p>
+  );
+}
+
+// 상세 = 게임 툴팁 순서: 별 줄 → 이름 → 구분선 → 잠재 블록 → 에디 블록
 function Detail({ item }) {
   return (
-    <section className="card item-detail" aria-label={`${item.name} 상세`}>
-      <h4>{item.name} <span className="muted small">{item.slot}{item.level ? ` · ${item.level}제` : ""}{item.starforce ? ` · ${item.starforce}성` : ""}</span></h4>
+    <section className="item-detail tooltip" aria-label={`${item.name} 상세`}>
+      <StarRow count={item.starforce} />
+      <h4 className={`tip-name ${gradeClass(item.potential_grade)}`}>{item.name}</h4>
+      <p className="tip-meta">{item.slot}{item.level ? ` · ${item.level}제` : ""}{item.starforce ? ` · ${item.starforce}성` : ""}</p>
       <div className="lines">
-        <div>
+        <div className="tip-block">
           <span className={`grade-tag ${gradeClass(item.potential_grade)}`}>잠재 {item.potential_grade || "없음"}</span>
           <ul className="plain">{item.potentials.map((l, i) => <li key={i}>{l}</li>)}</ul>
         </div>
-        <div>
+        <div className="tip-block">
           <span className={`grade-tag ${gradeClass(item.additional_grade)}`}>에디 {item.additional_grade || "없음"}</span>
           <ul className="plain">{item.additional.map((l, i) => <li key={i}>{l}</li>)}</ul>
         </div>

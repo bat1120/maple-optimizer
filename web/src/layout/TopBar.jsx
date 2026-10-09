@@ -26,7 +26,7 @@ export default function TopBar({ route }) {
         {route.page !== "home" && (
           <form role="search" className="topbar-search" onSubmit={submit}>
             <Icon name="search" size={16} className="field-icon" />
-            <input type="search" aria-label="캐릭터 검색" placeholder="캐릭터 닉네임 검색" value={q}
+            <input type="search" name="nickname" autoComplete="off" spellCheck={false} aria-label="캐릭터 검색" placeholder="캐릭터 닉네임 검색…" value={q}
                    onChange={(e) => setQ(e.target.value)} />
           </form>
         )}

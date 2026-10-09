@@ -21,11 +21,12 @@ export default function ProfileCard({ name, summary, defense, onDefense, onRefre
           <span>{summary.character_class}</span>
           {p.guild && <><span className="dot" aria-hidden="true" /><span className="muted">길드 {p.guild}</span></>}
         </p>
-        <div className="stats-row">
-          <div className="stat stat-primary"><span className="stat-label">스탯 공격력</span><strong>{formatBig(summary.stat_attack?.engine)}</strong></div>
-          <div className="stat"><span className="stat-label">전투력(인게임 기록)</span><strong>{formatBig(summary.combat_power_reference)}</strong></div>
-          <div className="stat"><span className="stat-label">적용 중인 세팅</span><strong className="small">{settingLabel(summary.active_setting)}</strong></div>
-        </div>
+        {/* 스탯 창: 게임 캐릭터 정보 창처럼 라벨 왼쪽 · 값 오른쪽 줄(design.md) */}
+        <dl className="stat-window">
+          <div className="stat-line stat-primary"><dt>스탯 공격력</dt><dd>{formatBig(summary.stat_attack?.engine)}</dd></div>
+          <div className="stat-line"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
+          <div className="stat-line"><dt>적용 중인 세팅</dt><dd className="stat-text">{settingLabel(summary.active_setting)}</dd></div>
+        </dl>
       </div>
       <div className="profile-side">
         <label className="field">보스 방어율(%)

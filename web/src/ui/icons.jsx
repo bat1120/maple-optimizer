@@ -31,13 +31,11 @@ export default function Icon({ name, size = 18, className = "", label }) {
   );
 }
 
-// 로고 표시: 단단한 마름모(별 모양 대신 간결한 도형)
-export function LogoMark({ size = 26 }) {
+// 로고 표시: 워드마크 옆 주황 네모 점 하나(design.md — 그림 로고를 쓰지 않는다)
+export function LogoMark({ size = 10 }) {
   return (
-    <svg className="logo-svg" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)" />
-      <path d="M16 7.5 23.5 16 16 24.5 8.5 16Z" fill="var(--gold)" />
-      <path d="M16 11.5 19.8 16 16 20.5 12.2 16Z" fill="var(--accent)" opacity="0.55" />
+    <svg className="logo-svg" width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+      <rect width="10" height="10" rx="1.5" fill="var(--accent-fill)" />
     </svg>
   );
 }

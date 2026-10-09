@@ -11,8 +11,9 @@ export default function App() {
   const route = useRoute();
   return (
     <>
+      <a className="skip-link" href="#main">본문으로 건너뛰기</a>
       <TopBar route={route} />
-      <main className={`page page-${route.page}`}>
+      <main id="main" tabIndex={-1} className={`page page-${route.page}`}>
         {route.page === "home" && <Home />}
         {route.page === "character" && <Character key={route.name} route={route} />}
         {route.page === "calc" && <Calc />}
@@ -21,7 +22,7 @@ export default function App() {
       </main>
       <footer className="footer muted small">
         <p>데이터: 넥슨 Open API(약 15분 지연) · 이 사이트는 넥슨과 관계없는 개인 프로젝트예요</p>
-        <p>최근 검색·테마 설정은 이 브라우저에만 저장돼요</p>
+        <p>최근 검색·테마 설정은 이 브라우저에만 저장돼요 · 메이플스토리 서체 © NEXON Korea</p>
       </footer>
     </>
   );
