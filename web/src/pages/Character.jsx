@@ -115,9 +115,7 @@ export default function Character({ route }) {
           <TabIntro tab={tab} />
           {tab === "summary" && (
             <div className="summary-grid">
-              <EquipmentGrid presets={summary.equipment_presets} active={summary.active_setting?.equipment}
-                             image={summary.profile?.image} name={name} />
-              <div className="stack">
+              <div className="stack summary-side">
                 <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} />
                 {summary.excluded?.length > 0 && (
                   <section className="card">
@@ -127,6 +125,8 @@ export default function Character({ route }) {
                   </section>
                 )}
               </div>
+              <EquipmentGrid presets={summary.equipment_presets} active={summary.active_setting?.equipment}
+                             image={summary.profile?.image} name={name} />
             </div>
           )}
           {tab === "upgrade" && (

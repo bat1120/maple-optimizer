@@ -60,10 +60,35 @@ function Detail({ item }) {
   );
 }
 
+// 목록 보기(maple.gg 문법): 아이콘 · 부위 · 이름 · ★성 · 잠재/에디 줄
+function ItemList({ items }) {
+  return (
+    <ul className="item-list" aria-label="장비 목록">
+      {items.map((it) => (
+        <li key={it.slot} className={`item-card ${gradeClass(it.potential_grade)}`}>
+          <div className="item-head">
+            {it.icon ? <img src={it.icon} alt="" width={36} height={36} /> : <span className="slot-abbr" aria-hidden="true">{it.name.slice(0, 2)}</span>}
+            <div className="item-title">
+              <span className="item-slot">{it.slot}</span>
+              <strong>{it.name}</strong>
+              {it.starforce > 0 && <span className="star-chip">★{it.starforce}</span>}
+            </div>
+          </div>
+          <dl className="item-lines">
+            <div><dt className={gradeClass(it.potential_grade)}>잠재</dt><dd>{(it.potentials || []).join(" · ") || "—"}</dd></div>
+            <div><dt className={gradeClass(it.additional_grade)}>에디</dt><dd>{(it.additional || []).join(" · ") || "—"}</dd></div>
+          </dl>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function EquipmentGrid({ presets, active, image, name }) {
   const keys = Object.keys(presets || {});
   const [preset, setPreset] = useState(keys.includes(String(active)) ? String(active) : keys[0]);
   const [openSlot, setOpenSlot] = useState(null);
+  const [view, setView] = useState("grid"); // grid = 장비창, list = 목록
   if (!keys.length) {
     return (
       <section className="card equipment">
@@ -72,7 +97,8 @@ export default function EquipmentGrid({ presets, active, image, name }) {
       </section>
     );
   }
-  const bySlot = Object.fromEntries((presets[preset] || []).map((it) => [it.slot, it]));
+  const items = presets[preset] || [];
+  const bySlot = Object.fromEntries(items.map((it) => [it.slot, it]));
   const opened = openSlot && bySlot[openSlot];
   return (
     <section className="card equipment">
@@ -81,26 +107,43 @@ export default function EquipmentGrid({ presets, active, image, name }) {
           <h3 className="panel-title">장비</h3>
           <p className="panel-sub">칸을 누르면 잠재·에디 옵션이 열려요. 테두리 색 = 잠재 등급</p>
         </div>
-        <div className="seg" role="group" aria-label="장비 프리셋">
-          {keys.map((k) => (
-            <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
-                    onClick={() => { setPreset(k); setOpenSlot(null); }}>프리셋 {k}</button>
-          ))}
+        <div className="equipment-tools">
+          <div className="seg" role="group" aria-label="장비 프리셋">
+            {keys.map((k) => (
+              <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
+                      onClick={() => { setPreset(k); setOpenSlot(null); }}>프리셋 {k}</button>
+            ))}
+          </div>
+          <div className="seg" role="group" aria-label="장비 보기">
+            <button type="button" className={view === "grid" ? "on" : ""} aria-pressed={view === "grid"} onClick={() => setView("grid")}>장비창</button>
+            <button type="button" className={view === "list" ? "on" : ""} aria-pressed={view === "list"} onClick={() => setView("list")}>목록</button>
+          </div>
         </div>
       </div>
-      <div className="equip-grid">
-        {LAYOUT.map(([slot, col, row]) => (
-          <Slot key={slot} slot={slot} col={col} row={row} item={bySlot[slot]} open={openSlot === slot}
-                onOpen={() => setOpenSlot(openSlot === slot ? null : slot)} />
-        ))}
-        <div className="equip-avatar" style={{ gridColumn: 3, gridRow: "1 / span 4" }}>
-          {image ? <img src={image} alt={`${name} 캐릭터`} /> : <span className="muted small">캐릭터</span>}
+      {view === "grid" ? (
+        <div className="equip-body">
+          <div>
+            <div className="equip-grid">
+              {LAYOUT.map(([slot, col, row]) => (
+                <Slot key={slot} slot={slot} col={col} row={row} item={bySlot[slot]} open={openSlot === slot}
+                      onOpen={() => setOpenSlot(openSlot === slot ? null : slot)} />
+              ))}
+              <div className="equip-avatar" style={{ gridColumn: 3, gridRow: "1 / span 4" }}>
+                {image ? <img src={image} alt={`${name} 캐릭터`} /> : <span className="muted small">캐릭터</span>}
+              </div>
+            </div>
+            <div className="grade-legend muted small" aria-label="잠재 등급 색">
+              {["레어", "에픽", "유니크", "레전드리"].map((g) => <span key={g}><i className={`swatch ${gradeClass(g)}`} />{g}</span>)}
+            </div>
+          </div>
+          {/* 츄츄지지 문법: 오른쪽 고정 칸에 선택한 장비의 게임 툴팁 */}
+          <div className="equip-detail">
+            {opened ? <Detail item={opened} /> : <p className="detail-empty muted small">장비 칸을 눌러 보세요.</p>}
+          </div>
         </div>
-      </div>
-      <div className="grade-legend muted small" aria-label="잠재 등급 색">
-        {["레어", "에픽", "유니크", "레전드리"].map((g) => <span key={g}><i className={`swatch ${gradeClass(g)}`} />{g}</span>)}
-      </div>
-      {opened && <Detail item={opened} />}
+      ) : (
+        <ItemList items={items} />
+      )}
     </section>
   );
 }

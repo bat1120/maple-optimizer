@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import Character from "./Character.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); window.location.hash = ""; });
@@ -75,6 +75,18 @@ describe("character page", () => {
     const groups = [...d.querySelectorAll(".tip-stars [aria-hidden]")].map((s) => s.textContent);
     expect(groups).toEqual(["★★★★★", "★★★★★", "★★★★★", "★★★★★", "★★"]);
     expect(d).toHaveTextContent("스타포스 22성");
+  });
+
+  it("장비 [목록] 보기는 부위·이름·잠재 줄을 카드로 보여 준다", async () => {
+    mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: "목록" }));
+    const list = screen.getByRole("list", { name: "장비 목록" });
+    const hat = within(list).getAllByRole("listitem").find((li) => li.textContent.includes("프리셋2 모자"));
+    expect(hat).toHaveTextContent("모자");
+    expect(hat).toHaveTextContent("INT +12%");
+    fireEvent.click(screen.getByRole("button", { name: "장비창" }));
+    expect(screen.queryByRole("list", { name: "장비 목록" })).toBeNull();
   });
 
   it("세팅 순위: 1위 메달", async () => {

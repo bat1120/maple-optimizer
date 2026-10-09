@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getRoadmap } from "./api.js";
 import { formatMeso, formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
+import { gradeClass } from "./character/grades.js";
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
@@ -59,21 +60,25 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
             <>
               <h4>가격 대비 순위 (큐브 메소 재설정 기준)</h4>
               <details className="note"><summary>가격·시세 기준 보기</summary><p className="muted small">{data.value_note} {data.market_note}</p></details>
-              <table aria-label="가격 대비 순위">
-                <thead><tr><th>#</th><th>부위</th><th>단계</th><th className="num">실딜</th><th className="num">큐브 평균 비용</th><th>억당 효율</th><th>관측 시세</th></tr></thead>
-                <tbody>
-                  {data.value_ranking.map((v, i) => (
-                    <tr key={`${v.slot}-${v.kind}`}>
-                      <td><span className={`medal medal-${i + 1}`}>{i + 1}</span></td><td>{v.slot} {v.kind}</td>
-                      <td>{label(v)}<br /><span className="muted">{v.target.join(" / ")}</span></td>
-                      <td className="num">{formatPct(v.delta_pct)}</td><td className="num">{v.cube_cost_text}</td>
-                      <td className="eff"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} />
-                        <span className="num">{formatPct(v.per_100m)}</span></td>
-                      <td className="muted">{marketText(v.market)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* 환산주스탯 '아이템 리스트' 문법: 카드 2단 · 오른쪽 위 남색 배지(실딜) · 비용 · 억당 막대 */}
+              <ol className="rank-cards" aria-label="가격 대비 순위">
+                {data.value_ranking.map((v, i) => (
+                  <li key={`${v.slot}-${v.kind}`} className="rank-card">
+                    <div className="rank-top">
+                      <span className={`medal medal-${i + 1}`}>{i + 1}</span>
+                      <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
+                      <span className="score-badge" title="보스 실딜 상승">{formatPct(v.delta_pct)}</span>
+                    </div>
+                    <p className="rank-target"><span className={`grade-chip ${gradeClass(v.grade)}`}>{label(v)}</span>{v.target.join(" / ")}</p>
+                    <div className="rank-cost">
+                      <span>큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
+                      <span className="eff"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} />
+                        <span className="num">억당 {formatPct(v.per_100m)}</span></span>
+                    </div>
+                    <p className="rank-market muted small">{marketText(v.market)}</p>
+                  </li>
+                ))}
+              </ol>
             </>
           )}
           {data.value_ranking?.length === 0 && data.slots.length === 0 && (

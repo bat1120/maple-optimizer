@@ -52,19 +52,19 @@ describe("roadmap panel", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     render(<RoadmapPanel name="x" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const rows = within(screen.getByRole("table", { name: "가격 대비 순위" })).getAllByRole("row");
-    expect(rows[1]).toHaveTextContent("엠블렘 에디");
-    expect(rows[1]).toHaveTextContent("253억 8269만");
-    expect(rows[1]).toHaveTextContent("+0.029%");
-    expect(rows[2]).toHaveTextContent("하의 잠재");
+    const rows = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("엠블렘 에디");
+    expect(rows[0]).toHaveTextContent("253억 8269만");
+    expect(rows[0]).toHaveTextContent("+0.029%");
+    expect(rows[1]).toHaveTextContent("하의 잠재");
   });
 
   it("관측 시세가 있으면 큐브 비용 옆에 시세와 시세 기준 억당을 보여준다", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     render(<RoadmapPanel name="x" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const rows = within(screen.getByRole("table", { name: "가격 대비 순위" })).getAllByRole("row");
-    expect(rows[1]).toHaveTextContent("시세 180억 (3건, 최저 150억) · 억당 +0.041%");
-    expect(rows[2]).toHaveTextContent("시세 없음");
+    const rows = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("시세 180억 (3건, 최저 150억) · 억당 +0.041%");
+    expect(rows[1]).toHaveTextContent("시세 없음");
   });
 });

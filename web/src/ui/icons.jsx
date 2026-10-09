@@ -35,7 +35,7 @@ export default function Icon({ name, size = 18, className = "", label }) {
 export function LogoMark({ size = 10 }) {
   return (
     <svg className="logo-svg" width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" focusable="false">
-      <rect width="10" height="10" rx="1.5" fill="var(--accent-fill)" />
+      <rect width="10" height="10" rx="3" fill="var(--accent-fill)" />
     </svg>
   );
 }

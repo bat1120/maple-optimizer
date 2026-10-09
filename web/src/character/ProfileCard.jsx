@@ -11,21 +11,20 @@ export default function ProfileCard({ name, summary, defense, onDefense, onRefre
           : <span data-testid="avatar-fallback" aria-hidden="true">{(summary.character_class || "?").slice(0, 1)}</span>}
       </div>
       <div className="profile-main">
-        <div className="profile-title">
-          <h2>{p.name || name}</h2>
+        <div className="profile-chips">
           {p.world && <span className="badge">{p.world}</span>}
+          <span className="badge badge-quiet">{summary.character_class}</span>
         </div>
+        <h2 className="profile-name">{p.name || name}</h2>
         <p className="profile-meta">
           <span className="meta-strong">Lv.{summary.level}</span>
-          <span className="dot" aria-hidden="true" />
-          <span>{summary.character_class}</span>
-          {p.guild && <><span className="dot" aria-hidden="true" /><span className="muted">길드 {p.guild}</span></>}
+          {p.guild && <><span className="dot" aria-hidden="true" /><span>길드 {p.guild}</span></>}
         </p>
-        {/* 스탯 창: 게임 캐릭터 정보 창처럼 라벨 왼쪽 · 값 오른쪽 줄(design.md) */}
-        <dl className="stat-window">
-          <div className="stat-line stat-primary"><dt>스탯 공격력</dt><dd>{formatBig(summary.stat_attack?.engine)}</dd></div>
-          <div className="stat-line"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
-          <div className="stat-line"><dt>적용 중인 세팅</dt><dd className="stat-text">{settingLabel(summary.active_setting)}</dd></div>
+        {/* 숫자 칸: 레퍼런스(환산주스탯·츄츄지지)처럼 세로선으로 나눈 칸, 핵심 숫자는 주황 */}
+        <dl className="kpi-strip">
+          <div className="kpi kpi-primary"><dt>스탯 공격력</dt><dd>{formatBig(summary.stat_attack?.engine)}</dd></div>
+          <div className="kpi"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
+          <div className="kpi"><dt>적용 중인 세팅</dt><dd className="kpi-text">{settingLabel(summary.active_setting)}</dd></div>
         </dl>
       </div>
       <div className="profile-side">
