@@ -6,7 +6,8 @@
 추천 카드는 실딜이 처음 오르는 단계, 즉 '지금보다 한 단계 위'다(2026-10-04 실사용 피드백: 고점 한 번에 추천 X).
 
 - 줄 수치·확률: engine/data/cube_tables.json (공식 큐브 확률표, tools/fetch_cube_tables.py). 201레벨부터 수치 +1.
-- 쿨감(스킬 재사용 대기시간 -N초) 줄은 실딜 공식으로 값을 매길 수 없어 유지한다. '쿨감 1초 = 주스탯 N%'를 주면 환산해 넣는다.
+- 쿨감(스킬 재사용 대기시간 -N초) 줄은 실딜 공식으로 값을 매길 수 없어 유지한다. '쿨감 1초 = 주스탯 N%'를 주거나
+  직업 표(원문 주스탯% 또는 원문 최종뎀% → 캐릭터 스펙으로 주스탯% 변환)가 있으면 환산해 넣는다.
 - 제네시스·데스티니 무기, 아스트라 보조무기, 미트라 엠블렘, 엔버·카이저·제논의 보조무기는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
 """
 import copy
@@ -110,9 +111,10 @@ SWAP = {"잠재": with_potentials, "에디": with_additional}
 _COOLDOWN_DATA = pathlib.Path(__file__).resolve().parents[1] / "data" / "cooldown_value.json"
 
 
-def cooldown_valuer(character_class: str, manual_pct: float | None):
+def cooldown_valuer(character_class: str, manual_pct: float | None, fd_to_main=None):
     """(쿨감 총 초 → 주스탯 % 또는 None, 출처 정보). 직접 입력이 있으면 그 값 × 초.
-    없으면 직업 표(출처 원문 숫자, 누적·계단식) — 표에 없는 초수·직업은 None(반영 안 함, 사이를 짐작하지 않는다)."""
+    없으면 직업 표(출처 원문 숫자, 누적·계단식) — 표에 없는 초수·직업은 None(반영 안 함, 사이를 짐작하지 않는다).
+    원문이 최종뎀% 단위면(jobs_final_damage) fd_to_main(최종뎀% → 주스탯%, 캐릭터 스펙으로 계산)이 있을 때만 반영한다."""
     if manual_pct:
         return (lambda s: s * manual_pct), {"kind": "manual", "pct_per_sec": manual_pct}
     data = json.loads(_COOLDOWN_DATA.read_text(encoding="utf-8"))
@@ -121,10 +123,37 @@ def cooldown_valuer(character_class: str, manual_pct: float | None):
         table = {int(k): v for k, v in e["cumulative"].items()}
         return (lambda s: table.get(int(s))), {"kind": "table", "job": character_class, **{k: e[k] for k in ("unit", "source", "date", "basis")},
                                                "cumulative": table}
+    f = data.get("jobs_final_damage", {}).get(character_class)
+    if f:
+        if f.get("per_sec"):
+            fd_of = lambda s: round(int(s) * f["per_sec"], 6)  # noqa: E731 — 원문이 '1초당' 값
+        else:
+            fd_table = {int(k): v for k, v in f["cumulative"].items()}
+            fd_of = lambda s: fd_table.get(int(s))  # noqa: E731
+
+        def valuer(s):
+            fd = fd_of(s)
+            return None if fd is None or fd_to_main is None else round(fd_to_main(fd), 6)
+        src = {"kind": "table_fd", "job": character_class,
+               **{k: f[k] for k in ("unit", "source", "date", "basis", "quote")}, "stale": bool(f.get("stale"))}
+        src.update({"per_sec": f["per_sec"]} if f.get("per_sec") else {"cumulative": {int(k): v for k, v in f["cumulative"].items()}})
+        return valuer, src
     r = data["reference_only"].get(character_class)
     if r:
         return (lambda s: None), {"kind": "reference", "job": character_class, **{k: r[k] for k in ("unit", "source", "date", "why_not_applied")}}
     return (lambda s: None), {"kind": "none", "job": character_class}
+
+
+def _with_main_pct(items: dict, mains, pct: float) -> dict:
+    """items 사본 — 첫 아이템에 주스탯 pct%(퍼센트 줄)를 더한다(쿨감 환산 검산·변환용)."""
+    out = dict(items)
+    slot = next(iter(out))
+    it = copy.copy(out[slot])
+    it.stats = copy.deepcopy(it.stats)
+    for m in ([mains] if isinstance(mains, str) else mains):
+        it.stats.add(StatLine(m, pct, True))
+    out[slot] = it
+    return out
 
 
 def _valued(it: Item, mains, valuer) -> Item:
@@ -148,12 +177,29 @@ class _Planner:
         self.miracle = miracle  # 미라클 타임: 큐브 등급 상승 확률 2배
         job = job_profile(snap.character_class)
         self.snap, self.main, self.mains = snap, job.mains[0], job.mains
-        self.per_sec, self.cooldown_source = cooldown_valuer(snap.character_class, cooldown_main_pct)
         self.useful = {self.main, job.attack, "BOSS", "IED", "CD", "DMG"}
         self.ev = Evaluator(snap, setting, boss, catalog)
         self.raw = self.ev.base_items()
+        self._raw_base, self._fd_cache = self.ev.index(self.raw), {}
+        self.per_sec, self.cooldown_source = cooldown_valuer(snap.character_class, cooldown_main_pct, fd_to_main=self.fd_to_main)
+        if self.cooldown_source["kind"] == "table_fd":  # 이 캐릭터 기준 주스탯% (안내·검산용)
+            secs = sorted(self.cooldown_source["cumulative"]) if "cumulative" in self.cooldown_source else range(1, 6)
+            self.cooldown_source["converted"] = {s: round(self.per_sec(s), 2) for s in secs}
         self.items = {s: _valued(it, self.mains, self.per_sec) for s, it in self.raw.items()}
         self.base = self.ev.index(self.items)
+
+    def fd_to_main(self, fd_pct: float) -> float:
+        """실딜을 fd_pct%만큼 올리는 주스탯%(이 캐릭터 스펙, 이분 탐색 — 원문 최종뎀%를 주스탯%로 바꿀 때만 쓴다)."""
+        if fd_pct not in self._fd_cache:
+            target, lo, hi = 1 + fd_pct / 100, 0.0, 400.0
+            for _ in range(50):
+                mid = (lo + hi) / 2
+                if self.ev.index(_with_main_pct(self.raw, self.mains, mid)) / self._raw_base < target:
+                    lo = mid
+                else:
+                    hi = mid
+            self._fd_cache[fd_pct] = (lo + hi) / 2
+        return self._fd_cache[fd_pct]
 
     def delta(self, slot: str, kind: str, lines: list[str]) -> float:
         trial = dict(self.items)

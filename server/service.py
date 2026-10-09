@@ -291,16 +291,30 @@ def _total_key(total: dict | None) -> tuple:
     return tuple(sorted((k, v) for k, v in (total or {}).items() if v))
 
 
-def _cooldown(snap: CharacterSnapshot, cooldown_main_pct: float | None) -> tuple[dict, str]:
-    """쿨감을 어떻게 반영했는지(출처 포함)와 안내 문구."""
-    from engine.market.recommend import cooldown_valuer
+def _cooldown(snap: CharacterSnapshot, cooldown_main_pct: float | None, setting=None, b=None) -> tuple[dict, str]:
+    """쿨감을 어떻게 반영했는지(출처 포함)와 안내 문구. 최종뎀 단위 출처는 이 캐릭터 기준 주스탯%도 같이 적는다."""
+    from engine.market.recommend import _Planner, cooldown_valuer
     _, src = cooldown_valuer(snap.character_class, cooldown_main_pct)
+    if src["kind"] == "table_fd" and setting is not None:
+        src = _Planner(snap, setting, b, CATALOG, cooldown_main_pct).cooldown_source
     if src["kind"] == "manual":
         return src, f"쿨감 1초를 주스탯 {cooldown_main_pct:g}%로 환산했어요(직접 입력)."
     if src["kind"] == "table":
         steps = "·".join(f"{s}초 {v:g}%" for s, v in sorted(src["cumulative"].items()))
         return src, (f"{src['job']} 쿨감: {steps}({src['unit']}, 출처 {src['source']} · {src['date']}). "
                      "표에 없는 초수는 반영하지 않아요(계단식이라 짐작하지 않아요).")
+    if src["kind"] == "table_fd":
+        conv = src.get("converted", {})
+        if "per_sec" in src:
+            fd = {s: s * src["per_sec"] for s in conv}
+            head = f"1초당 최종뎀 {src['per_sec']:g}%(원문 범위의 낮은 값)"
+        else:
+            fd = src["cumulative"]
+            head = "·".join(f"{s}초 최종뎀 {v:g}%" for s, v in sorted(fd.items()))
+        steps = "·".join(f"{s}초 주스탯 {conv[s]:g}%" for s in sorted(conv))
+        old = " 오래된 자료(밸런스 패치 전)라 지금과 다를 수 있어요." if src.get("stale") else ""
+        return src, (f"{src['job']} 쿨감: {head}(출처 {src['source']} · {src['date']}) → 이 캐릭터 스펙으로 바꾸면 {steps}. "
+                     f"원문은 최종뎀 단위이고, 주스탯 환산은 실딜이 같은 만큼 오르는 값으로 엔진이 계산했어요.{old}")
     if src["kind"] == "reference":
         return src, (f"{src['job']} 쿨감은 {src['unit']} 단위 자료만 있어 실딜에 넣지 않았어요({src['source']}). "
                      "쿨감 1초 = 주스탯 몇 %인지 직접 입력하면 넣어요.")
@@ -321,7 +335,7 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                       "delta_pct": r.delta_pct, "probability": r.probability, "kept": r.kept,
                       "search": f"{category} · {r.kind} {r.grade} {' / '.join(r.target)} · {r.min_starforce}성 이상",
                       "current": {"name": r.current_name, "starforce": r.min_starforce, "potentials": r.current}})
-    cd, cd_note = _cooldown(snap, cooldown_main_pct)
+    cd, cd_note = _cooldown(snap, cooldown_main_pct, chosen, b)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
             "cooldown_main_pct": cooldown_main_pct, "cooldown": cd,
             "note": ("부위·잠재/에디마다 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐어요. "
@@ -359,7 +373,7 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
     rm = build(snap, chosen, b, CATALOG, cooldown_main_pct, observed, miracle=miracle)
     rows = [{"slot": slot, **row} for slot, row in rm.items()]
     value = [{**v, "cube_cost_text": meso_text(v["cube_cost"])} for v in value_ranking(rm)]
-    cd, cd_note = _cooldown(snap, cooldown_main_pct)
+    cd, cd_note = _cooldown(snap, cooldown_main_pct, chosen, b)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "cooldown_main_pct": cooldown_main_pct,
             "cooldown": cd, "slots": rows, "value_ranking": value,
             "value_note": ("가격 대비 순위: 메소 재설정(윗잠=블랙 큐브, 에디=화이트 에디셔널 큐브)으로 그 단계까지 가는 평균 비용 "
