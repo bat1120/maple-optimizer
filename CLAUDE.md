@@ -2,7 +2,8 @@
 
 메이플스토리(KMS) 장비 최적화 웹 서비스. 넥슨 Open API로 스펙을 불러와 실딜·억당 효율을 계산하고,
 경매장 화면 공유를 읽어 매물을 평가한다. 관리자 AI 상담은 OpenAI(gpt-6-luna)를 쓴다.
-스펙: `docs/superpowers/specs/2026-10-03-maple-optimizer-design.md` · 목표: `GOALS.md` · 기록: `goal-log.md`
+스펙·계획(`docs/superpowers/`)·목표(`GOALS.md`)·기록(`goal-log.md`)·목표 판정(`tests/goals/`)·디자인 규칙(`design.md`)은
+사용자 PC에만 있고 GitHub에는 없다(2026-10-10). 클라우드 세션에서는 없으니 필요하면 사용자에게 묻는다.
 **새 세션은 먼저 `docs/HANDOFF.md`(최근 작업·다음 할 일·클라우드에서 못 하는 것)를 읽는다.**
 
 ## 언어

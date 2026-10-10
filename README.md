@@ -2,8 +2,7 @@
 
 메이플스토리(KMS) 캐릭터 닉네임으로 현재 스펙을 불러와 **보스 실딜 기준**으로 장비 교체·경매장 매물·강화 비용·예산 최적화를 계산하는 웹 서비스.
 
-- 설계: `docs/superpowers/specs/2026-10-03-maple-optimizer-design.md`
-- 진행 상황: `GOALS.md`, 기록: `goal-log.md`
+- 설계·계획 문서와 목표 기록(GOALS·goal-log)은 개발자 PC에만 둔다(GitHub에는 올리지 않는다).
 
 ## 무엇을 계산하나
 
@@ -106,7 +105,6 @@ DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/validate.ps1          # 회귀 스위트 (pytest + vitest)
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -Goal G5   # 목표별 판정
 ```
 
 - `tests/fixtures/`는 익명화한 실제 넥슨 응답이다(2026-10-02~03). 넥슨 약관상 수집 데이터는 30일 안에 갱신해야 하므로 서비스 데이터로 쓰지 않는다. 다시 받으려면 `.raw/`에 넣고 `uv run python tools/build_fixtures.py`.

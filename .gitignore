@@ -19,3 +19,13 @@ web/dist/
 # 화면 분석 학습 데이터(내 PC 전용)
 .data/
 .hallmark/
+
+# 개발 과정 기록·목표·설계 문서는 PC에만(2026-10-10)
+docs/superpowers/
+GOALS.md
+goal-log.md
+goals/
+tests/goals/
+scripts/verify.ps1
+scripts/rollback.ps1
+design.md
