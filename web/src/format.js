@@ -1,5 +1,8 @@
 // 표시·입력 변환. 계산은 서버(engine)가 한다.
 
+// 환산 숫자가 환산주스탯(MapleScouter)과 다른 이유(2026-10-10) — 환산이 나오는 화면에 같은 문구를 쓴다
+export const SCOUTER_DIFF_NOTE = "환산 주스탯은 이 사이트 기준(지금 상태·보스 세팅의 실딜)이에요. 환산주스탯(MapleScouter)은 도핑·버프를 모두 켠 기준이라, 같은 템이라도 오르는 숫자가 달라요.";
+
 export function formatMeso(meso) {
   const eok = Math.floor(meso / 100_000_000);
   const man = Math.floor((meso % 100_000_000) / 10_000);

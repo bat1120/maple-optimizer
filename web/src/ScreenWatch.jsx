@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
 import { clipboardText, sampleScouter, scouterInfoUrl } from "./scouter.js";
 import { hasExtension, sendToExtension } from "./extension.js";
-import { formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
+import { SCOUTER_DIFF_NOTE, formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
 
 // 공유한 게임 창(또는 웹 경매장 탭)을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
@@ -144,7 +144,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
         <span>
           {item.slot} 자리 · 실딜 {formatPct(item.delta_pct)}
           {item.per_100m != null ? ` · 억당 ${formatPct(item.per_100m)}` : ""}
-          {item.main_stat_gain != null ? ` · 환산 ${formatStat(item.main_stat_gain)}` : ""}
+          {item.main_stat_gain != null ? <span title={SCOUTER_DIFF_NOTE}>{` · 환산 ${formatStat(item.main_stat_gain)}`}</span> : ""}
           {item.excluded?.length ? <span className="muted"> · 계산 제외: {item.excluded.join(", ")}</span> : null}
           {item.special_ring_note ? <><br /><span className="error">{item.special_ring_note}</span></> : null}
           {item.secondary_note ? <><br /><span className="error">{item.secondary_note}</span></> : null}

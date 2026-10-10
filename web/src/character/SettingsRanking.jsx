@@ -1,4 +1,4 @@
-import { formatRelative, formatStat, settingLabel } from "../format.js";
+import { SCOUTER_DIFF_NOTE, formatRelative, formatStat, settingLabel } from "../format.js";
 import { PanelHead, RowsSkeleton } from "../ui/Guide.jsx";
 
 export default function SettingsRanking({ ranking, loading = false }) {
@@ -28,6 +28,7 @@ export default function SettingsRanking({ ranking, loading = false }) {
           ))}
         </tbody>
       </table>
+      <p className="muted small">{SCOUTER_DIFF_NOTE}</p>
     </section>
   );
 }
