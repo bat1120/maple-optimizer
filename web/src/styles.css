@@ -520,7 +520,8 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 /* 순위 카드 오른쪽 위 = 순위 기준(1억 메소당 실딜) */
 .rank-eff { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; white-space: nowrap; }
 .rank-eff-k { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
-.rank-eff strong { font-size: var(--fs-lg); font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.rank-eff strong { font-size: var(--fs-lg); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.top1 .rank-eff strong { color: var(--accent); }
 .top1 .rank-eff strong { font-size: var(--fs-xl, 1.6rem); }
 .rank-cost .muted strong { color: var(--text); }
 /* 보스 세팅 표: 프리셋 번호 칸 — 지금 착용과 다른 값만 진하게 */

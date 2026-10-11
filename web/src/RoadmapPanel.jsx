@@ -49,7 +49,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
     <section className="panel">
       {/* 2026-10-11 심사 3회차: 1위 카드까지 제목 2개·접힘 2개를 지나야 했다 → 제목 하나, 기준은 접힘 하나 */}
       <PanelHead title="가격 대비 업그레이드 순위" icon="trend"
-                 subtitle="잠재·에디를 올렸을 때 1억 메소당 보스 실딜이 많이 오르는 순서예요.">
+                 subtitle="잠재·에디를 올렸을 때 1억 메소당 보스 실딜이 많이 오르는 순서예요(같은 메소로 더 많이 오르는 게 위).">
         <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
           {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "전체 부위 로드맵"}
         </button>
@@ -80,16 +80,16 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
           </details>
           {data.value_ranking?.length > 0 && (
             <>
-              {/* 카드 2단 · 오른쪽 위는 순위 기준(1억 메소당 실딜) — 2026-10-11 심사 6회차: 실딜 배지가 더 진해
-                  '실딜이 큰 3위가 왜 2위 아래?'로 읽혔다. 실딜%·비용은 아래 보조 줄 */}
+              {/* 카드 2단 · 오른쪽 위는 실딜%(효과) 크게, 순위 기준인 1억 메소당은 아래 줄 — 2026-10-11 사용자 결정
+                  (심사 6회차는 억당을, 7회차는 실딜을 크게 하라고 엇갈렸다) */}
               <ol className="rank-cards" aria-label="가격 대비 순위">
                 {(showAll ? data.value_ranking : data.value_ranking.slice(0, TOP)).map((v, i) => (
                   <li key={`${v.slot}-${v.kind}`} className={`rank-card${i === 0 ? " top1" : ""}`}>
                     <div className="rank-top">
                       <span className={`medal medal-${i + 1}`}>{i + 1}</span>
                       <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
-                      <span className="rank-eff" title="순위 기준: 1억 메소를 쓸 때 오르는 보스 실딜">
-                        <span className="rank-eff-k">1억 메소당</span><strong className="num">{formatPct(v.per_100m)}</strong></span>
+                      <span className="rank-eff" title="이 단계까지 올리면 오르는 보스 실딜">
+                        <span className="rank-eff-k">보스 실딜</span><strong className="num">{formatPct(v.delta_pct)}</strong></span>
                     </div>
                     {/* 칩 = 게임 경매장 상세 검색 칸 순서(부위 → 등급 → 1·2·3줄, 각 줄은 '이상') */}
                     {i === 0 && <span className="cond-head">경매장 상세 검색</span>}
@@ -99,7 +99,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                       {v.target.map((t, k) => <li key={k}><span className="cond-k">{k + 1}줄</span>{t} 이상</li>)}
                     </ul>
                     <div className="rank-cost">
-                      <span className="muted">실딜 <strong className="num">{formatPct(v.delta_pct)}</strong></span>
+                      <span className="eff-value" title="순위 기준">1억 메소당 <strong className="num">{formatPct(v.per_100m)}</strong></span>
                       <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
                     </div>
                     <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
