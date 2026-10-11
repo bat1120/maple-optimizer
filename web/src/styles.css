@@ -718,7 +718,10 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   label.defense-field { justify-content: flex-end; }
   .profile-side { flex-direction: row; align-items: center; justify-content: space-between; }
   section table.rank-table { display: table; width: 100%; white-space: normal; }
-  .rank-table th, .rank-table td { padding-left: 6px; padding-right: 6px; }
+  .rank-table th, .rank-table td { padding-left: 3px; padding-right: 3px; }
+  .rank-table .combo-col { width: auto; font-size: var(--fs-xs); }
+  .rank-table th { font-size: 0.68rem; }
+  .rank-table .medal { min-width: 20px; height: 20px; padding: 0 4px; }
   .rank-table td.num, .rank-table th.num { white-space: nowrap; font-size: var(--fs-sm); }
   section table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
   section table td .muted, section table td br + span { white-space: normal; }
