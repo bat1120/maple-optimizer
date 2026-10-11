@@ -188,14 +188,31 @@ def _union_texts(text: str) -> list[str]:
     return [t]
 
 
+_SYMBOL_KEYS = (("symbol_str", "STR"), ("symbol_dex", "DEX"), ("symbol_int", "INT"),
+                ("symbol_luk", "LUK"), ("symbol_hp", "HP"))
+
+
 def _symbol_block(symbol_json: dict | None) -> StatBlock:
     b = StatBlock()
     for s in (symbol_json or {}).get("symbol") or []:
-        for k, key in (("symbol_str", "STR"), ("symbol_dex", "DEX"), ("symbol_int", "INT"),
-                       ("symbol_luk", "LUK"), ("symbol_hp", "HP")):
+        for k, key in _SYMBOL_KEYS:
             if num(s.get(k)):
                 b.add(StatLine(key, num(s[k]), False))
     return b
+
+
+def _symbol_items(symbol_json: dict | None) -> list:
+    """심볼 경로용 목록(2026-10-11): 이름·종류·지역·레벨·성장치는 넥슨 필드 그대로."""
+    out = []
+    for s in (symbol_json or {}).get("symbol") or []:
+        kind, _, region = (s.get("symbol_name") or "").partition(":")
+        out.append({"name": s.get("symbol_name"), "kind": kind.strip(), "region": region.strip(),
+                    "level": int(num(s.get("symbol_level"))), "force": int(num(s.get("symbol_force"))),
+                    "growth": int(num(s.get("symbol_growth_count"))),
+                    "require_growth": int(num(s.get("symbol_require_growth_count"))),
+                    "other_effect": s.get("symbol_other_effect_description"),
+                    "stats": {key: num(s[k]) for k, key in _SYMBOL_KEYS if num(s.get(k))}})
+    return out
 
 
 # 조건부 효과를 나타내는 표현. 이런 줄은 스탯창 상시 수치가 아니다 (예: "중첩 당 데미지 3%, 방어율 무시 3% 증가").
@@ -310,6 +327,7 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         excluded=excluded,
         titles=titles,
         symbols=_symbol_block(bundle.get("character/symbol-equipment")),
+        symbol_items=_symbol_items(bundle.get("character/symbol-equipment")),
         union=union,
         union_states=union_states,
         active_union_preset=active_union if union_states else 0,

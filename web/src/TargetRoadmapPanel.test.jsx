@@ -13,6 +13,8 @@ const DATA = {
       ratio_after: 34.66, total_cost_text: "5000만" },
     { slot: "HEXA 코어", path: "HEXA 코어", name: "화중군자 VI 1→2레벨", delta_pct: 0.47, cost_text: "2억 6600만",
       ratio_after: 34.82, total_cost_text: "3억 1600만" },
+    { slot: "심볼", path: "심볼", name: "어센틱심볼 : 세르니움", from_level: 9, to_level: 10, delta_pct: 0.3, cost_text: "7억 900만",
+      ratio_after: 34.92, total_cost_text: "10억 2500만", remaining_symbols: 263 },
   ],
   scouter: { v: 1, slot: "로드맵", from: "지금 템", to: "목표 50% 로드맵", name: "천지만물렌", job: "렌", level: 284,
              rows: { main: ["STR"], sub: ["DEX"], attack: "공격력" }, fields: { "STR|기본": 10 }, ied_add: [], ied_remove: [] },
@@ -37,6 +39,8 @@ describe("목표 배율 로드맵 패널", () => {
     expect(rows[1]).toHaveTextContent("도미네이터 펜던트 15→16성");
     expect(rows[1]).toHaveTextContent("34.66%");
     expect(screen.getByText(/48.70%/)).toBeInTheDocument();
+    expect(rows[3]).toHaveTextContent("심볼 · 어센틱심볼 : 세르니움 9→10레벨");
+    expect(rows[3]).toHaveTextContent("심볼 263개");
   });
   it("확장이 있으면 [MapleScouter에서 진짜 배율 보기] — 고른 보스와 함께 변화량을 보낸다", async () => {
     document.documentElement.setAttribute("data-mapleopt-ext", "0.1.0");
