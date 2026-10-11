@@ -38,6 +38,21 @@ def _block(lines, job):
     return b
 
 
+def _spread(subs: tuple, rest: float, cap: float = 10) -> tuple:
+    """남은 레벨을 부가 스탯에 반씩 나누되 한 줄 상한(10레벨, 나무위키 레벨표)을 넘긴 몫은 다른 줄로(2026-10-11)."""
+    out = list(subs)
+    while rest > 1e-9:
+        open_ = [i for i, v in enumerate(out) if v < cap]
+        if not open_:
+            break
+        share = rest / len(open_)
+        for i in open_:
+            add = min(share, cap - out[i])
+            out[i] += add
+            rest -= add
+    return tuple(out)
+
+
 def hexa_stat_paths(pl, fragment_price: float, sunday: bool = False) -> list[dict]:
     if not fragment_price or not pl.snap.hexa_stat:
         return []
@@ -61,7 +76,7 @@ def hexa_stat_paths(pl, fragment_price: float, sunday: bool = False) -> list[dic
             d = 0.0
             for m, q in dist.items():
                 rest = (H.MAX_G - core["grade"]) - (m - main_now)
-                d += q * gain(m, tuple(s + rest / len(subs_now) for s in subs_now))
+                d += q * gain(m, _spread(tuple(subs_now), rest))
             cost = frag * fragment_price
             if d > 0 and cost > 0:
                 out.append({"slot": "HEXA 스탯", "path": "HEXA 스탯", "name": f"{label} 강화 계속 {core['grade']}→20등급",

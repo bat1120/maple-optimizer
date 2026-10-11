@@ -11,8 +11,12 @@ from engine.stats.snapshot import CharacterSnapshot, Item, Setting
 
 def _index(snap: CharacterSnapshot, setting: Setting, items: dict[str, Item], boss: BossProfile,
            catalog: SetCatalog) -> float:
-    pred = predict(calibrate(snap, catalog), sources_for(snap, setting, catalog, items))
-    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss)
+    cal = calibrate(snap, catalog)
+    pred = predict(cal, sources_for(snap, setting, catalog, items))
+    # 실효 크확(Evaluator.index와 같게, 2026-10-11): 그 세팅의 원래 장비를 100%로 보고 교체로 줄어든 만큼만 뺀다
+    # (기준을 지금 착용 세팅으로 하면 크확을 덜 찍은 보스 하이퍼 프리셋이 밀려 실제 보스 세팅이 1등에서 빠졌다)
+    base_cr = predict(cal, sources_for(snap, setting, catalog, preset_items(snap, setting.equipment))).cr
+    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss, min(100.0, 100.0 + pred.cr - base_cr))
 
 
 def predict_setting(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,

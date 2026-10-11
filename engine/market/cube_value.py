@@ -39,4 +39,6 @@ def expected_cost(kind: str, level: int, current_grade: str | None, target_grade
     for g in GRADE_ORDER[cur:tgt]:
         p, ceiling = _data(kind)["tier_up"][g]
         cost += tier_up_tries(min(1.0, p * 2) if miracle else p, ceiling).mean * reset_cost_for(kind, level, g)
-    return cost + reset_cost_for(kind, level, target_grade) / p_success
+    # 등급이 오르는 그 한 번도 목표 등급 표에서 줄을 뽑는다 — 이미 성공 기회 1회(2026-10-11)
+    tries = 1 / p_success - (1 if tgt > cur else 0)
+    return cost + reset_cost_for(kind, level, target_grade) * tries

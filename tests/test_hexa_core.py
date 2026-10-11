@@ -16,7 +16,7 @@ def test_cost_table_totals_match_source():
 def test_ratio_from_effect_text():
     cur = "바르가르는 최대 3명의 적을 302%의 데미지로 3번 공격\n일반 몬스터 공격 시 데미지 403%p 증가"
     nxt = "바르가르는 최대 3명의 적을 306%의 데미지로 3번 공격\n일반 몬스터 공격 시 데미지 411%p 증가"
-    assert ratio(cur, nxt) == pytest.approx((306 / 302 + 411 / 403) / 2)
+    assert ratio(cur, nxt) == pytest.approx(306 / 302)  # '일반 몬스터 …%p'는 보스 실딜과 무관(2026-10-11)
     assert ratio("X의 최종 데미지 11% 증가", "X의 최종 데미지 12% 증가", final_damage=True) == pytest.approx(112 / 111)
     assert ratio("a 10%", "a 10% b 5%") is None  # 문장 구조가 바뀌면 계산하지 않는다
 
@@ -94,7 +94,7 @@ def test_mastery_core_sums_linked_skill_shares():
     _, by = _lete()
     p = by["인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨"]
     sh = job_shares("레테")["shares"]
-    want = sh["인보크 : 템플러 VI"] * ((157 / 155 + 189 / 185) / 2 - 1) + sh["이딕트 : 템플러 아츠 VI"] * (730 / 718 - 1)
+    want = sh["인보크 : 템플러 VI"] * (157 / 155 - 1) + sh["이딕트 : 템플러 아츠 VI"] * (730 / 718 - 1)
     assert p["delta_pct"] == pytest.approx(want)
 
 

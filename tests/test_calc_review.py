@@ -110,3 +110,65 @@ def test_saved_cube_tables_lines_sum_to_100():
                             bad.append((kind, grade, part, band, i))
     known = {("잠재", "에픽", p, b, i) for p in ("무기", "보조무기", "엠블렘") for b in ("200", "250") for i in (1, 2)}
     assert set(bad) <= known, sorted(set(bad) - known)
+
+
+# ── 과대평가 6건(2026-10-11 검토 2차) ──
+def test_hexa_core_ratio_ignores_normal_monster_damage():
+    """마스터리 VI 문장의 '일반 몬스터 공격 시 데미지 N%p'는 보스 실딜과 무관 — 평균에서 뺀다(레테 임프린트 VI)."""
+    from engine.market.hexa_core_paths import ratio
+    snap = snapshot(bundle("레테"))
+    sk = snap.hexa_skills["임프린트 VI"]
+    assert ratio(sk["effect"], sk["next"]) == pytest.approx((300 / 295 + 217 / 215) / 2)
+    assert ratio("A 10% 확률로 B 100%의 데미지", "A 20% 확률로 B 110%의 데미지") == pytest.approx(1.1)  # 확률 %도 뺀다
+
+
+def test_origin_ascent_bonus_ied_is_additive_with_skill_ied():
+    """나무위키 HEXA 매트릭스: 방무 보너스는 스킬 방무와 합적용(어센트 60→70→80→100). 보뎀은 스킬 보뎀 위에 더한다."""
+    from engine.market.hexa_core_paths import bonus_factor
+    from engine.stats.model import FinalStats
+    final = FinalStats(stats={}, ap={}, atk=0, matk=0, dmg=100.0, boss=300.0, fd=0, cd=0, cr=0, ied=90.0,
+                       stat_attack_min=0, stat_attack_max=0, combat_power=0)
+    desc = ("[마스터 레벨 : 30]\n10레벨 : 몬스터 방어율 무시 10% 증가, 보스 몬스터 공격 시 데미지 10% 증가\n"
+            "20레벨 : 몬스터 방어율 무시 10% 증가, 보스 몬스터 공격 시 데미지 10% 증가\n30레벨 : 몬스터 방어율 무시 20% 증가")
+    eff = "몬스터 방어율 60% 추가 무시, 보스 몬스터 공격 시 데미지 40% 증가"
+    d, c = 3.0, 0.1
+    ied10 = (1 - d * c * (1 - 0.70)) / (1 - d * c * (1 - 0.60))
+    assert bonus_factor(desc, 10, final, 300.0, eff) == pytest.approx(ied10 * (540 + 10) / 540)
+    ied30 = (1 - d * c * (1 - 1.00)) / (1 - d * c * (1 - 0.80))  # 10·20레벨 보너스까지 이미 80%
+    assert bonus_factor(desc, 30, final, 300.0, eff) == pytest.approx(ied30)
+
+
+def test_hexa_stat_sub_levels_capped_at_10():
+    from engine.market.hexa_paths import _spread
+    assert _spread((10, 3), 5) == (10, 8)
+    assert _spread((4, 6), 4) == (6, 8)
+    assert _spread((9, 9), 4) == (10, 10)
+
+
+def test_setting_comparison_counts_crit_rate_loss():
+    import copy
+    import dataclasses
+    from engine.stats.evaluate import evaluate_setting, swap_item
+    from engine.stats.residual import preset_items
+    snap = snapshot(bundle("레테"))
+    setting = snap.active_setting
+    base = evaluate_setting(snap, setting, BOSS, CAT)
+    it = preset_items(snap, setting.equipment)["모자"]
+    stats = copy.deepcopy(it.stats)
+    stats.cr -= 10
+    worse = dataclasses.replace(it, stats=stats)
+    assert swap_item(snap, setting, "모자", worse, BOSS, CAT) < base * 0.99
+
+
+def test_cube_cost_counts_lines_rolled_at_tier_up():
+    """등급이 오를 때 나오는 줄도 목표 등급 표에서 뽑힌다 — 그 한 번도 성공 기회(마지막 항은 (1−p)/p회)."""
+    from engine.market.cube_value import expected_cost, reset_cost_for, tier_up_tries
+    up = tier_up_tries(0.014, 107).mean * reset_cost_for("잠재", 150, "유니크")
+    leg = reset_cost_for("잠재", 150, "레전드리")
+    assert expected_cost("잠재", 150, "유니크", "레전드리", 0.02) == pytest.approx(up + leg * (1 / 0.02 - 1))
+    assert expected_cost("잠재", 150, "유니크", "유니크", 0.01) == pytest.approx(reset_cost_for("잠재", 150, "유니크") / 0.01)
+
+
+def test_hexa_reset_expectation_converges_to_namu_table():
+    from engine.stats.hexa import reach_cost
+    assert reach_cost(10, 0.0)["fragments"] == pytest.approx(145148.2, rel=1e-5)  # 나무위키 기대값표 10레벨 '14만 5148개'

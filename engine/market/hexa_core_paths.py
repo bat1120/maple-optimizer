@@ -22,6 +22,9 @@ _DATA = pathlib.Path(__file__).resolve().parents[1] / "data"
 COST = json.loads((_DATA / "hexa_core_cost.json").read_text(encoding="utf-8"))["costs"]
 _SHARE = _DATA / "skill_share.json"
 _PCT = re.compile(r"(\d+(?:\.\d+)?)%")
+_PCT_DMG = re.compile(r"(\d+(?:\.\d+)?)%(?!\s*확률)")
+_SKILL_IED = re.compile(r"방어율 (\d+(?:\.\d+)?)% 추가 무시")
+_SKILL_BOSS = re.compile(r"보스 몬스터 공격 시 데미지 (\d+(?:\.\d+)?)% 증가")
 _BONUS = re.compile(r"(\d+)레벨\s*:\s*([^\n]+)")
 _BONUS_ITEM = re.compile(r"(방어율 무시|보스 몬스터 공격 시 데미지)\s*(\d+(?:\.\d+)?)%")
 _FD = re.compile(r"^(.+?)의 최종 데미지 (?:증가량 )?\d+(?:\.\d+)?%")
@@ -78,11 +81,17 @@ def job_shares(job: str) -> dict | None:
     return json.loads(_SHARE.read_text(encoding="utf-8")).get("jobs", {}).get(job)
 
 
+def _boss_pcts(text: str) -> list[str]:
+    """보스 실딜에 쓰는 % 숫자만: '일반 몬스터 …' 구간과 'N% 확률' 은 뺀다(2026-10-11 검토: 마스터리 VI 과대평가)."""
+    segs = [seg for ln in text.split("\n") for seg in ln.split(", ") if "일반 몬스터" not in seg]
+    return [m for seg in segs for m in _PCT_DMG.findall(seg)]
+
+
 def ratio(effect: str | None, nxt: str | None, final_damage: bool = False) -> float | None:
     """지금 → 다음 레벨 효과 문장에서 바뀐 % 숫자들의 배율 평균. 문장 구조가 다르면 None."""
     if not effect or not nxt:
         return None
-    a, b = _PCT.findall(effect), _PCT.findall(nxt)
+    a, b = _boss_pcts(effect), _boss_pcts(nxt)
     if len(a) != len(b):
         return None
     rs = []
@@ -96,22 +105,29 @@ def ratio(effect: str | None, nxt: str | None, final_damage: bool = False) -> fl
     return sum(rs) / len(rs) if rs else 1.0
 
 
-def bonus_factor(description: str | None, target: int, final, boss_defense: float) -> float:
-    """목표 레벨이 10·20·30이면 설명의 보너스(방어율 무시·보스 데미지)를 그 스킬 배율로."""
+def bonus_factor(description: str | None, target: int, final, boss_defense: float, effect: str | None = None) -> float:
+    """목표 레벨이 10·20·30이면 설명의 보너스(방어율 무시·보스 데미지)를 그 스킬 배율로.
+    (2026-10-11) 나무위키 HEXA 매트릭스: 보너스 방무는 스킬 자체 방무와 합적용(어센트 60→70→80→100, 오리진 0→20→50).
+    스킬 방무·보뎀 S = 효과 문장의 '방어율 N% 추가 무시'·'보스 … N% 증가' + 목표 미만 레벨 보너스.
+    효과 문장이 레벨 보너스를 이미 품는지는 1레벨 픽스처만 있어 미확인 — 품는다면 S가 커져 이득을 낮게 본다(보수적)."""
+    items = [(int(lv), kind, float(x)) for lv, text in _BONUS.findall(description or "") for kind, x in _BONUS_ITEM.findall(text)]
+    s_ied = sum(map(float, _SKILL_IED.findall(effect or ""))) + sum(x for lv, k, x in items if lv < target and k == "방어율 무시")
+    s_boss = sum(map(float, _SKILL_BOSS.findall(effect or ""))) + sum(x for lv, k, x in items if lv < target and k != "방어율 무시")
+    d = boss_defense / 100
     f = 1.0
-    for lv, text in _BONUS.findall(description or ""):
-        if int(lv) != target:
+    for lv, kind, x in items:
+        if lv != target:
             continue
-        for kind, x in _BONUS_ITEM.findall(text):
-            x = float(x)
-            if kind == "방어율 무시":
-                d = boss_defense / 100
-                old = 1 - d * (1 - final.ied / 100)
-                new = 1 - d * (1 - final.ied / 100) * (1 - x / 100)
-                f *= (new / old) if old > 0 else 1.0
-            else:
-                base = 100 + final.dmg + final.boss
-                f *= (base + x) / base
+        if kind == "방어율 무시":
+            keep = 1 - final.ied / 100
+            old = 1 - d * keep * (1 - min(100.0, s_ied) / 100)
+            new = 1 - d * keep * (1 - min(100.0, s_ied + x) / 100)
+            f *= (max(0.0, new) / old) if old > 0 else 1.0
+            s_ied += x
+        else:
+            base = 100 + final.dmg + final.boss + s_boss
+            f *= (base + x) / base
+            s_boss += x
     return f
 
 
@@ -134,7 +150,7 @@ def core_paths(snap, shares: dict, fragment_price: float, boss_defense: float, s
         ratios, unvalued = {}, []  # 지분 스킬 → 배율(한 코어가 여러 스킬을 올리면 각각 더한다)
         for n in names:
             sk = skills.get(n) or {}
-            bonus = bonus_factor(sk.get("description"), target, snap.final, boss_defense)
+            bonus = bonus_factor(sk.get("description"), target, snap.final, boss_defense, sk.get("effect"))
             if enhance:
                 base = n[:-3] if n.endswith(" 강화") else n
                 t = enhance_targets(sk.get("effect"), sk.get("next"), base, shares)
