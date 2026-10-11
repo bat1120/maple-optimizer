@@ -21,8 +21,8 @@ export default function Scouter() {
         <a className="button-link" href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>
       </p>
       {/* 2026-10-11 심사 3회차: 번호가 중간에 끊기고 주황 칠 버튼이 여럿이었다 → 방법 A/B 두 묶음, 칠 버튼은 위의 하나만 */}
-      <section className="card">
-        <h3>방법 A · 크롬 확장 프로그램 (추천, 버튼 한 번)</h3>
+      <section className="card method-a">
+        <h3>방법 A · 크롬 확장 프로그램 <span className="badge badge-quiet">PC 크롬 전용</span></h3>
         <p>확장을 깔면 매물 옆 <strong>[MapleScouter에 넣기]</strong> 한 번으로 MapleScouter 탭이 열리고, 내 캐릭터로 교체한 뒤 칸까지 채워요. 북마크·복사가 필요 없어요.</p>
         <ol>
           <li>크롬 주소창에 <code>chrome://extensions</code> 열기 → 오른쪽 위 <strong>개발자 모드</strong> 켜기</li>

@@ -18,7 +18,7 @@ function Next({ row, kind }) {
   return <span>{label(t)} {formatPct(t.delta_pct)}<br /><span className="muted">{t.target.join(" / ")}</span></span>;
 }
 
-export default function RoadmapPanel({ name, defense, autoLoad = false }) {
+export default function RoadmapPanel({ name, defense, autoLoad = false, active = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -67,8 +67,13 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
       )}
       {data && (
         <>
+          {/* 2026-10-11 심사 4회차: 기준 세팅이 접힌 회색 줄에만 있어 '내 캐릭터 기준이 맞나' 의심 → 본문 글자로 보이고, 착용과 다르면 말한다 */}
+          <p className="basis-line">
+            <span className="basis-k">계산 기준</span> 보스 세팅 <strong>{settingLabel(data.evaluation_setting)}</strong>
+            {active && settingLabel(active) !== settingLabel(data.evaluation_setting) && <span className="muted"> — 지금 착용과 달라요</span>}
+          </p>
           <details className="note basis">
-            <summary>계산 기준 · {settingLabel(data.evaluation_setting)}(보스 세팅) · 큐브 메소 재설정 비용</summary>
+            <summary>계산 방법 · 큐브 메소 재설정 비용 기준</summary>
             <p className="muted small">{data.note}</p>
             {data.value_ranking?.length > 0 && <p className="muted small">{data.value_note} {data.market_note}</p>}
           </details>
@@ -83,11 +88,13 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
                       <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
                       <span className="score-badge" title="보스 실딜 상승">실딜 {formatPct(v.delta_pct)}</span>
                     </div>
-                    <span className="cond-head">경매장 검색</span>
+                    {/* 칩 = 게임 경매장 상세 검색 칸 순서(부위 → 등급 → 1·2·3줄, 각 줄은 '이상') */}
+                    <span className="cond-head">경매장 상세 검색</span>
                     <ul className="rank-cond" aria-label="경매장 검색 조건">
-                      <li className="cond-slot">{v.slot}</li>
-                      <li className={`cond-grade ${gradeClass(v.grade)}`}>{v.kind} {v.grade}</li>
-                      {v.target.map((t, k) => <li key={k}>{t}</li>)}
+                      <li className="cond-slot"><span className="cond-k">부위</span>{v.slot}</li>
+                      <li className={`cond-grade ${gradeClass(v.grade)}`}><span className="cond-k">{v.kind}</span>{v.grade}</li>
+                      {v.target.map((t, k) => <li key={k}><span className="cond-k">{k + 1}줄</span>{t} 이상</li>)}
+                      {v.route === "큐브" && <li className="cond-cube">경매장 구매 불가 · 지금 템에 큐브</li>}
                     </ul>
                     <div className="rank-cost">
                       <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
@@ -97,10 +104,11 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {/* 아래 줄은 모든 카드가 같은 높이: 살 수 있으면 복사, 못 사면 같은 자리에 안내 칩 */}
                     <div className="rank-foot">
-                      {v.route !== "큐브" ? (
-                        <button type="button" className={`rank-copy${i === 0 ? "" : " text-button"}`} onClick={() => copy(v)}>
-                          {copied === `${v.slot}-${v.kind}` ? "복사했어요" : "경매장 검색 조건 복사"}</button>
-                      ) : <span className="cube-only">큐브로만 — 경매장에서 살 수 없는 템</span>}
+                      {v.route !== "큐브" && (
+                        <button type="button" className={`rank-copy${i === 0 ? "" : " ghost small"}`} onClick={() => copy(v)}>
+                          {copied === `${v.slot}-${v.kind}` ? "복사됨 ✓" : "경매장 검색 조건 복사"}</button>
+                      )}
+                      {i === 0 && v.route !== "큐브" && <span className="muted small">게임 경매장 › 상세 검색에 붙여 넣으세요</span>}
                     </div>
                   </li>
                 ))}

@@ -6,6 +6,8 @@ import BottomTabs, { TAB_ICON, TAB_LABEL } from "../layout/BottomTabs.jsx";
 import ProfileCard from "../character/ProfileCard.jsx";
 import EquipmentGrid from "../character/EquipmentGrid.jsx";
 import TopPick from "../character/TopPick.jsx";
+import FreeSwitch from "../character/FreeSwitch.jsx";
+import StatSummary from "../character/StatSummary.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
 import PathsPanel from "../PathsPanel.jsx";
@@ -138,7 +140,7 @@ export default function Character({ route }) {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="character">
+    <div className={`character tab-${tab}`}>
       {busy && !summary && <Skeleton />}
       {error && (error.status === 404 ? <NotFound name={name} /> : (
         <ErrorState message={error.message} onRetry={load}>
@@ -148,7 +150,8 @@ export default function Character({ route }) {
       {summary && (
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} onRefresh={load} busy={busy} />
-          {tab === "summary" && <TopPick name={name} defense={defense} />}
+          {tab === "summary" && <FreeSwitch ranking={settings?.ranking} />}
+          {tab === "summary" && <TopPick name={name} defense={defense} after={settings?.ranking?.[0]?.relative_to_active > 1} />}
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -161,6 +164,7 @@ export default function Character({ route }) {
             <div className="summary-grid">
               <div className="stack summary-side">
                 <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} />
+                <StatSummary final={summary.final} />
                 {summary.excluded?.length > 0 && (
                   <section className="card">
                     <h3 className="panel-title">계산에서 뺀 옵션</h3>
@@ -176,7 +180,7 @@ export default function Character({ route }) {
           {tab === "upgrade" && (
             <div className="stack">
               {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
-              <RoadmapPanel name={name} defense={defense} autoLoad />
+              <RoadmapPanel name={name} defense={defense} autoLoad active={summary.active_setting} />
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>

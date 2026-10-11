@@ -24,7 +24,7 @@ export default function ProfileCard({ name, summary, onRefresh, busy }) {
         <dl className="kpi-strip">
           <div className="kpi kpi-primary"><dt>스탯 공격력</dt><dd>{formatBig(summary.stat_attack?.engine)}</dd></div>
           <div className="kpi"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
-          <div className="kpi"><dt>적용 중인 세팅</dt><dd className="kpi-text">{settingLabel(summary.active_setting)}</dd></div>
+          <div className="kpi"><dt>지금 착용 중인 세팅</dt><dd className="kpi-text">{settingLabel(summary.active_setting)}</dd></div>
         </dl>
       </div>
       <div className="profile-side">

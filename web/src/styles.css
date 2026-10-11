@@ -402,7 +402,8 @@ label.defense-field input { width: 72px; min-height: 40px; padding: 6px 10px; te
   border: 2px solid var(--g, var(--line)); color: var(--text); overflow: hidden; font-weight: 500; }
 button.slot { background: var(--surface-2); border-color: var(--g, var(--line)); color: var(--text); transition: background-color var(--dur) var(--ease), transform 120ms var(--ease); }
 @media (hover: hover) and (pointer: fine) { button.slot:hover:not(:disabled) { background: var(--surface-3); border-color: var(--g, var(--line-strong)); } }
-.slot.open { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent-fill); }
+/* 선택 표시는 등급 테두리를 건드리지 않는 바깥 선(주황은 1순위·버튼 전용) */
+.slot.open { outline: 2px solid var(--text); outline-offset: 2px; box-shadow: none; }
 .slot img { width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated; }
 .slot-abbr { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
 .slot-name { display: none; }
@@ -412,7 +413,7 @@ button.slot { background: var(--surface-2); border-color: var(--g, var(--line));
 .star-badge { position: absolute; right: 2px; bottom: 2px; padding: 0 4px; border-radius: 4px; background: var(--badge-shade); font-size: 0.62rem; font-weight: 800; color: var(--star); font-variant-numeric: tabular-nums; line-height: 1.5; }
 .ring-badge { position: absolute; bottom: 1px; left: 3px; font-size: 0.6rem; font-weight: 800; color: var(--text-2); }
 .equip-avatar { display: grid; place-items: center; border-radius: var(--radius); overflow: hidden; background: radial-gradient(closest-side, var(--surface-2), transparent); color: var(--muted); }
-.equip-avatar img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; transform: scale(3.4); transform-origin: 50% 60%; }
+.equip-avatar img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; transform: scale(2.8); transform-origin: 50% 60%; }
 .grade-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .grade-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--g); }
@@ -484,8 +485,26 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 .rank-card > .eff { display: block; height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
 .rank-card > .eff .bar { height: 100%; margin: 0; }
 .rank-copy { align-self: flex-start; }
-.rank-card:not(.top1) .score-badge { background: var(--surface-3); color: var(--text); }
 .rank-card:not(.top1) > .eff .bar { background: var(--line-strong); }
+.rank-cond .cond-k { margin-right: 4px; font-weight: 600; color: var(--muted); }
+.rank-cond .cond-cube { border-style: dashed; color: var(--muted); }
+.rank-foot { gap: var(--sp-3); flex-wrap: wrap; }
+.rank-foot .ghost.small { min-height: 36px; }
+.basis-line { margin: var(--sp-1) 0 0; font-size: var(--fs-sm); color: var(--text-2); }
+.basis-k { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--surface-3); font-size: var(--fs-xs); font-weight: 700; color: var(--text); }
+/* '먼저 무료로' 띠: 1순위 띠와 같은 폭, 강조는 초록(돈 안 드는 이득) */
+.free-switch { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-lg); background: var(--surface); }
+.free-switch-label { flex: none; padding: 2px 8px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: var(--fs-xs); font-weight: 800; }
+.free-switch-body { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); }
+.free-switch-body strong { color: var(--text); }
+.free-switch-gain { margin-left: var(--sp-2); font-size: var(--fs-md); font-weight: 800; color: var(--up); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.free-switch + .top-pick { margin-top: var(--sp-2); }
+/* 요약 PC: 왼쪽 단은 스크롤을 따라와 아래 빈 구멍이 남지 않게 */
+.stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin: var(--sp-3) 0 0; }
+.stat-grid > div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); padding: 7px 0; border-bottom: 1px solid var(--line); }
+.stat-grid dt { color: var(--muted); font-size: var(--fs-sm); }
+.stat-grid dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cond-head { margin: 0 0 -2px; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
 .rank-foot { display: flex; align-items: center; min-height: 40px; margin-top: auto; }
 .text-button { min-height: 36px; padding: 4px 0; border: 0; background: none; color: var(--accent); font-weight: 700; font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 3px; }
@@ -644,7 +663,7 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .panel-actions { justify-content: flex-start; }
   .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .equip-body { grid-template-columns: minmax(0, 1fr); }
-  .equip-grid .slot-empty { visibility: hidden; }
+  .equip-grid .slot-empty { visibility: visible; }
   .detail-empty { min-height: 80px; }
   .rank-cards { grid-template-columns: minmax(0, 1fr); }
   .rank-slot strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -662,6 +681,10 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .top-pick-gain { grid-row: 1; grid-column: 2; white-space: nowrap; }
   .top-pick-eff { grid-column: 1 / -1; }
   .rank-cond .cond-slot { display: none; }
+  .tab-upgrade .kpi-strip, .tab-calc .kpi-strip { display: none; }
+  .scouter-page { display: flex; flex-direction: column; }
+  .scouter-page > .method-a { order: 9; }
+  .free-switch-gain { display: block; margin: 2px 0 0; }
   .tab-intro { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
   label.defense-field { justify-content: flex-end; }
   .profile-side { flex-direction: row; align-items: center; justify-content: space-between; }

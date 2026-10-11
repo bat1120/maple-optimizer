@@ -101,6 +101,6 @@ describe("roadmap panel", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const first = cards()[0];
     const chips = within(first).getByRole("list", { name: "경매장 검색 조건" });
-    expect(within(chips).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["엠블렘", "에디 레전드리", "마력 +12%", "마력 +9%"]);
+    expect(within(chips).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["부위엠블렘", "에디레전드리", "1줄마력 +12% 이상", "2줄마력 +9% 이상"]);
   });
 });
