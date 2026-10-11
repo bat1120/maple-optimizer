@@ -55,3 +55,72 @@ def test_paths_api_includes_hexa_cores_with_fragment_price(tmp_path):
     assert {"HEXA 코어", "HEXA 스탯"} <= kinds
     hx = [p for p in r["all"] if p["path"] == "HEXA 코어"]
     assert all(p["cost_text"] and p["erda"] >= 1 for p in hx)
+
+
+# ── 2026-10-11: 3rd 스킬 코어·직업군 공용 코어 비용 열 구분, 강화 코어의 문장별 대상 스킬 ──
+from types import SimpleNamespace
+
+from engine.market.hexa_core_paths import KIND, cost_column
+
+
+def _lete():
+    snap = snapshot(bundle("레테"))
+    return snap, {p["name"]: p for p in core_paths(snap, job_shares("레테")["shares"], 7_000_000, 300.0, "직업 기준값")}
+
+
+def test_third_skill_list_from_official_notice():
+    assert KIND["third_skill"]["레테"] == ["보이드 오리진"]
+    assert KIND["third_skill"]["에반"] == ["드래곤 소어", "버티컬 피니셔", "소어-돌아와!"]
+    assert len(KIND["third_skill"]) == 48 and KIND["all_job_common"] == ["솔 야누스", "솔 헤카테"]
+
+
+def test_cost_column_by_core_kind():
+    snap = snapshot(bundle("레테"))
+    col = {c["name"]: cost_column(c) for c in snap.hexa_cores}
+    assert col["보이드 오리진"] == "3rd 스킬"  # API는 셋 다 '스킬 코어'라 공지 목록으로 가른다
+    assert col["오버로드 : 이터널 게이즈"] == col["앱솔루트 레인"] == "스킬"
+    assert col["솔 헤카테"] == col["솔 야누스"] == "공용" and col["프라이멀 퓨리 VI"] == "직업군 공용"
+    assert col["체인 커맨드"] == "강화" and col["임펠 VI/팩트 매니페스트"] == "마스터리"
+
+
+def test_third_skill_and_job_common_core_paths_use_their_cost_rows():
+    _, by = _lete()
+    assert by["보이드 오리진 3→4레벨"]["fragments"] == COST["3rd 스킬"][3][1]
+    assert by["오버로드 : 이터널 게이즈 1→2레벨"]["fragments"] == COST["스킬"][1][1]
+    assert by["프라이멀 퓨리 VI 1→2레벨"]["fragments"] == COST["직업군 공용"][1][1]
+
+
+def test_mastery_core_sums_linked_skill_shares():
+    _, by = _lete()
+    p = by["인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI 20→21레벨"]
+    sh = job_shares("레테")["shares"]
+    want = sh["인보크 : 템플러 VI"] * ((157 / 155 + 189 / 185) / 2 - 1) + sh["이딕트 : 템플러 아츠 VI"] * (730 / 718 - 1)
+    assert p["delta_pct"] == pytest.approx(want)
+
+
+def test_enhance_core_line_targets():
+    _, by = _lete()
+    sh = job_shares("레테")["shares"]
+    az = by["인보크/오버로드 : 아즈라스 1→2레벨"]
+    assert az["delta_pct"] == pytest.approx(sh["인보크/오버로드 : 아즈라스"] * (112 / 111 - 1))
+    # 체인 커맨드 강화: '맹약 완성'은 체인 커맨드의 공격(지분은 체인 커맨드), 오버로드 줄은 16→16 그대로,
+    # '맹약 실체화 중 데미지 증가량'은 버프 유지율을 몰라 계산하지 않고 따로 보여 준다
+    cc = by["체인 커맨드 1→2레벨"]
+    assert cc["delta_pct"] == pytest.approx(sh["체인 커맨드"] * (112 / 111 - 1))
+    assert [s["skill"] for s in cc["skills"]] == ["체인 커맨드"]
+    assert cc["unvalued"] == ["맹약 실체화 중 데미지 증가량 10%로 증가 → 11%"]
+
+
+def test_enhance_core_category_line_raises_every_matching_skill():
+    """'오버로드 스킬의 최종 데미지 증가량'이 오르면 이름에 '오버로드'가 든 스킬 지분을 모두 더한다."""
+    snap = SimpleNamespace(
+        hexa_cores=[{"name": "체인 커맨드", "level": 5, "type": "강화 코어", "skills": ["체인 커맨드 강화"]}],
+        hexa_skills={"체인 커맨드 강화": {"level": 5, "description": "",
+                                     "effect": "오버로드 스킬의 최종 데미지 증가량 16%로 증가",
+                                     "next": "오버로드 스킬의 최종 데미지 증가량 17%로 증가"}},
+        final=None)
+    shares = {"오버로드 : 템플러 온슬로트": 4.0, "인보크/오버로드 : 아즈라스": 3.0, "인보크 : 템플러 VI": 7.0, "체인 커맨드": 3.5}
+    (p,) = core_paths(snap, shares, 7_000_000, 300.0, "x")
+    assert p["delta_pct"] == pytest.approx(7.0 * (117 / 116 - 1))
+    assert {s["skill"] for s in p["skills"]} == {"오버로드 : 템플러 온슬로트", "인보크/오버로드 : 아즈라스"}
+    assert p["fragments"] == COST["강화"][5][1]
