@@ -114,13 +114,13 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                           <span className="muted small">경매장 구매 불가 템 — 지금 템에 큐브</span>
                         </>
                       )}
-                      {i === 0 && v.route !== "큐브" && <span className="muted small">게임 경매장 › 상세 검색에 붙여 넣으세요</span>}
+                      {i === 0 && v.route !== "큐브" && <span className="muted small">게임 경매장 › 상세 검색에서 위 칩 순서대로 고르세요</span>}
                     </div>
                   </li>
                 ))}
               </ol>
               <p className="copy-status muted small" role="status">
-                {copied ? `복사했어요: ${copiedText} — 게임 경매장 › 상세 검색에서 이 조건으로 찾으세요.` : ""}
+                {copied ? `복사했어요: ${copiedText} — 메모해 두고 게임 경매장 › 상세 검색에서 칩 순서대로 고르세요.` : ""}
               </p>
               {data.value_ranking.length > TOP && (
                 <button type="button" className="ghost more-ranks" onClick={() => setShowAll(!showAll)}>

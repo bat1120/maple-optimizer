@@ -690,7 +690,6 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .top-pick-body > .muted:first-of-type { grid-column: 1 / -1; grid-row: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .top-pick-gain { grid-row: 1; grid-column: 2; white-space: nowrap; }
   .top-pick-eff { grid-column: 1 / -1; }
-  .rank-cond .cond-slot { display: none; }
   .tab-upgrade .kpi-strip, .tab-calc .kpi-strip { display: none; }
   .scouter-page { display: flex; flex-direction: column; }
   .scouter-page > .method-a { order: 9; }

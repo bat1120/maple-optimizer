@@ -83,7 +83,7 @@ describe("roadmap panel", () => {
     expect(screen.getByText("부위별 다음 단계·모든 단계 보기").closest("details")).not.toHaveAttribute("open");
   });
 
-  it("순위 카드에서 [경매장 검색 조건 복사] — 그 조건을 그대로 클립보드에, 붙여 넣을 곳 안내", async () => {
+  it("순위 카드에서 [경매장 검색 조건 복사] — 그 조건을 그대로 클립보드에, 게임에서 고를 곳 안내", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     const write = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { value: { writeText: write }, configurable: true });
