@@ -13,15 +13,17 @@
 | 구매 불가 템 | 제네시스·데스티니, 아스트라 보조, 미트라 엠블렘, 엔버·카이저·제논 보조무기 | `engine/market/recommend.py` |
 | 보조무기 종류 | 툴팁 장비분류 ↔ 지금 보조무기 종류(API) 맞춰 보기 | `engine/market/secondary.py` |
 | 스타포스 경로 | 성별 스탯 표(실측 검산), 기대 비용·흔적 복구·평균 파괴·스페어 | `engine/enhance/starforce_stats.py`, `engine/enhance/starforce.py` |
-| 강화 이벤트 | 샤이닝 스타포스·파괴 방지·미라클 타임 | `engine/market/events.py` |
+| 강화 이벤트 | 썬데이 스타포스(개별)·파괴 방지·미라클 타임·부위별 스페어·불꽃 값 | `engine/market/events.py` |
 | HEXA | HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨, 연무장 딜 지분) | `engine/stats/hexa.py`, `engine/market/hexa_paths.py`, `engine/market/hexa_core_paths.py` |
-| 경로 비교 | 구매·직작·큐브·스타포스·HEXA를 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
+| 경로 비교 | 구매·직작·큐브·스타포스·추옵·HEXA를 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
-- 경로 비교: 30% 할인·파괴 감소 등 썬데이 이벤트를 하나씩 고르기(API는 `sf=discount30,destroy_down30,…` 지원, 화면은 샤이닝 묶음만)
-- 스페어 값을 부위마다 다르게 넣기(지금은 모든 부위에 같은 값)
-- HEXA: 3rd 스킬 코어를 오리진과 구분(지금은 둘 다 비싼 '스킬' 비용표), 여러 스킬에 걸치는 강화 코어(체인 커맨드 강화) 반영
-- 추옵(환생의 불꽃) 재설정 경로 — 불꽃 등급별 확률표(공식 자료)가 먼저 필요
+- (2026-10-11 끝남: 썬데이 이벤트 개별 선택, 부위별 스페어, 화면 분석 한도 DB, 테스트 템 제거, HEXA 3rd·강화 코어, 추옵 경로)
+- HEXA 강화 코어: 최종 데미지가 아닌 줄(예: 맹약 실체화 중 데미지)은 `unvalued`로만 남음 — 화면 표시 없음, 버프 유지율 출처 필요.
+  6차 오버로드가 체인 커맨드 강화를 받는지 미확인. 3rd 스킬 목록 `engine/data/hexa_core_kind.json`은 공지 바뀌면 손으로 갱신
+- 추옵: 보스 장비로 출처 확인된 템만(에테르넬·도전자·일반·데스티니 무기 빠짐), 제네시스 2차 해방 전 재설정 불가 미반영,
+  불꽃 가격은 사용자 입력
+- MapleScouter 자동 채우기(확장·북마클릿) 유지 여부 — 약관 제15조 위험, 사용자 결정 대기
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
 - 넥슨 API가 필요한 일: 실제 캐릭터 조회, `tools/collect_skill_shares.py`(직업별 딜 지분 수집 — 지금은 레테만 있음),
