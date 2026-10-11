@@ -11,7 +11,7 @@
   --accent-fill: oklch(68% 0.190 45); --accent-fill-hover: oklch(63% 0.190 43); --on-accent: oklch(99.6% 0.002 265);
   /* 버튼 칠(2026-10-11 심사: 밝은 주황+흰 글자 대비 3.06 → 진한 주황 #c2410c 계열, 대비 5.18) */
   --btn: oklch(55.3% 0.174 38); --btn-hover: oklch(47% 0.143 37); --on-btn: oklch(99.6% 0.002 265);
-  --accent: oklch(58% 0.190 42); --accent-hover: oklch(52% 0.180 40); --accent-soft: oklch(96.5% 0.030 60);
+  --accent: oklch(54% 0.180 40); --accent-hover: oklch(52% 0.180 40); --accent-soft: oklch(96.5% 0.030 60);
   /* 점수 배지(남색) · 순위 카드(크림) */
   --badge: oklch(33% 0.060 265); --on-badge: oklch(98% 0.005 265);
   --rank-bg: oklch(98.6% 0.022 85); --rank-line: oklch(86% 0.080 70);
@@ -31,7 +31,7 @@
   /* 글자 눈금 */
   --fs-xs: 0.75rem; --fs-sm: 0.85rem; --fs-base: 0.95rem; --fs-md: 1.05rem; --fs-lg: 1.25rem; --fs-xl: 1.6rem; --fs-2xl: 2.1rem;
   /* 모양 — 둥근 흰 카드, 그림자 없음 */
-  --radius-sm: 6px; --radius: 8px; --radius-lg: 14px; --radius-xl: 14px;
+  --radius-sm: 6px; --radius: 8px; --radius-lg: 14px; --radius-xl: 14px; --radius-inner: 10px;
   --shadow: none; --shadow-lg: none;
   --ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent-fill);
   /* 움직임(emil-design-eng): 강한 ease-out, 180ms 이하 */
@@ -45,7 +45,7 @@
 }
 /* 다크: 츄츄지지 계열 짙은 회남색 */
 :root[data-theme="dark"] {
-  --bg: oklch(15% 0.008 265); --surface: oklch(22% 0.010 265); --surface-2: oklch(24.5% 0.011 265); --surface-3: oklch(28% 0.012 265);
+  --bg: oklch(16.5% 0.008 265); --surface: oklch(22% 0.010 265); --surface-2: oklch(24.5% 0.011 265); --surface-3: oklch(28% 0.012 265);
   --line: oklch(29% 0.012 265); --line-strong: oklch(37% 0.014 265);
   --text: oklch(94% 0.005 265); --text-2: oklch(83% 0.008 265); --muted: oklch(70% 0.012 265);
   --accent: oklch(76% 0.150 50); --accent-hover: oklch(81% 0.130 52); --accent-soft: oklch(28% 0.050 50); --on-accent: oklch(18% 0.020 45);
@@ -58,7 +58,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: oklch(15% 0.008 265); --surface: oklch(22% 0.010 265); --surface-2: oklch(24.5% 0.011 265); --surface-3: oklch(28% 0.012 265);
+    --bg: oklch(16.5% 0.008 265); --surface: oklch(22% 0.010 265); --surface-2: oklch(24.5% 0.011 265); --surface-3: oklch(28% 0.012 265);
     --line: oklch(29% 0.012 265); --line-strong: oklch(37% 0.014 265);
     --text: oklch(94% 0.005 265); --text-2: oklch(83% 0.008 265); --muted: oklch(70% 0.012 265);
     --accent: oklch(76% 0.150 50); --accent-hover: oklch(81% 0.130 52); --accent-soft: oklch(28% 0.050 50); --on-accent: oklch(18% 0.020 45);
@@ -159,9 +159,9 @@ button.btn-lg { min-height: 52px; padding: 0 28px; font-size: var(--fs-md); }
 .button-link { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: var(--radius);
   background: var(--btn); color: var(--on-btn); font-weight: 700; font-size: var(--fs-sm); }
 .button-link:hover { background: var(--btn-hover); color: var(--on-btn); }
-.bookmarklet { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 18px; border-radius: var(--radius); background: var(--star);
-  color: var(--text); font-weight: 700; cursor: grab; border: 1px solid var(--line-strong); }
-.bookmarklet:hover { color: var(--text); }
+.bookmarklet { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 18px; border-radius: 999px; background: var(--surface);
+  color: var(--accent); font-weight: 700; cursor: grab; border: 2px dashed var(--accent-fill); }
+.bookmarklet:hover { color: var(--accent-hover); }
 kbd, .kbd { font: 700 var(--fs-xs)/1 var(--font-body); padding: 4px 7px; border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong); border-bottom-width: 2px; background: var(--surface-2); color: var(--muted); }
 @media (hover: hover) and (pointer: fine) {
@@ -205,7 +205,7 @@ ol.steps > li::before { content: counter(step); position: absolute; left: 0; top
   display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-size: var(--fs-xs); font-weight: 800; font-variant-numeric: tabular-nums; }
 details.note > summary { color: var(--muted); font-size: var(--fs-sm); }
 /* 2026-10-11 심사: 한 탭에 같은 '사용 방법' 막대가 4번 → 패널 안 것은 제목 아래 작은 링크로 */
-.panel > .howto { display: inline-block; margin: 0 0 var(--sp-2); border: 0; background: none; }
+.panel > .howto { display: none; }
 .panel > .howto > summary { display: inline-flex; padding: 0; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
 .panel > .howto > summary::after { content: none; }
 .panel > .howto[open] { display: block; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
@@ -405,11 +405,11 @@ button.slot { background: var(--surface-2); border-color: var(--g, var(--line));
 .star-badge { position: absolute; right: 2px; bottom: 2px; padding: 0 4px; border-radius: 4px; background: var(--badge-shade); font-size: 0.62rem; font-weight: 800; color: var(--star); font-variant-numeric: tabular-nums; line-height: 1.5; }
 .ring-badge { position: absolute; bottom: 1px; left: 3px; font-size: 0.6rem; font-weight: 800; color: var(--text-2); }
 .equip-avatar { display: grid; place-items: center; border-radius: var(--radius); overflow: hidden; background: var(--surface-2); color: var(--muted); }
-.equip-avatar img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; transform: scale(1.5); }
+.equip-avatar img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; transform: scale(2.4); }
 .grade-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .grade-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--g); }
-.equip-detail { min-height: 100%; }
+.equip-detail { position: sticky; top: calc(var(--bar-h) + var(--sp-3)); }
 .detail-empty { margin: 0; padding: var(--sp-3) var(--sp-4); border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface-2); }
 
 /* 아이템 상세 = 게임 툴팁(별 줄 → 이름 → 구분선 → 잠재·에디) — 츄츄지지처럼 어두운 패널 */
@@ -442,13 +442,13 @@ button.slot { background: var(--surface-2); border-color: var(--g, var(--line));
 /* 순위 — 1위만 주황 칠 */
 .medal { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: var(--radius-sm);
   background: var(--surface-3); font-size: var(--fs-xs); font-weight: 800; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.medal-1 { background: var(--accent-fill); color: var(--on-accent); }
+.medal-1 { background: var(--btn); color: var(--on-btn); }
 td.eff { min-width: 130px; }
 td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; background: var(--accent-fill); margin: 6px 0 4px; }
 
 /* 가격 대비 순위 카드 2단(환산주스탯 '아이템 리스트' 문법) */
 .rank-cards { list-style: none; margin: var(--sp-3) 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
-.rank-card { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.rank-card { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius-inner); background: var(--surface); }
 .rank-card.top1 { grid-column: 1 / -1; border: 2px solid var(--accent-fill); background: var(--rank-bg); padding: var(--sp-4) var(--sp-5); }
 .rank-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-3); align-items: start; }
 .rank-slot { display: flex; flex-direction: column; min-width: 0; }
@@ -471,9 +471,21 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 .rank-copy { align-self: flex-start; }
 .rank-market { margin: 0; }
 .paths-table td.eff-col { font-weight: 800; color: var(--accent); }
+details.fold { margin: var(--sp-3) 0 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+details.fold > summary { display: flex; align-items: center; min-height: 52px; padding: var(--sp-3) var(--sp-5); font-weight: 700; color: var(--text-2); }
+details.fold[open] > summary { border-bottom: 1px solid var(--line); }
+details.fold > .panel, details.fold > div > .panel { margin: 0; border: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+/* 순위 카드 안 경매장 검색 조건 칩 */
+.rank-cond { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rank-cond li { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-2); }
+.rank-cond .cond-slot { background: var(--surface-3); border-color: var(--surface-3); color: var(--text); font-weight: 800; }
+.rank-cond .cond-grade { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: var(--text); }
+.rank-cond .cond-grade::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g, var(--muted)); }
 /* 요약 탭 '업그레이드 1순위' 한 줄 */
 .top-pick { display: flex; align-items: center; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4);
   border: 2px solid var(--accent-fill); border-radius: var(--radius-lg); background: var(--rank-bg); }
+.top-pick[aria-busy="true"] { border: 1px solid var(--line); background: var(--surface); }
+.top-pick[aria-busy="true"] .top-pick-label { background: var(--surface-3); color: var(--muted); }
 .top-pick-label { flex: none; padding: 2px 8px; border-radius: var(--radius-sm); background: var(--btn); color: var(--on-btn); font-size: var(--fs-xs); font-weight: 800; }
 .top-pick-body { display: flex; align-items: baseline; gap: var(--sp-2) var(--sp-3); flex-wrap: wrap; flex: 1; min-width: 0; }
 .top-pick-body strong { font-size: var(--fs-md); }
@@ -482,7 +494,9 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 /* 못 찾은 닉네임: 오류 상자 안의 검색 줄 */
 .not-found { align-items: flex-start; }
 .retry-search { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); max-width: 520px; }
-.retry-search input { width: 100%; padding-left: 40px; }
+.retry-search .search-field .field-icon { left: 14px; }
+.retry-search input { width: 100%; min-height: 44px; padding-left: 40px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); }
+.retry-search button { min-height: 44px; border-radius: 999px; }
 .mobile-search { display: none; }
 /* 부위별 자세히(접기) — 순위 아래 긴 표·목록을 한 번에 접어 둔다 */
 details.more { margin: var(--sp-4) 0 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
@@ -495,6 +509,8 @@ details.more[open] > summary { margin-bottom: var(--sp-2); }
 /* 계산기 */
 .calc-grid, .panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); align-items: start; margin-top: var(--sp-4); }
 .calc-grid > *, .panels > * { margin: 0; }
+.calc-grid > form { display: flex; flex-direction: column; }
+.calc-grid > form > button:last-of-type { margin-top: auto; }
 .panels { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .panel { margin: var(--sp-4) 0; }
 .result { margin-top: var(--sp-4); padding: var(--sp-4); border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); animation: fade-in 180ms var(--ease) both; }
@@ -592,6 +608,11 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .equip-grid .slot-empty { visibility: hidden; }
   .detail-empty { min-height: 80px; }
   .rank-cards { grid-template-columns: minmax(0, 1fr); }
+  .rank-slot strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top1 .score-badge { font-size: var(--fs-sm); }
+  .rank-cost { flex-direction: column; align-items: stretch; gap: 2px; }
+  .rank-cost > span { display: flex; justify-content: space-between; gap: var(--sp-2); }
+  button.small { min-height: 40px; }
   section table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
   section table td .muted, section table td br + span { white-space: normal; }
   .calc-grid, .panels { grid-template-columns: minmax(0, 1fr); }

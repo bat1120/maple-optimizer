@@ -182,4 +182,17 @@ describe("character page", () => {
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     expect(await screen.findByText("불러온 장비가 없어요")).toBeInTheDocument();
   });
+
+  // 2026-10-11 디자인 심사 2회차: 1위가 셋(가격 대비·검색 추천·경로 비교)으로 갈림 → 가격 대비 순위만 펼치고 나머지는 접는다
+  it("업그레이드 탭은 가격 대비 순위만 펼치고, 검색 추천·경로 비교·목표 배율은 접어 둔다", async () => {
+    mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    for (const t of ["경매장 검색 추천", "업그레이드 경로 비교", "목표 배율 로드맵"]) {
+      const d = screen.getByRole("heading", { name: t }).closest("details");
+      expect(d).not.toBeNull();
+      expect(d).not.toHaveAttribute("open");
+    }
+    expect(screen.getByRole("heading", { name: "전체 부위 로드맵" }).closest("details")).toBeNull();
+  });
 });

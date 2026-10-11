@@ -20,8 +20,8 @@ const c = encodeURIComponent(NAME);
 // ready: 이 조건이 참이 되면 다 그려진 것(API 응답까지). act: 찍기 전에 할 동작.
 export const SCREENS = [
   { id: "home", url: "/#/", ready: "!!document.querySelector('.hero-search')" },
-  { id: "summary", url: `/#/c/${c}?tab=summary`, ready: "document.querySelectorAll('.equip-grid button.slot').length > 5" },
-  { id: "summary-tooltip", url: `/#/c/${c}?tab=summary`, ready: "document.querySelectorAll('.equip-grid button.slot').length > 5",
+  { id: "summary", url: `/#/c/${c}?tab=summary`, ready: "document.querySelectorAll('.equip-grid button.slot').length > 5 && !document.querySelector('.top-pick[aria-busy=true]')" },
+  { id: "summary-tooltip", url: `/#/c/${c}?tab=summary`, ready: "document.querySelectorAll('.equip-grid button.slot').length > 5 && !document.querySelector('.top-pick[aria-busy=true]')",
     act: "document.querySelector('.equip-grid button.slot').click()", after: "!!document.querySelector('.tooltip')" },
   { id: "upgrade", url: `/#/c/${c}?tab=upgrade`, ready: "document.querySelectorAll('.rank-card').length > 0", settle: 4000 },
   { id: "calc", url: "/#/calc", ready: "!!document.querySelector('.calc-grid')" },

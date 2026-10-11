@@ -75,15 +75,19 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
                       <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
                       <span className="score-badge" title="보스 실딜 상승">실딜 {formatPct(v.delta_pct)}</span>
                     </div>
-                    <p className="rank-target"><span className={`grade-chip ${gradeClass(v.grade)}`}>{label(v)}</span>{v.target.join(" / ")}</p>
+                    <ul className="rank-cond" aria-label="경매장 검색 조건">
+                      <li className="cond-slot">{v.slot}</li>
+                      <li className={`cond-grade ${gradeClass(v.grade)}`}>{v.kind} {v.grade}</li>
+                      {v.target.map((t, k) => <li key={k}>{t}</li>)}
+                    </ul>
                     <div className="rank-cost">
                       <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
-                      <span className="eff-value">억당 효율 <strong className="num">{formatPct(v.per_100m)}</strong></span>
+                      <span className="eff-value">1억 메소당 실딜 <strong className="num">{formatPct(v.per_100m)}</strong></span>
                     </div>
                     <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {v.route !== "큐브" ? (
-                      <button type="button" className="ghost small rank-copy" onClick={() => copy(v)}>
+                      <button type="button" className={`rank-copy${i === 0 ? "" : " ghost small"}`} onClick={() => copy(v)}>
                         {copied === `${v.slot}-${v.kind}` ? "복사했어요" : "경매장 조건 복사"}</button>
                     ) : <p className="muted small rank-market">경매장에서 살 수 없는 템 — 지금 템에 큐브</p>}
                   </li>

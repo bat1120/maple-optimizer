@@ -27,6 +27,9 @@ const body = {
   ],
 };
 
+// 순위 카드(목록의 직계 항목)만 센다 — 카드 안의 경매장 조건 칩 목록은 빼고(2026-10-11)
+const cards = () => [...screen.getByRole("list", { name: "가격 대비 순위" }).children];
+
 describe("roadmap panel", () => {
   it("전체 부위의 다음 단계를 잠재·에디로 보여주고, 큐브 경로를 표시한다", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
@@ -52,7 +55,7 @@ describe("roadmap panel", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     render(<RoadmapPanel name="x" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const rows = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    const rows = cards();
     expect(rows[0]).toHaveTextContent("엠블렘 에디");
     expect(rows[0]).toHaveTextContent("253억 8269만");
     expect(rows[0]).toHaveTextContent("+0.029%");
@@ -63,7 +66,7 @@ describe("roadmap panel", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     render(<RoadmapPanel name="x" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const rows = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    const rows = cards();
     expect(rows[0]).toHaveTextContent("시세 180억 (3건, 최저 150억) · 억당 +0.041%");
     expect(rows[1]).not.toHaveTextContent("시세 없음");   // 2026-10-11 심사: 시세가 없으면 줄을 비운다(뜻이 모호했다)
   });
@@ -73,7 +76,7 @@ describe("roadmap panel", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...body, value_ranking: many }) });
     render(<RoadmapPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const list = () => within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    const list = () => cards();
     expect(list()).toHaveLength(8);
     fireEvent.click(screen.getByRole("button", { name: "순위 3개 더 보기" }));
     expect(list()).toHaveLength(11);
@@ -86,8 +89,17 @@ describe("roadmap panel", () => {
     Object.defineProperty(navigator, "clipboard", { value: { writeText: write }, configurable: true });
     render(<RoadmapPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
-    const first = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem")[0];
+    const first = cards()[0];
     await act(async () => { fireEvent.click(within(first).getByRole("button", { name: "경매장 조건 복사" })); });
     expect(write).toHaveBeenCalledWith("엠블렘 · 에디 레전드리 · 마력 +12% / 마력 +9%");
+  });
+
+  it("순위 카드 안에 경매장 조건을 칩으로 바로 보여 준다(부위·등급·옵션 줄)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
+    render(<RoadmapPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
+    const first = cards()[0];
+    const chips = within(first).getByRole("list", { name: "경매장 검색 조건" });
+    expect(within(chips).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["엠블렘", "에디 레전드리", "마력 +12%", "마력 +9%"]);
   });
 });

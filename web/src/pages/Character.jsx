@@ -69,6 +69,16 @@ function Skeleton() {
   );
 }
 
+// 접어 두는 구역(2026-10-11 심사 2회차: 1위가 셋으로 갈려 '무엇부터'가 흐려졌다 → 가격 대비 순위만 펼친다)
+function Fold({ title, children }) {
+  return (
+    <details className="fold">
+      <summary>{title}</summary>
+      {children}
+    </details>
+  );
+}
+
 // 닉네임을 못 찾았을 때(404): 같은 이름 '다시 시도'는 막다른 길이라, 그 닉네임을 채운 검색창으로 고쳐 찾게 한다(2026-10-11 디자인 심사)
 function NotFound({ name }) {
   const [q, setQ] = useState(name);
@@ -158,9 +168,9 @@ export default function Character({ route }) {
             <div className="stack">
               {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
               <RoadmapPanel name={name} defense={defense} autoLoad />
-              <RecommendPanel name={name} defense={defense} autoLoad />
-              <PathsPanel name={name} defense={defense} autoLoad showRefresh={false} />
-              <TargetRoadmapPanel name={name} defense={defense} />
+              <Fold title="실딜이 큰 순서의 경매장 조건(가격은 안 봐요)"><RecommendPanel name={name} defense={defense} autoLoad /></Fold>
+              <Fold title="방법별 비교 — 구매·직작·큐브·스타포스·HEXA"><PathsPanel name={name} defense={defense} autoLoad showRefresh={false} /></Fold>
+              <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={defense} /></Fold>
               <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} /></div>
               <p className="card mobile-only muted note-box">
                 <Icon name="monitor" size={16} />
