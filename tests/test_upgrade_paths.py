@@ -82,8 +82,8 @@ def test_all_paths_are_meaningful_and_sorted_by_value_and_include_cube_on_curren
 
 def test_paths_without_observations_still_rank_cube_routes():
     _, _, paths = _paths([])
-    # 관측 매물이 없으면 지금 템을 올리는 경로(큐브·스타포스 — 2026-10-07 스타포스 추가)만
-    assert paths["all"] and all(p["path"] in ("큐브", "스타포스") for p in paths["all"])
+    # 관측 매물이 없으면 지금 템을 올리는 경로(큐브·스타포스 — 2026-10-07 스타포스, 2026-10-11 추옵 메소 재설정 추가)만
+    assert paths["all"] and all(p["path"] in ("큐브", "스타포스", "추옵") for p in paths["all"])
     assert any(p["path"] == "큐브" for p in paths["all"])
 
 

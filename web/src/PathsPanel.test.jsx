@@ -111,4 +111,21 @@ describe("paths panel", () => {
     const url = decodeURIComponent(f.mock.calls.at(-1)[0]);
     expect(url).toContain("spare_by_slot=벨트:5000000000");
   });
+  it("추옵: 불꽃 값(만 메소)을 넣으면 flame_prices로 보내고, 추옵 행에 불꽃·평균 횟수·주스탯 환산 목표를 보여 준다", async () => {
+    const fl = { slot: "무기", path: "추옵", name: "제네시스 카르타", flame: "추가옵션 재설정", price_each: 3e6,
+                 expected_tries: 1154.65, reach_probability: 0.000866, target_score: 8.93, mean_score: 9.42, current_score: 8.93,
+                 target_main: 829.4, current_main: 829.3, delta_pct: 0.49, cost: 3.46e9, cost_text: "34억 6396만", per_100m: 0.014,
+                 kind: null, set_change: [] };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [fl], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("심연의 환생의 불꽃 1개 값(만 메소)"), { target: { value: "5000" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = decodeURIComponent(f.mock.calls.at(-1)[0]);
+    expect(url).toContain("flame_prices=심연:50000000");
+    const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("추옵 · 제네시스 카르타 · 추가옵션 재설정");
+    expect(row).toHaveTextContent("평균 1,155회");
+    expect(row).toHaveTextContent("주스탯 환산 829 → 830 이상");
+  });
 });
