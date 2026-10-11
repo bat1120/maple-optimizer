@@ -53,7 +53,7 @@
   --tip-bg: oklch(15% 0.012 265); --tip-line: oklch(32% 0.020 265);
   --gold-soft: oklch(32% 0.06 91); --star-ink: var(--star); --up: oklch(76% 0.140 150); --btn: oklch(70% 0.180 45); --btn-hover: oklch(76% 0.150 50); --on-btn: oklch(18% 0.020 45); --success: oklch(76% 0.140 150);
   --error: oklch(70% 0.17 25); --error-soft: oklch(28% 0.07 25);
-  --grade-rare: var(--tip-rare); --grade-epic: var(--tip-epic); --grade-unique: var(--tip-unique); --grade-legendary: var(--tip-legendary);
+  --grade-rare: var(--tip-rare); --grade-epic: var(--tip-epic); --grade-unique: oklch(78% 0.150 85); --grade-legendary: oklch(72% 0.170 145);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -66,7 +66,7 @@
     --tip-bg: oklch(15% 0.012 265); --tip-line: oklch(32% 0.020 265);
     --gold-soft: oklch(32% 0.06 91); --star-ink: var(--star); --up: oklch(76% 0.140 150); --btn: oklch(70% 0.180 45); --btn-hover: oklch(76% 0.150 50); --on-btn: oklch(18% 0.020 45); --success: oklch(76% 0.140 150);
     --error: oklch(70% 0.17 25); --error-soft: oklch(28% 0.07 25);
-    --grade-rare: var(--tip-rare); --grade-epic: var(--tip-epic); --grade-unique: var(--tip-unique); --grade-legendary: var(--tip-legendary);
+    --grade-rare: var(--tip-rare); --grade-epic: var(--tip-epic); --grade-unique: oklch(78% 0.150 85); --grade-legendary: oklch(72% 0.170 145);
     color-scheme: dark;
   }
 }
@@ -613,6 +613,18 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .rank-cost { flex-direction: column; align-items: stretch; gap: 2px; }
   .rank-cost > span { display: flex; justify-content: space-between; gap: var(--sp-2); }
   button.small { min-height: 40px; }
+  fieldset.events .chip { min-height: 40px; }
+  .top-pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2) var(--sp-3); }
+  .top-pick-label { justify-self: start; }
+  .top-pick-go { grid-row: 1; grid-column: 2; min-height: 44px; }
+  .top-pick-body { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--sp-3); align-items: baseline; }
+  .top-pick-body > strong { font-size: var(--fs-lg); }
+  .top-pick-body > .muted:first-of-type { grid-column: 1 / -1; grid-row: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-pick-gain { grid-row: 1; grid-column: 2; white-space: nowrap; }
+  .top-pick-body > .muted:last-child:not(:first-of-type) { grid-column: 1 / -1; white-space: nowrap; }
+  section table.rank-table { display: table; width: 100%; white-space: normal; }
+  .rank-table th, .rank-table td { padding-left: 6px; padding-right: 6px; }
+  .rank-table td.num, .rank-table th.num { white-space: nowrap; font-size: var(--fs-sm); }
   section table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
   section table td .muted, section table td br + span { white-space: normal; }
   .calc-grid, .panels { grid-template-columns: minmax(0, 1fr); }
