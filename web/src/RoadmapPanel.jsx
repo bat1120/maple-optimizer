@@ -6,6 +6,7 @@ import { gradeClass } from "./character/grades.js";
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
+const TOP = 8; // 가격 대비 순위는 처음 8개만(나머지는 [더 보기])
 const label = (t) => `${t.grade} ${t.lines_good}줄`;
 // 관측 시세: 화면 분석으로 쌓인 매물 중 이 단계 조건을 갖춘 것
 const marketText = (m) => (m ? `시세 ${formatMeso(m.median)} (${m.count}건, 최저 ${formatMeso(m.min)}) · 억당 ${formatPct(m.per_100m)}` : "시세 없음");
@@ -21,6 +22,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const load = async () => {
     setBusy(true);
@@ -62,7 +64,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
               <details className="note"><summary>가격·시세 기준 보기</summary><p className="muted small">{data.value_note} {data.market_note}</p></details>
               {/* 환산주스탯 '아이템 리스트' 문법: 카드 2단 · 오른쪽 위 남색 배지(실딜) · 비용 · 억당 막대 */}
               <ol className="rank-cards" aria-label="가격 대비 순위">
-                {data.value_ranking.map((v, i) => (
+                {(showAll ? data.value_ranking : data.value_ranking.slice(0, TOP)).map((v, i) => (
                   <li key={`${v.slot}-${v.kind}`} className="rank-card">
                     <div className="rank-top">
                       <span className={`medal medal-${i + 1}`}>{i + 1}</span>
@@ -79,12 +81,18 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
                   </li>
                 ))}
               </ol>
+              {data.value_ranking.length > TOP && (
+                <button type="button" className="ghost small" onClick={() => setShowAll(!showAll)}>
+                  {showAll ? "순위 접기" : `순위 ${data.value_ranking.length - TOP}개 더 보기`}
+                </button>
+              )}
             </>
           )}
           {data.value_ranking?.length === 0 && data.slots.length === 0 && (
             <EmptyState icon="trend" title="올릴 수 있는 단계를 찾지 못했어요">지금 장비 기준으로 계산된 단계가 없어요.</EmptyState>
           )}
-          <h4>부위별 다음 단계</h4>
+          <details className="more">
+          <summary>부위별 다음 단계·모든 단계 보기</summary>
           <table aria-label="부위별 다음 단계">
             <thead><tr><th>부위</th><th>지금</th><th>잠재 다음 단계</th><th>에디 다음 단계</th></tr></thead>
             <tbody>
@@ -113,6 +121,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
               ))}
             </details>
           ))}
+          </details>
         </>
       )}
     </section>

@@ -455,6 +455,10 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 .rank-cost .eff .bar { align-self: stretch; margin: 2px 0; }
 .rank-cost .eff .num { font-size: var(--fs-xs); color: var(--muted); }
 .rank-market { margin: var(--sp-1) 0 0; }
+/* 부위별 자세히(접기) — 순위 아래 긴 표·목록을 한 번에 접어 둔다 */
+details.more { margin: var(--sp-4) 0 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
+details.more > summary { font-weight: 700; color: var(--text-2); }
+details.more[open] > summary { margin-bottom: var(--sp-2); }
 
 /* 추천 카드 */
 .rec-item strong:first-child { font-size: var(--fs-base); }

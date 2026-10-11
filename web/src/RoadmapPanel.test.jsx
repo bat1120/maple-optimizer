@@ -67,4 +67,16 @@ describe("roadmap panel", () => {
     expect(rows[0]).toHaveTextContent("시세 180억 (3건, 최저 150억) · 억당 +0.041%");
     expect(rows[1]).toHaveTextContent("시세 없음");
   });
+
+  it("가격 대비 순위는 처음 8개만 보이고 [더 보기]로 나머지를 펼친다, 부위별 표는 접어 둔다", async () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({ ...body.value_ranking[1], slot: `부위${i + 1}`, per_100m: 0.02 - i * 0.001 }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...body, value_ranking: many }) });
+    render(<RoadmapPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
+    const list = () => within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
+    expect(list()).toHaveLength(8);
+    fireEvent.click(screen.getByRole("button", { name: "순위 3개 더 보기" }));
+    expect(list()).toHaveLength(11);
+    expect(screen.getByText("부위별 다음 단계·모든 단계 보기").closest("details")).not.toHaveAttribute("open");
+  });
 });
