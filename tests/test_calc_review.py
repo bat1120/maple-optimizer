@@ -96,20 +96,14 @@ def test_cube_table_parser_sums_repeated_lines():
 
 
 def test_saved_cube_tables_lines_sum_to_100():
-    """저장된 표의 줄 합. 에픽 무기·보조무기·엠블렘 2·3번째 줄은 옛 파서가 중복 문장을 덮어써 98%대 — 다시 받기 전까지 알려진 예외."""
+    """저장된 표의 모든 줄 합이 100%(2026-10-11 다시 받음 — 옛 파서가 덮어쓴 에픽 무기 방무 +15% 0.87% → 2.50%)."""
     import json
     import pathlib
     t = json.loads((pathlib.Path(__file__).resolve().parents[1] / "engine/data/cube_tables.json").read_text(encoding="utf-8"))
-    bad = []
-    for kind, grades in t["tables"].items():
-        for grade, parts in grades.items():
-            for part, bands in parts.items():
-                for band, lines in bands.items():
-                    for i, ln in enumerate(lines):
-                        if abs(sum(ln.values()) - 100) > 0.01:
-                            bad.append((kind, grade, part, band, i))
-    known = {("잠재", "에픽", p, b, i) for p in ("무기", "보조무기", "엠블렘") for b in ("200", "250") for i in (1, 2)}
-    assert set(bad) <= known, sorted(set(bad) - known)
+    bad = [(k, g, p, b, i) for k, grades in t["tables"].items() for g, parts in grades.items() for p, bands in parts.items()
+           for b, lines in bands.items() for i, ln in enumerate(lines) if abs(sum(ln.values()) - 100) > 0.01]
+    assert not bad, bad
+    assert t["tables"]["잠재"]["에픽"]["무기"]["200"][1]["몬스터 방어율 무시 +15%"] == pytest.approx(2.5023)
 
 
 # ── 과대평가 6건(2026-10-11 검토 2차) ──
