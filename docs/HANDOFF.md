@@ -15,7 +15,7 @@
 | 스타포스 경로 | 성별 스탯 표(실측 검산), 기대 비용·흔적 복구·평균 파괴·스페어 | `engine/enhance/starforce_stats.py`, `engine/enhance/starforce.py` |
 | 강화 이벤트 | 썬데이 스타포스(개별)·파괴 방지·미라클 타임·부위별 스페어·불꽃 값 | `engine/market/events.py` |
 | HEXA | HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨, 연무장 딜 지분) | `engine/stats/hexa.py`, `engine/market/hexa_paths.py`, `engine/market/hexa_core_paths.py` |
-| 경로 비교 | 구매·직작·큐브·스타포스·추옵·HEXA를 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
+| 경로 비교 | 구매·직작·큐브·스타포스·추옵·HEXA·심볼을 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
 - (2026-10-11 끝남: 썬데이 이벤트 개별 선택, 부위별 스페어, 화면 분석 한도 DB, 테스트 템 제거, HEXA 3rd·강화 코어, 추옵 경로)
@@ -24,6 +24,7 @@
 - 추옵: 보스 장비로 출처 확인된 템만(에테르넬·도전자·일반·데스티니 무기 빠짐), 제네시스 2차 해방 전 재설정 불가 미반영,
   불꽃 가격은 사용자 입력
 - 큐브표 다시 받기: 옛 파서가 같은 문장을 덮어써 잠재 에픽 무기·보조·엠블렘 2·3번째 줄 합이 98%대(방무 +15% 과소). 파서는 고쳤고 `tools/fetch_cube_tables.py` 재실행은 사용자 확인 뒤
+- 심볼: 포스 보정(보스 요구 포스)·11레벨 지역 보스 데미지 +20% 미반영 — 보스 목록·요구 포스·전체 포스 출처 필요
 - MapleScouter 자동 채우기(확장·북마클릿) 유지 여부 — 약관 제15조 위험, 사용자 결정 대기
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
