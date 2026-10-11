@@ -39,7 +39,7 @@ TOOL_DEFS = [
     {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
                       "required": ["name"]}},
-    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위·잠재/에디마다 지금보다 한 단계 위(grade·lines_good)로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
+    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 카드 하나 — 잠재·에디를 각각 지금보다 한 단계 위로 바꾼 조건을 한 번에 검색하도록 묶고(parts), 둘을 함께 바꾸면 보스 실딜이 몇 % 오르는지(delta_pct, 종류별은 parts[].delta_pct) 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},

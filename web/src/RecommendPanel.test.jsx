@@ -18,6 +18,38 @@ const body = {
   ],
 };
 
+const combined = {
+  ...body,
+  recommendations: [
+    { slot: "보조무기", category: "보조무기", kind: "잠재+에디", grade: "레전드리", lines_good: 3, min_starforce: 0, delta_pct: 8.6,
+      target_potentials: ["마력 +12%", "마력 +9%", "마력 +9%"], kept: [],
+      parts: [
+        { kind: "잠재", grade: "레전드리", lines_good: 3, target: ["마력 +12%", "마력 +9%", "마력 +9%"], delta_pct: 4.739, kept: [] },
+        { kind: "에디", grade: "유니크", lines_good: 3, target: ["마력 +9%", "마력 +6%", "마력 +6%"], delta_pct: 3.572, kept: [] },
+      ],
+      current: { name: "녹스 마법깃펜", starforce: 0, potentials: ["보스 몬스터 데미지 +40%"], additional: ["보스 몬스터 데미지 +18%"] } },
+  ],
+};
+
+describe("recommend panel — 윗잠·에디 한 번에(2026-10-11)", () => {
+  it("부위당 카드 하나에 잠재·에디 조건과 종류별 실딜을 같이 보여 주고, 복사도 한 줄로", async () => {
+    const writeText = vi.fn();
+    Object.assign(navigator, { clipboard: { writeText } });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => combined });
+    render(<RecommendPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
+    const [card] = within(screen.getByRole("list", { name: "추천 검색 조건" })).getAllByRole("listitem");
+    expect(card).toHaveTextContent("실딜 +8.600%");
+    expect(card).toHaveTextContent("잠재 레전드리 3줄");
+    expect(card).toHaveTextContent("에디 유니크 3줄");
+    expect(card).toHaveTextContent("잠재만 +4.739%");
+    expect(card).toHaveTextContent("에디만 +3.572%");
+    expect(card).toHaveTextContent("지금 에디: 보스 몬스터 데미지 +18%");
+    fireEvent.click(within(card).getByRole("button", { name: "복사" }));
+    expect(writeText).toHaveBeenCalledWith("보조무기 · 잠재 레전드리 마력 +12% / 마력 +9% / 마력 +9% · 에디 유니크 마력 +9% / 마력 +6% / 마력 +6% · 0성 이상");
+  });
+});
+
 describe("recommend panel", () => {
   it("보스 세팅 기준 검색 조건 카드를 실딜 상승과 함께 보여준다", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });

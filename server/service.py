@@ -369,22 +369,29 @@ def _cooldown(snap: CharacterSnapshot, cooldown_main_pct: float | None, setting=
 def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_main_pct: float | None = None) -> dict:
     """게임 경매장 검색 조건 카드(잠재·에디). 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도).
     제네시스·데스티니 무기처럼 경매장에서 살 수 없는 템은 빠진다(로드맵에서 큐브 경로로 본다)."""
-    from engine.market.recommend import recommend_searches
+    from engine.market.recommend import combined_searches
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
     cards = []
-    for r in recommend_searches(snap, chosen, b, CATALOG, top=top, cooldown_main_pct=cooldown_main_pct):
-        category = r.slot.rstrip("0123456789") or r.slot
-        cards.append({"slot": r.slot, "category": category, "kind": r.kind, "grade": r.grade,
-                      "lines_good": r.lines_good, "target_potentials": r.target, "min_starforce": r.min_starforce,
-                      "delta_pct": r.delta_pct, "probability": r.probability, "kept": r.kept,
-                      "search": f"{category} · {r.kind} {r.grade} {' / '.join(r.target)} · {r.min_starforce}성 이상",
-                      "current": {"name": r.current_name, "starforce": r.min_starforce, "potentials": r.current}})
+    # 부위당 카드 하나: 윗잠·에디를 한 번에 검색(2026-10-11). 위쪽 키(kind·grade·target_potentials)는 첫 종류 — 예전 화면 호환
+    for c in combined_searches(snap, chosen, b, CATALOG, top=top, cooldown_main_pct=cooldown_main_pct):
+        category = c["slot"].rstrip("0123456789") or c["slot"]
+        first = c["parts"][0]
+        cond = " · ".join(f"{p['kind']} {p['grade']} {' / '.join(p['target'])}" for p in c["parts"])
+        cards.append({"slot": c["slot"], "category": category, "kind": "+".join(p["kind"] for p in c["parts"]),
+                      "grade": first["grade"], "lines_good": first["lines_good"], "target_potentials": first["target"],
+                      "parts": c["parts"], "min_starforce": c["min_starforce"], "delta_pct": c["delta_pct"],
+                      "probability": first["probability"], "kept": [k for p in c["parts"] for k in p["kept"]],
+                      "search": f"{category} · {cond} · {c['min_starforce']}성 이상",
+                      "current": {"name": c["current_name"], "starforce": c["min_starforce"],
+                                  "potentials": next((p["current"] for p in c["parts"] if p["kind"] == "잠재"), []),
+                                  "additional": next((p["current"] for p in c["parts"] if p["kind"] == "에디"), [])}})
     cd, cd_note = _cooldown(snap, cooldown_main_pct, chosen, b)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
             "recommendations": cards,
             "cooldown_main_pct": cooldown_main_pct, "cooldown": cd,
-            "note": ("부위·잠재/에디마다 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐어요. "
+            "note": ("부위마다 잠재·에디를 한 번에 검색하는 카드예요. 각각 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐고, "
+                     "카드 실딜은 둘을 함께 바꾼 값이에요(종류별 실딜은 카드 안에). "
                      "줄 수치는 공식 큐브 확률표의 흔한 줄(확률 2% 이상, 이탈 제외)이고, 그 줄만 바꾼 같은 템 기준이에요. "
                      "쿨감 줄은 유지해요 — " + cd_note)}
 
