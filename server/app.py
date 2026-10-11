@@ -57,7 +57,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
-               vision_dataset_dir: str | None = None, vision_public_daily: int = 20,
+               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0,
                vision_frames_per_min: int = 240) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
@@ -263,7 +263,29 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                                  on_usage=usage.add)
 
         def sse():
-            for e in events():
+            # 도구 계산·모델 응답을 기다리는 동안 agent_ping_seconds마다 SSE 주석을 보내 연결을 살린다
+            # (2026-10-12: 데모에서 31초 도구 + 모델 응답 동안 조용해 끊겨 '호출'에서 멈췄다)
+            import queue
+            import threading
+            q: queue.Queue = queue.Queue()
+            end = object()
+
+            def work():
+                try:
+                    for e in events():
+                        q.put(e)
+                finally:
+                    q.put(end)
+
+            threading.Thread(target=work, daemon=True).start()
+            while True:
+                try:
+                    e = q.get(timeout=agent_ping_seconds)
+                except queue.Empty:
+                    yield ": ping\n\n"
+                    continue
+                if e is end:
+                    return
                 yield "data: " + json.dumps(e, ensure_ascii=False, default=str) + "\n\n"
 
         return StreamingResponse(sse(), media_type="text/event-stream")

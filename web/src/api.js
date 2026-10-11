@@ -113,6 +113,7 @@ export async function streamAgent(messages, onEvent) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
+  let finished = false;
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
@@ -121,9 +122,14 @@ export async function streamAgent(messages, onEvent) {
     while ((i = buf.indexOf("\n\n")) >= 0) {
       const chunk = buf.slice(0, i);
       buf = buf.slice(i + 2);
-      if (chunk.startsWith("data: ")) onEvent(JSON.parse(chunk.slice(6)));
+      if (!chunk.startsWith("data: ")) continue; // ': ping' 같은 연결 유지 주석
+      const ev = JSON.parse(chunk.slice(6));
+      if (ev.type === "done") finished = true;
+      onEvent(ev);
     }
   }
+  // done 없이 끝나면 중간에 끊긴 것 — 아무 말 없이 멈춰 보이지 않게(2026-10-12)
+  if (!finished) throw new ApiError(0, "STREAM_CUT", "연결이 끊겼어요 — 서버가 계산하는 동안 응답이 끊겼을 수 있어요. 다시 물어봐 주세요.");
 }
 
 export const postVision = (body) => post("/api/vision/listings", body);
