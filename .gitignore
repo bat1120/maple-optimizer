@@ -29,3 +29,6 @@ tests/goals/
 scripts/verify.ps1
 scripts/rollback.ps1
 design.md
+
+# 디자인 심사 캡처 결과(2026-10-11)
+tools/design_review/out/

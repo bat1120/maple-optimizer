@@ -89,6 +89,20 @@ describe("character page", () => {
     expect(screen.queryByRole("list", { name: "장비 목록" })).toBeNull();
   });
 
+  it("요약 탭 위에 '업그레이드 1순위' 한 줄 — 누르면 업그레이드 탭", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      if (String(url).includes("/settings")) return ok(SETTINGS);
+      if (String(url).includes("/roadmap")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", slots: [], value_ranking: [
+        { slot: "엠블렘", kind: "에디", grade: "레전드리", lines_good: 2, target: ["마력 +12%", "마력 +9%"], delta_pct: 5.55, cube_cost_text: "253억 8269만", per_100m: 0.022 }] });
+      return ok(SUMMARY);
+    });
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    const pick = await screen.findByRole("region", { name: "업그레이드 1순위" });
+    expect(pick).toHaveTextContent("엠블렘 에디");
+    expect(pick).toHaveTextContent("+5.550%");
+    expect(within(pick).getByRole("link", { name: /순위 전체 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
+  });
+
   it("세팅 순위: 1위 메달", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
@@ -114,10 +128,21 @@ describe("character page", () => {
     expect(screen.queryByText(/관리자 로그인/)).toBeNull();
   });
 
-  it("오류는 카드 안에 서버 문구 그대로 + 다시 시도", async () => {
-    const f = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({ code: "NOT_FOUND", message: "캐릭터를 찾을 수 없어요." }) });
+  // 2026-10-11 디자인 심사: 닉네임을 못 찾으면 같은 이름 '다시 시도'는 막다른 길 → 닉네임이 채워진 검색창으로 고쳐 찾게
+  it("닉네임을 못 찾으면(404) 그 닉네임이 채워진 검색창과 [다시 검색], 아래 탭 막대는 숨긴다", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 404, json: async () => ({ code: "NOT_FOUND", message: "캐릭터를 찾을 수 없어요." }) });
+    const { container } = render(<Character route={{ page: "character", name: "없는캐릭", tab: "summary" }} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("「없는캐릭」 캐릭터를 찾지 못했어요");
+    expect(screen.getByRole("searchbox", { name: "캐릭터 닉네임 다시 검색" })).toHaveValue("없는캐릭");
+    expect(screen.getByRole("button", { name: "다시 검색" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다시 시도" })).toBeNull();
+    expect(container.querySelector(".bottom-tabs")).toBeNull();
+  });
+
+  it("서버 오류는 카드 안에 서버 문구 그대로 + 다시 시도", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({ code: "NEXON_DOWN", message: "넥슨 Open API가 응답하지 않아요." }) });
     render(<Character route={{ page: "character", name: "없는캐릭", tab: "summary" }} />);
-    expect(await screen.findByRole("alert")).toHaveTextContent("캐릭터를 찾을 수 없어요.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("넥슨 Open API가 응답하지 않아요.");
     f.mockImplementation(async (url) => (String(url).includes("/settings") ? ok(SETTINGS) : ok(SUMMARY)));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "다시 시도" })); });
     expect(await screen.findByRole("heading", { name: "내신부레테" })).toBeInTheDocument();

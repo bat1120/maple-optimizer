@@ -111,4 +111,15 @@ describe("paths panel", () => {
     const url = decodeURIComponent(f.mock.calls.at(-1)[0]);
     expect(url).toContain("spare_by_slot=벨트:5000000000");
   });
+
+  it("경로 표는 처음 5줄 + [나머지 N개 보기], 세트 변화가 하나도 없으면 그 열을 숨긴다", async () => {
+    const row = { ...PATHS.all[0], set_change: [] };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: Array.from({ length: 7 }, () => row) }));
+    render(<PathsPanel name="내신부레테" defense={300} autoLoad />);
+    const table = await screen.findByRole("table", { name: "업그레이드 경로" });
+    expect(within(table).getAllByRole("row")).toHaveLength(1 + 5);
+    expect(within(table).queryByRole("columnheader", { name: "세트 변화" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "나머지 2개 보기" }));
+    expect(within(table).getAllByRole("row")).toHaveLength(1 + 7);
+  });
 });

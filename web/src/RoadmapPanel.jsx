@@ -23,6 +23,10 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [copied, setCopied] = useState(null);
+  // 경매장 검색 조건 그대로(게임 경매장에서 이 조건으로 찾는다) — 2026-10-11 심사: 순위 카드에서 바로 경매장으로
+  const condition = (v) => `${v.slot} · ${v.kind} ${v.grade} · ${v.target.join(" / ")}`;
+  const copy = async (v) => { try { await navigator.clipboard.writeText(condition(v)); setCopied(`${v.slot}-${v.kind}`); } catch { /* 복사 못 하면 조용히 */ } };
 
   const load = async () => {
     setBusy(true);
@@ -65,19 +69,23 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
               {/* 환산주스탯 '아이템 리스트' 문법: 카드 2단 · 오른쪽 위 남색 배지(실딜) · 비용 · 억당 막대 */}
               <ol className="rank-cards" aria-label="가격 대비 순위">
                 {(showAll ? data.value_ranking : data.value_ranking.slice(0, TOP)).map((v, i) => (
-                  <li key={`${v.slot}-${v.kind}`} className="rank-card">
+                  <li key={`${v.slot}-${v.kind}`} className={`rank-card${i === 0 ? " top1" : ""}`}>
                     <div className="rank-top">
                       <span className={`medal medal-${i + 1}`}>{i + 1}</span>
                       <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
-                      <span className="score-badge" title="보스 실딜 상승">{formatPct(v.delta_pct)}</span>
+                      <span className="score-badge" title="보스 실딜 상승">실딜 {formatPct(v.delta_pct)}</span>
                     </div>
                     <p className="rank-target"><span className={`grade-chip ${gradeClass(v.grade)}`}>{label(v)}</span>{v.target.join(" / ")}</p>
                     <div className="rank-cost">
-                      <span>큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
-                      <span className="eff"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} />
-                        <span className="num">억당 {formatPct(v.per_100m)}</span></span>
+                      <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
+                      <span className="eff-value">억당 효율 <strong className="num">{formatPct(v.per_100m)}</strong></span>
                     </div>
-                    <p className="rank-market muted small">{marketText(v.market)}</p>
+                    <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
+                    {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
+                    {v.route !== "큐브" ? (
+                      <button type="button" className="ghost small rank-copy" onClick={() => copy(v)}>
+                        {copied === `${v.slot}-${v.kind}` ? "복사했어요" : "경매장 조건 복사"}</button>
+                    ) : <p className="muted small rank-market">경매장에서 살 수 없는 템 — 지금 템에 큐브</p>}
                   </li>
                 ))}
               </ol>

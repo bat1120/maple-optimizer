@@ -30,6 +30,9 @@ export default function TopBar({ route }) {
                    onChange={(e) => setQ(e.target.value)} />
           </form>
         )}
+        {route.page !== "home" && (
+          <a className="mobile-search" href="#/" aria-label="캐릭터 검색"><Icon name="search" size={20} /></a>
+        )}
         <nav className="topbar-nav" aria-label="주요 메뉴">
           <a className="nav-link" href="#/calc" aria-current={route.page === "calc" ? "page" : undefined}>
             <Icon name="calc" size={16} />계산기

@@ -65,7 +65,7 @@ describe("roadmap panel", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const rows = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem");
     expect(rows[0]).toHaveTextContent("시세 180억 (3건, 최저 150억) · 억당 +0.041%");
-    expect(rows[1]).toHaveTextContent("시세 없음");
+    expect(rows[1]).not.toHaveTextContent("시세 없음");   // 2026-10-11 심사: 시세가 없으면 줄을 비운다(뜻이 모호했다)
   });
 
   it("가격 대비 순위는 처음 8개만 보이고 [더 보기]로 나머지를 펼친다, 부위별 표는 접어 둔다", async () => {
@@ -78,5 +78,16 @@ describe("roadmap panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "순위 3개 더 보기" }));
     expect(list()).toHaveLength(11);
     expect(screen.getByText("부위별 다음 단계·모든 단계 보기").closest("details")).not.toHaveAttribute("open");
+  });
+
+  it("순위 카드에서 [경매장 조건 복사] — 그 조건을 그대로 클립보드에", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
+    const write = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: write }, configurable: true });
+    render(<RoadmapPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
+    const first = within(screen.getByRole("list", { name: "가격 대비 순위" })).getAllByRole("listitem")[0];
+    await act(async () => { fireEvent.click(within(first).getByRole("button", { name: "경매장 조건 복사" })); });
+    expect(write).toHaveBeenCalledWith("엠블렘 · 에디 레전드리 · 마력 +12% / 마력 +9%");
   });
 });

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCharacter, getSettings } from "../api.js";
-import { hashFor } from "../router.js";
+import { hashFor, navigate } from "../router.js";
 import { addRecent } from "../recent.js";
 import BottomTabs, { TAB_ICON, TAB_LABEL } from "../layout/BottomTabs.jsx";
 import ProfileCard from "../character/ProfileCard.jsx";
 import EquipmentGrid from "../character/EquipmentGrid.jsx";
+import TopPick from "../character/TopPick.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
 import PathsPanel from "../PathsPanel.jsx";
@@ -68,6 +69,29 @@ function Skeleton() {
   );
 }
 
+// 닉네임을 못 찾았을 때(404): 같은 이름 '다시 시도'는 막다른 길이라, 그 닉네임을 채운 검색창으로 고쳐 찾게 한다(2026-10-11 디자인 심사)
+function NotFound({ name }) {
+  const [q, setQ] = useState(name);
+  const submit = (e) => { e.preventDefault(); if (q.trim()) navigate({ page: "character", name: q.trim() }); };
+  return (
+    <div className="card error-card not-found" role="alert">
+      <span className="error-icon"><Icon name="alert" size={20} /></span>
+      <div className="error-body">
+        <p className="error-title">「{name}」 캐릭터를 찾지 못했어요</p>
+        <p className="muted small">띄어쓰기·대소문자를 확인해 주세요. 막 만든 캐릭터는 넥슨 Open API에 나오기까지 시간이 걸려요.</p>
+        <form role="search" className="hero-search retry-search" onSubmit={submit}>
+          <div className="search-field">
+            <Icon name="search" size={18} className="field-icon" />
+            <input type="search" name="nickname" autoComplete="off" spellCheck={false} aria-label="캐릭터 닉네임 다시 검색"
+                   value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <button type="submit">다시 검색</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Character({ route }) {
   const { name, tab } = route;
   const [defense, setDefense] = useState(300);
@@ -97,14 +121,15 @@ export default function Character({ route }) {
   return (
     <div className="character">
       {busy && !summary && <Skeleton />}
-      {error && (
+      {error && (error.status === 404 ? <NotFound name={name} /> : (
         <ErrorState message={error.message} onRetry={load}>
-          닉네임을 다시 확인하거나 잠시 뒤에 다시 시도해 주세요. <a href="#/">첫 화면으로</a>
+          잠시 뒤에 다시 시도해 주세요. <a href="#/">첫 화면으로</a>
         </ErrorState>
-      )}
+      ))}
       {summary && (
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy} />
+          {tab === "summary" && <TopPick name={name} defense={defense} />}
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -131,10 +156,11 @@ export default function Character({ route }) {
           )}
           {tab === "upgrade" && (
             <div className="stack">
+              {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
               <RoadmapPanel name={name} defense={defense} autoLoad />
+              <RecommendPanel name={name} defense={defense} autoLoad />
               <PathsPanel name={name} defense={defense} autoLoad showRefresh={false} />
               <TargetRoadmapPanel name={name} defense={defense} />
-              <RecommendPanel name={name} defense={defense} autoLoad />
               <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} /></div>
               <p className="card mobile-only muted note-box">
                 <Icon name="monitor" size={16} />
@@ -145,7 +171,7 @@ export default function Character({ route }) {
           {tab === "calc" && <CalcPanels />}
         </div>
       )}
-      <BottomTabs route={{ page: "character", name, tab }} />
+      {(summary || !error) && <BottomTabs route={{ page: "character", name, tab }} />}
     </div>
   );
 }

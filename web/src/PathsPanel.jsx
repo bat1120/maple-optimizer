@@ -19,6 +19,9 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
   const [refresh, setRefresh] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showAllRows, setShowAllRows] = useState(false);
+  const ROWS = 5; // 경로 표는 처음 5줄만(2026-10-11 심사: 15줄 두 줄 셀이 1000px 넘게 늘어났다)
+  const hasSet = (data?.all || []).some((p) => p.set_change?.length); // 세트 변화가 하나도 없으면 빈 열을 숨긴다
 
   const run = async (fn) => {
     setBusy(true);
@@ -105,10 +108,10 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
           {data.all.length === 0 && (
             <EmptyState icon="layers" title="비교할 경로가 아직 없어요">관측 매물이 쌓이거나 큐브로 오를 단계가 있으면 여기에 나와요.</EmptyState>
           )}
-          <table aria-label="업그레이드 경로" hidden={data.all.length === 0}>
-            <thead><tr><th>부위</th><th>경로</th><th className="num">실딜</th><th className="num">비용</th><th className="num">억당</th><th>세트 변화</th></tr></thead>
+          <table aria-label="업그레이드 경로" hidden={data.all.length === 0} className="paths-table">
+            <thead><tr><th>부위</th><th>경로</th><th className="num">실딜</th><th className="num">비용</th><th className="num">억당</th>{hasSet && <th>세트 변화</th>}</tr></thead>
             <tbody>
-              {data.all.map((p, i) => (
+              {(showAllRows ? data.all : data.all.slice(0, ROWS)).map((p, i) => (
                 <tr key={i}>
                   <td>{p.slot}</td>
                   <td>{pathLabel(p)}{p.target ? <><br /><span className="muted">{p.target.join(" / ")}</span></> : null}
@@ -116,12 +119,16 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
                       {p.spare_price ? "(비용에 포함)" : "(스페어 값 미포함 — 흔적 복구 메소만)"}</span></> : null}
                     {p.path === "HEXA 코어" ? <><br /><span className="muted">조각 {p.fragments}개 · 솔 에르다 {p.erda}개 · 딜 지분: {p.share_source}</span></> : null}
                     {p.path === "HEXA 스탯" ? <><br /><span className="muted">조각 평균 {Math.round(p.fragments).toLocaleString("ko-KR")}개(초기화 메소 포함)</span></> : null}</td>
-                  <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num">{formatPct(p.per_100m)}</td>
-                  <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>
+                  <td className="num">{formatPct(p.delta_pct)}</td><td className="num">{p.cost_text}</td><td className="num eff-col">{formatPct(p.per_100m)}</td>
+                  {hasSet && <td className="muted">{p.set_change?.map((c) => `${c.set} ${c.before}→${c.after}`).join(", ") || "—"}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
+          {data.all.length > ROWS && (
+            <button type="button" className="ghost small" onClick={() => setShowAllRows(!showAllRows)}>
+              {showAllRows ? "접기" : `나머지 ${data.all.length - ROWS}개 보기`}</button>
+          )}
         </>
       )}
     </section>
