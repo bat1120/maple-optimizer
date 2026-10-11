@@ -168,7 +168,7 @@ export default function Character({ route }) {
           {tab === "summary" && (
             <div className="summary-grid">
               <div className="stack summary-side">
-                <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} />
+                <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} active={summary.active_setting} />
                 <StatSummary final={summary.final} />
                 {summary.excluded?.length > 0 && (
                   <section className="card">

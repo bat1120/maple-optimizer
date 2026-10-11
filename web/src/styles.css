@@ -376,7 +376,10 @@ label.defense-field input { width: 72px; min-height: 40px; padding: 6px 10px; te
 .mobile-only { display: none; }
 
 /* 요약 탭 — 왼쪽 좁은 단 · 오른쪽 넓은 단 */
-.summary-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.25fr); gap: var(--sp-4); align-items: start; }
+.summary-grid { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr); gap: var(--sp-4); align-items: stretch; }
+/* 두 단 바닥을 맞춘다(2026-10-11 심사 6회차): 왼쪽 마지막 카드가 남는 높이를 채운다 */
+.summary-side { display: flex; flex-direction: column; }
+.summary-side > :last-child { flex: 1; }
 .summary-grid > * { margin: var(--sp-4) 0 0; }
 .summary-side > :first-child { margin-top: 0; }
 .stack > * { margin-top: var(--sp-4); }
@@ -514,6 +517,19 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 .stat-grid > div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); padding: 7px 0; border-bottom: 1px solid var(--line); }
 .stat-grid dt { color: var(--muted); font-size: var(--fs-sm); }
 .stat-grid dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* 순위 카드 오른쪽 위 = 순위 기준(1억 메소당 실딜) */
+.rank-eff { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; white-space: nowrap; }
+.rank-eff-k { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+.rank-eff strong { font-size: var(--fs-lg); font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.top1 .rank-eff strong { font-size: var(--fs-xl, 1.6rem); }
+.rank-cost .muted strong { color: var(--text); }
+/* 보스 세팅 표: 프리셋 번호 칸 — 지금 착용과 다른 값만 진하게 */
+.rank-table { width: 100%; }
+.rank-table th, .rank-table td { padding-left: 6px; padding-right: 6px; }
+.rank-table td.num, .rank-table th.num { white-space: nowrap; }
+.rank-table .combo-col { width: 2.8em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+.rank-table th.combo-col { font-size: var(--fs-xs); white-space: nowrap; }
+.rank-table td.combo-col.diff { color: var(--text); font-weight: 800; }
 .cond-head { margin: 0 0 -2px; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
 .rank-foot { display: flex; align-items: center; min-height: 40px; margin-top: auto; }
 .text-button { min-height: 36px; padding: 4px 0; border: 0; background: none; color: var(--accent); font-weight: 700; font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 3px; }
