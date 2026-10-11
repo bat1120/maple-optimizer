@@ -59,15 +59,15 @@ describe("paths panel", () => {
     render(<PathsPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "샤이닝 스타포스 한 번에" })); });
-    for (const n of [/30% 할인/, /21성 이하 파괴 30% 감소/, /5·10·15성 100%/, /복구 메소 20% 할인/]) {
-      expect(screen.getByRole("checkbox", { name: n })).toBeChecked();
-    }
+    // 샤이닝 = 30% 할인 + 21성 이하 파괴 30% 감소(나무위키). 5·10·15성 100%·복구 메소 할인은 따로 고른다
+    for (const n of [/30% 할인/, /21성 이하 파괴 30% 감소/]) expect(screen.getByRole("checkbox", { name: n })).toBeChecked();
+    for (const n of [/5·10·15성 100%/, /복구 메소 20% 할인/]) expect(screen.getByRole("checkbox", { name: n })).not.toBeChecked();
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /미라클 타임/ })); });
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /파괴 방지/ })); });
     await act(async () => { fireEvent.change(screen.getByLabelText("스페어 1개 값(억)"), { target: { value: "12" } }); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
     const url = f.mock.calls.at(-1)[0];
-    expect(url).toContain("sf=discount30%2Cdestroy_down30%2Cguarantee_5_10_15%2Crestore_discount20%2Cprotect");
+    expect(url).toContain("sf=discount30%2Cdestroy_down30%2Cprotect");
     expect(url).toContain("miracle=true");
     expect(url).toContain("spare_price=1200000000");
   });

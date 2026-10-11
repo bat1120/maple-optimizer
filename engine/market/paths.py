@@ -218,6 +218,9 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
         # 보조무기는 그 직업이 낄 수 있는 종류로 확인된 매물만(engine/market/secondary.py)
         slots = [s for s in slots if _part(s) != "보조무기" or secondary_fits(
             pl.raw[s].part, job_profile(snap.character_class).branches, obs.get("equip_type"), obs.get("job_groups")) is True]
+        # 특수 반지(리스트레인트 등) 스킬 효과는 실딜에 없다 — 일반 반지 매물로 그 칸을 바꾸라고 하지 않는다(2026-10-11)
+        if not obs.get("special_ring_level"):
+            slots = [s for s in slots if not pl.raw[s].special_ring_level]
         if not slots:
             continue
         price = obs["price"] * (1 + OTHER_WORLD_FEE if obs.get("other_world") else 1)

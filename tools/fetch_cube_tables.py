@@ -36,9 +36,17 @@ def parse(page: str) -> list[dict[str, float]] | None:
         return None  # 그 레벨 구간에 없는 부위(예: 201레벨 이상 엠블렘)
     out = []
     for p in parts:
-        out.append({html.unescape(o).strip(): float(v) for o, v in _ROW.findall(p)})
+        # 공식표는 하위 등급 몫과 그 등급 몫을 같은 문장으로 따로 싣는다 — 덮어쓰지 말고 더한다(2026-10-11: 에픽 무기 방무 +15%)
+        d: dict[str, float] = {}
+        for o, v in _ROW.findall(p):
+            o = html.unescape(o).strip()
+            d[o] = d.get(o, 0.0) + float(v)
+        out.append(d)
     if len(out) != 3 or not all(out):
         raise ValueError(f"확률표 형식이 예상과 달라요 (표 {len(out)}개, 줄 수 {[len(x) for x in out]})")
+    sums = [round(sum(x.values()), 4) for x in out]
+    if any(abs(t - 100) > 0.01 for t in sums):
+        raise ValueError(f"확률표 줄 합이 100%가 아니에요 {sums}")
     return out
 
 

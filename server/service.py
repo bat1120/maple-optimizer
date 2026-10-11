@@ -222,6 +222,14 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
             if fits is None:
                 row["secondary_note"] = "툴팁의 장비분류(보조무기 종류)를 못 읽어서, 이 캐릭터가 낄 수 있는 보조무기인지 확인이 필요해요"
         slots = SLOTS_BY_CATEGORY.get(cat, (cat,))
+        if not x.get("special_ring_level"):  # 일반 반지 매물은 특수 반지 칸에 넣지 않는다(2026-10-11)
+            from engine.stats.residual import preset_items
+            worn = preset_items(snap, chosen.equipment)
+            slots = tuple(s for s in slots if not (worn.get(s) and worn[s].special_ring_level))
+            if not slots:
+                row["reason"] = "반지 칸이 모두 특수 반지예요 — 특수 반지 스킬 효과는 실딜에 없어서 일반 반지와 바꾸는 평가는 하지 않아요"
+                out.append(row)
+                continue
         item = item_from_input(slots[0], x.get("part") or cat, x.get("name") or "?", x.get("total") or {},
                                x.get("potentials") or [], snap.level, x.get("starforce") or 0)
         scored = [(s, swap_item(snap, chosen, s, item, b, CATALOG)) for s in slots]

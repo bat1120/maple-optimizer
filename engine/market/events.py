@@ -36,11 +36,11 @@ class Events:
     def parse(cls, sf: str | None = None, miracle: bool = False, spare_price: float | None = None,
               fragment_price: float | None = None, hexa_sunday: bool = False, spare_by_slot: str | None = None,
               flame_prices: str | None = None) -> "Events":
-        """sf: 쉼표로 이은 스타포스 조건(SF_FLAGS 이름, 'shining' = 앞의 넷).
+        """sf: 쉼표로 이은 스타포스 조건(SF_FLAGS 이름, 'shining' = 30% 할인 + 파괴 30% 감소).
         flame_prices: '불꽃:메소'를 쉼표로(불꽃 = 강력·타오르는·영원·검은·심연 또는 아이템 이름)."""
         names = {n.strip() for n in (sf or "").split(",") if n.strip()}
-        if "shining" in names:
-            names |= {"discount30", "destroy_down30", "guarantee_5_10_15", "restore_discount20"}
+        if "shining" in names:  # 나무위키 '메이플스토리/스타포스 강화': 비용 30% 할인 + 21성 이하 파괴 30% 감소(2026-10-11)
+            names |= {"discount30", "destroy_down30"}
         unknown = names - set(SF_FLAGS) - {"shining"}
         if unknown:
             raise ValueError(f"알 수 없는 스타포스 조건: {', '.join(sorted(unknown))}")

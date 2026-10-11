@@ -48,11 +48,12 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
 }
 
 // events: { discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect, miracle, spareEok, fragmentMan, hexaSunday }
-// 썬데이 스타포스 이벤트는 하나씩(넷 다 = 샤이닝 스타포스). 예전 shining: true도 넷으로 받는다
+// 썬데이 스타포스 이벤트는 하나씩. 샤이닝 스타포스 = SHINING 둘(나무위키, 2026-10-11). 예전 shining: true도 그 둘로 받는다
 export const SF_EVENTS = ["discount30", "destroy_down30", "guarantee_5_10_15", "restore_discount20"];
+export const SHINING = ["discount30", "destroy_down30"];
 export function getPaths(name, bossDefense = 300, events = {}) {
   const q = new URLSearchParams({ boss_defense: String(bossDefense) });
-  const sf = [...SF_EVENTS.filter((k) => events[k] || events.shining), events.protect && "protect"].filter(Boolean).join(",");
+  const sf = [...SF_EVENTS.filter((k) => events[k] || (events.shining && SHINING.includes(k))), events.protect && "protect"].filter(Boolean).join(",");
   if (sf) q.set("sf", sf);
   if (events.miracle) q.set("miracle", "true");
   const spare = Number(events.spareEok);

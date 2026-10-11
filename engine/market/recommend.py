@@ -11,6 +11,7 @@
 - 제네시스·데스티니 무기, 아스트라 보조무기, 미트라 엠블렘, 엔버·카이저·제논의 보조무기는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
 """
 import copy
+import dataclasses
 import functools
 import json
 import pathlib
@@ -82,9 +83,9 @@ def _rebuild(it: Item, potentials: list[str], after: list[str], additional: list
             continue
         for line in parsed:
             stats.add(line)
-    return Item(slot=it.slot, part=it.part, name=it.name, starforce=it.starforce, stats=stats, excluded=excluded,
-                potentials=list(potentials), core=it.core, after=list(after), additional=list(additional),
-                level=it.level, potential_grade=it.potential_grade, additional_grade=it.additional_grade)
+    # 줄만 바꾸고 스타포스·주문서·추옵 등 나머지는 그대로(2026-10-11: Item을 새로 만들어 sf_option이 사라져 로드맵 스타포스가 끊겼다)
+    return dataclasses.replace(it, stats=stats, excluded=excluded, potentials=list(potentials), after=list(after),
+                               additional=list(additional))
 
 
 def _check(it: Item) -> None:

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SF_EVENTS, getPaths, postMarketRefresh } from "./api.js";
+import { SHINING, getPaths, postMarketRefresh } from "./api.js";
 import { formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -45,9 +45,9 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
   const [events, setEvents] = useState({ discount30: false, destroy_down30: false, guarantee_5_10_15: false, restore_discount20: false,
                                          protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false, spareBySlot: {},
                                          flameMan: {} });
-  const shining = SF_EVENTS.every((k) => events[k]);
+  const shining = SHINING.every((k) => events[k]);
   const sfSlots = [...new Set((data?.all || []).filter((p) => p.path === "스타포스").map((p) => p.slot))];
-  const toggleShining = () => setEvents((e) => ({ ...e, ...Object.fromEntries(SF_EVENTS.map((k) => [k, !shining])) }));
+  const toggleShining = () => setEvents((e) => ({ ...e, ...Object.fromEntries(SHINING.map((k) => [k, !shining])) }));
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
   const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
@@ -79,7 +79,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <label className="chip"><input type="checkbox" checked={events.discount30} onChange={() => toggle("discount30")} /> 30% 할인</label>
         <label className="chip"><input type="checkbox" checked={events.destroy_down30} onChange={() => toggle("destroy_down30")} /> 21성 이하 파괴 30% 감소</label>
         <label className="chip"><input type="checkbox" checked={events.guarantee_5_10_15} onChange={() => toggle("guarantee_5_10_15")} /> 5·10·15성 100%</label>
-        <label className="chip"><input type="checkbox" checked={events.restore_discount20} onChange={() => toggle("restore_discount20")} /> 복구 메소 20% 할인</label>
+        <label className="chip"><input type="checkbox" checked={events.restore_discount20} onChange={() => toggle("restore_discount20")} /> 복구 메소 20% 할인<span className="muted small">(출처 확인 중)</span></label>
         <button type="button" className="ghost small" aria-pressed={shining} aria-label="샤이닝 스타포스 한 번에" onClick={toggleShining}>
           샤이닝 스타포스{shining ? " ✓" : ""}</button>
         <label className="chip"><input type="checkbox" checked={events.protect} onChange={() => toggle("protect")} /> 파괴 방지<span className="muted small">(15~17성)</span></label>
