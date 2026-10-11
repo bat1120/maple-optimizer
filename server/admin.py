@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import secrets
 import sqlite3
+import threading
 from collections.abc import Callable
 
 COOKIE = "mo_admin"
@@ -50,6 +51,7 @@ class UsageStore:
 
     def __init__(self, path: str, clock: Callable[[], float]):
         self._db = sqlite3.connect(path, check_same_thread=False)
+        self._lock = threading.Lock()  # 연결 하나를 작업 스레드들이 같이 쓴다(cache.py와 같은 이유)
         self._db.execute("CREATE TABLE IF NOT EXISTS agent_usage (day TEXT PRIMARY KEY, tokens INTEGER)")
         self._clock = clock
 
@@ -58,10 +60,12 @@ class UsageStore:
         return dt.datetime.fromtimestamp(self._clock(), kst).date().isoformat()
 
     def used(self) -> int:
-        row = self._db.execute("SELECT tokens FROM agent_usage WHERE day = ?", (self._day(),)).fetchone()
+        with self._lock:
+            row = self._db.execute("SELECT tokens FROM agent_usage WHERE day = ?", (self._day(),)).fetchone()
         return row[0] if row else 0
 
     def add(self, tokens: int) -> None:
-        self._db.execute("INSERT INTO agent_usage VALUES (?, ?) ON CONFLICT(day) DO UPDATE SET tokens = tokens + ?",
-                         (self._day(), tokens, tokens))
-        self._db.commit()
+        with self._lock:
+            self._db.execute("INSERT INTO agent_usage VALUES (?, ?) ON CONFLICT(day) DO UPDATE SET tokens = tokens + ?",
+                             (self._day(), tokens, tokens))
+            self._db.commit()
