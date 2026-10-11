@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getCharacter, getSettings } from "../api.js";
+import { getBosses, getCharacter, getSettings } from "../api.js";
 import { hashFor } from "../router.js";
 import { addRecent } from "../recent.js";
 import BottomTabs, { TAB_ICON, TAB_LABEL } from "../layout/BottomTabs.jsx";
@@ -23,7 +23,7 @@ export const TAB_GUIDE = {
       <>장비창 위 <strong>[프리셋 1·2·3]</strong>으로 장비 프리셋을 바꿔 볼 수 있어요. 처음엔 지금 적용 중인 프리셋이 열려요.</>,
       <>장비 칸을 누르면 <strong>잠재·에디 옵션</strong>이 열려요. 칸 테두리 색은 잠재 등급, ★ 숫자는 스타포스예요.</>,
       <><strong>보스 세팅 순위</strong>는 장비·하이퍼·어빌 프리셋 조합을 보스 실딜로 줄 세운 거예요. '현재 대비'가 +면 지금보다 세요.</>,
-      <>위쪽 <strong>보스 방어율(%)</strong>을 바꾸면 순위와 업그레이드 계산이 그 값으로 다시 계산돼요.</>,
+      <>위쪽 <strong>보스</strong>(목록에서 보스·난이도, 또는 방어율 직접 입력)를 바꾸면 순위와 업그레이드 계산이 그 보스로 다시 계산돼요. 요구 포스가 있는 보스는 포스 보정도 들어가요.</>,
     ],
   },
   upgrade: {
@@ -75,6 +75,7 @@ export default function Character({ route }) {
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [bosses, setBosses] = useState(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -93,6 +94,11 @@ export default function Character({ route }) {
 
   useEffect(() => { setSummary(null); setSettings(null); }, [name]);
   useEffect(() => { load(); }, [load]);
+  // 보스 목록은 캐릭터를 불러온 뒤 한 번(목록이 없으면 직접 입력만)
+  useEffect(() => {
+    if (!summary || bosses) return;
+    getBosses().then((r) => setBosses(r?.bosses || [])).catch(() => setBosses([]));
+  }, [summary, bosses]);
 
   return (
     <div className="character">
@@ -104,7 +110,8 @@ export default function Character({ route }) {
       )}
       {summary && (
         <div className="fade-in">
-          <ProfileCard name={name} summary={summary} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy} />
+          <ProfileCard name={name} summary={summary} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
+                       bosses={bosses || []} force={settings?.force} />
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>

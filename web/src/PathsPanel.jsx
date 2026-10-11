@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SHINING, getPaths, postMarketRefresh } from "./api.js";
+import { SHINING, bossBody, getPaths, postMarketRefresh } from "./api.js";
 import { formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -61,7 +61,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
   const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
-    setRefresh(await postMarketRefresh({ name, boss_defense: defense, max_searches: 15 }));
+    setRefresh(await postMarketRefresh({ name, ...bossBody(defense), max_searches: 15 }));
     setData(await getPaths(name, defense, events));
   });
 

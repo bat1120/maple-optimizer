@@ -29,22 +29,29 @@ async function request(url, options) {
 
 const base = (name) => `/api/character/${encodeURIComponent(name)}`;
 
+// 보스: 문자열이면 보스 목록 id(boss=), 숫자면 예전처럼 방어율(boss_defense=) — 2026-10-11
+export const bossQuery = (boss) => (typeof boss === "string" ? { boss } : { boss_defense: String(boss) });
+export const bossBody = (boss) => (typeof boss === "string" ? { boss } : { boss_defense: boss });
+const bq = (boss) => new URLSearchParams(bossQuery(boss)).toString();
+
+export const getBosses = () => request("/api/bosses");
+
 export function getCharacter(name) {
   return request(base(name));
 }
 
 export function getSettings(name, bossDefense = 300) {
-  return request(`${base(name)}/settings?boss_defense=${bossDefense}`);
+  return request(`${base(name)}/settings?${bq(bossDefense)}`);
 }
 
 export function getRecommend(name, bossDefense = 300, top = 5, cooldownMainPct = null) {
   const cd = cooldownMainPct ? `&cooldown_main_pct=${cooldownMainPct}` : "";
-  return request(`${base(name)}/recommend?boss_defense=${bossDefense}&top=${top}${cd}`);
+  return request(`${base(name)}/recommend?${bq(bossDefense)}&top=${top}${cd}`);
 }
 
 export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
   const cd = cooldownMainPct ? `&cooldown_main_pct=${cooldownMainPct}` : "";
-  return request(`${base(name)}/roadmap?boss_defense=${bossDefense}${cd}`);
+  return request(`${base(name)}/roadmap?${bq(bossDefense)}${cd}`);
 }
 
 // events: { discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect, miracle, spareEok, fragmentMan, hexaSunday }
@@ -52,7 +59,7 @@ export function getRoadmap(name, bossDefense = 300, cooldownMainPct = null) {
 export const SF_EVENTS = ["discount30", "destroy_down30", "guarantee_5_10_15", "restore_discount20"];
 export const SHINING = ["discount30", "destroy_down30"];
 export function getPaths(name, bossDefense = 300, events = {}) {
-  const q = new URLSearchParams({ boss_defense: String(bossDefense) });
+  const q = new URLSearchParams(bossQuery(bossDefense));
   const sf = [...SF_EVENTS.filter((k) => events[k] || (events.shining && SHINING.includes(k))), events.protect && "protect"].filter(Boolean).join(",");
   if (sf) q.set("sf", sf);
   if (events.miracle) q.set("miracle", "true");
@@ -128,7 +135,7 @@ export const postVisionScoreReset = () => post("/api/vision/score/reset", {});
 
 // 목표 보스 배율 로드맵: { current, target, fragmentMan }
 export function getTargetRoadmap(name, bossDefense = 300, { current, target, fragmentMan } = {}) {
-  const q = new URLSearchParams({ boss_defense: String(bossDefense), current_ratio: String(current), target_ratio: String(target) });
+  const q = new URLSearchParams({ ...bossQuery(bossDefense), current_ratio: String(current), target_ratio: String(target) });
   const frag = Number(fragmentMan);
   if (frag > 0) q.set("fragment_price", String(Math.round(frag * 1e4)));
   return request(`${base(name)}/target-roadmap?${q}`);

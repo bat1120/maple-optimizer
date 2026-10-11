@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
+import { bossBody, getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
 import { clipboardText, scouterInfoUrl } from "./scouter.js";
 import { hasExtension, sendToExtension } from "./extension.js";
 import { SCOUTER_DIFF_NOTE, formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
@@ -65,7 +65,7 @@ function EditForm({ item, name, defense, onSaved, onCancel }) {
     const fields = { name: f.name.trim(), starforce: f.starforce === "" ? null : Number(f.starforce),
                      potentials: lines(f.potentials), additional: lines(f.additional), price: price ?? null };
     try {
-      const res = await postVisionCorrect({ frame_id: item.frame_id, signature: item.signature, name, boss_defense: defense, fields });
+      const res = await postVisionCorrect({ frame_id: item.frame_id, signature: item.signature, name, ...bossBody(defense), fields });
       onSaved(res.item);
     } catch (e) {
       setError(e.message);
@@ -120,7 +120,7 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
     const p = parsePrice(price);
     if (!p) return setError("가격을 예: 45억 3000만 처럼 입력해 주세요.");
     try {
-      const res = await postListings(name, { setting: item.setting, boss_defense: defense, listings: [{
+      const res = await postListings(name, { setting: item.setting, ...bossBody(defense), listings: [{
         slot: item.slot, part: r.part || r.category || item.slot, name: r.name || "?", total: r.total || {},
         potentials: r.potentials || [], starforce: r.starforce || 0, price: p }] });
       const top = res.ranking[0];
@@ -216,7 +216,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
     if (!name) return;
     const pending = items.filter((it) => !it.evaluated && it.reason?.startsWith("캐릭터를 먼저"));
     if (!pending.length) return;
-    postVisionEvaluate({ name, boss_defense: defense, listings: pending.map((p) => p.read) })
+    postVisionEvaluate({ name, ...bossBody(defense), listings: pending.map((p) => p.read) })
       .then((r) => {
         const bySig = new Map(r.items.map((x, i) => [pending[i].signature, { ...x, signature: pending[i].signature }]));
         bySig.forEach((x, sig) => { if (x.evaluated) seen.current.add(sig); });
@@ -238,7 +238,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       inflight.current += 1;
       (async () => {
         try {
-          const r = await postVision({ image, name: name || null, boss_defense: defense, seen: [...seen.current],
+          const r = await postVision({ image, name: name || null, ...bossBody(defense), seen: [...seen.current],
                                        tooltips_only: !readLists });
           setCount((c) => c + 1);
           if (r.frame_id) refreshStats();

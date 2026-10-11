@@ -3,6 +3,7 @@
 - need(kind, L)·meso(kind, 지역, L): L레벨 → L+1레벨에 필요한 성장치(심볼 개수)와 강화 메소
 - stats_at(kind, L, 직업): L레벨 심볼이 주는 스탯(%미적용). 제논은 STR·DEX·LUK 각각, 데몬어벤져는 최대 HP
 - 그랜드 어센틱심볼은 주스탯이 없다(경험치·메소·드롭률만)
+- force_at(kind, L): L레벨 심볼의 포스(보스 포스 보정은 engine/stats/force.py)
 """
 import json
 import pathlib
@@ -22,6 +23,17 @@ def split_name(name: str) -> tuple[str, str]:
 
 def max_level(kind: str) -> int:
     return KINDS[kind]["max_level"]
+
+
+def force_at(kind: str, level: int) -> int:
+    """L레벨 심볼의 포스: 아케인 10(L+2), 어센틱·그랜드 10L(나무 성장표, 픽스처 symbol_force로 검산)."""
+    f = KINDS[kind]["force"]
+    return f["per_level"] * (level + f["add"]) if level > 0 else 0
+
+
+def force_kind(kind: str) -> str:
+    """심볼 종류 → 포스 종류('아케인' 또는 '어센틱')."""
+    return "아케인" if kind.startswith("아케인") else "어센틱"
 
 
 def need(kind: str, level: int) -> int:

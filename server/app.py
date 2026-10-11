@@ -144,34 +144,50 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             cache.put(name, day, body)
         return snapshot(body)
 
+    def pick(snap, boss_defense: float, boss: str | None = None, arcane_force: int | None = None,
+             authentic_force: int | None = None):
+        """(스냅샷, 보스): boss(보스 목록 id)가 있으면 그 방어율·요구 포스, 없으면 boss_defense 숫자(하위 호환)."""
+        try:
+            return service.choose(snap, boss_defense, boss, arcane_force, authentic_force)
+        except KeyError:
+            raise ApiError(400, "BAD_BOSS", f"보스 목록에 없는 보스예요: {boss}") from None
+
     @app.get("/api/health")
     def health():
         return {"status": "ok"}
+
+    @app.get("/api/bosses")
+    def bosses():
+        """보스 목록(방어율·요구 포스·출처). engine/data/bosses.json 그대로."""
+        from engine.stats.force import CHECKED, boss_list
+        return {"checked": CHECKED, "bosses": boss_list()}
 
     @app.get("/api/character/{name}")
     def character(name: str, date: str | None = None):
         return service.summary(load(name, date))
 
     @app.get("/api/character/{name}/settings")
-    def settings(name: str, boss_defense: float = 300.0, date: str | None = None):
-        return service.settings(load(name, date), boss_defense)
+    def settings(name: str, boss_defense: float = 300.0, date: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+        return service.settings(*pick(load(name, date), boss_defense, boss, arcane_force, authentic_force))
 
     @app.get("/api/character/{name}/recommend")
     def recommend(name: str, boss_defense: float = 300.0, top: int = 5, cooldown_main_pct: float | None = None,
-                  date: str | None = None):
-        return service.recommend(load(name, date), boss_defense, max(1, min(top, 20)), cooldown_main_pct)
+                  date: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.recommend(snap, b, max(1, min(top, 20)), cooldown_main_pct)
 
     @app.get("/api/character/{name}/roadmap")
     def roadmap(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
-                miracle: bool = False):
-        return service.roadmap(load(name, date), boss_defense, cooldown_main_pct, prices.rows(), miracle=miracle)
+                miracle: bool = False, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.roadmap(snap, b, cooldown_main_pct, prices.rows(), miracle=miracle)
 
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):
-        snap = load(name, date)
+        snap, b = pick(load(name, date), body.boss_defense, body.boss, body.arcane_force, body.authentic_force)
         setting = Setting(**body.setting.model_dump()) if body.setting else None
         try:
-            return service.listings(snap, setting, body.boss_defense, body.listings, body.fee_rate)
+            return service.listings(snap, setting, b, body.listings, body.fee_rate)
         except InvalidPrice as e:
             raise ApiError(400, "INVALID_PRICE", str(e)) from None
         except NoDamage as e:
@@ -204,10 +220,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.post("/api/character/{name}/optimize")
     def optimize(name: str, body: OptimizeIn, date: str | None = None):
-        snap = load(name, date)
+        snap, b = pick(load(name, date), body.boss_defense, body.boss, body.arcane_force, body.authentic_force)
         setting = Setting(**body.setting.model_dump()) if body.setting else None
         try:
-            return service.optimize(snap, setting, body.boss_defense, body.budget, body.candidates, body.fee_rate)
+            return service.optimize(snap, setting, b, body.budget, body.candidates, body.fee_rate)
         except ValueError as e:
             raise ApiError(422, "INVALID_INPUT", str(e)) from None
 
@@ -256,6 +272,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         image: str
         name: str | None = None
         boss_defense: float = 300.0
+        boss: str | None = None
         setting: dict | None = None
         seen: list[str] = []
         tooltips_only: bool = True  # 툴팁 없는 화면은 AI에 보내지 않는다(목록 화면도 읽으려면 false)
@@ -264,7 +281,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
                       date: str | None = None, sf: str | None = None, miracle: bool = False,
                       spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False,
-                      spare_by_slot: str | None = None, flame_prices: str | None = None):
+                      spare_by_slot: str | None = None, flame_prices: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
         """sf: 스타포스 이벤트(쉼표: shining, discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect),
         miracle: 미라클 타임, spare_price: 파괴 시 스페어 1개 값(메소), fragment_price: 솔 에르다 조각 1개 값(메소, HEXA 경로),
         hexa_sunday: HEXA 스탯 썬데이(메인 5레벨 이상 확률 ×1.2),
@@ -274,13 +291,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday, spare_by_slot, flame_prices)
         except ValueError as e:
             raise ApiError(400, "BAD_EVENTS", str(e))
-        return service.paths(load(name, date), boss_defense, prices.rows(), cooldown_main_pct, events=events)
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.paths(snap, b, prices.rows(), cooldown_main_pct, events=events)
 
     @app.get("/api/character/{name}/target-roadmap")
     def target_roadmap(name: str, current_ratio: float, target_ratio: float = 50.0, boss_defense: float = 300.0,
                        date: str | None = None, sf: str | None = None, miracle: bool = False,
                        spare_price: float | None = None, fragment_price: float | None = None, hexa_sunday: bool = False,
-                      spare_by_slot: str | None = None):
+                      spare_by_slot: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
         """목표 배율 로드맵: current_ratio(지금 보스 배율 %, 예: MapleScouter 효율·보스컷) → target_ratio."""
         from engine.market.events import Events
         if current_ratio <= 0 or target_ratio <= 0:
@@ -289,22 +307,26 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday, spare_by_slot)
         except ValueError as e:
             raise ApiError(400, "BAD_EVENTS", str(e))
-        return service.target_roadmap(load(name, date), boss_defense, prices.rows(), current_ratio, target_ratio, events)
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.target_roadmap(snap, b, prices.rows(), current_ratio, target_ratio, events)
 
     class MarketRefreshIn(BaseModel):
         name: str
         slots: list[str] | None = None
         max_searches: int = Field(15, ge=1, le=30)
         boss_defense: float = 300.0
+        boss: str | None = None
 
-    def _market_refresh(name: str, slots=None, max_searches: int = 15, boss_defense: float = 300.0) -> dict:
+    def _market_refresh(name: str, slots=None, max_searches: int = 15, boss_defense: float = 300.0,
+                        boss: str | None = None) -> dict:
         if not auction_mcp_command:
             raise ApiError(503, "AUCTION_DISABLED",
                            "경매장 검색 연결이 꺼져 있어요. 로컬 PC에서 AUCTION_MCP_CMD(예: npx.cmd -y maple-auction-mcp)를 "
                            ".env에 넣고, 크롬에 maple-auction-mcp 확장을 설치해 웹 경매장에 로그인해 주세요.")
         from server.auction_mcp import McpUnavailable, refresh_market
         try:
-            return refresh_market(load(name, None), auction_mcp_command, prices, slots, max_searches, boss_defense)
+            snap, b = pick(load(name, None), boss_defense, boss)
+            return refresh_market(snap, auction_mcp_command, prices, slots, max_searches, b)
         except McpUnavailable as e:
             raise ApiError(503, "AUCTION_UNAVAILABLE", str(e)) from None
 
@@ -313,7 +335,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         """로드맵 다음 단계 조건으로 웹 경매장을 검색(판매 중·판매 완료)해 관측 시세에 넣는다(관리자, 일일 검색 한도 소진)."""
         if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
             raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
-        return _market_refresh(body.name, body.slots, body.max_searches, body.boss_defense)
+        return _market_refresh(body.name, body.slots, body.max_searches, body.boss_defense, body.boss)
 
     def _agent_refresh(name, slots=None, max_searches=10):
         try:
@@ -332,6 +354,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     class VisionEvalIn(BaseModel):
         name: str
         boss_defense: float = 300.0
+        boss: str | None = None
         listings: list[dict]
 
     @app.get("/api/market/stats")
@@ -350,7 +373,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     @app.post("/api/vision/evaluate")
     def vision_evaluate(body: VisionEvalIn, request: Request):
         """이미 화면에서 읽은 매물을 다시 평가한다(캐릭터 조회 전에 읽은 줄). 비전 호출 없음 — 일반 유저도 쓴다."""
-        return {"items": service.vision_items(load(body.name, None), None, body.boss_defense, body.listings[:50], [])}
+        snap, b = pick(load(body.name, None), body.boss_defense, body.boss)
+        return {"items": service.vision_items(snap, None, b, body.listings[:50], [])}
 
     @app.post("/api/vision/listings")
     def vision_listings(body: VisionIn, request: Request):
@@ -381,7 +405,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 observations.quota_add(who)
             except Exception as e:
                 _log.warning("한도 기록 실패: %s", type(e).__name__)
-        snap = load(body.name, None) if body.name else None
+        snap, vb = pick(load(body.name, None) if body.name else None, body.boss_defense, body.boss)
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
         for x in data["listings"]:
@@ -403,7 +427,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         # 내 PC 학습 데이터(켜졌을 때만). 캐시로 돌려준 같은 화면은 다시 저장하지 않는다
         frame_id = (dataset.save_frame(body.image, data)
                     if dataset_on and not data.get("cached") and not data.get("skipped") else None)
-        items = service.vision_items(snap, setting, body.boss_defense, data["listings"], set(body.seen))
+        items = service.vision_items(snap, setting, vb, data["listings"], set(body.seen))
         for it in items:
             it["frame_id"] = frame_id
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
@@ -416,6 +440,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         signature: str
         name: str
         boss_defense: float = 300.0
+        boss: str | None = None
         fields: dict
 
     _EDITABLE = ("name", "starforce", "level", "potentials", "additional", "price", "total")
@@ -443,7 +468,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             read["potentials"] = read["potential_lines"] + read["additional"]
         if "starforce" in fields:
             read["starforce_source"] = "사용자 수정"
-        item = service.vision_items(load(body.name, None), None, body.boss_defense, [read], [])[0]
+        snap, b = pick(load(body.name, None), body.boss_defense, body.boss)
+        item = service.vision_items(snap, None, b, [read], [])[0]
         item["frame_id"] = body.frame_id
         return {"item": item}
 

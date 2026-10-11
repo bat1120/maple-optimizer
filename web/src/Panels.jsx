@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { postCraft, postCube, postOptimize, postStarforce } from "./api.js";
+import { bossBody, postCraft, postCube, postOptimize, postStarforce } from "./api.js";
 import { formatMeso, formatPct, parsePrice, settingLabel } from "./format.js";
 import { PanelHead } from "./ui/Guide.jsx";
 
@@ -197,7 +197,7 @@ export function OptimizePanel({ name, listings, defense, feeRate = 0.05 }) {
     if (!listings.length) return setError({ message: "먼저 매물을 추가해 주세요." });
     const b = parsePrice(budget);
     if (b == null) return setError({ message: "예산을 입력해 주세요 (예: 50억)." });
-    run(() => postOptimize(name, { budget: b, boss_defense: defense, fee_rate: feeRate, candidates: listings }));
+    run(() => postOptimize(name, { budget: b, ...bossBody(defense), fee_rate: feeRate, candidates: listings }));
   };
   return (
     <form onSubmit={submit} className="panel">

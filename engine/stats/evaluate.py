@@ -1,6 +1,7 @@
 """세팅·교체 평가: 스냅샷을 활성 세팅으로 보정하고, 다른 세팅·교체를 보스 실딜 지수로 비교한다."""
 import itertools
 
+from engine.stats.force import character_force, force_mult
 from engine.stats.jobs import job_profile
 from engine.stats.metrics import BossProfile, boss_index
 from engine.stats.model import StatBlock
@@ -16,7 +17,8 @@ def _index(snap: CharacterSnapshot, setting: Setting, items: dict[str, Item], bo
     # 실효 크확(Evaluator.index와 같게, 2026-10-11): 그 세팅의 원래 장비를 100%로 보고 교체로 줄어든 만큼만 뺀다
     # (기준을 지금 착용 세팅으로 하면 크확을 덜 찍은 보스 하이퍼 프리셋이 밀려 실제 보스 세팅이 1등에서 빠졌다)
     base_cr = predict(cal, sources_for(snap, setting, catalog, preset_items(snap, setting.equipment))).cr
-    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss, min(100.0, 100.0 + pred.cr - base_cr))
+    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss, min(100.0, 100.0 + pred.cr - base_cr),
+                      force_mult(boss, character_force(snap, setting)))
 
 
 def predict_setting(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
@@ -61,7 +63,8 @@ class Evaluator:
         return preset_items(self.snap, self.setting.equipment)
 
     def index(self, items: dict[str, Item], extra: dict | None = None) -> float:
-        """extra: 장비 밖 스탯 변화 {'pct': StatBlock, 'nopct': StatBlock}(예: HEXA 스탯 바꾸기)."""
+        """extra: 장비 밖 스탯 변화 {'pct': StatBlock, 'nopct': StatBlock}(예: HEXA 스탯 바꾸기)
+        와 포스 변화 {'force': {'아케인'|'어센틱': 증가량}}(심볼 레벨업 — 요구 포스가 있는 보스만 실딜이 바뀐다)."""
         src = sources_for(self.snap, self.setting, self.catalog, items)
         if extra:
             src = Sources(src.pct + extra.get("pct", StatBlock()), src.nopct + extra.get("nopct", StatBlock()), src.excluded)
@@ -70,4 +73,5 @@ class Evaluator:
         if self._base_cr is None:
             self._base_cr = predict(self._cal, sources_for(self.snap, self.setting, self.catalog, self.base_items())).cr
         crit_rate = min(100.0, 100.0 + pred.cr - self._base_cr)
-        return boss_index(pred, self._job, items["무기"].part, self.boss, crit_rate)
+        fm = force_mult(self.boss, character_force(self.snap, self.setting, (extra or {}).get("force")))
+        return boss_index(pred, self._job, items["무기"].part, self.boss, crit_rate, fm)
