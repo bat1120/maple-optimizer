@@ -150,8 +150,13 @@ export default function Character({ route }) {
       {summary && (
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} onRefresh={load} busy={busy} />
-          {tab === "summary" && <FreeSwitch ranking={settings?.ranking} />}
-          {tab === "summary" && <TopPick name={name} defense={defense} after={settings?.ranking?.[0]?.relative_to_active > 1} />}
+          {/* 추천 상자 하나에 두 줄(2026-10-11 심사 5회차: 띠 두 개가 모양이 달라 별개 부품처럼 보였다) */}
+          {tab === "summary" && (
+            <div className="picks">
+              <FreeSwitch ranking={settings?.ranking} />
+              <TopPick name={name} defense={defense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
+            </div>
+          )}
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -185,7 +190,7 @@ export default function Character({ route }) {
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
               <Fold title="실딜만 보고 고르기 — 가격은 안 봐요"><RecommendPanel name={name} defense={defense} autoLoad /></Fold>
-              <Fold title="방법별 비교 — 구매·직작·큐브·스타포스·HEXA"><PathsPanel name={name} defense={defense} autoLoad showRefresh={false} /></Fold>
+              <Fold title="방법별 비교 — 구매·직작·큐브·강화"><PathsPanel name={name} defense={defense} autoLoad showRefresh={false} /></Fold>
               <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={defense} /></Fold>
               <h3 className="section-label">고급 도구</h3>
               <div className="pc-only">

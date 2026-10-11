@@ -1,5 +1,8 @@
 // 서버 API 호출. 오류는 서버가 준 code·message를 그대로 담은 ApiError로 던진다.
 
+// 서버가 설명을 안 준 실패: 'HTTP 500' 같은 개발자 문구 대신(2026-10-11 심사 5회차)
+const friendly = (status) => (status >= 500 ? "서버가 잠시 계산하지 못했어요." : status === 429 ? "요청이 많아 잠시 쉬는 중이에요." : `요청이 실패했어요(${status}).`);
+
 export class ApiError extends Error {
   constructor(status, code, message) {
     super(message);
@@ -22,7 +25,7 @@ async function request(url, options) {
     body = null;
   }
   if (!res.ok) {
-    throw new ApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? `요청 실패 (HTTP ${res.status})`);
+    throw new ApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? friendly(res.status));
   }
   return body;
 }
@@ -96,7 +99,7 @@ export async function streamAgent(messages, onEvent) {
   if (!res.ok) {
     let body = null;
     try { body = await res.json(); } catch { body = null; }
-    throw new ApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? `요청 실패 (HTTP ${res.status})`);
+    throw new ApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? friendly(res.status));
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gradeClass } from "./grades.js";
 import { EmptyState } from "../ui/Guide.jsx";
 
@@ -122,8 +122,16 @@ function ItemList({ items }) {
 export default function EquipmentGrid({ presets, active, image, name }) {
   const keys = Object.keys(presets || {});
   const [preset, setPreset] = useState(keys.includes(String(active)) ? String(active) : keys[0]);
-  // 처음엔 무기 툴팁을 열어 둔다(2026-10-11 심사: 아무것도 안 눌렀을 때 오른쪽 절반이 비었다)
-  const [openSlot, setOpenSlot] = useState("무기");
+  // PC는 처음에 무기 툴팁을 열어 둔다(오른쪽 칸이 비지 않게). 휴대폰은 툴팁이 장비창 아래로 길게 붙어
+  // 페이지를 밀어내므로 닫아 두고, 칸을 누르면 툴팁으로 스크롤한다(2026-10-11 심사 5회차).
+  const wide = typeof window !== "undefined" && window.matchMedia?.("(min-width: 721px)").matches;
+  const first = wide ? "무기" : null;
+  const [openSlot, setOpenSlot] = useState(first);
+  const detailRef = useRef(null);
+  const userOpened = useRef(false);
+  useEffect(() => {
+    if (!wide && userOpened.current && openSlot) detailRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [openSlot, wide]);
   const [view, setView] = useState("grid"); // grid = 장비창, list = 목록
   if (!keys.length) {
     return (
@@ -147,7 +155,7 @@ export default function EquipmentGrid({ presets, active, image, name }) {
           <div className="seg" role="group" aria-label="장비 프리셋">
             {keys.map((k) => (
               <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
-                      onClick={() => { setPreset(k); setOpenSlot("무기"); }}>프리셋 {k}</button>
+                      onClick={() => { setPreset(k); setOpenSlot(first); }}>프리셋 {k}</button>
             ))}
           </div>
           <div className="seg" role="group" aria-label="장비 보기">
@@ -162,7 +170,7 @@ export default function EquipmentGrid({ presets, active, image, name }) {
             <div className="equip-grid">
               {LAYOUT.map(([slot, col, row]) => (
                 <Slot key={slot} slot={slot} col={col} row={row} item={bySlot[slot]} open={openSlot === slot}
-                      onOpen={() => setOpenSlot(openSlot === slot ? null : slot)} />
+                      onOpen={() => { userOpened.current = true; setOpenSlot(openSlot === slot ? null : slot); }} />
               ))}
               {/* 게임에서도 비는 자리(4열 1~2줄)에 캐릭터를 둔다 */}
               <div className="equip-avatar" style={{ gridColumn: 4, gridRow: "1 / span 2" }}>
@@ -174,7 +182,7 @@ export default function EquipmentGrid({ presets, active, image, name }) {
             </div>
           </div>
           {/* 츄츄지지 문법: 오른쪽 고정 칸에 선택한 장비의 게임 툴팁 */}
-          <div className="equip-detail">
+          <div className="equip-detail" ref={detailRef}>
             {opened ? <Detail item={opened} /> : <p className="detail-empty muted small">장비 칸을 누르면 여기에 게임 툴팁처럼 옵션이 보여요.</p>}
           </div>
         </div>

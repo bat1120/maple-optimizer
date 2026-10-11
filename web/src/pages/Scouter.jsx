@@ -14,6 +14,8 @@ export default function Scouter() {
   return (
     <div className="scouter-page">
       <h1>환산 주스탯 계산기에 템 넣기</h1>
+      {/* 휴대폰: 매물을 읽는 화면 평가·확장·북마크가 모두 PC용이라 첫머리에 말한다(5회차) */}
+      <p className="card note-box scouter-pc-note muted">이 기능은 PC 브라우저에서만 쓸 수 있어요 — 매물은 PC의 경매장 화면 평가에서 읽어 와요.</p>
       <p className="muted">
         경매장 화면 평가에서 읽은 매물을, MapleScouter 입력 화면에 클릭 두 번으로 옮겨요. 템을 바꿨을 때 달라지는 스탯(세트 효과 포함)만 지금 칸 값에 더해요.
       </p>

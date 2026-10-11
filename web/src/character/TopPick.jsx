@@ -17,15 +17,15 @@ export default function TopPick({ name, defense, after = false }) {
   if (top === null) return null;
   return (
     <section className="top-pick" aria-label="업그레이드 1순위" aria-busy={top === undefined}>
-      <span className="top-pick-label">{after ? "다음으로 메소를 쓴다면" : "업그레이드 1순위"}</span>
+      <span className="pick-label">{after ? "다음으로 메소를 쓴다면" : "업그레이드 1순위"}</span>
       {top === undefined ? (
         <span className="muted small">가격 대비 순위를 계산하는 중이에요…</span>
       ) : (
         <span className="top-pick-body">
           <strong>{top.slot} {top.kind}</strong>
           <span className="muted">{top.grade} {top.lines_good}줄 · {top.target.join(" / ")}</span>
-          {/* 업그레이드 탭 카드와 같은 규칙: 실딜은 배지, 순위 기준인 억당 효율은 주황 큰 숫자 */}
-          <span className="score-badge top-pick-gain">실딜 {formatPct(top.delta_pct)}</span>
+          {/* 강조는 하나: 순위 기준인 억당 효율만 주황 큰 숫자(5회차: 한 줄에 강조 5종) */}
+          <span className="top-pick-gain">실딜 {formatPct(top.delta_pct)}</span>
           <span className="top-pick-eff">1억 메소당 <strong className="num">{formatPct(top.per_100m)}</strong>
             {top.cube_cost_text && <span className="muted"> · 큐브 평균 {top.cube_cost_text}</span>}</span>
         </span>

@@ -5,6 +5,7 @@
 import json
 import pathlib
 import sqlite3
+import threading
 from collections.abc import Callable
 
 KEEP_SECONDS = 30 * 86400  # 시세는 금방 바뀐다 — 30일 지난 관측은 지운다
@@ -16,6 +17,7 @@ class PriceStore:
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._db.execute("CREATE TABLE IF NOT EXISTS observed (key TEXT PRIMARY KEY, seen_at REAL, body TEXT)")
         self._clock = clock
+        self._lock = threading.Lock()  # 연결 하나를 작업 스레드들이 같이 쓴다(cache.py와 같은 이유)
 
     def record(self, read: dict) -> bool:
         """가격과 잠재·에디 줄이 있는 매물만 저장한다. 같은 매물·같은 가격은 한 번만. 저장했으면 True."""
@@ -33,12 +35,14 @@ class PriceStore:
         key = json.dumps([body["category"], body["name"], body["starforce"], sorted(lines[0]), sorted(lines[1]),
                           body["price"], body["sold"]], ensure_ascii=False)
         now = self._clock()
-        self._db.execute("DELETE FROM observed WHERE seen_at <= ?", (now - KEEP_SECONDS,))
-        cur = self._db.execute("INSERT OR IGNORE INTO observed VALUES (?, ?, ?)",
-                               (key, now, json.dumps(body, ensure_ascii=False)))
-        self._db.commit()
-        return cur.rowcount == 1
+        with self._lock:
+            self._db.execute("DELETE FROM observed WHERE seen_at <= ?", (now - KEEP_SECONDS,))
+            cur = self._db.execute("INSERT OR IGNORE INTO observed VALUES (?, ?, ?)",
+                                   (key, now, json.dumps(body, ensure_ascii=False)))
+            self._db.commit()
+            return cur.rowcount == 1
 
     def rows(self) -> list[dict]:
-        return [{**json.loads(body), "seen_at": seen}
-                for seen, body in self._db.execute("SELECT seen_at, body FROM observed ORDER BY seen_at")]
+        with self._lock:
+            got = self._db.execute("SELECT seen_at, body FROM observed ORDER BY seen_at").fetchall()
+        return [{**json.loads(body), "seen_at": seen} for seen, body in got]

@@ -7,7 +7,7 @@ export default function FreeSwitch({ ranking }) {
   if (!best || !(best.relative_to_active > 1)) return null;
   return (
     <section className="free-switch" aria-label="먼저 무료로">
-      <span className="free-switch-label">먼저 무료로</span>
+      <span className="pick-label">먼저 무료로</span>
       <span className="free-switch-body">
         보스 갈 때 <strong>{settingLabel(best.setting)}</strong>로 바꾸면
         <span className="free-switch-gain">실딜 {formatRelative(best.relative_to_active)}</span>

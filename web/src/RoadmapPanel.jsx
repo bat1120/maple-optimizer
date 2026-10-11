@@ -3,6 +3,7 @@ import { getRoadmap } from "./api.js";
 import { formatMeso, formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 import { gradeClass } from "./character/grades.js";
+import { hashFor } from "./router.js";
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
@@ -89,12 +90,11 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                       <span className="score-badge" title="보스 실딜 상승">실딜 {formatPct(v.delta_pct)}</span>
                     </div>
                     {/* 칩 = 게임 경매장 상세 검색 칸 순서(부위 → 등급 → 1·2·3줄, 각 줄은 '이상') */}
-                    <span className="cond-head">경매장 상세 검색</span>
+                    {i === 0 && <span className="cond-head">경매장 상세 검색</span>}
                     <ul className="rank-cond" aria-label="경매장 검색 조건">
                       <li className="cond-slot"><span className="cond-k">부위</span>{v.slot}</li>
                       <li className={`cond-grade ${gradeClass(v.grade)}`}><span className="cond-k">{v.kind}</span>{v.grade}</li>
                       {v.target.map((t, k) => <li key={k}><span className="cond-k">{k + 1}줄</span>{t} 이상</li>)}
-                      {v.route === "큐브" && <li className="cond-cube">경매장 구매 불가 · 지금 템에 큐브</li>}
                     </ul>
                     <div className="rank-cost">
                       <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
@@ -104,9 +104,15 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {/* 아래 줄은 모든 카드가 같은 높이: 살 수 있으면 복사, 못 사면 같은 자리에 안내 칩 */}
                     <div className="rank-foot">
-                      {v.route !== "큐브" && (
+                      {v.route !== "큐브" ? (
                         <button type="button" className={`rank-copy${i === 0 ? "" : " ghost small"}`} onClick={() => copy(v)}>
                           {copied === `${v.slot}-${v.kind}` ? "복사됨 ✓" : "경매장 검색 조건 복사"}</button>
+                      ) : (
+                        // 경매장에서 못 사는 템(5회차: 다음 행동이 없었다) → 같은 자리·같은 모양으로 큐브 비용 계산기
+                        <>
+                          <a className={i === 0 ? "button-link" : "button-ghost"} href={hashFor({ page: "character", name, tab: "calc" })}>큐브 비용 계산하기</a>
+                          <span className="muted small">경매장 구매 불가 템 — 지금 템에 큐브</span>
+                        </>
                       )}
                       {i === 0 && v.route !== "큐브" && <span className="muted small">게임 경매장 › 상세 검색에 붙여 넣으세요</span>}
                     </div>

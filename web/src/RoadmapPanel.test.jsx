@@ -95,6 +95,17 @@ describe("roadmap panel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("게임 경매장 › 상세 검색");
   });
 
+  // 2026-10-11 심사 5회차: 경매장에서 못 사는 템은 다음 행동이 없었다 → 같은 자리에 큐브 비용 계산기로 가는 버튼
+  it("경매장에서 못 사는 템(큐브)은 복사 대신 [큐브 비용 계산하기]로 계산기 탭에 간다", async () => {
+    const cube = { ...body.value_ranking[1], slot: "무기", route: "큐브" };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...body, value_ranking: [body.value_ranking[0], cube] }) });
+    render(<RoadmapPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
+    const second = cards()[1];
+    expect(within(second).queryByRole("button", { name: "경매장 검색 조건 복사" })).toBeNull();
+    expect(within(second).getByRole("link", { name: "큐브 비용 계산하기" }).getAttribute("href")).toMatch(/tab=calc|\/calc/);
+  });
+
   it("순위 카드 안에 경매장 조건을 칩으로 바로 보여 준다(부위·등급·옵션 줄)", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     render(<RoadmapPanel name="내신부레테" defense={300} />);
