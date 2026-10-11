@@ -67,6 +67,9 @@ class CharacterSnapshot:
     hexa_cores: list = field(default_factory=list)  # HEXA 코어 레벨: [{"name", "level", "type", "skills"}]
     hexa_skills: dict = field(default_factory=dict)  # 6차 스킬 이름 → {level, effect, next, description}
     own_shares: dict = field(default_factory=dict)   # 본인 최신 연무장 기록의 스킬별 딜 지분(%) — 없으면 비어 있다
+    # 심볼 목록(2026-10-11, character/symbol-equipment): [{"name", "kind", "region", "level", "force", "growth",
+    #   "require_growth", "other_effect", "stats"}] — growth는 지금 레벨에서 쌓인 성장치(필요치를 넘을 수 있다)
+    symbol_items: list = field(default_factory=list)
 
     @property
     def active_setting(self) -> Setting:

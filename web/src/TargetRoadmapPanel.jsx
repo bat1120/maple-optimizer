@@ -16,6 +16,7 @@ export const BOSSES = [
 function stepLabel(s) {
   if (s.path === "스타포스") return `${s.name} ${s.from_star}→${s.to_star}성`;
   if (s.path === "큐브") return `${s.slot} ${s.kind} ${s.grade} ${s.lines_good}줄`;
+  if (s.path === "심볼") return `${s.name} ${s.from_level}→${s.to_level}레벨${s.remaining_symbols > 0 ? ` (심볼 ${s.remaining_symbols.toLocaleString("ko-KR")}개 더)` : ""}`;
   return s.name;
 }
 
@@ -40,7 +41,7 @@ export default function TargetRoadmapPanel({ name, defense }) {
       setBusy(false);
     }
   };
-  // 장비 쪽(큐브·스타포스·HEXA 스탯)만 MapleScouter에 들어간다 — 우리 추정도 그 몫만
+  // 장비 쪽(큐브·스타포스·HEXA 스탯·심볼)만 MapleScouter에 들어간다 — 우리 추정도 그 몫만
   const expected = data ? data.final_ratio / (data.hexa_core_multiplier || 1) : null;
   const check = async () => setSent(await sendToExtension({ ...data.scouter, check: { boss, label, expected } }));
 
@@ -86,7 +87,7 @@ export default function TargetRoadmapPanel({ name, defense }) {
           {data.scouter && hasExtension() && (
             <p>
               <button type="button" onClick={check}>MapleScouter에서 진짜 배율 보기</button>{" "}
-              <span className="muted small">장비 변화(큐브·스타포스·HEXA 스탯)만 들어가요 — 우리 추정 {expected?.toFixed(2)}%</span>
+              <span className="muted small">장비 변화(큐브·스타포스·HEXA 스탯·심볼)만 들어가요 — 우리 추정 {expected?.toFixed(2)}%</span>
             </p>
           )}
           {data.scouter && !hasExtension() && (

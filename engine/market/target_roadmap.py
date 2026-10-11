@@ -3,7 +3,8 @@
 - 배율(예: MapleScouter 효율·보스컷의 익스트림 스우 34.52%)은 사용자가 넣는다 — 우리 엔진은 상대 실딜만 계산하므로
   '배율은 실딜 %만큼 비례해서 오른다'고 본다(레벨·포스 보정은 그대로)
 - 후보: 큐브(부위·잠재/에디마다 효율이 가장 좋은 단계 1개), HEXA 코어(다음 1레벨), HEXA 스탯(코어마다 1개),
-  스타포스(같은 부위를 한 성씩 이어서 — 고를 때마다 지금 상태 기준으로 실딜·비용을 다시 계산)
+  스타포스(같은 부위를 한 성씩 이어서 — 고를 때마다 지금 상태 기준으로 실딜·비용을 다시 계산),
+  심볼(2026-10-11: 같은 심볼을 한 레벨씩 이어서 — 비용은 강화 메소, 실딜은 그때까지 오른 심볼 스탯 기준으로 다시)
 - 큐브·HEXA 실딜은 처음 상태 기준값을 그대로 곱한다(근사). 경매장 구매·직작은 넣지 않는다(관측 매물에 따라 크게 바뀐다)
 - 크확을 깎는 큐브는 기본으로 빼고(keep_crit), 실딜 평가 자체도 크확이 줄면 손해로 잡는다(engine/stats/evaluate.py)
 """
@@ -15,6 +16,7 @@ from engine.enhance.starforce_stats import eligible, gain
 from engine.market.events import Events
 from engine.market.paths import upgrade_paths
 from engine.market.recommend import SWAP, _Planner, _valued
+from engine.market.symbol_paths import extra_of, step as symbol_step
 
 
 def apply_star(it, target: int):
@@ -39,14 +41,19 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
     events = events or Events()
     need = target_ratio / current_ratio if current_ratio > 0 else float("inf")
     out = {"current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": need, "steps": [],
-           "reached": need <= 1, "final_ratio": current_ratio, "total_cost": 0.0, "changed": {}, "hexa_stat": {}}
+           "reached": need <= 1, "final_ratio": current_ratio, "total_cost": 0.0, "changed": {}, "hexa_stat": {},
+           "symbols": {}}
     if need <= 1:
         return out
     pl = _Planner(snap, setting, boss, catalog, None, events.miracle)
     raw = dict(pl.raw)  # 지금까지 바뀐 상태(큐브·스타포스 반영)
 
-    def index_of(items):
-        return pl.ev.index({s: _valued(it, pl.mains, pl.per_sec) for s, it in items.items()})
+    sym_level = {sym["name"]: sym["level"] for sym in snap.symbol_items}  # 지금까지 올린 심볼 레벨
+    sym_stat: dict = {}  # 처음보다 늘어난 심볼 스탯(%미적용)
+
+    def index_of(items, stat=None):
+        return pl.ev.index({s: _valued(it, pl.mains, pl.per_sec) for s, it in items.items()},
+                           extra_of(sym_stat if stat is None else stat))
 
     cands: dict = {}
     for p in upgrade_paths(snap, setting, boss, catalog, observed, None, events)["all"]:
@@ -86,6 +93,26 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
         if c:
             cands[("스타포스", slot)] = c
 
+    def symbol_candidate(sym):
+        lv = sym_level[sym["name"]]
+        st = symbol_step(sym, lv, lv + 1, snap.character_class)
+        if st is None:
+            return None
+        stat = dict(sym_stat)
+        for k, v in st["stat_gain"].items():
+            stat[k] = stat.get(k, 0.0) + v
+        d = (index_of(raw, stat) / index_of(raw) - 1) * 100
+        if d <= 0 or st["meso"] <= 0:
+            return None
+        return {"slot": "심볼", "path": "심볼", "name": sym["name"], "kind": sym["kind"], "region": sym["region"],
+                "from_level": lv, "to_level": lv + 1, "cost": float(st["meso"]), "delta_pct": d,
+                "per_100m": d / (st["meso"] / 1e8), **st, "_sym": sym}
+
+    for sym in snap.symbol_items:
+        c = symbol_candidate(sym)
+        if c:
+            cands[("심볼", sym["name"])] = c
+
     mult = 1.0
     for _ in range(max_steps):
         if not cands or mult >= need:
@@ -105,6 +132,15 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
             out["changed"][p["slot"]] = raw[p["slot"]]
         elif p["path"] == "HEXA 스탯":
             out["hexa_stat"][p["core"]] = p.get("target_level")
+        elif p["path"] == "심볼":  # 같은 심볼의 다음 1레벨(지금까지 오른 스탯 기준으로 다시)
+            sym = p["_sym"]
+            sym_level[sym["name"]] = p["to_level"]
+            out["symbols"][sym["name"]] = p["to_level"]
+            for k, v in p["stat_gain"].items():
+                sym_stat[k] = sym_stat.get(k, 0.0) + v
+            c = symbol_candidate(sym)
+            if c:
+                cands[("심볼", sym["name"])] = c
         if p["path"] in ("스타포스", "큐브"):  # 이 부위의 다음 한 성(지금 상태 기준으로 다시)
             c = sf_candidate(p["slot"])
             if c:

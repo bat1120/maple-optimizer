@@ -9,6 +9,7 @@
 - 추옵: 지금 템 추옵을 환생의 불꽃·메소 재설정으로 다시 굴려 목표 점수 이상이 나올 때까지(engine/enhance/flame.py).
   점수 = 추옵 줄이 주는 실딜(%), 키마다 실딜 기울기를 재서 더한 선형 근사. 비용 = 1개 값 ÷ 목표 이상 확률,
   실딜 = 목표 이상에서 멈췄을 때 평균 점수 − 지금 추옵 점수. 보스 장비로 확인되는 템만.
+- 심볼: 아케인·어센틱 심볼을 다음 레벨부터 최대 레벨까지 — 비용은 강화 메소, 필요 심볼 개수는 따로(engine/market/symbol_paths.py).
 가격이 없거나 총 옵션을 모르는 매물은 실딜을 계산할 수 없어 뺀다.
 """
 import copy
@@ -23,6 +24,7 @@ from engine.market.cube_value import expected_cost
 from engine.market.events import Events
 from engine.market.hexa_core_paths import core_paths, job_shares
 from engine.market.hexa_paths import hexa_stat_paths
+from engine.market.symbol_paths import symbol_paths
 from engine.market.listing import item_from_input
 from engine.market.secondary import secondary_fits
 from engine.market.recommend import KINDS, MIN_GAIN, SKIP_SLOTS, SWAP, UNTRADEABLE_SECONDARY_JOBS, _part, _Planner, _valued, roadmap
@@ -210,6 +212,7 @@ def upgrade_paths(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, 
     shares, source = (snap.own_shares, "내 연무장 기록") if snap.own_shares else (
         (job_shares(snap.character_class) or {}).get("shares") or {}, "직업 기준값(연무장 상위 기록 중앙값)")
     out += core_paths(snap, shares, events.fragment_price, boss.defense, source)  # HEXA 스킬 코어
+    out += symbol_paths(pl)  # 아케인·어센틱 심볼(다음 레벨부터 최대 레벨까지, 강화 메소)
     for obs in observed or []:
         if not obs.get("price") or not obs.get("total"):
             continue

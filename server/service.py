@@ -259,10 +259,12 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
 
 def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, current_ratio: float,
                    target_ratio: float, events=None) -> dict:
-    """목표 배율 로드맵 + MapleScouter에 한꺼번에 넣을 변화량(큐브·스타포스·HEXA 스탯. HEXA 코어는 칸이 없어 빠진다)."""
+    """목표 배율 로드맵 + MapleScouter에 한꺼번에 넣을 변화량(큐브·스타포스·HEXA 스탯·심볼. HEXA 코어는 칸이 없어 빠진다)."""
     from engine.market.events import Events
     from engine.market.hexa_paths import _block, _lines
+    from engine.market.symbol_paths import extra_of
     from engine.market.target_roadmap import target_roadmap as build
+    from engine.stats.model import StatBlock
     from engine.stats import hexa as H
     events = events or Events()
     b = boss(defense)
@@ -276,8 +278,16 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             sub_lv = (H.MAX_G - lv) / 2
             d = H.delta(_block(_lines(core, lv, (sub_lv, sub_lv)), job), _block(core["lines"], job))
             extra = d if extra is None else {k: extra[k] + d[k] for k in ("pct", "nopct")}
+    sym_stat: dict = {}  # 심볼 단계로 늘어난 주스탯(%미적용) — MapleScouter '% 미적용' 칸
+    for s in r["steps"]:
+        if s["path"] == "심볼":
+            for k, v in s["stat_gain"].items():
+                sym_stat[k] = sym_stat.get(k, 0.0) + v
+    if sym_stat:
+        d = extra_of(sym_stat)
+        extra = {"pct": StatBlock(), **d} if extra is None else {"pct": extra["pct"], "nopct": extra["nopct"] + d["nopct"]}
     steps = [{**s, "cost_text": meso_text(s["cost"]), "total_cost_text": meso_text(s["total_cost"])} for s in r["steps"]]
-    eq = sum(1 for s in r["steps"] if s["path"] in ("큐브", "스타포스", "HEXA 스탯"))
+    eq = sum(1 for s in r["steps"] if s["path"] in ("큐브", "스타포스", "HEXA 스탯", "심볼"))
     scouter = (scouter_delta_multi(snap, chosen, r["changed"], extra, label=f"목표 {target_ratio:g}% 로드맵")
                if (r["changed"] or extra) else None)
     hexa_core = [s for s in r["steps"] if s["path"] == "HEXA 코어"]
@@ -289,7 +299,8 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
             "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
             "scouter": scouter, "hexa_core_multiplier": mult_core,
-            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨·포스 보정은 그대로). 스타포스는 한 성씩 이어서, "
+            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨·포스 보정은 그대로). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
+                     "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "
                      "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. MapleScouter에 넣는 변화량에는 HEXA 코어가 빠져요"
                      "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
 
@@ -353,7 +364,7 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
 
 def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
           cooldown_main_pct: float | None = None, top: int = 30, events=None) -> dict:
-    """업그레이드 경로 비교: 구매·직작·지금 템 큐브·스타포스·추옵·HEXA를 억당 실딜로(세트 효과 반영)."""
+    """업그레이드 경로 비교: 구매·직작·지금 템 큐브·스타포스·추옵·HEXA·심볼을 억당 실딜로(세트 효과 반영)."""
     from engine.market.paths import balanced, upgrade_paths
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
@@ -372,6 +383,9 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
                      "환생의 불꽃으로 목표 이상이 나올 때까지 — 비용 = 1개 값 × 평균 횟수, 실딜 = 목표 이상에서 멈췄을 때 평균 − 지금. "
                      "추옵 점수는 줄마다 실딜 기울기를 더한 근사이고, 보스 장비로 확인되는 템(보스 장신구·여명·칠흑·광휘·루타비스·"
                      "앱솔랩스·아케인셰이드·마이스터·제네시스 무기)만 계산해요. "
+                     "심볼 = 아케인·어센틱 심볼을 다음 레벨부터 최대 레벨까지 — 비용은 강화 메소(나무위키 성장표), 심볼은 거래 불가라 "
+                     "비용에 넣지 않고 필요 개수·지금 성장치로 남은 개수·일일 퀘스트 기준 날짜를 따로 줘요. 포스 보정(보스 요구 포스)과 "
+                     "11레벨 지역 보스 데미지 +20%는 실딜에 넣지 않았어요(max_effect에 문구만). 그랜드 어센틱심볼은 주스탯이 없어 빠져요. "
                      "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
 
 

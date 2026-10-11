@@ -90,6 +90,25 @@ describe("paths panel", () => {
     expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
     expect(row).toHaveTextContent("직업 기준값");
   });
+  it("심볼: 이름 L→L+1, 메소, 필요·남은 심볼 개수와 일일 퀘스트 날짜를 보여 주고, 다 찼으면 메소만", async () => {
+    const a = { slot: "심볼", path: "심볼", name: "어센틱심볼 : 세르니움", kind: "어센틱심볼", from_level: 9, to_level: 10,
+                delta_pct: 0.3, cost: 7.09e8, cost_text: "7억 900만", per_100m: 0.042, need_symbols: 909, growth: 646,
+                remaining_symbols: 263, daily: 30, days: 9, max_effect: null, set_change: [] };
+    const b = { ...a, name: "어센틱심볼 : 아르테리아", from_level: 7, to_level: 8, need_symbols: 581, growth: 583,
+                remaining_symbols: 0, daily: 15, days: 0 };
+    const c = { ...a, to_level: 11, need_symbols: 2009, remaining_symbols: 1363, days: 46,
+                max_effect: "성장 레벨 11 이상: 선택받은 세렌 공격 시 데미지 +20%, 추가 경험치 획득 +10%" };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [a, b, c] }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    const rows = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("어센틱심볼 : 세르니움 9→10레벨");
+    expect(rows[1]).toHaveTextContent("7억 900만");
+    expect(rows[1]).toHaveTextContent("필요 심볼 909개 · 남은 263개(일일 퀘스트 약 9일)");
+    expect(rows[2]).toHaveTextContent("성장치가 다 찼어요 — 메소만");
+    expect(rows[3]).toHaveTextContent("선택받은 세렌 공격 시 데미지 +20%");
+    expect(rows[3]).toHaveTextContent("실딜 미반영");
+  });
   it("썬데이 이벤트를 하나씩: 30% 할인만 켜면 그것만 보낸다", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "스타포스 30% 할인" } }));
     render(<PathsPanel name="내신부레테" defense={300} />);
