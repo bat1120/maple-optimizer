@@ -26,7 +26,7 @@ export default function Scouter() {
         <ol>
           <li>크롬 주소창에 <code>chrome://extensions</code> 열기 → 오른쪽 위 <strong>개발자 모드</strong> 켜기</li>
           <li><strong>압축해제된 확장 프로그램을 로드합니다</strong> → 프로젝트의 <code>extension</code> 폴더 고르기</li>
-          <li>이 사이트를 새로고침 → 캐릭터 화면 업그레이드 탭의 매물(또는 테스트 템) 옆 <strong>[MapleScouter에 넣기]</strong></li>
+          <li>이 사이트를 새로고침 → 캐릭터 화면 업그레이드 탭의 매물 옆 <strong>[MapleScouter에 넣기]</strong></li>
         </ol>
         <p className="muted small">PC 크롬 전용이에요(휴대폰 브라우저는 확장을 지원하지 않아요). 아직 웹 스토어에는 없어서 개발자 모드로 설치해요. 확장이 없으면 아래 북마크 방식을 쓰세요.</p>
       </section>

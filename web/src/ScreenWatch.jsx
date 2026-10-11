@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
-import { clipboardText, sampleScouter, scouterInfoUrl } from "./scouter.js";
+import { clipboardText, scouterInfoUrl } from "./scouter.js";
 import { hasExtension, sendToExtension } from "./extension.js";
 import { SCOUTER_DIFF_NOTE, formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
@@ -169,18 +169,6 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
 }
 
 // admin=false: 일반 유저 화면(2026-10-07) — 채점·학습 데이터·목록 읽기 같은 관리자 기능을 숨기고 오늘 남은 분석 횟수를 보여준다
-// 임시(2026-10-07, 테스트용): 경매장을 못 읽을 때 [환산용 복사]→MapleScouter 열기→환산 채우기 흐름을 시험하는 견본 한 줄.
-// 실딜·가격 같은 수치는 만들지 않고 MapleScouter 칸에 더할 값(보스 +10%, 크뎀 +5%)만 담는다.
-function TestItem({ name, job, level }) {
-  const item = { scouter: sampleScouter({ name, job, level }), read: {} };
-  return (
-    <p className="card small">
-      <strong>테스트 템</strong> <span className="muted">(임시 · 보스 데미지 +10%, 크리 데미지 +5%)</span>{" "}
-      <CopyScouter item={item} label="테스트 템 복사" />
-    </p>
-  );
-}
-
 export default function ScreenWatch({ name, job, level, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate, admin = true }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
@@ -312,7 +300,6 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       <p className="muted small">
         매물 옆 [환산용 복사] → MapleScouter에서 북마크 한 번으로 칸에 넣기: <a href="#/scouter">환산 채우기 설치·사용법</a>
       </p>
-      {!admin && name && <TestItem name={name} job={job} level={level} />}
       {!admin && (
         <p className="muted small">
           게임 경매장(또는 장비창)에서 매물에 마우스를 0.5초씩 대면, 툴팁을 읽어 내 캐릭터 기준 실딜·억당 효율로 평가해요.
