@@ -201,6 +201,22 @@ def _symbol_block(symbol_json: dict | None) -> StatBlock:
     return b
 
 
+def _force(stat_json: dict, name: str) -> int | None:
+    """character/stat의 '아케인포스'·'어센틱포스' — 심볼·하이퍼·길드 등 출처를 다 더한 값(없으면 None)."""
+    v = next((x["stat_value"] for x in stat_json.get("final_stat") or [] if x["stat_name"] == name), None)
+    return None if v in (None, "") else int(num(v))
+
+
+def _hyper_force(hy: dict) -> dict[int, int]:
+    """하이퍼 프리셋별 아케인포스: stat_increase '아케인포스 35 증가'의 숫자(레벨 0이면 0)."""
+    out = {}
+    for n in (1, 2, 3):
+        rows = [s for s in hy.get(f"hyper_stat_preset_{n}") or [] if s.get("stat_type") == "아케인포스"]
+        m = [re.search(r"(\d+)", s.get("stat_increase") or "") for s in rows]
+        out[n] = sum(int(x.group(1)) for x in m if x)
+    return out
+
+
 def _symbol_items(symbol_json: dict | None) -> list:
     """심볼 경로용 목록(2026-10-11): 이름·종류·지역·레벨·성장치는 넥슨 필드 그대로."""
     out = []
@@ -328,6 +344,9 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         titles=titles,
         symbols=_symbol_block(bundle.get("character/symbol-equipment")),
         symbol_items=_symbol_items(bundle.get("character/symbol-equipment")),
+        arcane_force=_force(bundle["character/stat"], "아케인포스"),
+        authentic_force=_force(bundle["character/stat"], "어센틱포스"),
+        hyper_force=_hyper_force(hy),
         union=union,
         union_states=union_states,
         active_union_preset=active_union if union_states else 0,

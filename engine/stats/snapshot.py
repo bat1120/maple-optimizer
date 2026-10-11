@@ -70,6 +70,10 @@ class CharacterSnapshot:
     # 심볼 목록(2026-10-11, character/symbol-equipment): [{"name", "kind", "region", "level", "force", "growth",
     #   "require_growth", "other_effect", "stats"}] — growth는 지금 레벨에서 쌓인 성장치(필요치를 넘을 수 있다)
     symbol_items: list = field(default_factory=list)
+    # 포스(2026-10-11): character/stat의 '아케인포스'·'어센틱포스'(없으면 None)와 하이퍼 프리셋별 아케인포스(stat_increase)
+    arcane_force: int | None = None
+    authentic_force: int | None = None
+    hyper_force: dict = field(default_factory=dict)
 
     @property
     def active_setting(self) -> Setting:

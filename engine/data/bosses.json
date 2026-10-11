@@ -1,0 +1,730 @@
+{
+ "_source": [
+  "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4 (나무위키 '아케인포스' 8. 아케인포스 필드: 캐릭터 ARC / 요구 ARC 비율별 주는 피해, 보스별 요구 아케인포스, 심볼 레벨당 포스 10(n+2), 2026-10-11 열람)",
+  "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4 (나무위키 '어센틱포스' 9. 어센틱포스 필드: 캐릭터 AUT − 요구 AUT 격차별 주는 피해, 보스별 요구 어센틱포스, 4.1 지역별 추가 데미지 적용 보스, 심볼 레벨당 포스 10n, 2026-10-11 열람)",
+  "https://maplestory.nexon.com/news/update/791 (2025-12-18 공지: 어센틱·그랜드 어센틱심볼 성장 레벨 11 이상 '[보스] 공격 시 데미지 +20%' — 최종 데미지인지 데미지%인지 없음)",
+  "보스별 방어율·요구 포스: 각 항목 source의 나무위키 보스 문서 정보창(물리·마법 방어), 2026-10-11 열람"
+ ],
+ "_checked": "2026-10-11",
+ "_notes": [
+  "defense = 정보창 물리 방어(마법 방어와 같다). 난이도·페이즈별로 다르면 페이즈별 항목으로 나눴다",
+  "arcane/authentic = 주는 피해 100%가 되는 요구 포스. 아케인은 비율표(arcane_table), 어센틱은 격차표(authentic_table)",
+  "symbol_region = 그 지역 어센틱(그랜드 포함)심볼 11레벨 효과 '[보스] 공격 시 데미지 +20%' 대상. 넥슨 API 심볼 설명과 공지 791로 확인 — 종류 미확인이라 실딜에 넣지 않는다",
+  "넣지 않은 보스: 발드릭스(나무 노멀·하드 정보창 방어율 칸이 비어 있음), 스토리 모드(사용 안 함), 그 밖에 출처를 아직 안 본 보스",
+  "익스트림 스우는 380%(나무 '방어율이 300%에서 380%로') — 서버 기본값 300은 노멀·하드 스우·검은 마법사와 같다"
+ ],
+ "arcane_table": {
+  "_note": "캐릭터 ARC / 요구 ARC 비율(%)이 at 이상일 때 주는 피해(%). 나무 표 0~9%=10, 10~29%=30, 30~49%=60, 50~69%=70, 70~99%=80, 100~109%=100, 110~129%=110, 130~149%=130, 150% 이상=150",
+  "rows": [
+   [
+    150,
+    150
+   ],
+   [
+    130,
+    130
+   ],
+   [
+    110,
+    110
+   ],
+   [
+    100,
+    100
+   ],
+   [
+    70,
+    80
+   ],
+   [
+    50,
+    70
+   ],
+   [
+    30,
+    60
+   ],
+   [
+    10,
+    30
+   ],
+   [
+    0,
+    10
+   ]
+  ]
+ },
+ "authentic_table": {
+  "_note": "캐릭터 AUT − 요구 AUT 격차가 at 이상일 때 주는 피해(%). 나무 표 행: -95 이하 5, -90 10, … -10 90, 0 100, 10 105, 20 110, 30 115, 40 120, 50 이상 125. 행 사이 격차(예: -15)는 표에 규칙이 없어 바로 아래 행 값(보수적)",
+  "rows": [
+   [
+    50,
+    125
+   ],
+   [
+    40,
+    120
+   ],
+   [
+    30,
+    115
+   ],
+   [
+    20,
+    110
+   ],
+   [
+    10,
+    105
+   ],
+   [
+    0,
+    100
+   ],
+   [
+    -10,
+    90
+   ],
+   [
+    -20,
+    80
+   ],
+   [
+    -30,
+    70
+   ],
+   [
+    -40,
+    60
+   ],
+   [
+    -50,
+    50
+   ],
+   [
+    -60,
+    40
+   ],
+   [
+    -70,
+    30
+   ],
+   [
+    -80,
+    20
+   ],
+   [
+    -90,
+    10
+   ],
+   [
+    -10000,
+    5
+   ]
+  ]
+ },
+ "bosses": [
+  {
+   "id": "lucid-easy",
+   "name": "루시드",
+   "difficulty": "이지",
+   "defense": 300.0,
+   "arcane": 360,
+   "source": [
+    "https://namu.wiki/w/%EB%A3%A8%EC%8B%9C%EB%93%9C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "lucid-normal",
+   "name": "루시드",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "arcane": 360,
+   "source": [
+    "https://namu.wiki/w/%EB%A3%A8%EC%8B%9C%EB%93%9C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "lucid-hard",
+   "name": "루시드",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "arcane": 360,
+   "source": [
+    "https://namu.wiki/w/%EB%A3%A8%EC%8B%9C%EB%93%9C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "will-easy",
+   "name": "윌",
+   "difficulty": "이지",
+   "defense": 300.0,
+   "arcane": 560,
+   "source": [
+    "https://namu.wiki/w/%EC%9C%8C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "will-normal",
+   "name": "윌",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "arcane": 760,
+   "source": [
+    "https://namu.wiki/w/%EC%9C%8C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "will-hard",
+   "name": "윌",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "arcane": 760,
+   "source": [
+    "https://namu.wiki/w/%EC%9C%8C%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "dusk-normal",
+   "name": "거대 괴수 더스크",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "arcane": 730,
+   "source": [
+    "https://namu.wiki/w/%EB%8D%94%EC%8A%A4%ED%81%AC",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "dusk-chaos",
+   "name": "거대 괴수 더스크",
+   "difficulty": "카오스",
+   "defense": 300.0,
+   "arcane": 730,
+   "source": [
+    "https://namu.wiki/w/%EB%8D%94%EC%8A%A4%ED%81%AC",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "jinhilla-normal",
+   "name": "진 힐라",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "arcane": 820,
+   "source": [
+    "https://namu.wiki/w/%EC%A7%84%20%ED%9E%90%EB%9D%BC",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "jinhilla-hard",
+   "name": "진 힐라",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "arcane": 900,
+   "source": [
+    "https://namu.wiki/w/%EC%A7%84%20%ED%9E%90%EB%9D%BC",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "dunkel-normal",
+   "name": "친위대장 듄켈",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "arcane": 850,
+   "source": [
+    "https://namu.wiki/w/%EB%93%84%EC%BC%88/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "dunkel-hard",
+   "name": "친위대장 듄켈",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "arcane": 850,
+   "source": [
+    "https://namu.wiki/w/%EB%93%84%EC%BC%88/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "blackmage-hard",
+   "name": "검은 마법사",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "arcane": 1320,
+   "source": [
+    "https://namu.wiki/w/%EA%B2%80%EC%9D%80%20%EB%A7%88%EB%B2%95%EC%82%AC/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "blackmage-extreme",
+   "name": "검은 마법사",
+   "difficulty": "익스트림",
+   "defense": 300.0,
+   "arcane": 1320,
+   "source": [
+    "https://namu.wiki/w/%EA%B2%80%EC%9D%80%20%EB%A7%88%EB%B2%95%EC%82%AC/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%95%84%EC%BC%80%EC%9D%B8%ED%8F%AC%EC%8A%A4"
+   ]
+  },
+  {
+   "id": "lotus-normal",
+   "name": "스우",
+   "difficulty": "노멀",
+   "defense": 300.0,
+   "source": [
+    "https://namu.wiki/w/%EC%8A%A4%EC%9A%B0/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0"
+   ]
+  },
+  {
+   "id": "lotus-hard",
+   "name": "스우",
+   "difficulty": "하드",
+   "defense": 300.0,
+   "source": [
+    "https://namu.wiki/w/%EC%8A%A4%EC%9A%B0/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0"
+   ]
+  },
+  {
+   "id": "lotus-extreme",
+   "name": "스우",
+   "difficulty": "익스트림",
+   "defense": 380.0,
+   "source": [
+    "https://namu.wiki/w/%EC%8A%A4%EC%9A%B0/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0"
+   ],
+   "note": "나무 정보창 '300%/300%/380%'(노멀/하드/익스트림), 익스트림 변경점 '방어율이 300%에서 380%로'"
+  },
+  {
+   "id": "seren-normal-1",
+   "name": "선택받은 세렌",
+   "difficulty": "노멀",
+   "phase": "1페이즈",
+   "defense": 380.0,
+   "authentic": 150,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "seren-normal-2",
+   "name": "선택받은 세렌",
+   "difficulty": "노멀",
+   "phase": "2페이즈",
+   "defense": 380.0,
+   "authentic": 200,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "seren-hard-1",
+   "name": "선택받은 세렌",
+   "difficulty": "하드",
+   "phase": "1페이즈",
+   "defense": 380.0,
+   "authentic": 150,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "seren-hard-2",
+   "name": "선택받은 세렌",
+   "difficulty": "하드",
+   "phase": "2페이즈",
+   "defense": 380.0,
+   "authentic": 200,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "seren-extreme-1",
+   "name": "선택받은 세렌",
+   "difficulty": "익스트림",
+   "phase": "1페이즈",
+   "defense": 380.0,
+   "authentic": 150,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "seren-extreme-2",
+   "name": "선택받은 세렌",
+   "difficulty": "익스트림",
+   "phase": "2페이즈",
+   "defense": 380.0,
+   "authentic": 200,
+   "symbol_region": "세르니움",
+   "source": [
+    "https://namu.wiki/w/%EC%84%A0%ED%83%9D%EB%B0%9B%EC%9D%80%20%EC%84%B8%EB%A0%8C",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kalos-easy-1",
+   "name": "감시자 칼로스",
+   "difficulty": "이지",
+   "phase": "1페이즈",
+   "defense": 330.0,
+   "authentic": 200,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kalos-easy-2",
+   "name": "감시자 칼로스",
+   "difficulty": "이지",
+   "phase": "2페이즈",
+   "defense": 380.0,
+   "authentic": 200,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ],
+   "note": "2페이즈 정보창은 난이도 구분 없이 380%"
+  },
+  {
+   "id": "kalos-normal-1",
+   "name": "감시자 칼로스",
+   "difficulty": "노멀",
+   "phase": "1페이즈",
+   "defense": 330.0,
+   "authentic": 250,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kalos-normal-2",
+   "name": "감시자 칼로스",
+   "difficulty": "노멀",
+   "phase": "2페이즈",
+   "defense": 380.0,
+   "authentic": 300,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ],
+   "note": "2페이즈 정보창은 난이도 구분 없이 380%"
+  },
+  {
+   "id": "kalos-chaos",
+   "name": "감시자 칼로스",
+   "difficulty": "카오스",
+   "defense": 380.0,
+   "authentic": 330,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kalos-extreme",
+   "name": "감시자 칼로스",
+   "difficulty": "익스트림",
+   "defense": 380.0,
+   "authentic": 440,
+   "symbol_region": "아르크스",
+   "source": [
+    "https://namu.wiki/w/%EA%B0%90%EC%8B%9C%EC%9E%90%20%EC%B9%BC%EB%A1%9C%EC%8A%A4",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "adversary-easy",
+   "name": "최초의 대적자",
+   "difficulty": "이지",
+   "defense": 380.0,
+   "authentic": 220,
+   "symbol_region": "오디움",
+   "source": [
+    "https://namu.wiki/w/%EC%B5%9C%EC%B4%88%EC%9D%98%20%EB%8C%80%EC%A0%81%EC%9E%90",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "adversary-normal",
+   "name": "최초의 대적자",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 320,
+   "symbol_region": "오디움",
+   "source": [
+    "https://namu.wiki/w/%EC%B5%9C%EC%B4%88%EC%9D%98%20%EB%8C%80%EC%A0%81%EC%9E%90",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "adversary-hard",
+   "name": "최초의 대적자",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 340,
+   "symbol_region": "오디움",
+   "source": [
+    "https://namu.wiki/w/%EC%B5%9C%EC%B4%88%EC%9D%98%20%EB%8C%80%EC%A0%81%EC%9E%90",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "adversary-extreme",
+   "name": "최초의 대적자",
+   "difficulty": "익스트림",
+   "defense": 380.0,
+   "authentic": 460,
+   "symbol_region": "오디움",
+   "source": [
+    "https://namu.wiki/w/%EC%B5%9C%EC%B4%88%EC%9D%98%20%EB%8C%80%EC%A0%81%EC%9E%90",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kaling-easy",
+   "name": "카링",
+   "difficulty": "이지",
+   "defense": 380.0,
+   "authentic": 230,
+   "symbol_region": "도원경",
+   "source": [
+    "https://namu.wiki/w/%EC%B9%B4%EB%A7%81/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kaling-normal",
+   "name": "카링",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 330,
+   "symbol_region": "도원경",
+   "source": [
+    "https://namu.wiki/w/%EC%B9%B4%EB%A7%81/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kaling-hard",
+   "name": "카링",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 350,
+   "symbol_region": "도원경",
+   "source": [
+    "https://namu.wiki/w/%EC%B9%B4%EB%A7%81/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "kaling-extreme",
+   "name": "카링",
+   "difficulty": "익스트림",
+   "defense": 380.0,
+   "authentic": 480,
+   "symbol_region": "도원경",
+   "source": [
+    "https://namu.wiki/w/%EC%B9%B4%EB%A7%81/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "star-normal",
+   "name": "찬란한 흉성",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 400,
+   "symbol_region": "아르테리아",
+   "source": [
+    "https://namu.wiki/w/%EC%B0%AC%EB%9E%80%ED%95%9C%20%ED%9D%89%EC%84%B1",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "star-hard",
+   "name": "찬란한 흉성",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 550,
+   "symbol_region": "아르테리아",
+   "source": [
+    "https://namu.wiki/w/%EC%B0%AC%EB%9E%80%ED%95%9C%20%ED%9D%89%EC%84%B1",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "bellona-easy",
+   "name": "벨로나",
+   "difficulty": "이지",
+   "defense": 380.0,
+   "authentic": 400,
+   "symbol_region": "아르테리아",
+   "source": [
+    "https://namu.wiki/w/%EB%B2%A8%EB%A1%9C%EB%82%98%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "bellona-normal",
+   "name": "벨로나",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 450,
+   "symbol_region": "아르테리아",
+   "source": [
+    "https://namu.wiki/w/%EB%B2%A8%EB%A1%9C%EB%82%98%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "bellona-hard",
+   "name": "벨로나",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 550,
+   "symbol_region": "아르테리아",
+   "source": [
+    "https://namu.wiki/w/%EB%B2%A8%EB%A1%9C%EB%82%98%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "limbo-normal",
+   "name": "림보",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 500,
+   "symbol_region": "카르시온",
+   "source": [
+    "https://namu.wiki/w/%EB%A6%BC%EB%B3%B4%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ],
+   "note": "나무 정보창에 1페이즈(스펙터 A·B)·3페이즈(림보-백) 380%, 나머지 페이즈는 '?' 표기"
+  },
+  {
+   "id": "limbo-hard",
+   "name": "림보",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 500,
+   "symbol_region": "카르시온",
+   "source": [
+    "https://namu.wiki/w/%EB%A6%BC%EB%B3%B4%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ],
+   "note": "나무 정보창에 1페이즈(스펙터 A·B)·3페이즈(림보-백) 380%, 나머지 페이즈는 '?' 표기"
+  },
+  {
+   "id": "jupiter-normal",
+   "name": "유피테르",
+   "difficulty": "노멀",
+   "defense": 380.0,
+   "authentic": 810,
+   "symbol_region": "기어드락",
+   "source": [
+    "https://namu.wiki/w/%EC%9C%A0%ED%94%BC%ED%85%8C%EB%A5%B4%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  },
+  {
+   "id": "jupiter-hard",
+   "name": "유피테르",
+   "difficulty": "하드",
+   "defense": 380.0,
+   "authentic": 810,
+   "symbol_region": "기어드락",
+   "source": [
+    "https://namu.wiki/w/%EC%9C%A0%ED%94%BC%ED%85%8C%EB%A5%B4%28%EB%A9%94%EC%9D%B4%ED%94%8C%EC%8A%A4%ED%86%A0%EB%A6%AC%29/%EB%B3%B4%EC%8A%A4%20%EB%AA%AC%EC%8A%A4%ED%84%B0",
+    "https://namu.wiki/w/%EC%96%B4%EC%84%BC%ED%8B%B1%ED%8F%AC%EC%8A%A4",
+    "https://maplestory.nexon.com/news/update/791",
+    "넥슨 Open API character/symbol-equipment symbol_other_effect_description (tests/fixtures 46명, 예: '성장 레벨 11 이상: 카링 공격 시 데미지 +20%')"
+   ]
+  }
+ ]
+}

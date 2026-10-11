@@ -567,3 +567,4 @@ fieldset.events { display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
 fieldset.events .chip { flex-direction: row; text-align: left; }
 fieldset.events input[type="checkbox"] { flex: none; }
 fieldset.events .chip .muted { display: inline; }
+.force-short { color: var(--error); font-weight: 600; margin: 0; }

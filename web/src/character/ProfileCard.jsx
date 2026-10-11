@@ -1,8 +1,10 @@
 import { formatBig, settingLabel } from "../format.js";
 import Icon from "../ui/icons.jsx";
+import BossPicker, { ForceNote } from "./BossPicker.jsx";
 
 // 요약 카드: 아바타 · 이름 · 월드 · 길드 · 직업 · 레벨 + 큰 숫자. 이미지는 넥슨 Open API 주소 그대로(저장하지 않는다).
-export default function ProfileCard({ name, summary, defense, onDefense, onRefresh, busy }) {
+// defense: 보스 id(보스 목록) 또는 방어율 숫자(직접 입력). force: 서버가 계산한 포스 보정(요구·지금·피해 %)
+export default function ProfileCard({ name, summary, defense, onDefense, onRefresh, busy, bosses = [], force = null }) {
   const p = summary.profile || {};
   return (
     <section className="card profile">
@@ -28,9 +30,8 @@ export default function ProfileCard({ name, summary, defense, onDefense, onRefre
         </dl>
       </div>
       <div className="profile-side">
-        <label className="field">보스 방어율(%)
-          <input type="number" inputMode="numeric" value={defense} onChange={(e) => onDefense(Number(e.target.value) || 0)} />
-        </label>
+        <BossPicker value={defense} bosses={bosses} onChange={onDefense} />
+        <ForceNote force={force} />
         <button type="button" className="ghost" onClick={onRefresh} disabled={busy}>
           <Icon name="refresh" size={16} className={busy ? "spin" : ""} />정보 갱신
         </button>

@@ -13,8 +13,33 @@ from engine.stats.snapshot import CharacterSnapshot, Setting
 CATALOG = SetCatalog.load()
 
 
-def boss(defense: float) -> BossProfile:
+def boss(defense: "float | BossProfile") -> BossProfile:
+    """방어율 숫자(예전 boss_defense) 또는 이미 고른 BossProfile(보스 목록 id, choose)."""
+    if isinstance(defense, BossProfile):
+        return defense
     return BossProfile(f"방어율 {defense:g}%", defense)
+
+
+def choose(snap: CharacterSnapshot | None, defense: float, boss_id: str | None = None,
+           arcane_force: int | None = None, authentic_force: int | None = None):
+    """(스냅샷, 보스). boss_id가 있으면 보스 목록(engine/data/bosses.json)의 방어율·요구 포스, 없으면 방어율 숫자만.
+    arcane_force·authentic_force: 사용자가 넣은 총 포스(보스 세팅 기준) — 넣으면 API 값 대신 쓴다(하이퍼 프리셋 보정 없이).
+    없는 보스 id면 KeyError."""
+    import dataclasses
+    from engine.stats.force import boss as listed
+    b = listed(boss_id) if boss_id else boss(defense)
+    if snap is not None and (arcane_force is not None or authentic_force is not None):
+        snap = dataclasses.replace(
+            snap, arcane_force=snap.arcane_force if arcane_force is None else arcane_force,
+            authentic_force=snap.authentic_force if authentic_force is None else authentic_force,
+            hyper_force=snap.hyper_force if arcane_force is None else {})
+    return snap, b
+
+
+def force_of(snap: CharacterSnapshot, setting: Setting, b: BossProfile) -> dict | None:
+    """화면 표시: {'kind', 'required', 'current', 'damage_pct'} — 요구 포스 없는 보스는 None."""
+    from engine.stats.force import character_force, force_info
+    return force_info(b, character_force(snap, setting))
 
 
 def summary(snap: CharacterSnapshot) -> dict:
@@ -49,7 +74,7 @@ def settings(snap: CharacterSnapshot, defense: float) -> dict:
     active = evaluate_setting(snap, snap.active_setting, b, CATALOG)
     base = predict_setting(snap, snap.active_setting, CATALOG)
     job = job_profile(snap.character_class)
-    return {"boss": asdict(b),
+    return {"boss": asdict(b), "force": force_of(snap, ranked[0][0], b),
             "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None,
                          "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None}
                         for s, v in ranked]}
@@ -77,7 +102,7 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
     built = [Listing(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
                      x.price, x.resale, fee_rate) for x in inputs if x.total]
     ranked = rank_listings(snap, chosen, built, b, CATALOG) if built else []
-    return {"setting": asdict(chosen), "boss": asdict(b), "held": held, "fee_rate": fee_rate,
+    return {"setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b), "held": held, "fee_rate": fee_rate,
             "fee_note": "판매 수수료는 사는 가격엔 붙지 않고, 지금 템 판매 대금(resale)에서만 빠져요.",
             "ranking": [{"slot": e.listing.slot, "name": e.listing.item.name, "price": e.listing.price,
                          "price_text": meso_text(e.listing.price),
@@ -294,12 +319,13 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
     mult_core = 1.0
     for s in hexa_core:
         mult_core *= 1 + s["delta_pct"] / 100
-    return {"evaluation_setting": asdict(chosen), "events": {**asdict(events), "label": events.label()},
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
+            "events": {**asdict(events), "label": events.label()},
             "current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": r["needed_multiplier"],
             "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
             "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
             "scouter": scouter, "hexa_core_multiplier": mult_core,
-            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨·포스 보정은 그대로). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
+            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
                      "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "
                      "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. MapleScouter에 넣는 변화량에는 HEXA 코어가 빠져요"
                      "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
@@ -355,7 +381,8 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                       "search": f"{category} · {r.kind} {r.grade} {' / '.join(r.target)} · {r.min_starforce}성 이상",
                       "current": {"name": r.current_name, "starforce": r.min_starforce, "potentials": r.current}})
     cd, cd_note = _cooldown(snap, cooldown_main_pct, chosen, b)
-    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "recommendations": cards,
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
+            "recommendations": cards,
             "cooldown_main_pct": cooldown_main_pct, "cooldown": cd,
             "note": ("부위·잠재/에디마다 지금보다 한 단계 위(실딜이 0.1% 이상 처음 오르는 등급·줄 수)를 골랐어요. "
                      "줄 수치는 공식 큐브 확률표의 흔한 줄(확률 2% 이상, 이탈 제외)이고, 그 줄만 바꾼 같은 템 기준이에요. "
@@ -372,7 +399,8 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
     events = events or Events()
     r = upgrade_paths(snap, chosen, b, CATALOG, observed, cooldown_main_pct, events)
     fmt = lambda ps: [{**p, "cost_text": meso_text(p["cost"])} for p in ps]  # noqa: E731
-    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "events": {**asdict(events), "label": events.label()},
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
+            "events": {**asdict(events), "label": events.label()},
             "all": fmt(balanced(r["all"], max(1, top // 4))),
             "best_by_slot": fmt(r["best_by_slot"]), "observed_count": len(observed or []),
             "note": ("구매 = 관측 매물을 그대로 끼운 실딜(세트 개수를 다시 세서 세트 효과 변화 포함, set_change), 다른 월드 매물은 +10%. "
@@ -384,8 +412,10 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
                      "추옵 점수는 줄마다 실딜 기울기를 더한 근사이고, 보스 장비로 확인되는 템(보스 장신구·여명·칠흑·광휘·루타비스·"
                      "앱솔랩스·아케인셰이드·마이스터·제네시스 무기)만 계산해요. "
                      "심볼 = 아케인·어센틱 심볼을 다음 레벨부터 최대 레벨까지 — 비용은 강화 메소(나무위키 성장표), 심볼은 거래 불가라 "
-                     "비용에 넣지 않고 필요 개수·지금 성장치로 남은 개수·일일 퀘스트 기준 날짜를 따로 줘요. 포스 보정(보스 요구 포스)과 "
-                     "11레벨 지역 보스 데미지 +20%는 실딜에 넣지 않았어요(max_effect에 문구만). 그랜드 어센틱심볼은 주스탯이 없어 빠져요. "
+                     "비용에 넣지 않고 필요 개수·지금 성장치로 남은 개수·일일 퀘스트 기준 날짜를 따로 줘요. 보스 목록에서 요구 포스가 있는 보스를 고르면 "
+                     "심볼로 오르는 포스(force_gain)만큼 포스 보정(나무위키 격차별 피해 비율)이 바뀐 몫도 실딜에 넣어요(force_after). "
+                     "11레벨 지역 보스 데미지 +20%는 최종뎀인지 데미지%인지 출처가 없어 실딜에 넣지 않았어요(max_effect에 문구만). "
+                     "그랜드 어센틱심볼은 주스탯이 없어 어센틱 보스를 골랐을 때만 포스 몫으로 나와요. "
                      "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
 
 
@@ -400,8 +430,8 @@ def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
     rows = [{"slot": slot, **row} for slot, row in rm.items()]
     value = [{**v, "cube_cost_text": meso_text(v["cube_cost"])} for v in value_ranking(rm)]
     cd, cd_note = _cooldown(snap, cooldown_main_pct, chosen, b)
-    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "cooldown_main_pct": cooldown_main_pct,
-            "cooldown": cd, "slots": rows, "value_ranking": value,
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
+            "cooldown_main_pct": cooldown_main_pct, "cooldown": cd, "slots": rows, "value_ranking": value,
             "value_note": ("가격 대비 순위: 메소 재설정(윗잠=블랙 큐브, 에디=화이트 에디셔널 큐브)으로 그 단계까지 가는 평균 비용 "
                            "(등급 상승·천장 포함)과 억당 실딜 상승률. 도달 확률은 줄별 기여를 더해 비교한 근사예요. "
                            "경매장에서 그 단계 템을 이보다 싸게 사면 그쪽이 이득이에요 — 화면 매물 평가로 비교하세요."),
