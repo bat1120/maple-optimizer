@@ -125,7 +125,22 @@ def item(item_json: dict, level: int) -> Item:
         sf_option=_sf_option(item_json.get("item_starforce_option") or {}),
         scroll_attack=_scroll_attack(item_json),
         amazing=item_json.get("starforce_scroll_flag") == "사용",
+        add_option=_add_option(item_json.get("item_add_option") or {}),
+        base_attack={k: num((item_json.get("item_base_option") or {}).get(src))
+                     for src, k in (("attack_power", "ATK"), ("magic_power", "MATK"))
+                     if num((item_json.get("item_base_option") or {}).get(src))},
     )
+
+
+def _add_option(opt: dict) -> dict:
+    """item_add_option → {(키, %여부): 값}. 실딜과 무관한 방어력·이동속도·점프력·MP·착감은 뺀다."""
+    out = {(k, False): num(opt.get(src)) for src, k in _OPTION_FLAT.items() if num(opt.get(src))}
+    for src, k in (("boss_damage", "BOSS"), ("damage", "DMG")):
+        if num(opt.get(src)):
+            out[(k, True)] = num(opt[src])
+    if num(opt.get("all_stat")):
+        out.update({(k, True): num(opt["all_stat"]) for k in _FOUR})
+    return out
 
 
 _SF_KEYS = {"str": "STR", "dex": "DEX", "int": "INT", "luk": "LUK", "attack_power": "ATK", "magic_power": "MATK"}

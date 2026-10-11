@@ -345,7 +345,7 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
 
 def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
           cooldown_main_pct: float | None = None, top: int = 30, events=None) -> dict:
-    """업그레이드 경로 비교: 구매·직작·지금 템 큐브를 억당 실딜로(세트 효과 반영)."""
+    """업그레이드 경로 비교: 구매·직작·지금 템 큐브·스타포스·추옵·HEXA를 억당 실딜로(세트 효과 반영)."""
     from engine.market.paths import balanced, upgrade_paths
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
@@ -360,6 +360,10 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
                      "직작 = 관측 매물 가격 + 그 매물 등급에서 단계까지 메소 재설정 평균. 큐브 = 지금 템에 메소 재설정 평균. "
                      "스타포스 = 지금 템을 목표 성까지 메소 기대값(강화 + 흔적 복구 메소, 고른 이벤트 반영). 파괴되면 같은 장비가 복구에 필요해요"
                      "(18성 이하 1개·19~20성 2개·21성 3개·22성 이상 4개) — expected_spares가 평균 스페어 개수, 스페어 값을 넣으면 비용에 더해요. "
+                     "추옵 = 지금 템 추옵을 메소 재설정(공식 1회 300만 메소, 검은 환생의 불꽃과 같은 확률) 또는 가격을 넣은 "
+                     "환생의 불꽃으로 목표 이상이 나올 때까지 — 비용 = 1개 값 × 평균 횟수, 실딜 = 목표 이상에서 멈췄을 때 평균 − 지금. "
+                     "추옵 점수는 줄마다 실딜 기울기를 더한 근사이고, 보스 장비로 확인되는 템(보스 장신구·여명·칠흑·광휘·루타비스·"
+                     "앱솔랩스·아케인셰이드·마이스터·제네시스 무기)만 계산해요. "
                      "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
 
 

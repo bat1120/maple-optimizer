@@ -63,6 +63,10 @@ export function getPaths(name, bossDefense = 300, events = {}) {
   const bySlot = Object.entries(events.spareBySlot || {}).filter(([, v]) => v !== "" && Number(v) >= 0)
     .map(([slot, v]) => `${slot}:${Math.round(Number(v) * 1e8)}`);
   if (bySlot.length) q.set("spare_by_slot", bySlot.join(","));
+  // 환생의 불꽃 1개 값(만 메소): 공식 메소 가격이 없어 넣은 불꽃만 추옵 경로에 들어간다(메소 재설정은 항상)
+  const flames = Object.entries(events.flameMan || {}).filter(([, v]) => Number(v) > 0)
+    .map(([k, v]) => `${k}:${Math.round(Number(v) * 1e4)}`);
+  if (flames.length) q.set("flame_prices", flames.join(","));
   return request(`${base(name)}/paths?${q}`);
 }
 

@@ -36,6 +36,9 @@ class Item:
     sf_option: dict[str, float] = field(default_factory=dict)
     scroll_attack: dict[str, float] = field(default_factory=dict)
     amazing: bool = False
+    # 추옵 재설정 경로용(2026-10-11): 지금 추옵(item_add_option, (키, %여부) → 값)과 순수 공격력·마력(item_base_option)
+    add_option: dict = field(default_factory=dict)
+    base_attack: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
