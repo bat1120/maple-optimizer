@@ -233,6 +233,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     class ChatIn(BaseModel):
         messages: list[dict]
 
+    @app.get("/api/admin/session")
+    def admin_session(request: Request):
+        """관리자 로그인 상태(쿠키) — 캐릭터 화면이 관리자에게만 AI 상담을 보인다(2026-10-12)."""
+        return {"admin": bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())}
+
     @app.post("/api/admin/login")
     def login(body: LoginIn):
         if not (admin_password_hash and session_secret):

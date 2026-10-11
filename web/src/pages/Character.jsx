@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { getBosses, getCharacter, getSettings } from "../api.js";
+import { getAdminSession, getBosses, getCharacter, getSettings } from "../api.js";
+import AgentPanel from "../AgentPanel.jsx";
 import { hashFor } from "../router.js";
 import { addRecent } from "../recent.js";
 import BottomTabs, { TAB_ICON, TAB_LABEL } from "../layout/BottomTabs.jsx";
@@ -76,6 +77,7 @@ export default function Character({ route }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [bosses, setBosses] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(null); // 관리자 로그인(쿠키)이면 맨 위에 AI 상담(2026-10-12). 캐릭터를 불러온 뒤 한 번 확인
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -94,6 +96,10 @@ export default function Character({ route }) {
 
   useEffect(() => { setSummary(null); setSettings(null); }, [name]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!summary || isAdmin !== null) return;
+    getAdminSession().then((r) => setIsAdmin(r?.admin === true)).catch(() => setIsAdmin(false));
+  }, [summary, isAdmin]);
   // 보스 목록은 캐릭터를 불러온 뒤 한 번(목록이 없으면 직접 입력만)
   useEffect(() => {
     if (!summary || bosses) return;
@@ -112,6 +118,10 @@ export default function Character({ route }) {
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
+          {isAdmin && (
+            <AgentPanel key={name} name={name} initialAuthed title="AI 상담"
+                        watchProps={{ job: summary.character_class, level: summary.level, defense }} />
+          )}
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>

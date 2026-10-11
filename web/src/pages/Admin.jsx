@@ -228,7 +228,7 @@ export default function Admin() {
       <RecommendPanel name={summary ? name.trim() : ""} defense={defense} />
       <RoadmapPanel name={summary ? name.trim() : ""} defense={defense} />
       <PathsPanel name={summary ? name.trim() : ""} defense={defense} />
-      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} />
+      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} watchProps={{ defense }} />
       <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} onFeeRate={onFeeRate} />
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { adminLogin, streamAgent } from "./api.js";
+import ScreenWatch from "./ScreenWatch.jsx";
 
 // 관리자 전용 AI 에이전트 채팅. 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
 // 화면 분석에서 읽은 매물을 질문에 붙인다. 엔진 평가 숫자는 붙이지 않는다 — 에이전트가 도구로 다시 계산해야
@@ -30,11 +31,42 @@ export function withScreenItems(question, name, items, feeRate = null) {
 ${JSON.stringify(listings)}`;
 }
 
-export default function AgentPanel({ name = "", screenItems = [], feeRate = null }) {
+export const QUICK_QUESTIONS = ["지금 뭐부터 올리면 돼?", "경매장에서 뭘 검색할까?", "예산 100억으로 뭐 할까?"];
+
+const searchText = (s) => [s.category,
+  s.potentials?.length ? `잠재 ${s.potentials.join(" / ")}` : null,
+  s.additional?.length ? `에디 ${s.additional.join(" / ")}` : null,
+  `${s.min_starforce ?? 0}성 이상`].filter(Boolean).join(" · ");
+
+// AI가 request_auction_screen을 부르면 채팅 안에 뜨는 카드: 검색 조건 → [화면 연결] → 읽은 매물을 [AI에게 보내기](2026-10-12)
+function ScreenRequest({ search, note, name, watchProps, onSend, busy }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const ready = items.filter((i) => !isListOnly(i));
+  return (
+    <div role="group" aria-label="경매장 화면 요청" className="card small">
+      <p><strong>경매장에서 이 조건으로 검색해 주세요</strong>{note ? <span className="muted"> — {note}</span> : null}</p>
+      <p className="chips"><span className="chip">{searchText(search)}</span></p>
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)}>화면 연결</button>
+      ) : (
+        <>
+          <ScreenWatch name={name} admin={false} {...watchProps} onItems={setItems} />
+          <button type="button" disabled={!ready.length || busy} onClick={() => onSend(items)}>
+            {`매물 ${ready.length}개 AI에게 보내기`}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function AgentPanel({ name = "", screenItems = [], feeRate = null, initialAuthed = false, watchProps = {},
+                                     title = "AI 에이전트" }) {
   const [password, setPassword] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(initialAuthed);
   const [question, setQuestion] = useState("");
-  const [history, setHistory] = useState([]); // Claude에 보낼 {role, content}
+  const [history, setHistory] = useState([]); // 모델에 보낼 {role, content}
   const [log, setLog] = useState([]); // 화면 표시용 이벤트
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -51,11 +83,11 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
     }
   };
 
-  const send = async (e) => {
-    e.preventDefault();
-    if (!question.trim() || busy) return;
-    const messages = [...history, { role: "user", content: withScreenItems(question.trim(), name, screenItems, feeRate) }];
-    setLog((l) => [...l, { type: "user", text: question.trim() }]);
+  // text: 화면에 보일 질문, items: 같이 보낼 화면 매물(채팅 안 화면 요청 카드에서 온 것 또는 아래 화면 평가)
+  const ask = async (text, items = screenItems) => {
+    if (!text.trim() || busy) return;
+    const messages = [...history, { role: "user", content: withScreenItems(text.trim(), name, items, feeRate) }];
+    setLog((l) => [...l, { type: "user", text: text.trim() }]);
     setQuestion("");
     setBusy(true);
     setError(null);
@@ -74,11 +106,12 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
       setBusy(false);
     }
   };
+  const send = (e) => { e.preventDefault(); ask(question); };
 
   if (!authed) {
     return (
       <form onSubmit={login} className="panel">
-        <h3>AI 에이전트 (관리자)</h3>
+        <h3>{title} (관리자)</h3>
         <label>관리자 비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
         <button type="submit">로그인</button>
         {error && <p role="alert" className="error">{error.message}</p>}
@@ -87,18 +120,28 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   }
   return (
     <section className="panel">
-      <h3>AI 에이전트</h3>
+      <h3>{title}</h3>
       {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
       <div className="chat">
         {log.map((ev, i) => {
           if (ev.type === "user") return <p key={i} className="me">🙋 {ev.text}</p>;
           if (ev.type === "text") return <p key={i}>{ev.text}</p>;
+          if (ev.type === "tool_call" && ev.name === "request_auction_screen")
+            return <ScreenRequest key={i} search={ev.input || {}} note={ev.input?.note} name={name} watchProps={watchProps} busy={busy}
+                                  onSend={(items) => ask("검색한 경매장 매물이에요. 내 캐릭터 기준으로 평가하고 추천해 줘.", items)} />;
           if (ev.type === "tool_call") return <p key={i} className="muted">🔧 {ev.name} 호출</p>;
           if (ev.type === "done" && ev.unverified_numbers?.length)
             return <p key={i} className="error">⚠ 검증되지 않은 숫자: {ev.unverified_numbers.join(", ")}</p>;
           return null;
         })}
       </div>
+      {name && (
+        <p className="chips" aria-label="바로 물어보기">
+          {QUICK_QUESTIONS.map((q) => (
+            <button key={q} type="button" className="ghost small" disabled={busy} onClick={() => ask(q)}>{q}</button>
+          ))}
+        </p>
+      )}
       <form onSubmit={send} className="search">
         <label>질문<input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="내신부레테 50억으로 뭐부터 할까?" /></label>
         <button type="submit" disabled={busy}>보내기</button>

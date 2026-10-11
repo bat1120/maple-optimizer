@@ -123,3 +123,40 @@ describe("agent panel character context", () => {
   });
 });
 
+
+describe("agent panel — AI가 먼저 추천하고 채팅 안에서 경매장 화면 요청(2026-10-12)", () => {
+  const ITEM = { signature: "s1", evaluated: true, slot: "보조무기", delta_pct: 1, read: {
+    name: "녹스 마법깃펜", category: "보조무기", part: "보조무기", starforce: 0, total: { MATK: 10 }, potentials: ["마력 +12%"], price: 3e9 } };
+
+  it("관리자로 이미 로그인돼 있으면 비밀번호를 묻지 않고, 바로 물어볼 질문 버튼을 준다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(sseResponse([{ type: "done", unverified_numbers: [] }]));
+    render(<AgentPanel name="내신부레테" initialAuthed />);
+    expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" }));
+    await screen.findByText(/지금 뭐부터 올리면 돼\?/, { selector: ".me" });
+    expect(JSON.parse(f.mock.calls[0][1].body).messages.at(-1).content).toContain("캐릭터: 내신부레테");
+  });
+
+  it("AI가 request_auction_screen을 부르면 검색 조건 카드 → [화면 연결] → 읽은 매물을 [AI에게 보내기]", async () => {
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(sseResponse([
+        { type: "tool_call", name: "request_auction_screen",
+          input: { category: "보조무기", potentials: ["마력 +12%", "마력 +9%"], additional: ["마력 +9%"], min_starforce: 0 } },
+        { type: "text", text: "이 조건으로 검색해 주세요." },
+        { type: "done", unverified_numbers: [] },
+      ]))
+      .mockResolvedValueOnce(sseResponse([{ type: "text", text: "이 매물이 억당 제일 좋아요." }, { type: "done", unverified_numbers: [] }]));
+    render(<AgentPanel name="내신부레테" initialAuthed watchProps={{ capture: null, initialItems: [ITEM] }} />);
+    fireEvent.change(screen.getByLabelText("질문"), { target: { value: "보조무기 경매장에서 찾아서 보여줘" } });
+    fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+    const card = await screen.findByRole("group", { name: "경매장 화면 요청" });
+    expect(card).toHaveTextContent("보조무기 · 잠재 마력 +12% / 마력 +9% · 에디 마력 +9% · 0성 이상");
+    fireEvent.click(screen.getByRole("button", { name: "화면 연결" }));
+    const send = await screen.findByRole("button", { name: "매물 1개 AI에게 보내기" });
+    fireEvent.click(send);
+    expect(await screen.findByText(/억당 제일 좋아요/)).toBeInTheDocument();
+    const sent = JSON.parse(f.mock.calls[1][1].body).messages.at(-1).content;
+    expect(sent).toContain("[경매장 화면에서 읽은 매물");
+    expect(sent).toContain('"name":"녹스 마법깃펜"');
+  });
+});

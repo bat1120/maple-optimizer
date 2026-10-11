@@ -158,3 +158,26 @@ describe("character page", () => {
     expect(await screen.findByText("불러온 장비가 없어요")).toBeInTheDocument();
   });
 });
+
+describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-12)", () => {
+  const withSession = (admin) => vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+    if (String(url).includes("/api/admin/session")) return ok({ admin });
+    if (String(url).includes("/settings")) return ok(SETTINGS);
+    return ok(SUMMARY);
+  });
+  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문", async () => {
+    withSession(true);
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    const ai = await screen.findByRole("heading", { name: "AI 상담" });
+    const tabs = screen.getByRole("tablist", { name: "캐릭터 화면 탭" });
+    expect(ai.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
+    expect(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" })).toBeInTheDocument();
+  });
+  it("관리자가 아니면 AI 상담이 없다", async () => {
+    withSession(false);
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    expect(screen.queryByRole("heading", { name: "AI 상담" })).toBeNull();
+  });
+});

@@ -99,6 +99,7 @@ export const postCraft = (body) => post("/api/craft/compare", body);
 export const postOptimize = (name, body) => post(`${base(name)}/optimize`, body);
 
 export const adminLogin = (password) => post("/api/admin/login", { password });
+export const getAdminSession = () => request("/api/admin/session");
 
 // 에이전트 SSE 스트림: 이벤트마다 onEvent를 부른다. 연결·인증 실패는 ApiError로 던진다.
 export async function streamAgent(messages, onEvent) {
