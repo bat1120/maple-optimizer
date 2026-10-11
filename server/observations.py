@@ -1,7 +1,7 @@
 """경매장 관측 기록: 화면 분석이 읽은 매물(가격·옵션)을 지우지 않고 쌓는다(2026-10-07).
 
 - 지금 시세(server/market.py, 30일)와 별개. 같은 매물·같은 가격은 하루 한 번, 날짜가 다르면 새 줄 → 시세 흐름
-- IP·화면 이미지는 저장하지 않는다. 경매장을 자동 조회하지 않는다 — 사용자가 공유한 화면에서 읽은 것만
+- IP·화면 이미지는 저장하지 않는다(화면 분석 하루 한도는 날짜별 HMAC 해시로만 센다). 경매장을 자동 조회하지 않는다 — 사용자가 공유한 화면에서 읽은 것만
 - DATABASE_URL(예: Neon 무료 Postgres)이 있으면 Postgres, 없으면 SQLite 파일(로컬·테스트)
 """
 import csv
@@ -42,6 +42,9 @@ class ObservationLog:
                          if c not in ("sold", "other_world") else f"{c} BOOLEAN" for c in COLUMNS)
         self._run(lambda cur: cur.execute(f"CREATE TABLE IF NOT EXISTS observations (id {serial}, key TEXT UNIQUE, {cols})"),
                   commit=True)
+        # 화면 분석 하루 한도(2026-10-11 사용자: 해시만 DB에). who = 날짜별 HMAC(IP) — IP 원문은 남기지 않는다
+        self._run(lambda cur: cur.execute("CREATE TABLE IF NOT EXISTS vision_quota (day TEXT, who TEXT, n INTEGER, "
+                                          "PRIMARY KEY (day, who))"), commit=True)
 
     def _run(self, fn, commit: bool = False):
         """fn(cursor)를 실행. Neon처럼 쉬다 연결을 끊는 DB면 한 번 다시 연결해 재시도한다."""
@@ -90,6 +93,26 @@ class ObservationLog:
             cur.execute(sql, (key, *(row[c] for c in COLUMNS)))
             return cur.rowcount == 1
         return self._run(ins, commit=True)
+
+    def _today(self) -> str:
+        return dt.datetime.fromtimestamp(self._clock(), dt.timezone(dt.timedelta(hours=9))).date().isoformat()
+
+    def quota_used(self, who: str) -> int:
+        """오늘(KST) who가 쓴 AI 판독 횟수."""
+        def q(cur):
+            cur.execute(f"SELECT n FROM vision_quota WHERE day = {self._ph} AND who = {self._ph}", (self._today(), who))
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
+        return self._run(q)
+
+    def quota_add(self, who: str) -> None:
+        """한 번 더 세고, 지난 날짜 줄은 지운다(오늘 것만 남긴다)."""
+        day, ph = self._today(), self._ph
+        def ins(cur):
+            cur.execute(f"DELETE FROM vision_quota WHERE day <> {ph}", (day,))
+            cur.execute(f"INSERT INTO vision_quota (day, who, n) VALUES ({ph}, {ph}, 1) "
+                        "ON CONFLICT (day, who) DO UPDATE SET n = vision_quota.n + 1", (day, who))
+        self._run(ins, commit=True)
 
     def count(self) -> int:
         def q(cur):

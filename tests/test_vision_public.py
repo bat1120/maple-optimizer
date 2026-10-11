@@ -105,3 +105,30 @@ def test_admin_has_no_public_quota(tmp_path):
     for _ in range(3):
         assert c.post("/api/vision/listings", json={"image": AI_FRAME}).status_code == 200
     assert fake.calls == 3
+
+
+def test_daily_quota_survives_restart_and_stores_no_raw_ip(tmp_path):
+    """한도는 DB에 남는다(2026-10-11 사용자: 해시만 DB에) — 서버가 다시 떠도 이어서 센다. IP 원문은 저장하지 않는다."""
+    import sqlite3
+    fake = Fake()
+    c = _app(tmp_path, fake, vision_public_daily=2)
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).status_code == 200
+    c2 = _app(tmp_path, fake, vision_public_daily=2)  # 재시작
+    r = c2.post("/api/vision/listings", json={"image": AI_FRAME})
+    assert r.status_code == 200 and r.json()["ai_remaining"] == 0
+    assert c2.post("/api/vision/listings", json={"image": AI_FRAME}).json()["code"] == "VISION_QUOTA"
+    db = sqlite3.connect(tmp_path / "c.sqlite3")
+    rows = db.execute("SELECT * FROM vision_quota").fetchall()
+    assert len(rows) == 1 and not any("testclient" in str(v) for v in rows[0])
+
+
+def test_old_quota_days_are_deleted(tmp_path):
+    import sqlite3
+    now = [1_800_000_000.0]
+    fake = Fake()
+    c = _app(tmp_path, fake, vision_public_daily=5, clock=lambda: now[0])
+    c.post("/api/vision/listings", json={"image": AI_FRAME})
+    now[0] += 86400 * 2  # 같은 앱으로 이틀 뒤 — 지난 날짜 줄은 지운다
+    c.post("/api/vision/listings", json={"image": AI_FRAME + "B"})
+    db = sqlite3.connect(tmp_path / "c.sqlite3")
+    assert db.execute("SELECT COUNT(*) FROM vision_quota").fetchone()[0] == 1
