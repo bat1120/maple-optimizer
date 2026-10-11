@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPaths, postMarketRefresh } from "./api.js";
+import { SF_EVENTS, getPaths, postMarketRefresh } from "./api.js";
 import { formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -31,7 +31,11 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       setBusy(false);
     }
   };
-  const [events, setEvents] = useState({ shining: false, protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false });
+  const [events, setEvents] = useState({ discount30: false, destroy_down30: false, guarantee_5_10_15: false, restore_discount20: false,
+                                         protect: false, miracle: false, spareEok: "", fragmentMan: "", hexaSunday: false, spareBySlot: {} });
+  const shining = SF_EVENTS.every((k) => events[k]);
+  const sfSlots = [...new Set((data?.all || []).filter((p) => p.path === "스타포스").map((p) => p.slot))];
+  const toggleShining = () => setEvents((e) => ({ ...e, ...Object.fromEntries(SF_EVENTS.map((k) => [k, !shining])) }));
   const toggle = (k) => setEvents((e) => ({ ...e, [k]: !e[k] }));
   const load = () => run(async () => setData(await getPaths(name, defense, events)));
   const update = () => run(async () => {
@@ -59,7 +63,12 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       ]} />
       <fieldset className="events">
         <legend className="muted small">강화 이벤트·파괴 비용</legend>
-        <label className="chip"><input type="checkbox" checked={events.shining} onChange={() => toggle("shining")} /> 샤이닝 스타포스<span className="muted small">(30% 할인·21성 이하 파괴 30%↓·5/10/15성 100%·복구 메소 20%↓)</span></label>
+        <label className="chip"><input type="checkbox" checked={events.discount30} onChange={() => toggle("discount30")} /> 30% 할인</label>
+        <label className="chip"><input type="checkbox" checked={events.destroy_down30} onChange={() => toggle("destroy_down30")} /> 21성 이하 파괴 30% 감소</label>
+        <label className="chip"><input type="checkbox" checked={events.guarantee_5_10_15} onChange={() => toggle("guarantee_5_10_15")} /> 5·10·15성 100%</label>
+        <label className="chip"><input type="checkbox" checked={events.restore_discount20} onChange={() => toggle("restore_discount20")} /> 복구 메소 20% 할인</label>
+        <button type="button" className="ghost small" aria-pressed={shining} aria-label="샤이닝 스타포스 한 번에" onClick={toggleShining}>
+          샤이닝 스타포스{shining ? " ✓" : ""}</button>
         <label className="chip"><input type="checkbox" checked={events.protect} onChange={() => toggle("protect")} /> 파괴 방지<span className="muted small">(15~17성)</span></label>
         <label className="chip"><input type="checkbox" checked={events.miracle} onChange={() => toggle("miracle")} /> 미라클 타임<span className="muted small">(큐브 등급 상승 2배)</span></label>
         <label className="inline">스페어 1개 값(억) <input aria-label="스페어 1개 값(억)" inputMode="decimal" value={events.spareEok} placeholder="비우면 미포함"
@@ -67,6 +76,18 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
         <label className="inline">조각 1개 값(만 메소) <input aria-label="조각 1개 값(만 메소)" inputMode="decimal" value={events.fragmentMan}
           placeholder="넣으면 HEXA 경로" onChange={(e) => setEvents((v) => ({ ...v, fragmentMan: e.target.value }))} style={{ width: "8em" }} /></label>
         <label className="chip"><input type="checkbox" checked={events.hexaSunday} onChange={() => toggle("hexaSunday")} /> HEXA 스탯 썬데이<span className="muted small">(메인 5레벨 이상 확률 ×1.2)</span></label>
+        {sfSlots.length > 0 && (
+          <details className="note">
+            <summary>부위별 스페어 값(억) — 비우면 위 공통 값</summary>
+            <div className="inline wrap">
+              {sfSlots.map((slot) => (
+                <label key={slot} className="inline">{slot} <input aria-label={`${slot} 스페어 값(억)`} inputMode="decimal"
+                  value={events.spareBySlot[slot] ?? ""} style={{ width: "5em" }}
+                  onChange={(e) => setEvents((v) => ({ ...v, spareBySlot: { ...v.spareBySlot, [slot]: e.target.value } }))} /></label>
+              ))}
+            </div>
+          </details>
+        )}
         <button type="button" className="ghost small" onClick={load} disabled={!name || busy}>이 조건으로 계산</button>
       </fieldset>
       {busy && !data && <RowsSkeleton rows={4} />}

@@ -20,12 +20,13 @@ class Events:
     protect: bool = False
     miracle: bool = False
     spare_price: float = 0.0
+    spare_by_slot: tuple = ()    # ((부위, 메소), …) — 넣은 부위만 spare_price 대신(2026-10-11)
     fragment_price: float = 0.0  # 솔 에르다 조각 1개 시세(메소) — 있어야 HEXA 경로를 억당으로 비교한다
     hexa_sunday: bool = False    # HEXA 스탯: 메인 5레벨 이상일 때 메인 강화 확률 ×1.2
 
     @classmethod
     def parse(cls, sf: str | None = None, miracle: bool = False, spare_price: float | None = None,
-              fragment_price: float | None = None, hexa_sunday: bool = False) -> "Events":
+              fragment_price: float | None = None, hexa_sunday: bool = False, spare_by_slot: str | None = None) -> "Events":
         """sf: 쉼표로 이은 스타포스 조건(SF_FLAGS 이름, 'shining' = 앞의 넷)."""
         names = {n.strip() for n in (sf or "").split(",") if n.strip()}
         if "shining" in names:
@@ -33,8 +34,24 @@ class Events:
         unknown = names - set(SF_FLAGS) - {"shining"}
         if unknown:
             raise ValueError(f"알 수 없는 스타포스 조건: {', '.join(sorted(unknown))}")
+        by_slot = []
+        for part in (spare_by_slot or "").split(","):
+            if not part.strip():
+                continue
+            slot, sep, val = part.partition(":")
+            try:
+                by_slot.append((slot.strip(), max(0.0, float(val))))
+            except ValueError:
+                raise ValueError(f"부위별 스페어 값은 '부위:메소' 형식이에요: {part.strip()}") from None
+            if not sep or not slot.strip():
+                raise ValueError(f"부위별 스페어 값은 '부위:메소' 형식이에요: {part.strip()}")
         return cls(**{n: True for n in names if n in SF_FLAGS}, miracle=miracle, spare_price=max(0.0, spare_price or 0.0),
+                   spare_by_slot=tuple(by_slot),
                    fragment_price=max(0.0, fragment_price or 0.0), hexa_sunday=hexa_sunday)
+
+    def spare_for(self, slot: str) -> float:
+        """그 부위 스페어 1개 값(메소): 부위별 값이 있으면 그것, 없으면 공통 값."""
+        return next((v for s, v in self.spare_by_slot if s == slot), self.spare_price)
 
     def starforce(self) -> StarforceConditions:
         return StarforceConditions(discount30=self.discount30, destroy_down30=self.destroy_down30,

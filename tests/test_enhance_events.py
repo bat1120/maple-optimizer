@@ -75,3 +75,23 @@ def test_roadmap_api_miracle_lowers_cube_cost(tmp_path):
     c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
     cost = lambda r: sum(t["cube_cost"] or 0 for row in r["slots"] for k in ("잠재", "에디") for t in row[k])  # noqa: E731
     assert cost(c.get("/api/character/x/roadmap?miracle=true").json()) < cost(c.get("/api/character/x/roadmap").json())
+
+
+def test_spare_price_per_slot_overrides_common_value(tmp_path):
+    """부위마다 스페어 값(2026-10-11): spare_by_slot=부위:메소,… — 넣은 부위만 공통 값 대신 그 값."""
+    from fastapi.testclient import TestClient
+    from helpers import bundle
+    from server.app import create_app
+    from engine.market.events import Events
+    ev = Events.parse(spare_price=1e9, spare_by_slot="벨트:5000000000, 반지4:0")
+    assert ev.spare_for("벨트") == 5e9 and ev.spare_for("반지4") == 0 and ev.spare_for("모자") == 1e9
+    with pytest.raises(ValueError):
+        Events.parse(spare_by_slot="벨트")
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
+    r = c.get("/api/character/x/paths?spare_price=1000000000&spare_by_slot=" + "벨트:5000000000").json()
+    sf = {p["slot"]: p for p in r["all"] if p["path"] == "스타포스"}
+    assert sf, "스타포스 경로가 있어야 비교할 수 있다"
+    for slot, p in sf.items():
+        assert p["spare_price"] == (5e9 if slot == "벨트" else 1e9)
+        assert p["cost"] == pytest.approx(p["meso"] + p["expected_spares"] * p["spare_price"])
+    assert c.get("/api/character/x/paths?spare_by_slot=벨트").status_code == 400

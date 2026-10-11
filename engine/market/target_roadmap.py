@@ -74,7 +74,7 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
             return None
         cur = index_of(raw)
         d = (index_of({**raw, slot: new}) / cur - 1) * 100
-        t = expected_totals(it.level, it.starforce, it.starforce + 1, events.starforce(), events.spare_price)
+        t = expected_totals(it.level, it.starforce, it.starforce + 1, events.starforce(), events.spare_for(slot))
         if d <= 0 or t["cost"] <= 0:
             return None
         return {"slot": slot, "path": "스타포스", "name": it.name, "from_star": it.starforce, "to_star": it.starforce + 1,

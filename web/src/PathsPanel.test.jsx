@@ -58,13 +58,16 @@ describe("paths panel", () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "이벤트 없음" } }));
     render(<PathsPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
-    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /샤이닝 스타포스/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "샤이닝 스타포스 한 번에" })); });
+    for (const n of [/30% 할인/, /21성 이하 파괴 30% 감소/, /5·10·15성 100%/, /복구 메소 20% 할인/]) {
+      expect(screen.getByRole("checkbox", { name: n })).toBeChecked();
+    }
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /미라클 타임/ })); });
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /파괴 방지/ })); });
     await act(async () => { fireEvent.change(screen.getByLabelText("스페어 1개 값(억)"), { target: { value: "12" } }); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
     const url = f.mock.calls.at(-1)[0];
-    expect(url).toContain("sf=shining%2Cprotect");
+    expect(url).toContain("sf=discount30%2Cdestroy_down30%2Cguarantee_5_10_15%2Crestore_discount20%2Cprotect");
     expect(url).toContain("miracle=true");
     expect(url).toContain("spare_price=1200000000");
   });
@@ -86,5 +89,26 @@ describe("paths panel", () => {
     expect(row.textContent).not.toContain("HEXA 코어 · ");  // 부위 칸과 겹치지 않게
     expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
     expect(row).toHaveTextContent("직업 기준값");
+  });
+  it("썬데이 이벤트를 하나씩: 30% 할인만 켜면 그것만 보낸다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "스타포스 30% 할인" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /30% 할인/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = f.mock.calls.at(-1)[0];
+    expect(url).toContain("sf=discount30");
+    expect(url).not.toContain("destroy_down30");
+  });
+  it("부위별 스페어 값: 스타포스 경로가 나온 부위마다 칸이 생기고, 넣은 부위만 spare_by_slot으로 보낸다", async () => {
+    const sf = { slot: "벨트", path: "스타포스", name: "분노한 자쿰의 벨트", from_star: 17, to_star: 18, delta_pct: 0.5,
+                 cost: 3e8, cost_text: "3억", per_100m: 0.1, expected_destroys: 0.4, expected_spares: 0.4, spare_price: 0, set_change: [] };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [sf], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("벨트 스페어 값(억)"), { target: { value: "50" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = decodeURIComponent(f.mock.calls.at(-1)[0]);
+    expect(url).toContain("spare_by_slot=벨트:5000000000");
   });
 });

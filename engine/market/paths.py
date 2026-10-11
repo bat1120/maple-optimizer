@@ -87,11 +87,11 @@ def _starforce_paths(pl, px, events: Events) -> list[dict]:
             new = dataclasses.replace(it, starforce=target, stats=stats, core=core)
             d, change = px.delta(slot, new)
             # 평균 메소(강화 + 흔적 복구 메소), 평균 파괴·스페어 소모. 스페어 값을 주면 비용에 '스페어 × 값'도 더한다
-            t = sf_expected_totals(it.level, it.starforce, target, events.starforce(), events.spare_price)
+            t = sf_expected_totals(it.level, it.starforce, target, events.starforce(), events.spare_for(slot))
             if d >= MIN_GAIN and t["cost"] > 0:
                 mine.append(_entry(slot, "스타포스", t["cost"], d, kind=None, name=it.name, from_star=it.starforce,
                                    to_star=target, gain=g, expected_destroys=t["destroys"], expected_spares=t["spares"],
-                                   meso=t["meso"], spare_price=events.spare_price, set_change=change))
+                                   meso=t["meso"], spare_price=events.spare_for(slot), set_change=change))
         out += sorted(mine, key=lambda p: p["per_100m"], reverse=True)[:SF_PER_SLOT]
     return out
 
