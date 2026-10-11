@@ -24,8 +24,10 @@ export default function TopPick({ name, defense }) {
         <span className="top-pick-body">
           <strong>{top.slot} {top.kind}</strong>
           <span className="muted">{top.grade} {top.lines_good}줄 · {top.target.join(" / ")}</span>
-          <span className="top-pick-gain">실딜 {formatPct(top.delta_pct)}</span>
-          {top.cube_cost_text && <span className="muted">큐브 평균 {top.cube_cost_text}</span>}
+          {/* 업그레이드 탭 카드와 같은 규칙: 실딜은 배지, 순위 기준인 억당 효율은 주황 큰 숫자 */}
+          <span className="score-badge top-pick-gain">실딜 {formatPct(top.delta_pct)}</span>
+          <span className="top-pick-eff">1억 메소당 <strong className="num">{formatPct(top.per_100m)}</strong>
+            {top.cube_cost_text && <span className="muted"> · 큐브 평균 {top.cube_cost_text}</span>}</span>
         </span>
       )}
       <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>순위 전체 보기<Icon name="chevron" size={14} /></a>

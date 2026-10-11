@@ -160,7 +160,8 @@ describe("character page", () => {
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
     expect(await screen.findByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
-    expect(screen.getByText(/PC에서 열면 경매장 화면을 바로 평가/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "경매장 화면 평가" }).closest("details")).not.toHaveAttribute("open");
+    expect(screen.getByText(/매물을 평가하는 기능은 PC에서만/)).toBeInTheDocument();
   });
 
   it("탭마다 할 수 있는 것 한 줄과 사용 방법이 붙는다", async () => {
@@ -175,6 +176,18 @@ describe("character page", () => {
     expect(screen.getByRole("heading", { name: "업그레이드 경로 비교" })).toBeInTheDocument();
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
     expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();
+  });
+
+  // 2026-10-11 심사 3회차: 보스 방어율은 프로필이 아니라 탭 안내 줄 오른쪽(계산기 탭엔 없음)
+  it("보스 방어율 입력은 탭 안내 줄에 있고, 계산기 탭에서는 숨는다", async () => {
+    mockApi();
+    const { rerender } = render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    const input = screen.getByRole("spinbutton", { name: /보스 방어율/ });
+    expect(input.closest(".tab-intro")).not.toBeNull();
+    expect(input).toHaveValue(300);
+    await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
+    expect(screen.queryByRole("spinbutton", { name: /보스 방어율/ })).toBeNull();
   });
 
   it("장비가 없으면 빈 상태 안내", async () => {
@@ -193,6 +206,6 @@ describe("character page", () => {
       expect(d).not.toBeNull();
       expect(d).not.toHaveAttribute("open");
     }
-    expect(screen.getByRole("heading", { name: "전체 부위 로드맵" }).closest("details")).toBeNull();
+    expect(screen.getByRole("heading", { name: "가격 대비 업그레이드 순위" }).closest("details")).toBeNull();
   });
 });

@@ -20,31 +20,32 @@ export default function Scouter() {
       <p>
         <a className="button-link" href={SCOUTER_INPUT_URL} target="_blank" rel="noopener noreferrer">MapleScouter 입력 화면 열기 ↗</a>
       </p>
+      {/* 2026-10-11 심사 3회차: 번호가 중간에 끊기고 주황 칠 버튼이 여럿이었다 → 방법 A/B 두 묶음, 칠 버튼은 위의 하나만 */}
       <section className="card">
-        <h3>추천: 크롬 확장 프로그램 (버튼 한 번)</h3>
+        <h3>방법 A · 크롬 확장 프로그램 (추천, 버튼 한 번)</h3>
         <p>확장을 깔면 매물 옆 <strong>[MapleScouter에 넣기]</strong> 한 번으로 MapleScouter 탭이 열리고, 내 캐릭터로 교체한 뒤 칸까지 채워요. 북마크·복사가 필요 없어요.</p>
         <ol>
           <li>크롬 주소창에 <code>chrome://extensions</code> 열기 → 오른쪽 위 <strong>개발자 모드</strong> 켜기</li>
           <li><strong>압축해제된 확장 프로그램을 로드합니다</strong> → 프로젝트의 <code>extension</code> 폴더 고르기</li>
           <li>이 사이트를 새로고침 → 캐릭터 화면 업그레이드 탭의 매물(또는 테스트 템) 옆 <strong>[MapleScouter에 넣기]</strong></li>
         </ol>
-        <p className="muted small">PC 크롬 전용이에요(휴대폰 브라우저는 확장을 지원하지 않아요). 아직 웹 스토어에는 없어서 개발자 모드로 설치해요. 확장이 없으면 아래 북마크 방식을 쓰세요.</p>
+        <p className="muted small">PC 크롬 전용이에요(휴대폰 브라우저는 확장을 지원하지 않아요). 아직 웹 스토어에는 없어서 개발자 모드로 설치해요. 확장이 없으면 방법 B를 쓰세요.</p>
       </section>
       <section className="card">
-        <h3>1. 한 번만: 북마크 버튼 설치</h3>
+        <h3>방법 B · 북마크 버튼</h3>
+        <h4 className="step-title"><span className="step-no">1</span>한 번만: 즐겨찾기 막대에 설치</h4>
         <p>아래 버튼을 브라우저 <strong>즐겨찾기(북마크) 막대로 끌어다 놓으세요.</strong> 즐겨찾기 막대가 안 보이면 Ctrl+Shift+B.</p>
-        <p><a ref={link} className="bookmarklet" href="#/scouter" onClick={(e) => e.preventDefault()}>환산 채우기</a></p>
-      </section>
-      <section className="card">
-        <h3>먼저 시험해 보기</h3>
+        <p className="bookmarklet-row">
+          <a ref={link} className="bookmarklet" href="#/scouter" onClick={(e) => e.preventDefault()}>환산 채우기</a>
+          <span className="muted small">↗ 즐겨찾기 막대로 끌어 놓기</span>
+        </p>
+        <h4 className="step-title"><span className="step-no">2</span>시험해 보기</h4>
         <p>경매장 데이터 없이 견본(보스 데미지 +10%, 크리 데미지 +5%)으로 북마크가 되는지 볼 수 있어요.</p>
         <p>
-          <button type="button" onClick={copySample}>테스트용 복사</button>{" "}
+          <button type="button" className="ghost" onClick={copySample}>테스트용 복사</button>{" "}
           {copied && <span className="muted small">견본을 복사했어요 — MapleScouter 입력 화면에서 '환산 채우기'를 누르면 보스·크뎀 칸이 그만큼 올라가요(확인 뒤 같은 값을 빼거나 새로고침 전 검색 캐릭터 다시 불러오기)</span>}
         </p>
-      </section>
-      <section className="card">
-        <h3>2. 쓸 때마다</h3>
+        <h4 className="step-title"><span className="step-no">3</span>쓸 때마다</h4>
         <ol>
           <li>캐릭터 화면 → 업그레이드 탭 → 경매장 화면 평가에서 매물 옆 <strong>[환산용 복사]</strong></li>
           <li>복사 옆 <strong>MapleScouter 열기 ↗</strong> — 내 캐릭터 정보 화면이 열려요</li>

@@ -71,27 +71,28 @@ describe("roadmap panel", () => {
     expect(rows[1]).not.toHaveTextContent("시세 없음");   // 2026-10-11 심사: 시세가 없으면 줄을 비운다(뜻이 모호했다)
   });
 
-  it("가격 대비 순위는 처음 8개만 보이고 [더 보기]로 나머지를 펼친다, 부위별 표는 접어 둔다", async () => {
+  it("가격 대비 순위는 처음 7개만(1위 전체 폭 + 2단 3줄) 보이고 [더 보기]로 나머지를 펼친다, 부위별 표는 접어 둔다", async () => {
     const many = Array.from({ length: 11 }, (_, i) => ({ ...body.value_ranking[1], slot: `부위${i + 1}`, per_100m: 0.02 - i * 0.001 }));
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...body, value_ranking: many }) });
     render(<RoadmapPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const list = () => cards();
-    expect(list()).toHaveLength(8);
-    fireEvent.click(screen.getByRole("button", { name: "순위 3개 더 보기" }));
+    expect(list()).toHaveLength(7);
+    fireEvent.click(screen.getByRole("button", { name: "순위 4개 더 보기" }));
     expect(list()).toHaveLength(11);
     expect(screen.getByText("부위별 다음 단계·모든 단계 보기").closest("details")).not.toHaveAttribute("open");
   });
 
-  it("순위 카드에서 [경매장 조건 복사] — 그 조건을 그대로 클립보드에", async () => {
+  it("순위 카드에서 [경매장 검색 조건 복사] — 그 조건을 그대로 클립보드에, 붙여 넣을 곳 안내", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     const write = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { value: { writeText: write }, configurable: true });
     render(<RoadmapPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const first = cards()[0];
-    await act(async () => { fireEvent.click(within(first).getByRole("button", { name: "경매장 조건 복사" })); });
+    await act(async () => { fireEvent.click(within(first).getByRole("button", { name: "경매장 검색 조건 복사" })); });
     expect(write).toHaveBeenCalledWith("엠블렘 · 에디 레전드리 · 마력 +12% / 마력 +9%");
+    expect(screen.getByRole("status")).toHaveTextContent("게임 경매장 › 상세 검색");
   });
 
   it("순위 카드 안에 경매장 조건을 칩으로 바로 보여 준다(부위·등급·옵션 줄)", async () => {

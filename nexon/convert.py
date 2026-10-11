@@ -125,7 +125,28 @@ def item(item_json: dict, level: int) -> Item:
         sf_option=_sf_option(item_json.get("item_starforce_option") or {}),
         scroll_attack=_scroll_attack(item_json),
         amazing=item_json.get("starforce_scroll_flag") == "사용",
+        tip_stats=_tip_stats(item_json),
     )
+
+
+# 게임 툴팁 순서·이름. %는 퍼센트 줄
+_TIP_KEYS = [("str", "STR", False), ("dex", "DEX", False), ("int", "INT", False), ("luk", "LUK", False),
+             ("max_hp", "최대 HP", False), ("attack_power", "공격력", False), ("magic_power", "마력", False),
+             ("boss_damage", "보스 몬스터 공격 시 데미지", True), ("ignore_monster_armor", "몬스터 방어율 무시", True),
+             ("damage", "데미지", True), ("all_stat", "올스탯", True)]
+_TIP_PARTS = {"base": "item_base_option", "add": "item_add_option", "etc": "item_etc_option",
+              "sf": "item_starforce_option", "exc": "item_exceptional_option"}
+
+
+def _tip_stats(item_json: dict) -> list[dict]:
+    """툴팁 스탯 줄: 합계(item_total_option + 익셉셔널)와 출처별 값. 0인 줄은 뺀다."""
+    out = []
+    for src, label, pct in _TIP_KEYS:
+        parts = {k: num((item_json.get(block) or {}).get(src)) for k, block in _TIP_PARTS.items()}
+        total = num((item_json.get("item_total_option") or {}).get(src)) + parts["exc"]
+        if total:
+            out.append({"label": label, "pct": pct, "total": total, **{k: v for k, v in parts.items() if v}})
+    return out
 
 
 _SF_KEYS = {"str": "STR", "dex": "DEX", "int": "INT", "luk": "LUK", "attack_power": "ATK", "magic_power": "MATK"}

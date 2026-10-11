@@ -15,12 +15,12 @@ export default function SettingsRanking({ ranking, loading = false }) {
     <section className="card">
       <PanelHead title="보스 세팅 순위" subtitle="장비·하이퍼·어빌 프리셋 조합을 보스 실딜로 줄 세웠어요. 위 5개만 보여요." />
       <table aria-label="보스 세팅 순위" className="rank-table">
-        <thead><tr><th>#</th><th>조합</th><th className="num">현재 대비</th><th className="num">환산 주스탯</th></tr></thead>
+        <thead><tr><th>#</th><th>조합</th><th className="num">지금 대비</th><th className="num">환산 주스탯</th></tr></thead>
         <tbody>
           {ranking.slice(0, 5).map((r, i) => (
             <tr key={settingLabel(r.setting)}>
               <td><span className={`medal medal-${i + 1}`}>{i + 1}</span></td>
-              <td>{settingLabel(r.setting)}</td>
+              <td>{settingLabel(r.setting).split(" · ").map((part, k) => <span key={k}>{k ? " · " : ""}<span className="combo-part">{part}</span></span>)}</td>
               <td className={`num ${r.relative_to_active > 1 ? "pos" : r.relative_to_active < 1 ? "neg" : ""}`}>
                 {r.relative_to_active == null ? "—" : formatRelative(r.relative_to_active)}</td>
               <td className="num">{r.main_stat_vs_active == null ? "—" : formatStat(r.main_stat_vs_active)}</td>

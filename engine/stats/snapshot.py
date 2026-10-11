@@ -36,6 +36,8 @@ class Item:
     sf_option: dict[str, float] = field(default_factory=dict)
     scroll_attack: dict[str, float] = field(default_factory=dict)
     amazing: bool = False
+    # 화면 툴팁용(2026-10-11 디자인 심사): 게임 툴팁처럼 스탯 줄마다 합계와 출처(기본·추옵·주문서·강화·익셉셔널). 계산에는 안 쓴다
+    tip_stats: list[dict] = field(default_factory=list)
 
 
 @dataclass

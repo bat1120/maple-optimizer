@@ -35,4 +35,7 @@ def test_equipment_items_carry_grades_and_lines():
                 "additional", "level", "special_ring_level"):
         assert all(key in x for x in items), key
     glove = next(x for x in items if x["slot"] == "장갑")
+    # 툴팁 스탯 줄: 합계 = 기본 + 추옵 + 주문서 + 강화 (+ 익셉셔널)
+    lines = [ln for x in items for ln in x["stats"]]
+    assert lines and all(ln["total"] == sum(ln.get(k, 0) for k in ("base", "add", "etc", "sf", "exc")) for ln in lines if not ln["pct"])
     assert glove["potential_grade"] and glove["potentials"] and glove["icon"] is None

@@ -39,13 +39,42 @@ function StarRow({ count }) {
   );
 }
 
-// 상세 = 게임 툴팁 순서: 별 줄 → 이름 → 구분선 → 잠재 블록 → 에디 블록
+// 스탯 줄(게임 툴팁 문법): 'STR : +150 (100 +30 +8 +12)' — 기본(흰)·추옵(연두)·주문서(보라)·강화(노랑)·익셉셔널(빨강)
+const PARTS = [["base", "기본"], ["add", "추가옵션"], ["etc", "주문서"], ["sf", "스타포스"], ["exc", "익셉셔널"]];
+const num = (v, pct) => `${Number.isInteger(v) ? v : v.toFixed(1)}${pct ? "%" : ""}`;
+function StatLines({ stats }) {
+  if (!stats?.length) return null;
+  return (
+    <ul className="plain tip-stat-lines" aria-label="장비 스탯">
+      {stats.map((l) => {
+        const parts = PARTS.filter(([k]) => l[k]);
+        const split = parts.length > 1 || (parts.length === 1 && parts[0][0] !== "base");
+        return (
+          <li key={l.label} className={split ? "tip-up" : undefined}>
+            {l.label} : +{num(l.total, l.pct)}
+            {split && (
+              <span className="tip-parts"> ({parts.map(([k, name], i) => (
+                <span key={k} className={`tip-${k}`} title={name}>{i ? " +" : ""}{num(l[k], l.pct)}</span>
+              ))})</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// 상세 = 게임 툴팁 순서: 별 줄 → 이름 → 스탯 줄 → 잠재 블록 → 에디 블록
 function Detail({ item }) {
   return (
     <section className="item-detail tooltip" aria-label={`${item.name} 상세`}>
       <StarRow count={item.starforce} />
       <h4 className={`tip-name ${gradeClass(item.potential_grade)}`}>{item.name}</h4>
-      <p className="tip-meta">{item.slot}{item.level ? ` · ${item.level}제` : ""}{item.starforce ? ` · ${item.starforce}성` : ""}</p>
+      <div className="tip-head">
+        {item.icon && <img className={`tip-icon ${gradeClass(item.potential_grade)}`} src={item.icon} alt="" width={48} height={48} />}
+        <p className="tip-meta">{item.slot}{item.level ? ` · ${item.level}제` : ""}{item.starforce ? ` · ${item.starforce}성` : ""}</p>
+      </div>
+      <StatLines stats={item.stats} />
       <div className="lines">
         <div className="tip-block">
           <span className={`grade-tag ${gradeClass(item.potential_grade)}`}>잠재 {item.potential_grade || "없음"}</span>
@@ -87,7 +116,8 @@ function ItemList({ items }) {
 export default function EquipmentGrid({ presets, active, image, name }) {
   const keys = Object.keys(presets || {});
   const [preset, setPreset] = useState(keys.includes(String(active)) ? String(active) : keys[0]);
-  const [openSlot, setOpenSlot] = useState(null);
+  // 처음엔 무기 툴팁을 열어 둔다(2026-10-11 심사: 아무것도 안 눌렀을 때 오른쪽 절반이 비었다)
+  const [openSlot, setOpenSlot] = useState("무기");
   const [view, setView] = useState("grid"); // grid = 장비창, list = 목록
   if (!keys.length) {
     return (
@@ -111,7 +141,7 @@ export default function EquipmentGrid({ presets, active, image, name }) {
           <div className="seg" role="group" aria-label="장비 프리셋">
             {keys.map((k) => (
               <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
-                      onClick={() => { setPreset(k); setOpenSlot(null); }}>프리셋 {k}</button>
+                      onClick={() => { setPreset(k); setOpenSlot("무기"); }}>프리셋 {k}</button>
             ))}
           </div>
           <div className="seg" role="group" aria-label="장비 보기">
@@ -138,7 +168,7 @@ export default function EquipmentGrid({ presets, active, image, name }) {
           </div>
           {/* 츄츄지지 문법: 오른쪽 고정 칸에 선택한 장비의 게임 툴팁 */}
           <div className="equip-detail">
-            {opened ? <Detail item={opened} /> : <p className="detail-empty muted small">장비 칸을 눌러 보세요.</p>}
+            {opened ? <Detail item={opened} /> : <p className="detail-empty muted small">장비 칸을 누르면 여기에 게임 툴팁처럼 옵션이 보여요.</p>}
           </div>
         </div>
       ) : (

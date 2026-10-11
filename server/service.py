@@ -34,7 +34,7 @@ def summary(snap: CharacterSnapshot) -> dict:
         "equipment_presets": {str(n): [{"slot": it.slot, "name": it.name, "starforce": it.starforce, "icon": it.icon,
                                         "potential_grade": it.potential_grade, "additional_grade": it.additional_grade,
                                         "potentials": list(it.potentials), "additional": list(it.additional),
-                                        "level": it.level, "special_ring_level": it.special_ring_level}
+                                        "level": it.level, "special_ring_level": it.special_ring_level, "stats": it.tip_stats}
                                        for it in items.values()]
                               for n, items in snap.equipment_presets.items() if items},
         "excluded": sorted(set(snap.excluded)),

@@ -2,7 +2,7 @@ import { formatBig, settingLabel } from "../format.js";
 import Icon from "../ui/icons.jsx";
 
 // 요약 카드: 아바타 · 이름 · 월드 · 길드 · 직업 · 레벨 + 큰 숫자. 이미지는 넥슨 Open API 주소 그대로(저장하지 않는다).
-export default function ProfileCard({ name, summary, defense, onDefense, onRefresh, busy }) {
+export default function ProfileCard({ name, summary, onRefresh, busy }) {
   const p = summary.profile || {};
   return (
     <section className="card profile">
@@ -28,13 +28,10 @@ export default function ProfileCard({ name, summary, defense, onDefense, onRefre
         </dl>
       </div>
       <div className="profile-side">
-        <label className="field">보스 방어율(%)
-          <input type="number" inputMode="numeric" value={defense} onChange={(e) => onDefense(Number(e.target.value) || 0)} />
-        </label>
         <button type="button" className="ghost" onClick={onRefresh} disabled={busy}>
           <Icon name="refresh" size={16} className={busy ? "spin" : ""} />정보 갱신
         </button>
-        <span className="muted small updated"><Icon name="clock" size={13} />{summary.date ? `${summary.date} 기준` : "최신(약 15분 지연)"}</span>
+        <span className="muted small updated"><Icon name="clock" size={13} />{summary.date ? `${summary.date} 기준` : "약 15분 전 데이터"}</span>
       </div>
     </section>
   );
