@@ -15,6 +15,7 @@
 | 스타포스 경로 | 성별 스탯 표(실측 검산), 기대 비용·흔적 복구·평균 파괴·스페어 | `engine/enhance/starforce_stats.py`, `engine/enhance/starforce.py` |
 | 강화 이벤트 | 썬데이 스타포스(개별)·파괴 방지·미라클 타임·부위별 스페어·불꽃 값 | `engine/market/events.py` |
 | HEXA | HEXA 스탯(초기화 기대값)·HEXA 코어(다음 1레벨, 연무장 딜 지분) | `engine/stats/hexa.py`, `engine/market/hexa_paths.py`, `engine/market/hexa_core_paths.py` |
+| 지금 시세 = DB 30일 | 경로 비교·로드맵·AI 상담·관리자 목록·경매장 검색 갱신이 관측 기록(Neon)의 최근 30일을 읽는다(같은 매물·가격은 한 번) — Render 재시작해도 남음. 보조무기 판정 칸 equip_type·job_groups 추가(기존 표에 자동으로 칸 더함). 읽기도 트랜잭션을 닫는다(Postgres 잠금 대기 방지) | `server/observations.py`, `server/app.py` |
 | 경로 비교 | 구매·직작·큐브·스타포스·추옵·HEXA·심볼을 억당으로, 종류별 상위 묶음 | `engine/market/paths.py`, `web/src/PathsPanel.jsx` |
 
 ## 다음 할 일 후보 (사용자와 정해서 진행)
