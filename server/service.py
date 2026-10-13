@@ -272,7 +272,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
                 f"이 매물 {f'{lv}레벨' if lv else '레벨 못 읽음'}"
                 + (f" · 지금 낀 {ring.name} {ring.special_ring_level}레벨" if ring else ""))
         try:
-            row["scouter"] = scouter_delta(snap, chosen, slot, item)  # 환산 계산기에 옮길 변화량(복사 버튼)
+            row["scouter"] = scouter_delta(snap, chosen, slot, item)  # 사람이 읽는 변화량(변화량 복사 버튼)
         except Exception:  # 변화량을 못 구해도 평가는 보여 준다
             row["scouter"] = None
         row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
@@ -284,7 +284,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
 
 def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, current_ratio: float,
                    target_ratio: float, events=None) -> dict:
-    """목표 배율 로드맵 + MapleScouter에 한꺼번에 넣을 변화량(큐브·스타포스·HEXA 스탯·심볼. HEXA 코어는 칸이 없어 빠진다)."""
+    """목표 배율 로드맵 + 사람이 읽는 장비 변화량(변화량 복사: 큐브·스타포스·HEXA 스탯·심볼. HEXA 코어는 칸이 없어 빠진다)."""
     from engine.market.events import Events
     from engine.market.hexa_paths import _block, _lines
     from engine.market.symbol_paths import extra_of
@@ -327,7 +327,7 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             "scouter": scouter, "hexa_core_multiplier": mult_core,
             "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
                      "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "
-                     "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. MapleScouter에 넣는 변화량에는 HEXA 코어가 빠져요"
+                     "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. 변화량 복사에는 HEXA 코어가 빠져요"
                      "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
 
 

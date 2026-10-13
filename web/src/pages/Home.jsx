@@ -83,11 +83,6 @@ export default function Home() {
             <span className="muted small">기대 비용·파괴 횟수, 잠재 재설정 기대비용, 매물 vs 직작 — 캐릭터 없이도 돼요</span>
             <Icon name="chevron" size={16} className="index-go" />
           </a>
-          <a className="index-row" href="#/scouter">
-            <strong>환산 주스탯 도우미</strong>
-            <span className="muted small">경매장 화면 평가에서 읽은 매물을 MapleScouter 입력 화면에 옮기는 방법</span>
-            <Icon name="chevron" size={16} className="index-go" />
-          </a>
           <h2 className="index-title">계산 기준</h2>
           <dl className="basis">
             <div><dt>데이터</dt><dd>넥슨 Open API(약 15분 지연)</dd></div>

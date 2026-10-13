@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { bossBody, getVisionDataset, postListings, postVision, postVisionCorrect, postVisionEvaluate, postVisionScore, postVisionScoreReset } from "./api.js";
-import { clipboardText, scouterInfoUrl } from "./scouter.js";
-import { hasExtension, sendToExtension } from "./extension.js";
+import { clipboardText } from "./scouter.js";
 import { SCOUTER_DIFF_NOTE, formatMeso, formatPct, formatStat, parsePrice } from "./format.js";
 import { createWatcher, tipHash, tipSame } from "./watch.js";
 
@@ -85,11 +84,10 @@ function EditForm({ item, name, defense, onSaved, onCancel }) {
 }
 
 // 화면에서 읽은 내용을 그대로 보여 준다(잘못 읽었는지 사용자가 확인할 수 있게). 가격을 못 읽었으면 직접 넣는다.
-// 환산 계산기(MapleScouter)에 옮길 변화량 복사 — 그쪽 화면에서 '환산 채우기' 북마크를 누르면 칸에 더해진다(#/scouter)
-function CopyScouter({ item, label = "환산용 복사" }) {
+// 템 교체 변화량을 사람이 읽는 글로 복사 — 다른 계산기와 손으로 비교할 때 쓴다.
+// MapleScouter에 자동으로 넣던 북마크·확장은 뺐다(2026-10-13, 운영자 연동 불가 — CLAUDE.md 금지 조항)
+function CopyScouter({ item, label = "변화량 복사" }) {
   const [done, setDone] = useState(false);
-  const [sent, setSent] = useState(null); // 확장으로 보낸 결과 { ok, error }
-  const ext = hasExtension();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(clipboardText(item.scouter, { price: item.read?.price, delta_pct: item.delta_pct }));
@@ -98,15 +96,10 @@ function CopyScouter({ item, label = "환산용 복사" }) {
       setDone(false);
     }
   };
-  // 확장 프로그램이 있으면 클릭 한 번: MapleScouter 탭을 열어 내 캐릭터로 교체하고 칸을 채운다(2026-10-07)
-  const send = async () => setSent(await sendToExtension(item.scouter));
   return (
     <span className="inline">
-      {ext && <button type="button" className="small" onClick={send}>MapleScouter에 넣기</button>}{" "}
       <button type="button" className="ghost small" onClick={copy}>{label}</button>
-      {sent?.ok && <span className="muted small">MapleScouter 탭을 열었어요 — 내 캐릭터로 교체하고 칸을 채우는 중이에요(몇 초)</span>}
-      {sent && !sent.ok && <span className="error small">{sent.error}</span>}
-      {done && <span className="muted small">복사했어요 — <a href={scouterInfoUrl(item.scouter.name)} target="_blank" rel="noopener noreferrer">MapleScouter 열기 ↗</a> → 새로 열린 MapleScouter 탭에서 즐겨찾기 막대의 '환산 채우기'(내 캐릭터로 교체 후 채워요)</span>}
+      {done && <span className="muted small">복사했어요</span>}
     </span>
   );
 }
@@ -296,9 +289,6 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       <p className="muted">
         공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
         화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.
-      </p>
-      <p className="muted small">
-        매물 옆 [환산용 복사] → MapleScouter에서 북마크 한 번으로 칸에 넣기: <a href="#/scouter">환산 채우기 설치·사용법</a>
       </p>
       {!admin && (
         <p className="muted small">

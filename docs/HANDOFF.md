@@ -9,7 +9,7 @@
 | 영역 | 내용 | 주요 파일 |
 |---|---|---|
 | UI | 디자인 토큰·아이콘·패널 사용 방법·첫 방문 안내·뼈대/빈/오류 상태 | `web/src/styles.css`, `web/src/ui/` |
-| 환산 연동 | MapleScouter 북마크(`#/scouter`)와 크롬 확장(내 캐릭터로 교체 후 칸 채우기) | `web/src/scouter.js`, `extension/` |
+| 환산 연동 정리 | 2026-10-13 MapleScouter 운영자가 연동은 어렵다고 답함 → 북마크(`#/scouter`)·크롬 확장(`extension/`)·'진짜 배율 보기' 삭제. 남은 건 사람이 읽는 [변화량 복사](매물 줄·목표 배율 로드맵) | `web/src/scouter.js` |
 | 구매 불가 템 | 제네시스·데스티니, 아스트라 보조, 미트라 엠블렘, 엔버·카이저·제논 보조무기 | `engine/market/recommend.py` |
 | 보조무기 종류 | 툴팁 장비분류 ↔ 지금 보조무기 종류(API) 맞춰 보기 | `engine/market/secondary.py` |
 | 스타포스 경로 | 성별 스탯 표(실측 검산), 기대 비용·흔적 복구·평균 파괴·스페어 | `engine/enhance/starforce_stats.py`, `engine/enhance/starforce.py` |
@@ -29,15 +29,15 @@
   칭호 포스의 장비 프리셋별 차이(미반영), 어센틱 격차표 행 사이 값(바로 아래 행으로 봄)
 - AI 상담(2026-10-12): 관리자 로그인이면 캐릭터 화면 맨 위에. AI가 request_auction_screen을 부르면 채팅 안 [화면 연결] →
   [매물 N개 AI에게 보내기]. 일반 사용자 공개는 비용 때문에 보류(사용자 결정)
-- MapleScouter 자동 채우기(확장·북마클릿) 유지 여부 — 약관 제15조 위험, 사용자 결정 대기
+- (2026-10-13 끝남: MapleScouter 자동 채우기 삭제 — 운영자 연동 불가 답변)
+- 목표 배율 로드맵의 '지금 배율'은 사용자가 MapleScouter 효율·보스컷에서 보고 손으로 넣는다 — 그 사이트 계산 결과를 입력으로 쓰는 셈이라 회색지대. 우리 엔진 배율로 바꿀지 사용자 결정
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
 - 넥슨 API가 필요한 일: 실제 캐릭터 조회, `tools/collect_skill_shares.py`(직업별 딜 지분 수집 — 지금은 레테만 있음),
   픽스처 갱신. `.env`가 없고 키를 클라우드에 넣지 않는다
-- 브라우저 확인(MapleScouter 실사이트, 경매장 화면 공유), 크롬 확장 설치 시험
+- 브라우저 확인(경매장 화면 공유)
 - 코드 수정과 테스트(`uv run pytest -q --ignore=tests/goals`, `npm --prefix web test`)는 클라우드에서 된다
 
 ## 주의
 - 숫자는 측정·출처값만. 표를 옮기면 실측(픽스처의 넥슨 API 값)으로 검산하는 테스트를 같이 쓴다
-- 템플릿 문자열 안의 JS 코드(`web/src/scouter.js`의 PREP/FILL/RUN_SOURCE)에서는 정규식 역슬래시가 사라진다 — 정규식 대신 indexOf
 - `extension/generated/run.js`는 `npm --prefix web run ext`로 만든다(테스트가 최신인지 확인)

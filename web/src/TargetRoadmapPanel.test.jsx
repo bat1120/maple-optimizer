@@ -42,16 +42,20 @@ describe("목표 배율 로드맵 패널", () => {
     expect(rows[3]).toHaveTextContent("심볼 · 어센틱심볼 : 세르니움 9→10레벨");
     expect(rows[3]).toHaveTextContent("심볼 263개");
   });
-  it("확장이 있으면 [MapleScouter에서 진짜 배율 보기] — 고른 보스와 함께 변화량을 보낸다", async () => {
+  it("MapleScouter에 자동으로 넣어 배율을 읽는 버튼은 없다(2026-10-13, 운영자 연동 불가)", async () => {
     document.documentElement.setAttribute("data-mapleopt-ext", "0.1.0");
-    const posted = [];
-    const orig = window.postMessage.bind(window);
-    window.postMessage = (d) => { posted.push(d); if (d.type === "MAPLEOPT_FILL") setTimeout(() => window.dispatchEvent(new MessageEvent("message", { source: window, data: { type: "MAPLEOPT_FILL_ACK", ok: true } })), 0); };
-    try {
-      await run();
-      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "MapleScouter에서 진짜 배율 보기" })); await new Promise((r) => setTimeout(r, 10)); });
-      expect(posted[0].payload.check).toMatchObject({ boss: "extreme_lotus", label: "익스트림 스우" });
-      expect(posted[0].payload.fields).toEqual({ "STR|기본": 10 });
-    } finally { window.postMessage = orig; }
+    await run();
+    expect(screen.queryByRole("button", { name: /진짜 배율 보기/ })).toBeNull();
+    expect(screen.queryByText(/크롬 확장/)).toBeNull();
+  });
+  it("[변화량 복사] — 로드맵 장비 변화(큐브·스타포스·HEXA 스탯·심볼)를 사람이 읽는 글로 복사한다", async () => {
+    const writeText = vi.fn().mockResolvedValue();
+    Object.assign(navigator, { clipboard: { writeText } });
+    await run();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "변화량 복사" })); });
+    const text = writeText.mock.calls[0][0];
+    expect(text).toContain("로드맵: 지금 템 → 목표 50% 로드맵");
+    expect(text).toContain("STR +10");
+    expect(text).not.toContain("MAPLEOPT1");
   });
 });

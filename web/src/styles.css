@@ -157,9 +157,7 @@ button.btn-lg { min-height: 52px; padding: 0 28px; font-size: var(--fs-md); }
 .button-link { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: var(--radius);
   background: var(--accent-fill); color: var(--on-accent); font-weight: 700; font-size: var(--fs-sm); }
 .button-link:hover { background: var(--accent-fill-hover); color: var(--on-accent); }
-.bookmarklet { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 18px; border-radius: var(--radius); background: var(--star);
   color: var(--text); font-weight: 700; cursor: grab; border: 1px solid var(--line-strong); }
-.bookmarklet:hover { color: var(--text); }
 kbd, .kbd { font: 700 var(--fs-xs)/1 var(--font-body); padding: 4px 7px; border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong); border-bottom-width: 2px; background: var(--surface-2); color: var(--muted); }
 @media (hover: hover) and (pointer: fine) {
@@ -477,12 +475,6 @@ details.more[open] > summary { margin-bottom: var(--sp-2); }
 form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radius: var(--radius); background: var(--error-soft); font-size: var(--fs-sm); }
 
 /* 환산 도우미(스타일만 — 마크업은 그대로) */
-.scouter-page > h1 { margin-top: var(--sp-2); }
-.scouter-page > p.muted { max-width: 72ch; }
-.scouter-page ol { padding-left: 22px; line-height: 1.75; }
-.scouter-page ol li { padding-left: 4px; }
-.scouter-page ol li::marker { color: var(--accent); font-weight: 700; }
-.scouter-page section h3 { display: flex; align-items: center; gap: 8px; }
 
 /* 관리자 화면 기본 정돈 */
 .admin h1, .admin-page h1 { margin-top: var(--sp-2); }

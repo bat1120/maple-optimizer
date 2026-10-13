@@ -13,7 +13,6 @@ export function parseHash(hash) {
   }
   if (parts[0] === "calc") return { page: "calc" };
   if (parts[0] === "admin") return { page: "admin" };
-  if (parts[0] === "scouter") return { page: "scouter" };
   return { page: "home" };
 }
 
@@ -24,7 +23,6 @@ export function hashFor(route) {
   }
   if (route.page === "calc") return "#/calc";
   if (route.page === "admin") return "#/admin";
-  if (route.page === "scouter") return "#/scouter";
   return "#/";
 }
 

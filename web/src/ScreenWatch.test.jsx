@@ -372,50 +372,34 @@ describe("screen watch how-to", () => {
   });
 });
 
-describe("screen watch scouter copy", () => {
-  it("평가된 매물에 [환산용 복사] — 누르면 클립보드에 요약과 북마클릿용 줄을 넣는다", async () => {
+// 2026-10-13: 환산주스탯(MapleScouter) 운영자가 연동은 어렵다고 답함 → 그 사이트에 자동으로 접근하는 북마크·확장은 뺐다.
+// 사람이 손으로 비교할 수 있게 '변화량 복사'(읽는 글)만 남긴다.
+const ROW = { signature: "s1", evaluated: true, slot: "장갑", delta_pct: 0.84, per_100m: 0.084, main_stat_gain: 480, excluded: [],
+              read: { name: "에테르넬 메이지글러브", total: { INT: 100 }, potentials: ["INT +12%"], price: 1e10 },
+              scouter: { v: 1, slot: "장갑", from: "도전자의 장갑", to: "에테르넬 메이지글러브", name: "내신부레테",
+                         rows: { main: ["INT"], sub: ["LUK"], attack: "마력" }, fields: { "INT|기본": 30, "보스 데미지": 10 },
+                         ied_add: [], ied_remove: [] } };
+
+describe("screen watch 변화량 복사", () => {
+  afterEach(() => { document.documentElement.removeAttribute("data-mapleopt-ext"); });
+  it("평가된 매물에 [변화량 복사] — 사람이 읽는 요약만 넣고, 자동 채우기 줄·북마크 안내는 없다", async () => {
     const writeText = vi.fn().mockResolvedValue();
     Object.assign(navigator, { clipboard: { writeText } });
-    const row = { signature: "s1", evaluated: true, slot: "장갑", delta_pct: 0.84, per_100m: 0.084, main_stat_gain: 480, excluded: [],
-                  read: { name: "에테르넬 메이지글러브", total: { INT: 100 }, potentials: ["INT +12%"], price: 1e10 },
-                  scouter: { v: 1, slot: "장갑", from: "도전자의 장갑", to: "에테르넬 메이지글러브", name: "내신부레테",
-                             rows: { main: ["INT"], sub: ["LUK"], attack: "마력" }, fields: { "INT|기본": 30 }, ied_add: [], ied_remove: [] } };
-    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} admin={false} />);
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "환산용 복사" })); });
-    expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toContain("MAPLEOPT1 ");
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[ROW]} admin={false} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "변화량 복사" })); });
+    const text = writeText.mock.calls[0][0];
+    expect(text).toContain("장갑: 도전자의 장갑 → 에테르넬 메이지글러브");
+    expect(text).toContain("INT +30");
+    expect(text).toContain("보스 데미지 +10%");
+    expect(text).not.toContain("MAPLEOPT1");
+    expect(text).not.toContain("북마크");
     expect(screen.getByText(/복사했어요/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /MapleScouter 열기/ })).toHaveAttribute("href", "https://maplescouter.com/ko/info?name=%EB%82%B4%EC%8B%A0%EB%B6%80%EB%A0%88%ED%85%8C");
-    expect(screen.getByRole("link", { name: /환산 채우기 설치/ })).toHaveAttribute("href", "#/scouter");
+    expect(screen.queryByRole("link", { name: /환산 채우기 설치/ })).toBeNull();
   });
-});
-
-
-// 업그레이드 탭의 임시 '테스트 템' 줄은 2026-10-11에 뺐다(사용자: 남은 일 다 진행) — 확장 테스트는 실제 매물 줄로 본다
-const EXT_ROW = { signature: "e1", evaluated: true, slot: "장갑", delta_pct: 0.5, per_100m: 0.05, main_stat_gain: 0, excluded: [],
-                  read: { name: "에테르넬 메이지글러브", total: {}, potentials: [], price: 1e10 },
-                  scouter: { v: 1, slot: "장갑", from: "도전자의 장갑", to: "에테르넬 메이지글러브", name: "내신부레테", job: "레테", level: 288,
-                             rows: { main: [], sub: [], attack: "마력" }, fields: { "보스 데미지": 10 }, ied_add: [], ied_remove: [] } };
-
-describe("screen watch with extension (확장 설치됨)", () => {
-  afterEach(() => { document.documentElement.removeAttribute("data-mapleopt-ext"); });
-  it("확장이 있으면 [MapleScouter에 넣기] — 누르면 클립보드 없이 확장으로 보낸다", async () => {
+  it("확장이 깔려 있어도 [MapleScouter에 넣기] 버튼은 없다", () => {
     document.documentElement.setAttribute("data-mapleopt-ext", "0.1.0");
-    const posted = [];
-    const orig = window.postMessage.bind(window);
-    window.postMessage = (data) => { posted.push(data); if (data.type === "MAPLEOPT_FILL") setTimeout(() => window.dispatchEvent(new MessageEvent("message", { source: window, data: { type: "MAPLEOPT_FILL_ACK", ok: true } })), 0); };
-    try {
-      render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} initialItems={[EXT_ROW]} admin={false} />);
-      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "MapleScouter에 넣기" })); await new Promise((r) => setTimeout(r, 10)); });
-      expect(posted[0]).toMatchObject({ type: "MAPLEOPT_FILL", payload: { name: "내신부레테", fields: { "보스 데미지": 10 } } });
-      expect(screen.getByText(/MapleScouter 탭을 열었어요/)).toBeInTheDocument();
-    } finally { window.postMessage = orig; }
-  });
-  it("확장이 없으면 그 버튼은 없다(복사·북마크 방식만)", () => {
-    render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} initialItems={[EXT_ROW]} admin={false} />);
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[ROW]} admin={false} />);
     expect(screen.queryByRole("button", { name: "MapleScouter에 넣기" })).toBeNull();
-    expect(screen.getByRole("button", { name: "환산용 복사" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "테스트 템 복사" })).toBeNull();
-    expect(screen.queryByText("테스트 템")).toBeNull();
+    expect(screen.queryByRole("button", { name: "환산용 복사" })).toBeNull();
   });
 });
