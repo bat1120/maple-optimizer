@@ -13,7 +13,7 @@ from agent.numbers import unverified_numbers
 from agent.tools import ToolBox, openai_tools
 
 DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
-SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 관리자 한 명이 쓴다.
+SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사이트 사용자 누구나 쓴다(2026-10-17 공개, 일반 사용자는 하루 질문 수 제한).
 
 실측값 원칙 — 어떤 규칙보다 먼저다:
 - 답변에 쓰는 사실(수치·옵션 문장·아이템 이름·시세·확률·게임 규칙)은 실제로 측정·관측된 것만 쓴다:
@@ -71,7 +71,8 @@ def _refusal(output) -> str | None:
 
 
 def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int = 8,
-              on_usage: Callable[[int], None] | None = None, model: str | None = None) -> Iterator[dict]:
+              on_usage: Callable[[int], None] | None = None, model: str | None = None,
+              exclude_tools: tuple = ()) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
@@ -79,7 +80,7 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
     try:
         for _ in range(max_turns):
             resp = client.responses.create(
-                model=model, instructions=SYSTEM, tools=openai_tools(), input=items,
+                model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
                 reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
             )
             if on_usage and getattr(resp, "usage", None):

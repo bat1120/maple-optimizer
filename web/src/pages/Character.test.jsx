@@ -106,7 +106,7 @@ describe("character page", () => {
     expect(screen.queryByRole("button", { name: "경매장 시세 갱신" })).toBeNull();   // 공개 화면에선 관리자 기능 숨김
   });
 
-  it("공개 화면에서는 화면 분석·AI 상담이 없다", async () => {
+  it("공개 화면 요약 탭에는 화면 분석 버튼·관리자 로그인이 없다", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     await screen.findByRole("heading", { name: "내신부레테" });
@@ -159,13 +159,14 @@ describe("character page", () => {
   });
 });
 
-describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-12)", () => {
+describe("character page — AI 상담은 모두에게, 일반 사용자는 하루 횟수 제한(2026-10-17)", () => {
   const withSession = (admin) => vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
     if (String(url).includes("/api/admin/session")) return ok({ admin });
+    if (String(url).includes("/api/agent/quota")) return ok(admin ? { admin: true, limit: null, remaining: null } : { admin: false, limit: 5, remaining: 3 });
     if (String(url).includes("/settings")) return ok(SETTINGS);
     return ok(SUMMARY);
   });
-  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문", async () => {
+  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문, 횟수 제한 표시 없음", async () => {
     withSession(true);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     const ai = await screen.findByRole("heading", { name: "AI 상담" });
@@ -173,11 +174,13 @@ describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-
     expect(ai.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
     expect(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" })).toBeInTheDocument();
+    expect(screen.queryByText(/오늘 남은 질문/)).toBeNull();
   });
-  it("관리자가 아니면 AI 상담이 없다", async () => {
+  it("일반 사용자도 AI 상담을 쓰고, 오늘 남은 질문 수를 본다", async () => {
     withSession(false);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
-    await screen.findByRole("heading", { name: "내신부레테" });
-    expect(screen.queryByRole("heading", { name: "AI 상담" })).toBeNull();
+    expect(await screen.findByRole("heading", { name: "AI 상담" })).toBeInTheDocument();
+    expect(await screen.findByText(/오늘 남은 질문 3\/5회/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
   });
 });

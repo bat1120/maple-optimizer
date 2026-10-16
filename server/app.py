@@ -57,7 +57,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
-               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0,
+               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5,
                vision_frames_per_min: int = 240) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
@@ -84,9 +84,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     import secrets as _secrets
     quota_secret = (session_secret or _secrets.token_hex(32)).encode()
 
-    def _quota_who(ip: str) -> str:
+    def _quota_who(ip: str, kind: str = "vision") -> str:
         day = int((clock() + 9 * 3600) // 86400)  # KST 날짜 — 날이 바뀌면 같은 IP도 다른 해시
-        return hmac.new(quota_secret, f"vision-quota|{day}|{ip}".encode(), hashlib.sha256).hexdigest()
+        return hmac.new(quota_secret, f"{kind}-quota|{day}|{ip}".encode(), hashlib.sha256).hexdigest()
 
     def _quota_used(who: str) -> int:
         try:
@@ -249,14 +249,36 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                      httponly=True, samesite="strict")
         return r
 
+    def _is_admin(request: Request) -> bool:
+        return bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())
+
+    def _agent_who(request: Request) -> str:
+        return _quota_who(request.client.host if request.client else "unknown", "agent")
+
+    @app.get("/api/agent/quota")
+    def agent_quota(request: Request):
+        """AI 상담 남은 횟수(2026-10-17 공개): 관리자는 제한 없음, 일반 사용자는 IP당 하루 agent_public_daily번."""
+        if _is_admin(request):
+            return {"admin": True, "limit": None, "remaining": None}
+        return {"admin": False, "limit": agent_public_daily,
+                "remaining": max(0, agent_public_daily - _quota_used(_agent_who(request)))}
+
     @app.post("/api/agent/chat")
     def agent_chat(body: ChatIn, request: Request):
-        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
-            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        # 모두에게 연다(2026-10-17 사용자). 일반 사용자는 IP당 하루 질문 수 제한 + 웹 경매장 검색(refresh_market) 없음
+        is_admin = _is_admin(request)
         if agent_client is None:
             raise ApiError(503, "AGENT_DISABLED", "에이전트가 설정되지 않았습니다(OPENAI_API_KEY).")
         from agent.loop import run_agent
         from agent.tools import ToolBox
+        who = None if is_admin else _agent_who(request)
+        if who is not None:
+            if _quota_used(who) >= agent_public_daily:
+                raise ApiError(429, "AGENT_QUOTA", f"오늘 AI 상담 한도({agent_public_daily}번)를 다 썼어요. 내일 다시 써 주세요.")
+            try:
+                observations.quota_add(who)
+            except Exception as e:  # DB가 잠깐 안 돼도 막지 않는다(하루 토큰 한도가 따로 있다)
+                _log.warning("AI 상담 한도 기록 실패: %s", type(e).__name__)
 
         def events():
             if usage.used() >= agent_daily_token_budget:
@@ -264,8 +286,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 yield {"type": "done", "unverified_numbers": []}
                 return
             yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows,
-                                                      refresh=_agent_refresh), body.messages,
-                                 on_usage=usage.add)
+                                                      refresh=_agent_refresh if is_admin else None), body.messages,
+                                 on_usage=usage.add, exclude_tools=() if is_admin else ("refresh_market",))
 
         def sse():
             # 도구 계산·모델 응답을 기다리는 동안 agent_ping_seconds마다 SSE 주석을 보내 연결을 살린다
@@ -555,6 +577,7 @@ def default_app() -> FastAPI:
                       auction_mcp_command=_env("AUCTION_MCP_CMD"),
                       vision_dataset_dir=_env("VISION_DATASET_DIR"),
                       vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
+                      agent_public_daily=int(_env("AGENT_PUBLIC_DAILY") or 5),
                       vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240))
 
 

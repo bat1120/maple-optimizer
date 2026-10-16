@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { adminLogin, streamAgent } from "./api.js";
+import { useEffect, useState } from "react";
+import { adminLogin, getAgentQuota, streamAgent } from "./api.js";
 import ScreenWatch from "./ScreenWatch.jsx";
 
 // 관리자 전용 AI 에이전트 채팅. 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
@@ -62,7 +62,7 @@ function ScreenRequest({ search, note, name, watchProps, onSend, busy }) {
 }
 
 export default function AgentPanel({ name = "", screenItems = [], feeRate = null, initialAuthed = false, watchProps = {},
-                                     title = "AI 에이전트" }) {
+                                     title = "AI 에이전트", showQuota = false }) {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(initialAuthed);
   const [question, setQuestion] = useState("");
@@ -70,6 +70,9 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   const [log, setLog] = useState([]); // 화면 표시용 이벤트
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [quota, setQuota] = useState(null); // 일반 사용자 하루 질문 수(2026-10-17 공개) — 관리자는 제한 없음
+  const loadQuota = () => { if (showQuota) getAgentQuota().then(setQuota).catch(() => setQuota(null)); };
+  useEffect(loadQuota, [showQuota]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (e) => {
     e.preventDefault();
@@ -104,6 +107,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
       if (err.status === 401) setAuthed(false);
     } finally {
       setBusy(false);
+      loadQuota();
     }
   };
   const send = (e) => { e.preventDefault(); ask(question); };
@@ -121,6 +125,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   return (
     <section className="panel">
       <h3>{title}</h3>
+      {quota && !quota.admin && <p className="muted small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</p>}
       {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
       <div className="chat">
         {log.map((ev, i) => {
