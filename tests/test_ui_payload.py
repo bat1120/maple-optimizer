@@ -39,3 +39,17 @@ def test_equipment_items_carry_grades_and_lines():
     lines = [ln for x in items for ln in x["stats"]]
     assert lines and all(ln["total"] == sum(ln.get(k, 0) for k in ("base", "add", "etc", "sf", "exc")) for ln in lines if not ln["pct"])
     assert glove["potential_grade"] and glove["potentials"] and glove["icon"] is None
+
+
+def test_settings_carry_boss_setting_stats():
+    """화면 기본 = 보스 세팅(2026-10-17): 1위 조합의 예측 최종 스탯·스공. 같은 조합이면 지금 착용 스탯과 같아야 한다."""
+    from engine.stats.evaluate import predict_setting
+    from server.service import CATALOG, settings
+    snap = snapshot(bundle("레테"))
+    r = settings(snap, 300)
+    best = r["best"]
+    assert best["setting"] == r["ranking"][0]["setting"]
+    assert best["stat_attack"] > 0 and best["final"]["stats"]
+    # 보정(calibrate) 기준: 지금 착용 조합을 예측하면 넥슨 최종 스탯과 같다 → 보스 세팅 숫자도 같은 잣대
+    p = predict_setting(snap, snap.active_setting, CATALOG)
+    assert abs(p.boss - snap.final.boss) < 0.5 and abs(p.dmg - snap.final.dmg) < 0.5

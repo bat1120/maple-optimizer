@@ -178,6 +178,24 @@ describe("character page", () => {
     expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();
   });
 
+  // 2026-10-17 사용자: 처음 들어가면 보스 최적 세팅으로 보여 준다(지금 착용은 작게 같이)
+  it("기본은 보스 세팅: 프로필 스공·세팅, 주요 스탯, 장비창 프리셋이 보스 1위 조합 기준", async () => {
+    const best = { setting: { equipment: 1, hyper: 3, ability: 2 }, stat_attack: 222000000,
+                   final: { ...SUMMARY.final, boss: 333 } };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      if (String(url).includes("/settings")) return ok({ ...SETTINGS, best });
+      if (String(url).includes("/roadmap")) return ok({ evaluation_setting: best.setting, note: "", value_ranking: [], slots: [] });
+      return ok(SUMMARY);
+    });
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    expect(await screen.findByText("보스 세팅")).toBeInTheDocument();
+    expect(screen.getByText("장비 1 · 하이퍼 3 · 어빌 2")).toBeInTheDocument();
+    expect(screen.getByText(/지금 착용: 장비 2 · 하이퍼 1 · 어빌 1/)).toBeInTheDocument();
+    expect(screen.getByText("2억 2,200만")).toBeInTheDocument();
+    expect(screen.getByText("333%")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "프리셋 1" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("장비가 없으면 빈 상태 안내", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => (String(url).includes("/settings") ? ok(SETTINGS) : ok({ ...SUMMARY, equipment_presets: {} })));
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);

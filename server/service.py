@@ -68,13 +68,21 @@ def summary(snap: CharacterSnapshot) -> dict:
 
 def settings(snap: CharacterSnapshot, defense: float) -> dict:
     from engine.stats.evaluate import predict_setting
+    from engine.stats.residual import preset_items
     from engine.stats.metrics import equivalent_main_stat
     b = boss(defense)
     ranked = rank_settings(snap, b, CATALOG)
     active = evaluate_setting(snap, snap.active_setting, b, CATALOG)
     base = predict_setting(snap, snap.active_setting, CATALOG)
     job = job_profile(snap.character_class)
-    return {"boss": asdict(b), "force": force_of(snap, ranked[0][0], b),
+    # 화면 기본 = 보스 세팅(2026-10-17 사용자: 처음 들어가면 보스 최적 세팅으로). 1위 조합의 예측 최종 스탯·스공
+    top = ranked[0][0]
+    pred = predict_setting(snap, top, CATALOG)
+    weapon = preset_items(snap, top.equipment)["무기"].part
+    best = {"setting": asdict(top), "stat_attack": stat_attack_max(pred, job, weapon),
+            "final": {"stats": pred.stats, "atk": pred.atk, "matk": pred.matk, "dmg": pred.dmg, "boss": pred.boss,
+                      "fd": pred.fd, "cd": pred.cd, "ied": pred.ied}}
+    return {"boss": asdict(b), "force": force_of(snap, ranked[0][0], b), "best": best,
             "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None,
                          "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None}
                         for s, v in ranked]}

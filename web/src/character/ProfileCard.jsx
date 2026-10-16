@@ -4,7 +4,7 @@ import BossPicker, { ForceNote } from "./BossPicker.jsx";
 
 // 요약 카드: 아바타 · 이름 · 월드 · 길드 · 직업 · 레벨 + 큰 숫자. 이미지는 넥슨 Open API 주소 그대로(저장하지 않는다).
 // defense: 보스 id(보스 목록) 또는 방어율 숫자(직접 입력). force: 서버가 계산한 포스 보정(요구·지금·피해 %)
-export default function ProfileCard({ name, summary, defense, onDefense, onRefresh, busy, bosses = [], force = null }) {
+export default function ProfileCard({ name, summary, best = null, defense, onDefense, onRefresh, busy, bosses = [], force = null }) {
   const p = summary.profile || {};
   return (
     <section className="card profile">
@@ -24,9 +24,14 @@ export default function ProfileCard({ name, summary, defense, onDefense, onRefre
         </p>
         {/* 숫자 칸: 레퍼런스(환산주스탯·츄츄지지)처럼 세로선으로 나눈 칸, 핵심 숫자는 주황 */}
         <dl className="kpi-strip">
-          <div className="kpi kpi-primary"><dt>스탯 공격력</dt><dd>{formatBig(summary.stat_attack?.engine)}</dd></div>
+          {/* 기본은 보스 세팅(2026-10-17 사용자). 세팅 순위가 오기 전엔 지금 착용 값 */}
+          <div className="kpi kpi-primary"><dt>스탯 공격력{best ? "(보스 세팅)" : ""}</dt><dd>{formatBig(best ? best.stat_attack : summary.stat_attack?.engine)}</dd></div>
           <div className="kpi"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
-          <div className="kpi"><dt>지금 착용 중인 세팅</dt><dd className="kpi-text">{settingLabel(summary.active_setting)}</dd></div>
+          <div className="kpi"><dt>{best ? "보스 세팅" : "지금 착용 중인 세팅"}</dt>
+            <dd className="kpi-text">{settingLabel(best ? best.setting : summary.active_setting)}
+              {best && settingLabel(best.setting) !== settingLabel(summary.active_setting) && (
+                <span className="kpi-sub">지금 착용: {settingLabel(summary.active_setting)}</span>
+              )}</dd></div>
         </dl>
       </div>
       <div className="profile-side">

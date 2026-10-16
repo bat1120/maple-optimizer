@@ -22,9 +22,9 @@ import { ErrorState } from "../ui/Guide.jsx";
 // 탭마다 '이 화면에서 할 수 있는 것' 한 줄 + 사용 방법. 실제로 있는 기능만 적는다.
 export const TAB_GUIDE = {
   summary: {
-    lead: "지금 장비와, 프리셋 조합별 보스 실딜 순위를 한눈에 봐요.",
+    lead: "보스 세팅(실딜 1위 조합) 기준 장비·스탯과, 프리셋 조합별 보스 실딜 순위를 한눈에 봐요.",
     steps: [
-      <>장비창 위 <strong>[프리셋 1·2·3]</strong>으로 장비 프리셋을 바꿔 볼 수 있어요. 처음엔 지금 적용 중인 프리셋이 열려요.</>,
+      <>장비창 위 <strong>[프리셋 1·2·3]</strong>으로 장비 프리셋을 바꿔 볼 수 있어요. 처음엔 보스 세팅(실딜 1위 조합)의 프리셋이 열려요 — [보스]·[착용] 표시로 구분해요.</>,
       <>장비 칸을 누르면 <strong>잠재·에디 옵션</strong>이 열려요. 칸 테두리 색은 잠재 등급, ★ 숫자는 스타포스예요.</>,
       <><strong>보스 세팅 순위</strong>는 장비·하이퍼·어빌 프리셋 조합을 보스 실딜로 줄 세운 거예요. '현재 대비'가 +면 지금보다 세요.</>,
       <>위쪽 <strong>보스</strong>(목록에서 보스·난이도, 또는 방어율 직접 입력)를 바꾸면 순위와 업그레이드 계산이 그 보스로 다시 계산돼요. 요구 포스가 있는 보스는 포스 보정도 들어가요.</>,
@@ -161,7 +161,7 @@ export default function Character({ route }) {
       ))}
       {summary && (
         <div className="fade-in">
-          <ProfileCard name={name} summary={summary} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
+          <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
           {isAdmin && (
             <AgentPanel key={name} name={name} initialAuthed title="AI 상담"
@@ -186,7 +186,7 @@ export default function Character({ route }) {
             <div className="summary-grid">
               <div className="stack summary-side">
                 <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} active={summary.active_setting} />
-                <StatSummary final={summary.final} />
+                <StatSummary final={settings?.best?.final || summary.final} setting={settings?.best ? settings.best.setting : null} />
                 {summary.excluded?.length > 0 && (
                   <section className="card">
                     <h3 className="panel-title">계산에서 뺀 옵션</h3>
@@ -195,7 +195,10 @@ export default function Character({ route }) {
                   </section>
                 )}
               </div>
-              <EquipmentGrid presets={summary.equipment_presets} active={summary.active_setting?.equipment}
+              {/* 처음엔 보스 세팅의 장비 프리셋(2026-10-17 사용자). 세팅 순위가 오면 다시 그린다 */}
+              <EquipmentGrid key={settings?.best?.setting.equipment ?? "worn"} presets={summary.equipment_presets}
+                             active={settings?.best?.setting.equipment ?? summary.active_setting?.equipment}
+                             boss={settings?.best?.setting.equipment} worn={summary.active_setting?.equipment}
                              image={summary.profile?.image} name={name} />
             </div>
           )}

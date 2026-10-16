@@ -119,7 +119,7 @@ function ItemList({ items }) {
   );
 }
 
-export default function EquipmentGrid({ presets, active, image, name }) {
+export default function EquipmentGrid({ presets, active, image, name, boss = null, worn = null }) {
   const keys = Object.keys(presets || {});
   const [preset, setPreset] = useState(keys.includes(String(active)) ? String(active) : keys[0]);
   // PC는 처음에 무기 툴팁을 열어 둔다(오른쪽 칸이 비지 않게). 휴대폰은 툴팁이 장비창 아래로 길게 붙어
@@ -155,7 +155,12 @@ export default function EquipmentGrid({ presets, active, image, name }) {
           <div className="seg" role="group" aria-label="장비 프리셋">
             {keys.map((k) => (
               <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
-                      onClick={() => { setPreset(k); setOpenSlot(first); }}>프리셋 {k}</button>
+                      onClick={() => { setPreset(k); setOpenSlot(first); }}>
+                프리셋 {k}
+                {/* 어느 프리셋이 보스 세팅·지금 착용인지(2026-10-17: 기본이 보스 세팅이 됐다) */}
+                {String(boss) === k && <span className="preset-tag" aria-hidden="true">보스</span>}
+                {String(worn) === k && String(boss) !== k && <span className="preset-tag worn" aria-hidden="true">착용</span>}
+              </button>
             ))}
           </div>
           <div className="seg" role="group" aria-label="장비 보기">
