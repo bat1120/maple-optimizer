@@ -19,6 +19,7 @@ import re
 import statistics
 from dataclasses import dataclass, field
 
+from engine.enhance.fixed import fixed_reason  # noqa: F401 — 재설정 불가 템(PC방 도미네이터 등)
 from engine.market.cube_value import expected_cost
 from engine.options import StatLine, parse_option
 from engine.stats.evaluate import Evaluator
@@ -252,7 +253,8 @@ class _Planner:
                 target = kept + chosen
                 reach = self.reach(slot, kind, tables, kept, chosen, single)
                 cur = it.potential_grade if kind == "잠재" else it.additional_grade
-                cost = expected_cost(kind, it.level, cur, grade, reach, miracle=self.miracle)
+                # 잠재 재설정이 안 되는 템(PC방 도미네이터 등)은 큐브 비용이 없다 — 큐브 경로에서 빠진다(2026-10-17)
+                cost = None if fixed_reason(it) else expected_cost(kind, it.level, cur, grade, reach, miracle=self.miracle)
                 delta = self.delta(slot, kind, target)
                 out.append({"grade": grade, "lines_good": len(chosen), "target": target, "probability": prob,
                             "reach_probability": reach, "delta_pct": delta, "cube_cost": cost,

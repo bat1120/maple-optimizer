@@ -91,6 +91,15 @@ def meso_text(v: float | None) -> str | None:
 _NO_TOTAL = "총 옵션이 없어 평가하지 않았어요 — 툴팁 윗부분이 보이게 띄워 주세요"
 
 
+def _resale(snap: CharacterSnapshot, setting: Setting, slot: str, resale: float) -> tuple[float, str | None]:
+    """지금 그 부위 템을 팔 수 없으면(PC방 템, 2026-10-17) 판매 대금 0과 안내 문구."""
+    from engine.enhance.fixed import cannot_sell
+    from engine.stats.residual import preset_items
+    cur = preset_items(snap, setting.equipment).get(slot)
+    why = cannot_sell(cur) if cur is not None else None
+    return (0, why) if why and resale else (resale, why)
+
+
 def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, inputs: list,
              fee_rate: float = DEFAULT_FEE_RATE) -> dict:
     if not 0 <= fee_rate <= 0.1:
@@ -99,8 +108,16 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
     chosen = setting or rank_settings(snap, b, CATALOG)[0][0]
     # 총 옵션 없이 평가하면 기본 스탯 0인 템처럼 계산돼 큰 음수가 나온다(2026-10-04 실사용 -19.5%) → 보류
     held = [{"name": x.name, "price_text": meso_text(x.price), "reason": _NO_TOTAL} for x in inputs if not x.total]
-    built = [Listing(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
-                     x.price, x.resale, fee_rate) for x in inputs if x.total]
+    notes = {}
+    built = []
+    for x in inputs:
+        if not x.total:
+            continue
+        resale, why = _resale(snap, chosen, x.slot, x.resale)
+        if why:
+            notes[x.slot] = why
+        built.append(Listing(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
+                             x.price, resale, fee_rate))
     ranked = rank_listings(snap, chosen, built, b, CATALOG) if built else []
     return {"setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b), "held": held, "fee_rate": fee_rate,
             "fee_note": "판매 수수료는 사는 가격엔 붙지 않고, 지금 템 판매 대금(resale)에서만 빠져요.",
@@ -112,7 +129,8 @@ def listings(snap: CharacterSnapshot, setting: Setting | None, defense: float, i
                          "net_cost_text": meso_text(e.listing.price - net_resale(e.listing.resale, fee_rate)),
                          "delta_pct": e.delta_pct, "per_100m": e.per_100m,
                          "main_stat_gain": e.main_stat_gain, "main_stat_gain_per_100m": e.main_stat_gain_per_100m,
-                         "excluded": e.listing.item.excluded} for e in ranked]}
+                         "excluded": e.listing.item.excluded,
+                         **({"resale_note": notes[e.listing.slot]} if e.listing.slot in notes else {})} for e in ranked]}
 
 
 def _conditions(c):
@@ -168,7 +186,7 @@ def optimize(snap: CharacterSnapshot, setting: Setting | None, defense: float, b
     b = boss(defense)
     chosen = setting or rank_settings(snap, b, CATALOG)[0][0]
     actions = [Action(x.slot, item_from_input(x.slot, x.part, x.name, x.total, x.potentials, snap.level, x.starforce),
-                      x.price - net_resale(x.resale, fee_rate), x.name) for x in candidates]
+                      x.price - net_resale(_resale(snap, chosen, x.slot, x.resale)[0], fee_rate), x.name) for x in candidates]
     plan = greedy(Evaluator(snap, chosen, b, CATALOG), actions, budget)
     return {"setting": asdict(chosen), "budget": budget, "spent": plan.spent, "gain_pct": plan.gain_pct,
             "actions": [{"slot": a.slot, "name": a.item.name, "cost": a.cost} for a in plan.actions]}
