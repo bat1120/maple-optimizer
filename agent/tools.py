@@ -39,7 +39,7 @@ TOOL_DEFS = [
     {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
                       "required": ["name"]}},
-    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위·잠재/에디마다 지금보다 한 단계 위(grade·lines_good)로 바꾸면 보스 실딜이 몇 % 오르는지 계산해 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
+    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 카드 하나 — 잠재·에디를 각각 지금보다 한 단계 위로 바꾼 조건을 한 번에 검색하도록 묶고(parts), 둘을 함께 바꾸면 보스 실딜이 몇 % 오르는지(delta_pct, 종류별은 parts[].delta_pct) 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
@@ -84,6 +84,18 @@ TOOL_DEFS = [
                                                          "candidates": {"type": "array", "items": _LISTING}, "fee_rate": _FEE},
                       "required": ["name", "budget", "candidates"]}},
 ]
+TOOL_DEFS.append(
+    {"name": "request_auction_screen",
+     "description": "사용자에게 게임 경매장 검색 화면을 채팅 안에서 공유해 달라고 요청한다(2026-10-12). 검색 조건(부위·잠재·에디·최소 스타포스)을 "
+                    "넣으면 화면에 [화면 연결] 카드가 뜨고, 사용자가 매물을 읽어 보내면 '[경매장 화면에서 읽은 매물]'이 붙은 다음 질문으로 온다. "
+                    "조건은 recommend_searches 카드나 사용자가 말한 조건을 글자 그대로 옮긴다.",
+     "input_schema": {"type": "object", "properties": {
+         "category": {"type": "string", "description": "부위(예: 보조무기, 반지)"},
+         "potentials": {"type": "array", "items": {"type": "string"}, "description": "잠재 줄(없으면 빈 목록)"},
+         "additional": {"type": "array", "items": {"type": "string"}, "description": "에디 줄(없으면 빈 목록)"},
+         "min_starforce": {"type": "integer"},
+         "note": {"type": "string", "description": "사용자에게 보일 한 줄 안내"}},
+         "required": ["category"]}})
 
 
 def openai_tools() -> list[dict]:
@@ -108,6 +120,14 @@ class ToolBox:
             return {"error": f"알 수 없는 도구: {name}"}
         except Exception as e:  # noqa: BLE001 — 도구 오류는 모델에게 그대로 보여 준다
             return {"error": f"{type(e).__name__}: {e}"}
+
+    @staticmethod
+    def _request_auction_screen(category, potentials=None, additional=None, min_starforce=0, note=None):
+        """화면이 이 결과(search)로 채팅 안 [화면 연결] 카드를 띄운다. 계산은 하지 않는다 — 매물은 다음 질문으로 온다."""
+        return {"status": "requested", "note": note,
+                "search": {"category": category, "potentials": list(potentials or []), "additional": list(additional or []),
+                           "min_starforce": int(min_starforce or 0)},
+                "next": "사용자가 화면을 연결해 매물을 보내면 evaluate_listings로 평가한다. 지금은 검색 조건만 안내하고 기다린다."}
 
     @staticmethod
     def _setting(s):

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { getCharacter, getSettings, postListings } from "../api.js";
+import { bossBody, getCharacter, getSettings, postListings } from "../api.js";
 import { formatMeso, formatPct, formatRelative, formatStat, parsePotentials, parsePrice, settingLabel } from "../format.js";
 import { loadListings, saveListings } from "../storage.js";
 import { CraftPanel, CubePanel, OptimizePanel, StarforcePanel } from "../Panels.jsx";
@@ -166,7 +166,7 @@ export default function Admin() {
   const evaluate = async () => {
     setError(null);
     try {
-      setResult(await postListings(name.trim(), { boss_defense: defense, fee_rate: feeRate, listings }));
+      setResult(await postListings(name.trim(), { ...bossBody(defense), fee_rate: feeRate, listings }));
     } catch (err) {
       setError(err);
     }
@@ -228,7 +228,7 @@ export default function Admin() {
       <RecommendPanel name={summary ? name.trim() : ""} defense={defense} />
       <RoadmapPanel name={summary ? name.trim() : ""} defense={defense} />
       <PathsPanel name={summary ? name.trim() : ""} defense={defense} />
-      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} />
+      <AgentPanel name={summary ? name.trim() : ""} screenItems={screenItems} feeRate={feeRate} watchProps={{ defense }} />
       <ScreenWatch name={summary ? name.trim() : ""} defense={defense} onItems={setScreenItems} onFeeRate={onFeeRate} />
     </div>
   );

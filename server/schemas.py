@@ -24,6 +24,9 @@ class ListingIn(BaseModel):
 class ListingsIn(BaseModel):
     setting: SettingIn | None = None
     boss_defense: float = 300.0
+    boss: str | None = None  # 보스 목록 id(engine/data/bosses.json) — 있으면 boss_defense 대신 그 보스 방어율·요구 포스
+    arcane_force: int | None = None
+    authentic_force: int | None = None
     fee_rate: float = Field(0.05, ge=0, le=0.1)  # 경매장 판매 수수료(5%, MVP 실버↑·PC방 3%)
     listings: list[ListingIn]
 
@@ -74,6 +77,9 @@ class CraftIn(BaseModel):
 class OptimizeIn(BaseModel):
     setting: SettingIn | None = None
     boss_defense: float = 300.0
+    boss: str | None = None  # 보스 목록 id(engine/data/bosses.json) — 있으면 boss_defense 대신 그 보스 방어율·요구 포스
+    arcane_force: int | None = None
+    authentic_force: int | None = None
     budget: float = Field(ge=0)
     fee_rate: float = Field(0.05, ge=0, le=0.1)
     candidates: list[ListingIn]

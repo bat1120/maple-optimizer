@@ -178,18 +178,6 @@ describe("character page", () => {
     expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();
   });
 
-  // 2026-10-11 심사 3회차: 보스 방어율은 프로필이 아니라 탭 안내 줄 오른쪽(계산기 탭엔 없음)
-  it("보스 방어율 입력은 탭 안내 줄에 있고, 계산기 탭에서는 숨는다", async () => {
-    mockApi();
-    const { rerender } = render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
-    await screen.findByRole("heading", { name: "내신부레테" });
-    const input = screen.getByRole("spinbutton", { name: /보스 방어율/ });
-    expect(input.closest(".tab-intro")).not.toBeNull();
-    expect(input).toHaveValue(300);
-    await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
-    expect(screen.queryByRole("spinbutton", { name: /보스 방어율/ })).toBeNull();
-  });
-
   it("장비가 없으면 빈 상태 안내", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => (String(url).includes("/settings") ? ok(SETTINGS) : ok({ ...SUMMARY, equipment_presets: {} })));
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
@@ -207,5 +195,28 @@ describe("character page", () => {
       expect(d).not.toHaveAttribute("open");
     }
     expect(screen.getByRole("heading", { name: "가격 대비 업그레이드 순위" }).closest("details")).toBeNull();
+  });
+});
+
+describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-12)", () => {
+  const withSession = (admin) => vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+    if (String(url).includes("/api/admin/session")) return ok({ admin });
+    if (String(url).includes("/settings")) return ok(SETTINGS);
+    return ok(SUMMARY);
+  });
+  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문", async () => {
+    withSession(true);
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    const ai = await screen.findByRole("heading", { name: "AI 상담" });
+    const tabs = screen.getByRole("tablist", { name: "캐릭터 화면 탭" });
+    expect(ai.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
+    expect(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" })).toBeInTheDocument();
+  });
+  it("관리자가 아니면 AI 상담이 없다", async () => {
+    withSession(false);
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    expect(screen.queryByRole("heading", { name: "AI 상담" })).toBeNull();
   });
 });

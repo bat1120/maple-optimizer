@@ -199,7 +199,9 @@ def test_recommend_route_returns_search_cards_on_boss_setting(tmp_path, clock):
     r = make(tmp_path, clock).get("/api/character/내신부레테/recommend?boss_defense=300&top=3").json()
     assert r["evaluation_setting"]["equipment"] == 2 and len(r["recommendations"]) == 3
     first = r["recommendations"][0]
-    assert first["search"].startswith(f"{first['category']} · 잠재 ") and first["delta_pct"] > 0
+    assert first["search"].startswith(f"{first['category']} · ") and first["delta_pct"] > 0
+    both = [c for c in r["recommendations"] if len(c["parts"]) == 2]  # 윗잠·에디를 한 카드로(2026-10-11)
+    assert all(" · 잠재 " in c["search"] and " · 에디 " in c["search"] for c in both)
     ring = make(tmp_path, clock).get("/api/character/내신부레테/recommend?top=20").json()["recommendations"]
     assert all(c["category"] == "반지" for c in ring if c["slot"].startswith("반지"))
 

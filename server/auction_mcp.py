@@ -172,8 +172,9 @@ def _plan(snap: CharacterSnapshot, rm: dict, slots: list[str]) -> list[tuple[str
 
 
 def refresh_market(snap: CharacterSnapshot, command, store, slots: list[str] | None = None, max_searches: int = 15,
-                   defense: float = 300.0, pause: float = 0.3) -> dict:
-    catalog, b = SetCatalog.load(), BossProfile("기준", defense)
+                   defense: "float | BossProfile" = 300.0, pause: float = 0.3) -> dict:
+    catalog = SetCatalog.load()
+    b = defense if isinstance(defense, BossProfile) else BossProfile("기준", defense)
     setting = rank_settings(snap, b, catalog)[0][0]
     rm = roadmap(snap, setting, b, catalog)
     if not slots:  # 가격 대비 순위 상위 부위부터

@@ -11,6 +11,7 @@
 - 제네시스·데스티니 무기, 아스트라 보조무기, 미트라 엠블렘, 엔버·카이저·제논의 보조무기는 경매장에서 살 수 없어 검색 추천에서 빼고, 로드맵에 '큐브' 경로로만 보여 준다.
 """
 import copy
+import dataclasses
 import functools
 import json
 import pathlib
@@ -82,9 +83,9 @@ def _rebuild(it: Item, potentials: list[str], after: list[str], additional: list
             continue
         for line in parsed:
             stats.add(line)
-    return Item(slot=it.slot, part=it.part, name=it.name, starforce=it.starforce, stats=stats, excluded=excluded,
-                potentials=list(potentials), core=it.core, after=list(after), additional=list(additional),
-                level=it.level, potential_grade=it.potential_grade, additional_grade=it.additional_grade)
+    # 줄만 바꾸고 스타포스·주문서·추옵 등 나머지는 그대로(2026-10-11: Item을 새로 만들어 sf_option이 사라져 로드맵 스타포스가 끊겼다)
+    return dataclasses.replace(it, stats=stats, excluded=excluded, potentials=list(potentials), after=list(after),
+                               additional=list(additional))
 
 
 def _check(it: Item) -> None:
@@ -206,6 +207,17 @@ class _Planner:
         trial[slot] = _valued(SWAP[kind](self.raw[slot], lines, self.snap.level), self.mains, self.per_sec)
         return (self.ev.index(trial) / self.base - 1) * 100
 
+    def delta_both(self, slot: str, potentials: list[str] | None, additional: list[str] | None) -> float:
+        """윗잠·에디를 함께 바꾼 실딜(%). None인 쪽은 그대로 둔다."""
+        it = self.raw[slot]
+        if potentials is not None:
+            it = SWAP["잠재"](it, potentials, self.snap.level)
+        if additional is not None:
+            it = SWAP["에디"](it, additional, self.snap.level)
+        trial = dict(self.items)
+        trial[slot] = _valued(it, self.mains, self.per_sec)
+        return (self.ev.index(trial) / self.base - 1) * 100
+
     def is_useful(self, option: str) -> bool:
         parsed = parse_option(option, self.snap.level)
         return bool(parsed) and any(line.key in self.useful for line in parsed)
@@ -229,7 +241,10 @@ class _Planner:
                     for o in cands:
                         if o not in single:
                             single[o] = self.delta(slot, kind, kept + [o])
-                    best = max(cands, key=lambda o: single[o])
+                    # 앞서 고른 줄을 넣은 상태에서 더 오르는 줄(2026-10-11) — 단독 1등(방무)을 세 줄 다 고르면
+                    # 곱연산이라 덜 올라 지금 템보다 못해졌다(레테 보조무기 잠재 추천이 사라짐)
+                    marg = {o: self.delta(slot, kind, kept + chosen + [o]) for o in cands} if chosen else single
+                    best = max(cands, key=lambda o: marg[o])
                     chosen.append(best)
                     prob *= tables[pos][best] / 100
                 if not chosen:
@@ -392,4 +407,35 @@ def recommend_searches(snap: CharacterSnapshot, setting: Setting, boss: BossProf
                                       t["probability"], row["starforce"], row["name"], row["current"][kind], kept,
                                       row["route"]))
     out.sort(key=lambda r: r.delta_pct, reverse=True)
+    return out[:top]
+
+
+def combined_searches(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
+                      top: int = 5, cooldown_main_pct: float | None = None,
+                      include_cube_route: bool = False) -> list[dict]:
+    """경매장 검색 카드를 부위당 하나로(2026-10-11 사용자: 경매장은 윗잠·에디를 한 번에 검색한다).
+    잠재·에디마다 recommend_searches와 같은 '다음 한 단계'를 고르고, 카드 실딜은 둘을 함께 바꾼 값.
+    parts에 종류별 단계와 그것만 바꿨을 때의 실딜을 남긴다(한쪽만 맞는 매물도 비교할 수 있게)."""
+    pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
+    rm = roadmap(snap, setting, boss, catalog, cooldown_main_pct, planner=pl)
+    out = []
+    for slot, row in rm.items():
+        if row["route"] != "경매장" and not include_cube_route:
+            continue
+        parts = []
+        for kind in KINDS:
+            i = row["next"][kind]
+            if i is None:
+                continue
+            t = row[kind][i]
+            parts.append({"kind": kind, "grade": t["grade"], "lines_good": t["lines_good"], "target": t["target"],
+                          "delta_pct": t["delta_pct"], "probability": t["probability"],
+                          "kept": [x for x in t["target"] if _COOLDOWN.match(x.strip())], "current": row["current"][kind]})
+        if not parts:
+            continue
+        by = {p["kind"]: p["target"] for p in parts}
+        delta = parts[0]["delta_pct"] if len(parts) == 1 else pl.delta_both(slot, by.get("잠재"), by.get("에디"))
+        out.append({"slot": slot, "delta_pct": delta, "parts": parts, "min_starforce": row["starforce"],
+                    "current_name": row["name"], "route": row["route"]})
+    out.sort(key=lambda c: c["delta_pct"], reverse=True)
     return out[:top]

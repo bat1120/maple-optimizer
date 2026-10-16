@@ -82,6 +82,12 @@ def sources_for(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
            + union_state)
     nopct = (snap.hyper_presets.get(setting.hyper, StatBlock()) + snap.ability_presets.get(setting.ability, StatBlock())
              + snap.symbols + snap.union)
+    # 지금 HEXA 스탯(2026-10-11): 주력 스탯은 %미적용이라 빼먹으면 주스탯 잔차%로 흡수돼 고정 주스탯 가치가 ~10% 부풀었다
+    if snap.hexa_stat:
+        from engine.stats import hexa
+        job = job_profile(snap.character_class)
+        hb = hexa.stat_block([ln for c in snap.hexa_stat for ln in c["lines"]], job.mains[0], xenon=job.name == "제논")
+        pct, nopct = pct + hb["pct"], nopct + hb["nopct"]
     return Sources(pct, nopct, excluded)
 
 

@@ -391,19 +391,11 @@ describe("screen watch scouter copy", () => {
 });
 
 
-describe("screen watch test item (임시: 경매장 없이 환산 채우기 시험)", () => {
-  it("[테스트 템 복사] — 내 캐릭터 이름·직업·레벨이 붙은 견본을 복사하고, 그 캐릭터 MapleScouter 화면 링크를 띄운다", async () => {
-    const writeText = vi.fn().mockResolvedValue();
-    Object.assign(navigator, { clipboard: { writeText } });
-    render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} admin={false} />);
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "테스트 템 복사" })); });
-    const line = writeText.mock.calls[0][0].split("\n").find((l) => l.startsWith("MAPLEOPT1 "));
-    const p = JSON.parse(line.slice(10));
-    expect(p).toMatchObject({ name: "내신부레테", job: "레테", level: 288, fields: { "보스 데미지": 10, "크리 데미지": 5 } });
-    expect(screen.getByRole("link", { name: /MapleScouter 열기/ }))
-      .toHaveAttribute("href", "https://maplescouter.com/ko/info?name=%EB%82%B4%EC%8B%A0%EB%B6%80%EB%A0%88%ED%85%8C");
-  });
-});
+// 업그레이드 탭의 임시 '테스트 템' 줄은 2026-10-11에 뺐다(사용자: 남은 일 다 진행) — 확장 테스트는 실제 매물 줄로 본다
+const EXT_ROW = { signature: "e1", evaluated: true, slot: "장갑", delta_pct: 0.5, per_100m: 0.05, main_stat_gain: 0, excluded: [],
+                  read: { name: "에테르넬 메이지글러브", total: {}, potentials: [], price: 1e10 },
+                  scouter: { v: 1, slot: "장갑", from: "도전자의 장갑", to: "에테르넬 메이지글러브", name: "내신부레테", job: "레테", level: 288,
+                             rows: { main: [], sub: [], attack: "마력" }, fields: { "보스 데미지": 10 }, ied_add: [], ied_remove: [] } };
 
 describe("screen watch with extension (확장 설치됨)", () => {
   afterEach(() => { document.documentElement.removeAttribute("data-mapleopt-ext"); });
@@ -413,15 +405,17 @@ describe("screen watch with extension (확장 설치됨)", () => {
     const orig = window.postMessage.bind(window);
     window.postMessage = (data) => { posted.push(data); if (data.type === "MAPLEOPT_FILL") setTimeout(() => window.dispatchEvent(new MessageEvent("message", { source: window, data: { type: "MAPLEOPT_FILL_ACK", ok: true } })), 0); };
     try {
-      render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} admin={false} />);
+      render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} initialItems={[EXT_ROW]} admin={false} />);
       await act(async () => { fireEvent.click(screen.getByRole("button", { name: "MapleScouter에 넣기" })); await new Promise((r) => setTimeout(r, 10)); });
       expect(posted[0]).toMatchObject({ type: "MAPLEOPT_FILL", payload: { name: "내신부레테", fields: { "보스 데미지": 10 } } });
       expect(screen.getByText(/MapleScouter 탭을 열었어요/)).toBeInTheDocument();
     } finally { window.postMessage = orig; }
   });
   it("확장이 없으면 그 버튼은 없다(복사·북마크 방식만)", () => {
-    render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} admin={false} />);
+    render(<ScreenWatch name="내신부레테" job="레테" level={288} defense={300} capture={null} initialItems={[EXT_ROW]} admin={false} />);
     expect(screen.queryByRole("button", { name: "MapleScouter에 넣기" })).toBeNull();
-    expect(screen.getByRole("button", { name: "테스트 템 복사" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "환산용 복사" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "테스트 템 복사" })).toBeNull();
+    expect(screen.queryByText("테스트 템")).toBeNull();
   });
 });

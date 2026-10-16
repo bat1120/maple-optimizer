@@ -38,6 +38,9 @@ class Item:
     amazing: bool = False
     # 화면 툴팁용(2026-10-11 디자인 심사): 게임 툴팁처럼 스탯 줄마다 합계와 출처(기본·추옵·주문서·강화·익셉셔널). 계산에는 안 쓴다
     tip_stats: list[dict] = field(default_factory=list)
+    # 추옵 재설정 경로용(2026-10-11): 지금 추옵(item_add_option, (키, %여부) → 값)과 순수 공격력·마력(item_base_option)
+    add_option: dict = field(default_factory=dict)
+    base_attack: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -66,6 +69,13 @@ class CharacterSnapshot:
     hexa_cores: list = field(default_factory=list)  # HEXA 코어 레벨: [{"name", "level", "type", "skills"}]
     hexa_skills: dict = field(default_factory=dict)  # 6차 스킬 이름 → {level, effect, next, description}
     own_shares: dict = field(default_factory=dict)   # 본인 최신 연무장 기록의 스킬별 딜 지분(%) — 없으면 비어 있다
+    # 심볼 목록(2026-10-11, character/symbol-equipment): [{"name", "kind", "region", "level", "force", "growth",
+    #   "require_growth", "other_effect", "stats"}] — growth는 지금 레벨에서 쌓인 성장치(필요치를 넘을 수 있다)
+    symbol_items: list = field(default_factory=list)
+    # 포스(2026-10-11): character/stat의 '아케인포스'·'어센틱포스'(없으면 None)와 하이퍼 프리셋별 아케인포스(stat_increase)
+    arcane_force: int | None = None
+    authentic_force: int | None = None
+    hyper_force: dict = field(default_factory=dict)
 
     @property
     def active_setting(self) -> Setting:

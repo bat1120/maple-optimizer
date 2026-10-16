@@ -100,10 +100,11 @@ def expected_totals(level: int, start: int, target: int, cond: StarforceConditio
     흔적 복구(full)로 파괴 직전 성에 돌아간다고 본다."""
     def restored(st):
         return destroy_return(st, cond)
+    # 파괴 확률 0인 성(14성 이하)은 복구 표를 찾지 않는다 — 표는 15성부터(2026-10-11 KeyError 수정)
     meso = _solve(level, start, target, cond, lambda st, d: attempt_cost(level, st, cond)
-                  + d * restore_meso(level, restored(st), cond))
+                  + (d * restore_meso(level, restored(st), cond) if d else 0.0))
     destroys = _solve(level, start, target, cond, lambda st, d: d)
-    spares = _solve(level, start, target, cond, lambda st, d: d * restore_spares(restored(st)))
+    spares = _solve(level, start, target, cond, lambda st, d: d * restore_spares(restored(st)) if d else 0.0)
     return {"meso": meso, "destroys": destroys, "spares": spares, "cost": meso + spares * spare_price}
 
 

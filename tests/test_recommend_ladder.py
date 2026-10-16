@@ -118,7 +118,8 @@ def test_roadmap_route_and_tool():
     assert weapon["route"] == "큐브" and r["evaluation_setting"]["equipment"] == 2
     cards = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("recommend_searches", {"name": "x", "top": 40})
     assert all(c["slot"] != "무기" for c in cards["recommendations"])
-    assert {c["kind"] for c in cards["recommendations"]} == {"잠재", "에디"}
+    assert {p["kind"] for c in cards["recommendations"] for p in c["parts"]} == {"잠재", "에디"}
+    assert len({c["slot"] for c in cards["recommendations"]}) == len(cards["recommendations"])  # 부위당 카드 하나
 
 
 def test_astra_secondary_is_cube_route_not_auction():
@@ -161,3 +162,28 @@ def test_mitra_emblem_is_untradeable():
     assert roadmap(snap, setting, BOSS, CAT)["엠블렘"]["route"] == "큐브"
     recs = {(r.slot, r.kind) for r in recommend_searches(snap, setting, BOSS, CAT, top=60)}
     assert ("엠블렘", "잠재") not in recs and ("엠블렘", "에디") not in recs
+
+
+def test_combined_card_per_slot_searches_potential_and_additional_together():
+    """경매장은 윗잠·에디를 한 번에 검색한다(2026-10-11 사용자) — 부위당 카드 하나, 실딜은 둘 다 바꾼 값."""
+    from engine.market.recommend import combined_searches
+    snap, setting = _setup()
+    per_kind = _recs()
+    cards = combined_searches(snap, setting, BOSS, CAT, top=60)
+    assert len({c["slot"] for c in cards}) == len(cards)  # 부위당 하나
+    both = next(c for c in cards if {p["kind"] for p in c["parts"]} == {"잠재", "에디"})
+    alone = [per_kind[(both["slot"], k)].delta_pct for k in ("잠재", "에디")]
+    assert both["delta_pct"] > max(alone)
+    assert {p["kind"]: p["delta_pct"] for p in both["parts"]} == pytest.approx(
+        {k: per_kind[(both["slot"], k)].delta_pct for k in ("잠재", "에디")})
+    assert [c["delta_pct"] for c in cards] == sorted((c["delta_pct"] for c in cards), reverse=True)
+
+
+def test_tier_lines_are_chosen_by_marginal_gain_not_alone():
+    """줄은 앞서 고른 줄을 넣은 상태에서 더 오르는 것으로 고른다(2026-10-11: 방무 단독 1등을 세 줄 다 골라 실딜이 음수,
+    레테 보조무기 잠재 추천이 사라졌다 — 방무는 곱연산이라 겹칠수록 덜 오른다)."""
+    snap, setting = _setup()
+    row = roadmap(snap, setting, BOSS, CAT)["보조무기"]
+    best = max(row["잠재"], key=lambda t: t["delta_pct"])
+    assert best["delta_pct"] > 0
+    assert row["next"]["잠재"] is not None

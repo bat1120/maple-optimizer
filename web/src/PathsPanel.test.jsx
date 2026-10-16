@@ -59,15 +59,15 @@ describe("paths panel", () => {
     render(<PathsPanel name="내신부레테" defense={300} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "샤이닝 스타포스 한 번에" })); });
-    for (const n of [/30% 할인/, /21성 이하 파괴 30% 감소/, /5·10·15성 100%/, /복구 메소 20% 할인/]) {
-      expect(screen.getByRole("checkbox", { name: n })).toBeChecked();
-    }
+    // 샤이닝 = 30% 할인 + 21성 이하 파괴 30% 감소(나무위키). 5·10·15성 100%·복구 메소 할인은 따로 고른다
+    for (const n of [/30% 할인/, /21성 이하 파괴 30% 감소/]) expect(screen.getByRole("checkbox", { name: n })).toBeChecked();
+    for (const n of [/5·10·15성 100%/, /복구 메소 20% 할인/]) expect(screen.getByRole("checkbox", { name: n })).not.toBeChecked();
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /미라클 타임/ })); });
     await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /파괴 방지/ })); });
     await act(async () => { fireEvent.change(screen.getByLabelText("스페어 1개 값(억)"), { target: { value: "12" } }); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
     const url = f.mock.calls.at(-1)[0];
-    expect(url).toContain("sf=discount30%2Cdestroy_down30%2Cguarantee_5_10_15%2Crestore_discount20%2Cprotect");
+    expect(url).toContain("sf=discount30%2Cdestroy_down30%2Cprotect");
     expect(url).toContain("miracle=true");
     expect(url).toContain("spare_price=1200000000");
   });
@@ -89,6 +89,25 @@ describe("paths panel", () => {
     expect(row.textContent).not.toContain("HEXA 코어 · ");  // 부위 칸과 겹치지 않게
     expect(row).toHaveTextContent("조각 85개 · 솔 에르다 3개");
     expect(row).toHaveTextContent("직업 기준값");
+  });
+  it("심볼: 이름 L→L+1, 메소, 필요·남은 심볼 개수와 일일 퀘스트 날짜를 보여 주고, 다 찼으면 메소만", async () => {
+    const a = { slot: "심볼", path: "심볼", name: "어센틱심볼 : 세르니움", kind: "어센틱심볼", from_level: 9, to_level: 10,
+                delta_pct: 0.3, cost: 7.09e8, cost_text: "7억 900만", per_100m: 0.042, need_symbols: 909, growth: 646,
+                remaining_symbols: 263, daily: 30, days: 9, max_effect: null, set_change: [] };
+    const b = { ...a, name: "어센틱심볼 : 아르테리아", from_level: 7, to_level: 8, need_symbols: 581, growth: 583,
+                remaining_symbols: 0, daily: 15, days: 0 };
+    const c = { ...a, to_level: 11, need_symbols: 2009, remaining_symbols: 1363, days: 46,
+                max_effect: "성장 레벨 11 이상: 선택받은 세렌 공격 시 데미지 +20%, 추가 경험치 획득 +10%" };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [a, b, c] }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    const rows = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("어센틱심볼 : 세르니움 9→10레벨");
+    expect(rows[1]).toHaveTextContent("7억 900만");
+    expect(rows[1]).toHaveTextContent("필요 심볼 909개 · 남은 263개(일일 퀘스트 약 9일)");
+    expect(rows[2]).toHaveTextContent("성장치가 다 찼어요 — 메소만");
+    expect(rows[3]).toHaveTextContent("선택받은 세렌 공격 시 데미지 +20%");
+    expect(rows[3]).toHaveTextContent("실딜 미반영");
   });
   it("썬데이 이벤트를 하나씩: 30% 할인만 켜면 그것만 보낸다", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, events: { label: "스타포스 30% 할인" } }));
@@ -121,5 +140,23 @@ describe("paths panel", () => {
     expect(within(table).queryByRole("columnheader", { name: "세트 변화" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "나머지 2개 보기" }));
     expect(within(table).getAllByRole("row")).toHaveLength(1 + 7);
+  });
+
+  it("추옵: 불꽃 값(만 메소)을 넣으면 flame_prices로 보내고, 추옵 행에 불꽃·평균 횟수·주스탯 환산 목표를 보여 준다", async () => {
+    const fl = { slot: "무기", path: "추옵", name: "제네시스 카르타", flame: "추가옵션 재설정", price_each: 3e6,
+                 expected_tries: 1154.65, reach_probability: 0.000866, target_score: 8.93, mean_score: 9.42, current_score: 8.93,
+                 target_main: 829.4, current_main: 829.3, delta_pct: 0.49, cost: 3.46e9, cost_text: "34억 6396만", per_100m: 0.014,
+                 kind: null, set_change: [] };
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...PATHS, all: [fl], events: { label: "이벤트 없음" } }));
+    render(<PathsPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "업그레이드 경로 비교" })); });
+    await act(async () => { fireEvent.change(screen.getByLabelText("심연의 환생의 불꽃 1개 값(만 메소)"), { target: { value: "5000" } }); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "이 조건으로 계산" })); });
+    const url = decodeURIComponent(f.mock.calls.at(-1)[0]);
+    expect(url).toContain("flame_prices=심연:50000000");
+    const row = within(screen.getByRole("table", { name: "업그레이드 경로" })).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("추옵 · 제네시스 카르타 · 추가옵션 재설정");
+    expect(row).toHaveTextContent("평균 1,155회");
+    expect(row).toHaveTextContent("주스탯 환산 829 → 830 이상");
   });
 });

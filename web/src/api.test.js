@@ -28,3 +28,19 @@ describe("api", () => {
     expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ listings: [] });
   });
 });
+
+describe("streamAgent(2026-10-12: 끊겨도 아무 말 없이 멈추던 것)", () => {
+  const streamOf = (text) => ({ ok: true, status: 200, body: new Response(text).body });
+  it("ping 주석은 건너뛰고, done까지 오면 정상으로 끝난다", async () => {
+    const { streamAgent } = await import("./api.js");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(streamOf(': ping\n\ndata: {"type":"text","text":"답"}\n\ndata: {"type":"done","unverified_numbers":[]}\n\n'));
+    const evs = [];
+    await streamAgent([], (e) => evs.push(e.type));
+    expect(evs).toEqual(["text", "done"]);
+  });
+  it("done 없이 연결이 끝나면 끊겼다고 알린다", async () => {
+    const { streamAgent } = await import("./api.js");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(streamOf('data: {"type":"tool_call","name":"recommend_searches","input":{}}\n\n'));
+    await expect(streamAgent([], () => {})).rejects.toThrow(/연결이 끊겼/);
+  });
+});

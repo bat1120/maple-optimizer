@@ -126,6 +126,10 @@ def item(item_json: dict, level: int) -> Item:
         scroll_attack=_scroll_attack(item_json),
         amazing=item_json.get("starforce_scroll_flag") == "사용",
         tip_stats=_tip_stats(item_json),
+        add_option=_add_option(item_json.get("item_add_option") or {}),
+        base_attack={k: num((item_json.get("item_base_option") or {}).get(src))
+                     for src, k in (("attack_power", "ATK"), ("magic_power", "MATK"))
+                     if num((item_json.get("item_base_option") or {}).get(src))},
     )
 
 
@@ -146,6 +150,17 @@ def _tip_stats(item_json: dict) -> list[dict]:
         total = num((item_json.get("item_total_option") or {}).get(src)) + parts["exc"]
         if total:
             out.append({"label": label, "pct": pct, "total": total, **{k: v for k, v in parts.items() if v}})
+    return out
+
+
+def _add_option(opt: dict) -> dict:
+    """item_add_option → {(키, %여부): 값}. 실딜과 무관한 방어력·이동속도·점프력·MP·착감은 뺀다."""
+    out = {(k, False): num(opt.get(src)) for src, k in _OPTION_FLAT.items() if num(opt.get(src))}
+    for src, k in (("boss_damage", "BOSS"), ("damage", "DMG")):
+        if num(opt.get(src)):
+            out[(k, True)] = num(opt[src])
+    if num(opt.get("all_stat")):
+        out.update({(k, True): num(opt["all_stat"]) for k in _FOUR})
     return out
 
 
@@ -194,14 +209,47 @@ def _union_texts(text: str) -> list[str]:
     return [t]
 
 
+_SYMBOL_KEYS = (("symbol_str", "STR"), ("symbol_dex", "DEX"), ("symbol_int", "INT"),
+                ("symbol_luk", "LUK"), ("symbol_hp", "HP"))
+
+
 def _symbol_block(symbol_json: dict | None) -> StatBlock:
     b = StatBlock()
     for s in (symbol_json or {}).get("symbol") or []:
-        for k, key in (("symbol_str", "STR"), ("symbol_dex", "DEX"), ("symbol_int", "INT"),
-                       ("symbol_luk", "LUK"), ("symbol_hp", "HP")):
+        for k, key in _SYMBOL_KEYS:
             if num(s.get(k)):
                 b.add(StatLine(key, num(s[k]), False))
     return b
+
+
+def _force(stat_json: dict, name: str) -> int | None:
+    """character/stat의 '아케인포스'·'어센틱포스' — 심볼·하이퍼·길드 등 출처를 다 더한 값(없으면 None)."""
+    v = next((x["stat_value"] for x in stat_json.get("final_stat") or [] if x["stat_name"] == name), None)
+    return None if v in (None, "") else int(num(v))
+
+
+def _hyper_force(hy: dict) -> dict[int, int]:
+    """하이퍼 프리셋별 아케인포스: stat_increase '아케인포스 35 증가'의 숫자(레벨 0이면 0)."""
+    out = {}
+    for n in (1, 2, 3):
+        rows = [s for s in hy.get(f"hyper_stat_preset_{n}") or [] if s.get("stat_type") == "아케인포스"]
+        m = [re.search(r"(\d+)", s.get("stat_increase") or "") for s in rows]
+        out[n] = sum(int(x.group(1)) for x in m if x)
+    return out
+
+
+def _symbol_items(symbol_json: dict | None) -> list:
+    """심볼 경로용 목록(2026-10-11): 이름·종류·지역·레벨·성장치는 넥슨 필드 그대로."""
+    out = []
+    for s in (symbol_json or {}).get("symbol") or []:
+        kind, _, region = (s.get("symbol_name") or "").partition(":")
+        out.append({"name": s.get("symbol_name"), "kind": kind.strip(), "region": region.strip(),
+                    "level": int(num(s.get("symbol_level"))), "force": int(num(s.get("symbol_force"))),
+                    "growth": int(num(s.get("symbol_growth_count"))),
+                    "require_growth": int(num(s.get("symbol_require_growth_count"))),
+                    "other_effect": s.get("symbol_other_effect_description"),
+                    "stats": {key: num(s[k]) for k, key in _SYMBOL_KEYS if num(s.get(k))}})
+    return out
 
 
 # 조건부 효과를 나타내는 표현. 이런 줄은 스탯창 상시 수치가 아니다 (예: "중첩 당 데미지 3%, 방어율 무시 3% 증가").
@@ -316,6 +364,10 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         excluded=excluded,
         titles=titles,
         symbols=_symbol_block(bundle.get("character/symbol-equipment")),
+        symbol_items=_symbol_items(bundle.get("character/symbol-equipment")),
+        arcane_force=_force(bundle["character/stat"], "아케인포스"),
+        authentic_force=_force(bundle["character/stat"], "어센틱포스"),
+        hyper_force=_hyper_force(hy),
         union=union,
         union_states=union_states,
         active_union_preset=active_union if union_states else 0,

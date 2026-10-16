@@ -32,9 +32,9 @@ def test_expected_cost_same_grade_is_geometric():
 
 def test_expected_cost_with_grade_up_adds_tier_up_tries():
     up = tier_up_tries(0.014, 107).mean * 34_000_000
-    assert expected_cost("잠재", 150, "유니크", "레전드리", 0.02) == pytest.approx(up + 40_000_000 / 0.02)
+    assert expected_cost("잠재", 150, "유니크", "레전드리", 0.02) == pytest.approx(up + 40_000_000 * (1 / 0.02 - 1))
     up2 = tier_up_tries(0.009804, 152).mean * 27_300_000 + tier_up_tries(0.007, 214).mean * 66_300_000
-    assert expected_cost("에디", 150, "에픽", "레전드리", 0.05) == pytest.approx(up2 + 78_000_000 / 0.05)
+    assert expected_cost("에디", 150, "에픽", "레전드리", 0.05) == pytest.approx(up2 + 78_000_000 * (1 / 0.05 - 1))
 
 
 def test_lower_grade_or_missing_grade_has_no_cube_cost():

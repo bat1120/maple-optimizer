@@ -55,13 +55,16 @@ def reach_cost(target: int, reset_fragments: float, sunday: bool = False) -> dic
             return min(go, per_reset + v0)
         return v(0, 0)
 
-    v0 = 0.0
-    for _ in range(5000):  # V(0,0) 고정점
-        new = solve(v0, reset_fragments, _c)
-        if abs(new - v0) < 1e-9:
-            break
-        v0 = new
-    return {"fragments": v0}
+    # V(0,0) = f(v0)의 고정점. f는 v0에 대해 조각별 선형(최솟값들)이라 뉴턴법이 몇 번 만에 끝난다
+    # (2026-10-11: 단순 반복 5000회는 목표 10레벨에서 수렴 전에 끊겨 0.57% 낮았다 — 나무위키 14만 5148개)
+    v0 = solve(0.0, reset_fragments, _c)
+    for _ in range(200):
+        f0 = solve(v0, reset_fragments, _c)
+        if abs(f0 - v0) < 1e-6 * max(1.0, v0):
+            return {"fragments": f0}
+        slope = solve(v0 + 1.0, reset_fragments, _c) - f0
+        v0 = (f0 - slope * v0) / (1 - slope) if slope < 1 else f0
+    raise RuntimeError("HEXA 스탯 기대값이 수렴하지 않았어요")
 
 
 _ATTR = {"크리티컬 데미지 증가": "cd", "보스 데미지 증가": "boss", "데미지 증가": "dmg"}
