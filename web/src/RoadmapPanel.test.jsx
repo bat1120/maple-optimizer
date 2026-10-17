@@ -83,16 +83,16 @@ describe("roadmap panel", () => {
     expect(screen.getByText("부위별 다음 단계·모든 단계 보기").closest("details")).not.toHaveAttribute("open");
   });
 
-  it("순위 카드에서 [경매장 검색 조건 복사] — 그 조건을 그대로 클립보드에, 게임에서 고를 곳 안내", async () => {
+  // 2026-10-17 사용자: 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 찾은 뒤 화면 공유로 평가하는 버튼
+  it("순위 카드 [이 조건으로 찾은 매물 평가하기] — 그 카드의 조건을 onEvaluate로 넘긴다", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
-    const write = vi.fn(async () => {});
-    Object.defineProperty(navigator, "clipboard", { value: { writeText: write }, configurable: true });
-    render(<RoadmapPanel name="내신부레테" defense={300} />);
+    const onEvaluate = vi.fn();
+    render(<RoadmapPanel name="내신부레테" defense={300} onEvaluate={onEvaluate} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const first = cards()[0];
-    await act(async () => { fireEvent.click(within(first).getByRole("button", { name: "경매장 검색 조건 복사" })); });
-    expect(write).toHaveBeenCalledWith("엠블렘 · 에디 레전드리 · 마력 +12% / 마력 +9%");
-    expect(screen.getByRole("status")).toHaveTextContent("게임 경매장 › 상세 검색");
+    expect(within(first).queryByRole("button", { name: "경매장 검색 조건 복사" })).toBeNull();
+    fireEvent.click(within(first).getByRole("button", { name: "이 조건으로 찾은 매물 평가하기" }));
+    expect(onEvaluate).toHaveBeenCalledWith(expect.objectContaining({ slot: "엠블렘", kind: "에디", target: ["마력 +12%", "마력 +9%"] }));
   });
 
   // 2026-10-11 심사 5회차: 경매장에서 못 사는 템은 다음 행동이 없었다 → 같은 자리에 큐브 비용 계산기로 가는 버튼

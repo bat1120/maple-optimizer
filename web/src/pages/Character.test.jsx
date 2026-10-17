@@ -196,6 +196,27 @@ describe("character page", () => {
     expect(screen.getByRole("button", { name: "프리셋 1" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  // 2026-10-17: 순위 카드에서 [이 조건으로 찾은 매물 평가하기] → 접혀 있던 화면 공유 평가가 열리고 찾는 조건이 위에 나온다
+  it("순위 카드의 평가 버튼을 누르면 화면 공유 평가 칸이 열리고 찾는 조건을 보여 준다", async () => {
+    const v = { slot: "엠블렘", kind: "에디", name: "골드 서버너 엠블렘", grade: "레전드리", lines_good: 2, target: ["마력 +12%", "마력 +9%"],
+                delta_pct: 5.5, per_100m: 0.022, cube_cost_text: "253억", route: "경매장" };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      if (String(url).includes("/settings")) return ok(SETTINGS);
+      if (String(url).includes("/roadmap")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", value_ranking: [v], slots: [] });
+      if (String(url).includes("/paths")) return ok({ evaluation_setting: SUMMARY.active_setting, observed_count: 0, note: "", all: [] });
+      if (String(url).includes("/recommend")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", recommendations: [] });
+      return ok(SUMMARY);
+    });
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+    const watch = (await screen.findByRole("heading", { name: "경매장 화면 평가" })).closest("details");
+    expect(watch).not.toHaveAttribute("open");
+    fireEvent.click(await screen.findByRole("button", { name: "이 조건으로 찾은 매물 평가하기" }));
+    expect(watch).toHaveAttribute("open");
+    const note = screen.getByRole("note", { name: "찾는 조건" });
+    expect(note).toHaveTextContent("부위엠블렘");
+    expect(note).toHaveTextContent("1줄마력 +12% 이상");
+  });
+
   it("장비가 없으면 빈 상태 안내", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => (String(url).includes("/settings") ? ok(SETTINGS) : ok({ ...SUMMARY, equipment_presets: {} })));
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);

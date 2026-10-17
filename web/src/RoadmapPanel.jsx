@@ -19,16 +19,12 @@ function Next({ row, kind }) {
   return <span>{label(t)} {formatPct(t.delta_pct)}<br /><span className="muted">{t.target.join(" / ")}</span></span>;
 }
 
-export default function RoadmapPanel({ name, defense, autoLoad = false, active = null }) {
+// onEvaluate(v): '이 조건으로 찾은 매물 평가하기' — 화면 공유 평가를 열고 찾는 조건을 넘긴다(없으면 버튼을 안 그린다)
+export default function RoadmapPanel({ name, defense, autoLoad = false, active = null, onEvaluate = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [copied, setCopied] = useState(null);
-  const [copiedText, setCopiedText] = useState("");
-  // 경매장 검색 조건 그대로(게임 경매장에서 이 조건으로 찾는다) — 2026-10-11 심사: 순위 카드에서 바로 경매장으로
-  const condition = (v) => `${v.slot} · ${v.kind} ${v.grade} · ${v.target.join(" / ")}`;
-  const copy = async (v) => { try { await navigator.clipboard.writeText(condition(v)); setCopied(`${v.slot}-${v.kind}`); setCopiedText(condition(v)); } catch { /* 복사 못 하면 조용히 */ } };
 
   const load = async () => {
     setBusy(true);
@@ -104,26 +100,27 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                     </div>
                     <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
-                    {/* 아래 줄은 모든 카드가 같은 높이: 살 수 있으면 복사, 못 사면 같은 자리에 안내 칩 */}
+                    {/* 아래 줄(2026-10-17 사용자): 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 검색한 뒤
+                        화면 공유로 매물을 평가하는 버튼(PC). 휴대폰은 화면 공유가 안 돼 안내만. 못 사는 템은 큐브 계산기 */}
                     <div className="rank-foot">
-                      {v.route !== "큐브" ? (
-                        <button type="button" className={`rank-copy${i === 0 ? "" : " ghost small"}`} onClick={() => copy(v)}>
-                          {copied === `${v.slot}-${v.kind}` ? "복사됨 ✓" : "경매장 검색 조건 복사"}</button>
-                      ) : (
+                      {v.route !== "큐브" ? (onEvaluate && (
+                        <>
+                          <button type="button" className={`rank-copy pc-only-inline${i === 0 ? "" : " ghost small"}`} onClick={() => onEvaluate(v)}>
+                            이 조건으로 찾은 매물 평가하기</button>
+                          {i === 0 && <span className="muted small mobile-only-inline">PC에서 게임 화면을 공유하면 찾은 매물을 평가해요</span>}
+                        </>
+                      )) : (
                         // 경매장에서 못 사는 템(5회차: 다음 행동이 없었다) → 같은 자리·같은 모양으로 큐브 비용 계산기
                         <>
                           <a className={i === 0 ? "button-link" : "button-ghost"} href={hashFor({ page: "character", name, tab: "calc" })}>큐브 비용 계산하기</a>
                           <span className="muted small">경매장 구매 불가 템 — 지금 템에 큐브</span>
                         </>
                       )}
-                      {i === 0 && v.route !== "큐브" && <span className="muted small">게임 경매장 › 상세 검색에서 위 칩 순서대로 고르세요</span>}
+                      {i === 0 && v.route !== "큐브" && <span className="muted small pc-only-inline">게임 경매장 › 상세 검색에서 위 칩대로 찾은 뒤 눌러 주세요</span>}
                     </div>
                   </li>
                 ))}
               </ol>
-              <p className="copy-status muted small" role="status">
-                {copied ? `복사했어요: ${copiedText} — 메모해 두고 게임 경매장 › 상세 검색에서 칩 순서대로 고르세요.` : ""}
-              </p>
               {data.value_ranking.length > TOP && (
                 <button type="button" className="ghost more-ranks" onClick={() => setShowAll(!showAll)}>
                   {showAll ? "순위 접기" : `순위 ${data.value_ranking.length - TOP}개 더 보기`}

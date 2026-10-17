@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAdminSession, getBosses, getCharacter, getSettings } from "../api.js";
 import AgentPanel from "../AgentPanel.jsx";
 import { hashFor, navigate } from "../router.js";
@@ -82,9 +82,9 @@ function Skeleton() {
 }
 
 // 접어 두는 구역(2026-10-11 심사 2회차: 1위가 셋으로 갈려 '무엇부터'가 흐려졌다 → 가격 대비 순위만 펼친다)
-function Fold({ title, children }) {
+function Fold({ title, children, open, onToggle, foldRef }) {
   return (
-    <details className="fold">
+    <details className="fold" ref={foldRef} open={open} onToggle={onToggle && ((e) => onToggle(e.currentTarget.open))}>
       <summary>{title}</summary>
       {children}
     </details>
@@ -117,6 +117,15 @@ function NotFound({ name }) {
 export default function Character({ route }) {
   const { name, tab } = route;
   const [defense, setDefense] = useState(300);
+  // 순위 카드 [이 조건으로 찾은 매물 평가하기] → 화면 공유 평가 칸을 열고 찾는 조건을 보여 준다(2026-10-17)
+  const [watchOpen, setWatchOpen] = useState(false);
+  const [watchTarget, setWatchTarget] = useState(null);
+  const watchRef = useRef(null);
+  const evaluate = (v) => {
+    setWatchTarget(v);
+    setWatchOpen(true);
+    setTimeout(() => watchRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }), 0);
+  };
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
@@ -205,7 +214,7 @@ export default function Character({ route }) {
           {tab === "upgrade" && (
             <div className="stack">
               {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
-              <RoadmapPanel name={name} defense={defense} autoLoad active={summary.active_setting} />
+              <RoadmapPanel name={name} defense={defense} autoLoad active={summary.active_setting} onEvaluate={evaluate} />
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
@@ -214,8 +223,8 @@ export default function Character({ route }) {
               <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={defense} /></Fold>
               <h3 className="section-label">고급 도구</h3>
               <div className="pc-only">
-                <Fold title="게임 경매장 화면을 읽어 매물 평가 (PC 전용)">
-                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} />
+                <Fold title="게임 경매장 화면을 읽어 매물 평가 (PC 전용)" open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
+                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} target={watchTarget} />
                 </Fold>
               </div>
               <p className="card mobile-only muted note-box">

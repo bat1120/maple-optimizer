@@ -130,37 +130,58 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
       setError(e.message);
     }
   };
+  // 카드 = 업그레이드 순위 카드와 같은 문법(2026-10-17 사용자): 오른쪽 위 실딜%, 아래 억당·가격, 옵션은 칩
   return (
-    <li>
-      <strong>{r.name}</strong>{r.starforce ? <span title={item.starforce_note}> {r.starforce}성{r.starforce_source === "별 세기" ? "" : "(확인 필요)"}</span> : ""} · {r.price ? formatMeso(r.price) : "가격 못 읽음"}
-      <br />
-      <span className="muted">{formatTotals(r.total)}{r.potentials?.length ? ` · ${r.potentials.join(" / ")}` : ""}</span>
+    <li className={`rank-card watch-card${item.evaluated ? "" : " pending"}`}>
+      <div className="rank-top">
+        <span className="rank-slot">
+          <strong>{r.name}</strong>
+          <span className="muted">
+            {item.slot ? `${item.slot} 자리` : r.part || r.category || ""}
+            {r.starforce ? <span title={item.starforce_note}> · {r.starforce}성{r.starforce_source === "별 세기" ? "" : "(확인 필요)"}</span> : ""}
+          </span>
+        </span>
+        {item.evaluated && (
+          <span className="rank-eff" title="지금 그 자리 템 대신 끼면 오르는 보스 실딜">
+            <span className="rank-eff-k">지금 템 대비</span>
+            <strong className={`num${item.delta_pct < 0 ? " neg" : ""}`}>{formatPct(item.delta_pct)}</strong></span>
+        )}
+      </div>
+      <ul className="rank-cond" aria-label="읽은 옵션">
+        <li>{formatTotals(r.total)}</li>
+        {(r.potentials || []).map((t, k) => <li key={k}>{t}</li>)}
+      </ul>
       {item.unverified_lines?.length ? (
         // 공식 큐브 옵션표에 없는 줄: 화면 글자와 다르게 읽었을 수 있다 — 툴팁과 대조해 달라고 알린다
-        <span className="error"> · 확인 필요: {item.unverified_lines.join(" / ")}</span>
+        <p className="error small watch-note">확인 필요: {item.unverified_lines.join(" / ")}</p>
       ) : null}
-      <br />
       {item.evaluated ? (
-        <span>
-          {item.slot} 자리 · 실딜 {formatPct(item.delta_pct)}
-          {item.per_100m != null ? ` · 억당 ${formatPct(item.per_100m)}` : ""}
-          {item.main_stat_gain != null ? <span title={SCOUTER_DIFF_NOTE}>{` · 환산 ${formatStat(item.main_stat_gain)}`}</span> : ""}
-          {item.excluded?.length ? <span className="muted"> · 계산 제외: {item.excluded.join(", ")}</span> : null}
-          {item.special_ring_note ? <><br /><span className="error">{item.special_ring_note}</span></> : null}
-          {item.secondary_note ? <><br /><span className="error">{item.secondary_note}</span></> : null}
-        </span>
+        <div className="rank-cost">
+          <span className="eff-value">{item.per_100m != null ? <>1억 메소당 <strong className="num">{formatPct(item.per_100m)}</strong></> : "억당 —"}</span>
+          <span className="muted">{r.price ? <>가격 <strong className="num">{formatMeso(r.price)}</strong></> : "가격 못 읽음"}</span>
+        </div>
       ) : (
-        <span className="muted">{item.reason || "목록만 보여요 — 툴팁을 띄우면 평가해요"}</span>
+        <p className="muted small watch-note">{r.price ? `가격 ${formatMeso(r.price)} · ` : "가격 못 읽음 · "}{item.reason || "목록만 보여요 — 툴팁을 띄우면 평가해요"}</p>
       )}
-      {item.evaluated && !r.price && name && (
-        <span className="inline">
-          <input aria-label={`${r.name} 가격`} value={price} placeholder="45억" onChange={(e) => setPrice(e.target.value)} />
-          <button type="button" onClick={calc}>억당 계산</button>
-        </span>
-      )}
-      {item.evaluated && item.scouter && <CopyScouter item={item} />}
-      {r.corrected && <span className="muted"> · 고친 값</span>}
-      {item.frame_id && name && !editing && <> <button type="button" onClick={() => setEditing(true)}>고치기</button></>}
+      {item.evaluated && (item.main_stat_gain != null || item.excluded?.length) ? (
+        <p className="muted small watch-note">
+          {item.main_stat_gain != null ? <span title={SCOUTER_DIFF_NOTE}>환산 {formatStat(item.main_stat_gain)}</span> : null}
+          {item.excluded?.length ? <span>{item.main_stat_gain != null ? " · " : ""}계산 제외: {item.excluded.join(", ")}</span> : null}
+        </p>
+      ) : null}
+      {item.special_ring_note ? <p className="error small watch-note">{item.special_ring_note}</p> : null}
+      {item.secondary_note ? <p className="error small watch-note">{item.secondary_note}</p> : null}
+      <div className="rank-foot">
+        {item.evaluated && !r.price && name && (
+          <span className="inline">
+            <input aria-label={`${r.name} 가격`} value={price} placeholder="45억" onChange={(e) => setPrice(e.target.value)} />
+            <button type="button" className="ghost small" onClick={calc}>억당 계산</button>
+          </span>
+        )}
+        {item.evaluated && item.scouter && <CopyScouter item={item} />}
+        {r.corrected && <span className="muted small">고친 값</span>}
+        {item.frame_id && name && !editing && <button type="button" className="ghost small" onClick={() => setEditing(true)}>고치기</button>}
+      </div>
       {editing && <EditForm item={item} name={name} defense={defense} onCancel={() => setEditing(false)}
                             onSaved={(u) => { setEditing(false); onReplace(item.signature, u); }} />}
       {error && <span className="error"> {error}</span>}
@@ -169,7 +190,8 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
 }
 
 // admin=false: 일반 유저 화면(2026-10-07) — 채점·학습 데이터·목록 읽기 같은 관리자 기능을 숨기고 오늘 남은 분석 횟수를 보여준다
-export default function ScreenWatch({ name, job, level, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate, admin = true }) {
+// target: 업그레이드 순위 카드에서 넘어온 찾는 조건(부위·등급·줄) — 게임에서 이대로 찾으라고 위에 보여 준다
+export default function ScreenWatch({ name, job, level, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate, admin = true, target = null }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
@@ -288,11 +310,23 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
   // 툴팁 없이 목록 행만 읽은 매물은 평가할 수 없으니 한 줄로 접는다
   const isListOnly = (it) => !it.evaluated && !Object.keys(it.read?.total || {}).length && !(it.read?.potentials || []).length;
   const listOnly = items.filter(isListOnly);
-  const detailed = items.filter((it) => !isListOnly(it));
+  // 억당 높은 순(가격을 못 읽었으면 실딜 순), 평가 못 한 매물은 맨 뒤 — 2026-10-17: 읽은 순서대로 쌓여 비교가 어려웠다
+  const rankOf = (it) => (!it.evaluated ? -Infinity : it.per_100m ?? (it.delta_pct ?? -1e9) / 1e6);
+  const detailed = items.filter((it) => !isListOnly(it)).sort((a, b) => rankOf(b) - rankOf(a));
 
   return (
     <section className="panel">
       <h3>{admin ? "경매장 화면 분석 (관리자)" : "경매장 화면 평가"}</h3>
+      {target && (
+        <div className="watch-target" role="note" aria-label="찾는 조건">
+          <span className="cond-head">게임 경매장 › 상세 검색에서 이 조건으로 찾으세요</span>
+          <ul className="rank-cond">
+            <li className="cond-slot"><span className="cond-k">부위</span>{target.slot}</li>
+            <li><span className="cond-k">{target.kind}</span>{target.grade}</li>
+            {target.target.map((t, k) => <li key={k}><span className="cond-k">{k + 1}줄</span>{t} 이상</li>)}
+          </ul>
+        </div>
+      )}
       <p className="muted">
         공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
         화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.
@@ -363,13 +397,13 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
         </details>
       )}
       {detailed.length > 0 && (
-        <ul className="plain">
+        <ol className="rank-cards watch-cards" aria-label="읽은 매물(억당 순)">
           {detailed.map((it) => (
             <Row key={it.signature} item={it} name={name} defense={defense}
                  onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))}
                  onReplace={(old, u) => { setItems((prev) => prev.map((p) => (p.signature === old ? u : p))); refreshStats(); }} />
           ))}
-        </ul>
+        </ol>
       )}
     </section>
   );

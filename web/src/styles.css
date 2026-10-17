@@ -556,6 +556,14 @@ details.basis > summary { font-size: var(--fs-xs); }
 .preset-tag { margin-left: 4px; padding: 0 5px; border-radius: 4px; background: var(--btn); color: var(--on-btn); font-size: 0.62rem; font-weight: 800; vertical-align: 1px; }
 .preset-tag.worn { background: var(--surface-3); color: var(--text-2); }
 .kpi-sub { display: block; margin-top: 2px; font-size: var(--fs-xs); font-weight: 500; color: var(--muted); }
+.pc-only-inline { display: inline-flex; }
+.mobile-only-inline { display: none; }
+.watch-target { display: flex; flex-direction: column; gap: 6px; margin: var(--sp-2) 0 var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  border: 2px solid var(--accent-fill); border-radius: var(--radius-inner); background: var(--rank-bg); }
+.watch-cards { margin-top: var(--sp-3); }
+.watch-card.pending { opacity: 0.8; border-style: dashed; }
+.watch-note { margin: 0; }
+.rank-eff strong.neg { color: var(--error); }
 .footer a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
 .rank-market { margin: 0; }
 .paths-table td.eff-col { font-weight: 800; color: var(--accent); }
@@ -683,6 +691,8 @@ form > [role="alert"] { margin-top: var(--sp-3); padding: 8px 12px; border-radiu
   .tabs { display: none; }
   .tab-intro { margin-top: var(--sp-2); }
   .pc-only { display: none; }
+  .pc-only-inline { display: none; }
+  .mobile-only-inline { display: inline; }
   .mobile-only { display: flex; }
   .bottom-tabs { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; border-top: 1px solid var(--line);
     background: var(--surface); padding-bottom: env(safe-area-inset-bottom); }

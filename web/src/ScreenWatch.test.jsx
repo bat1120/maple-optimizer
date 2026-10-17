@@ -36,7 +36,10 @@ describe("screen watch panel", () => {
     expect(JSON.parse(f.mock.calls[0][1].body)).toMatchObject({ name: "내신부레테", boss_defense: 300, seen: [] });
     expect(JSON.parse(f.mock.calls[1][1].body).seen).toEqual(["sig1"]);
     expect(screen.getByText(/센 반지/)).toBeInTheDocument();
-    expect(screen.getByText(/반지4 자리 · 실딜 \+1\.234%/)).toBeInTheDocument();
+    // 카드: 이름 아래 '반지4 자리', 오른쪽 위 '지금 템 대비' 실딜(2026-10-17 순위 카드 문법)
+    const card = screen.getByRole("list", { name: "읽은 매물(억당 순)" }).firstElementChild;
+    expect(card).toHaveTextContent("반지4 자리");
+    expect(card).toHaveTextContent("지금 템 대비+1.234%");
     expect(screen.getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
   });
 });
@@ -59,7 +62,8 @@ describe("screen watch rows", () => {
     expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/listings`);
     expect(body).toMatchObject({ setting: base.setting, boss_defense: 300,
                                  listings: [{ slot: "모자", name: "에테르넬 메이지햇", total: { INT: 120, MATK: 60 }, price: 4_500_000_000 }] });
-    expect(await screen.findByText(/억당 \+0\.018%/)).toBeInTheDocument();
+    expect(await screen.findByText("+0.018%")).toBeInTheDocument();
+    expect(screen.getByText("+0.018%").closest(".eff-value")).toHaveTextContent("1억 메소당 +0.018%");
   });
 
   it("평가를 보류한 이유를 보여준다", () => {
@@ -88,7 +92,8 @@ describe("screen watch pending rows", () => {
     await act(async () => { rerender(<ScreenWatch name="내신부레테" defense={300} capture={null} initialItems={[pending]} />); });
     expect(f.mock.calls[0][0]).toBe("/api/vision/evaluate");
     expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ name: "내신부레테", boss_defense: 300, listings: [pen] });
-    expect(await screen.findByText(/보조무기 자리 · 실딜 -2\.381%/)).toBeInTheDocument();
+    const card = (await screen.findByText(/보조무기 자리/)).closest("li");
+    expect(card).toHaveTextContent("지금 템 대비-2.381%");
   });
 
   it("목록에서만 본 매물(총옵션·잠재 없음)은 한 줄로 접는다", () => {
@@ -417,5 +422,17 @@ describe("screen watch with extension (확장 설치됨)", () => {
     expect(screen.getByRole("button", { name: "환산용 복사" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "테스트 템 복사" })).toBeNull();
     expect(screen.queryByText("테스트 템")).toBeNull();
+  });
+});
+
+// 2026-10-17: 읽은 순서대로 쌓여 비교가 어려웠다 → 억당 높은 순, 평가 못 한 매물은 맨 뒤
+describe("screen watch cards order", () => {
+  it("읽은 매물 카드를 억당 높은 순으로 놓고, 평가 못 한 매물은 뒤로 보낸다", () => {
+    const mk = (sig, name, per, evaluated = true) => ({ signature: sig, evaluated, slot: "모자", delta_pct: 1, per_100m: per,
+                                                         read: { name, price: 1e9, total: { INT: 10 }, potentials: ["INT +9%"] } });
+    render(<ScreenWatch name="내신부레테" capture={null} admin={false}
+                        initialItems={[mk("a", "느린 모자", 0.01), mk("c", "못 본 모자", null, false), mk("b", "빠른 모자", 0.05)]} />);
+    const names = [...screen.getByRole("list", { name: "읽은 매물(억당 순)" }).children].map((li) => li.querySelector("strong").textContent);
+    expect(names).toEqual(["빠른 모자", "느린 모자", "못 본 모자"]);
   });
 });
