@@ -153,4 +153,10 @@ class ObservationLog:
 
 def open_log(sqlite_path: str, clock: Callable[[], float]) -> ObservationLog:
     url = os.environ.get("DATABASE_URL")
-    return ObservationLog.postgres(url, clock) if url else ObservationLog.sqlite(sqlite_path, clock)
+    if url:
+        try:
+            return ObservationLog.postgres(url, clock)
+        except Exception as e:  # noqa: BLE001 — 관측 DB에 못 붙어도 사이트는 뜬다(2026-10-17 배포 장애: 시작하다 죽어 502)
+            import logging
+            logging.getLogger("uvicorn.error").warning("관측 DB(Postgres) 연결 실패 — 로컬 SQLite로 돈다: %s", type(e).__name__)
+    return ObservationLog.sqlite(sqlite_path, clock)

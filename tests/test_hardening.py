@@ -177,3 +177,17 @@ def test_server_process_does_not_run_as_root():
     """컨테이너 안 서버는 root가 아닌 app 사용자로 돈다(2026-10-17). 캐시 볼륨 권한은 시작할 때 app에게 넘긴다."""
     df = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "useradd" in df and "setpriv" in df and "--reuid=app" in df
+
+
+def test_app_user_gets_its_own_home():
+    """app 사용자로 바꿔도 HOME이 /root로 남으면 libpq가 ~/.postgresql을 못 읽어 Neon 연결이 깨졌다(2026-10-17 배포 장애)."""
+    cmd = next(ln for ln in (ROOT / "Dockerfile").read_text(encoding="utf-8").splitlines() if ln.startswith("CMD"))
+    assert "HOME=/app" in cmd
+
+
+def test_observation_log_falls_back_to_sqlite_when_postgres_is_unreachable(tmp_path, monkeypatch):
+    """관측 DB에 못 붙어도 사이트 전체가 죽지 않게 — 로컬 SQLite로 돌고 경고만 남긴다(2026-10-17 배포 장애)."""
+    from server import observations
+    monkeypatch.setenv("DATABASE_URL", "postgresql://x:y@127.0.0.1:1/none?connect_timeout=2")
+    log = observations.open_log(str(tmp_path / "o.sqlite3"), lambda: 1_800_000_000.0)
+    assert log.backend == "sqlite"

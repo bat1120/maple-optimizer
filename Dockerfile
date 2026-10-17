@@ -27,4 +27,4 @@ RUN useradd --system --uid 10001 --home-dir /app --no-create-home app && mkdir -
 VOLUME ["/app/.cache"]
 EXPOSE 8000
 # 포트: 플랫폼이 PORT를 주면 따르고(Render 등), 없으면 8000(docker compose)
-CMD ["sh", "-c", "chown -R app:app /app/.cache 2>/dev/null || true; exec setpriv --reuid=app --regid=app --init-groups /app/.venv/bin/uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]
+CMD ["sh", "-c", "chown -R app:app /app/.cache 2>/dev/null || true; export HOME=/app; exec setpriv --reuid=app --regid=app --init-groups /app/.venv/bin/uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]
