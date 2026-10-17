@@ -132,6 +132,7 @@ describe("agent panel — AI가 먼저 추천하고 채팅 안에서 경매장 �
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(sseResponse([{ type: "done", unverified_numbers: [] }]));
     render(<AgentPanel name="내신부레테" initialAuthed />);
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
+    expect(screen.getByText(/질문과 답변은 품질 확인을 위해 기록돼요/)).toBeInTheDocument(); // Langfuse 추적(2026-10-17)
     fireEvent.click(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" }));
     await screen.findByText(/지금 뭐부터 올리면 돼\?/, { selector: ".me" });
     expect(JSON.parse(f.mock.calls[0][1].body).messages.at(-1).content).toContain("캐릭터: 내신부레테");

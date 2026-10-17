@@ -29,6 +29,8 @@
 - AI 상담: 캐릭터 화면 맨 위에 모두에게(2026-10-17 공개). 일반 사용자는 IP당 하루 AGENT_PUBLIC_DAILY(기본 5)번,
   refresh_market 없음. 하루 토큰 한도(AGENT_DAILY_TOKEN_BUDGET, 기본 20만)는 관리자와 같이 쓴다 — 일반 사용자가 다 쓰면 관리자도 막힌다.
   AI가 request_auction_screen을 부르면 채팅 안 [화면 연결] → [매물 N개 AI에게 보내기]
+- AI 추적(2026-10-17, `agent/tracing.py`): LANGFUSE_PUBLIC_KEY·LANGFUSE_SECRET_KEY(·LANGFUSE_BASE_URL)가 있으면 Langfuse로
+  대화(agent)·모델 호출(generation)·도구(tool)를 보낸다. user_id는 'admin' 또는 날짜별 해시. 키가 없으면 아무것도 안 한다
 - MapleScouter 자동 채우기(확장·북마클릿) 유지 여부 — 약관 제15조 위험, 사용자 결정 대기
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)

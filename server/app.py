@@ -57,10 +57,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
-               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5,
+               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5, agent_tracer=None,
                vision_frames_per_min: int = 240) -> FastAPI:
     app = FastAPI(title="maple-optimizer")
     usage = admin.UsageStore(db_path, clock)
+    if agent_tracer is None:  # AI 상담 추적(Langfuse) — 키가 없으면 아무것도 안 한다(agent/tracing.py)
+        from agent.tracing import from_env
+        agent_tracer = from_env()
     cache = BundleCache(db_path, clock)
     from server.market import PriceStore
     prices = PriceStore(db_path, clock)
@@ -287,7 +290,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 return
             yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows,
                                                       refresh=_agent_refresh if is_admin else None), body.messages,
-                                 on_usage=usage.add, exclude_tools=() if is_admin else ("refresh_market",))
+                                 on_usage=usage.add, exclude_tools=() if is_admin else ("refresh_market",),
+                                 tracer=agent_tracer, trace_user="admin" if is_admin else who,
+                                 trace_meta={"public": not is_admin})
 
         def sse():
             # 도구 계산·모델 응답을 기다리는 동안 agent_ping_seconds마다 SSE 주석을 보내 연결을 살린다
@@ -302,6 +307,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                     for e in events():
                         q.put(e)
                 finally:
+                    try:
+                        agent_tracer.flush()  # 무료 서버는 곧 잠들 수 있다 — 대화가 끝나면 바로 보낸다
+                    except Exception as e:  # noqa: BLE001
+                        _log.warning("추적 전송 실패: %s", type(e).__name__)
                     q.put(end)
 
             threading.Thread(target=work, daemon=True).start()

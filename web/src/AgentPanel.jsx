@@ -126,6 +126,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
     <section className="panel">
       <h3>{title}</h3>
       {quota && !quota.admin && <p className="muted small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</p>}
+      <p className="muted small">질문과 답변은 품질 확인을 위해 기록돼요(IP는 남기지 않아요).</p>
       {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
       <div className="chat">
         {log.map((ev, i) => {

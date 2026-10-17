@@ -11,6 +11,7 @@ from collections.abc import Callable, Iterator
 
 from agent.numbers import unverified_numbers
 from agent.tools import ToolBox, openai_tools
+from agent.tracing import NoopTracer, safe
 
 DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
 SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사이트 사용자 누구나 쓴다(2026-10-17 공개, 일반 사용자는 하루 질문 수 제한).
@@ -70,19 +71,51 @@ def _refusal(output) -> str | None:
     return None
 
 
+def _brief(items: list, cap: int = 4000) -> list:
+    """추적에 보낼 입력 요약: 메시지·도구 결과 문자열은 cap 글자까지, SDK 객체는 종류·이름만."""
+    out = []
+    for it in items:
+        if isinstance(it, dict):
+            out.append({k: (v[:cap] if isinstance(v, str) else v) for k, v in it.items()})
+        else:
+            out.append({"type": getattr(it, "type", type(it).__name__), "name": getattr(it, "name", None)})
+    return out
+
+
 def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int = 8,
               on_usage: Callable[[int], None] | None = None, model: str | None = None,
-              exclude_tools: tuple = ()) -> Iterator[dict]:
+              exclude_tools: tuple = (), tracer=None, trace_user: str | None = None,
+              trace_meta: dict | None = None) -> Iterator[dict]:
+    """tracer: agent/tracing.py(Langfuse 또는 Noop). 추적이 실패해도 답변 흐름은 그대로다."""
+    tracer = tracer or NoopTracer()
+    question = messages[-1].get("content") if messages else None
+    answer = []
+    with safe(lambda: tracer.conversation(user_id=trace_user, metadata=trace_meta, input=question)) as root:
+        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer):
+            if ev["type"] == "text":
+                answer.append(ev["text"])
+            elif ev["type"] == "error":
+                root.update(level="ERROR", status_message=ev["message"])
+            yield ev
+        root.update(output="\n".join(answer))
+
+
+def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
     seen: list = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
     try:
         for _ in range(max_turns):
-            resp = client.responses.create(
-                model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
-                reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
-            )
+            with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:
+                resp = client.responses.create(
+                    model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
+                    reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
+                )
+                usage = getattr(resp, "usage", None)
+                gen.update(output=getattr(resp, "output_text", "") or [getattr(it, "name", None) for it in resp.output
+                                                                       if getattr(it, "type", None) == "function_call"],
+                           usage_details={"input": int(usage.input_tokens), "output": int(usage.output_tokens)} if usage else None)
             if on_usage and getattr(resp, "usage", None):
                 on_usage(int(resp.usage.input_tokens) + int(resp.usage.output_tokens))
             refusal = _refusal(resp.output)
@@ -108,7 +141,10 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
                     args = {}
                 else:
                     yield {"type": "tool_call", "name": call.name, "input": args}
-                    out = toolbox.run(call.name, args)
+                    with safe(lambda: tracer.observe(call.name, as_type="tool", input=args)) as t:
+                        out = toolbox.run(call.name, args)
+                        failed = isinstance(out, dict) and "error" in out
+                        t.update(output=out, **({"level": "ERROR", "status_message": str(out["error"])} if failed else {}))
                 seen += [args, out]
                 yield {"type": "tool_result", "name": call.name, "result": out}
                 items.append({"type": "function_call_output", "call_id": call.call_id,
