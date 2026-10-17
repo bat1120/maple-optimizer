@@ -295,6 +295,13 @@ class FrameCache:
         return sum(x != y for x, y in zip(a, b)) <= len(a) * 0.03
 
 
+MAX_PIXELS = 16_000_000  # 디코드 전에 가로×세로를 본다(약 4K 두 장) — 거대한 PNG로 2GB 서버 메모리를 터뜨리지 못하게
+
+
+class ImageTooLarge(Exception):
+    """화면 이미지 해상도가 MAX_PIXELS를 넘는다(디코드 전에 거절)."""
+
+
 class VisionQuota(Exception):
     """AI 판독이 필요한데 한도가 끝났다(일반 유저 하루 상한). 건너뛰기·재사용은 한도와 무관하게 된다."""
 
@@ -311,11 +318,14 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
 
     from server.tooltip import correct_name, crop, find_tooltips, stars_near
     try:
-        img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1]))).convert("RGB")
+        img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1])))
+        if img.size[0] * img.size[1] > MAX_PIXELS:  # 헤더만 읽은 상태 — 아직 풀지 않았다
+            raise ImageTooLarge()
+        img = img.convert("RGB")
         boxes = find_tooltips(img)
         tips = [crop(img, b) for b in boxes]
         stars = [stars_near(img, b) for b in boxes]
-    except (ValueError, OSError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
+    except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         img, boxes, tips, stars = None, [], [], []
     if tooltips_only and img is not None and not tips:
         # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)

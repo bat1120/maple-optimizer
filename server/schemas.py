@@ -28,7 +28,7 @@ class ListingsIn(BaseModel):
     arcane_force: int | None = None
     authentic_force: int | None = None
     fee_rate: float = Field(0.05, ge=0, le=0.1)  # 경매장 판매 수수료(5%, MVP 실버↑·PC방 3%)
-    listings: list[ListingIn]
+    listings: list[ListingIn] = Field(max_length=50)  # 공개 계산 입력 상한(2026-10-17 점검)
 
 
 class StarforceConditionsIn(BaseModel):
@@ -45,7 +45,7 @@ class StarforceIn(BaseModel):
     target: int = Field(ge=1, le=30)
     destroy_cost: float = Field(ge=0)
     conditions: StarforceConditionsIn = StarforceConditionsIn()
-    trials: int = Field(20000, ge=1000, le=200000)
+    trials: int = Field(20000, ge=1000, le=50000)
 
 
 class SumTarget(BaseModel):
@@ -82,4 +82,4 @@ class OptimizeIn(BaseModel):
     authentic_force: int | None = None
     budget: float = Field(ge=0)
     fee_rate: float = Field(0.05, ge=0, le=0.1)
-    candidates: list[ListingIn]
+    candidates: list[ListingIn] = Field(max_length=50)  # 예산 최적화는 후보 수의 제곱 이상 — 공개 CPU 점유 방지

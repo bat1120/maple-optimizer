@@ -114,6 +114,16 @@ class ObservationLog:
                         "ON CONFLICT (day, who) DO UPDATE SET n = vision_quota.n + 1", (day, who))
         self._run(ins, commit=True)
 
+    def quota_take(self, who: str) -> int:
+        """한 번 차감하고 차감 뒤 오늘 횟수를 돌려준다(확인과 기록 사이 틈이 없게, 2026-10-17). 지난 날짜 줄은 지운다."""
+        day, ph = self._today(), self._ph
+        def take(cur):
+            cur.execute(f"DELETE FROM vision_quota WHERE day <> {ph}", (day,))
+            cur.execute(f"INSERT INTO vision_quota (day, who, n) VALUES ({ph}, {ph}, 1) "
+                        "ON CONFLICT (day, who) DO UPDATE SET n = vision_quota.n + 1 RETURNING n", (day, who))
+            return int(cur.fetchone()[0])
+        return self._run(take, commit=True)
+
     def count(self) -> int:
         def q(cur):
             cur.execute("SELECT COUNT(*) FROM observations")

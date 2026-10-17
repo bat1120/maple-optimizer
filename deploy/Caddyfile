@@ -1,5 +1,16 @@
 # 자동 HTTPS(Let's Encrypt) + API·웹 리버스 프록시. 웹 정적 파일은 FastAPI가 서빙한다.
+# 2026-10-17 점검: 본문 크기 상한(거대한 화면 이미지로 메모리를 터뜨리지 못하게), 보안 헤더, 서버 정보 숨김
 {$DOMAIN} {
 	encode gzip
+	request_body {
+		max_size 8MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
 	reverse_proxy api:8000
 }

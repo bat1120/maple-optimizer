@@ -1,5 +1,12 @@
 # VM에서: DOMAIN=<도메인> docker compose up -d
 # 이미지: CI가 ghcr.io/<owner>/maple-optimizer:latest 로 올린다. 로컬 빌드면 IMAGE를 비워 두고 build를 쓴다.
+# 로그는 서비스마다 10MB × 5개까지만(2026-10-17 — 0.5초마다 오는 화면 분석 로그로 디스크가 차지 않게)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   api:
     image: ${IMAGE:-maple-optimizer:local}
@@ -10,6 +17,13 @@ services:
     expose:
       - "8000"
     restart: unless-stopped
+    logging: *logging
+    healthcheck:              # docker ps에 healthy/unhealthy로 보인다(멈춤 감지)
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   caddy:
     image: caddy:2
@@ -24,6 +38,7 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data      # 자동 HTTPS 인증서
     restart: unless-stopped
+    logging: *logging
 
 volumes:
   cache:

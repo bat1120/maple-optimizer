@@ -24,4 +24,4 @@ COPY --from=web /web/dist web/dist
 VOLUME ["/app/.cache"]
 EXPOSE 8000
 # 포트: 플랫폼이 PORT를 주면 따르고(Render 등), 없으면 8000(docker compose)
-CMD ["sh", "-c", "exec uv run --no-sync uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uv run --no-sync uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]

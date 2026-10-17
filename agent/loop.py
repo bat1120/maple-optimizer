@@ -85,13 +85,13 @@ def _brief(items: list, cap: int = 4000) -> list:
 def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int = 8,
               on_usage: Callable[[int], None] | None = None, model: str | None = None,
               exclude_tools: tuple = (), tracer=None, trace_user: str | None = None,
-              trace_meta: dict | None = None) -> Iterator[dict]:
+              trace_meta: dict | None = None, max_tokens: int | None = None) -> Iterator[dict]:
     """tracer: agent/tracing.py(Langfuse 또는 Noop). 추적이 실패해도 답변 흐름은 그대로다."""
     tracer = tracer or NoopTracer()
     question = messages[-1].get("content") if messages else None
     answer = []
     with safe(lambda: tracer.conversation(user_id=trace_user, metadata=trace_meta, input=question)) as root:
-        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer):
+        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens):
             if ev["type"] == "text":
                 answer.append(ev["text"])
             elif ev["type"] == "error":
@@ -100,11 +100,12 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
         root.update(output="\n".join(answer))
 
 
-def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer) -> Iterator[dict]:
+def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens=None) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
     seen: list = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
+    spent = 0
     try:
         for _ in range(max_turns):
             with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:
@@ -118,6 +119,11 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
                            usage_details={"input": int(usage.input_tokens), "output": int(usage.output_tokens)} if usage else None)
             if on_usage and getattr(resp, "usage", None):
                 on_usage(int(resp.usage.input_tokens) + int(resp.usage.output_tokens))
+            if getattr(resp, "usage", None):
+                spent += int(resp.usage.input_tokens) + int(resp.usage.output_tokens)
+            if max_tokens and spent > max_tokens:  # 질문 한 번이 하루 한도를 다 쓰지 못하게(공개 사용자, 2026-10-17)
+                yield {"type": "error", "message": "질문 한 번에 쓸 수 있는 AI 양을 넘었어요. 질문을 더 짧게 나눠 물어봐 주세요."}
+                break
             refusal = _refusal(resp.output)
             if refusal:
                 yield {"type": "error", "message": f"요청이 거절됐어요: {refusal}"}

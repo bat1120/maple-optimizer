@@ -161,3 +161,20 @@ describe("agent panel — AI가 먼저 추천하고 채팅 안에서 경매장 �
     expect(sent).toContain('"name":"녹스 마법깃펜"');
   });
 });
+
+describe("agent panel — 서버 입력 상한(메시지 20개)에 맞춰 최근 대화만 보낸다(2026-10-17)", () => {
+  it("대화가 길어져도 보내는 메시지는 20개 이하", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+      sseResponse([{ type: "text", text: "답" }, { type: "done", unverified_numbers: [] }]));
+    render(<AgentPanel name="내신부레테" initialAuthed />);
+    for (let i = 0; i < 12; i++) {
+      fireEvent.change(screen.getByLabelText("질문"), { target: { value: `질문 ${i}` } });
+      fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+      await screen.findByText(`🙋 질문 ${i}`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    const last = JSON.parse(f.mock.calls.at(-1)[1].body).messages;
+    expect(last.length).toBeLessThanOrEqual(20);
+    expect(last.at(-1).content).toContain("질문 11");
+  });
+});

@@ -89,7 +89,8 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   // text: 화면에 보일 질문, items: 같이 보낼 화면 매물(채팅 안 화면 요청 카드에서 온 것 또는 아래 화면 평가)
   const ask = async (text, items = screenItems) => {
     if (!text.trim() || busy) return;
-    const messages = [...history, { role: "user", content: withScreenItems(text.trim(), name, items, feeRate) }];
+    // 서버는 메시지 20개까지만 받는다(2026-10-17) — 최근 18개(질문·답 9쌍)에 새 질문을 붙인다
+    const messages = [...history.slice(-18), { role: "user", content: withScreenItems(text.trim(), name, items, feeRate) }];
     setLog((l) => [...l, { type: "user", text: text.trim() }]);
     setQuestion("");
     setBusy(true);
