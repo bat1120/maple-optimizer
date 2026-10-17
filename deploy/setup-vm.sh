@@ -6,15 +6,19 @@
 # 하는 일: Docker·compose 설치(Ubuntu 저장소), 80·443 열기(Oracle Ubuntu 이미지는 iptables가 막아 둔다),
 #         저장소 내려받기, .env 틀 만들기(권한 600). 키 값은 넣지 않는다 — 직접 채운다.
 set -euo pipefail
+# 패키지 설치 중 질문 창(iptables-persistent의 "규칙 저장?" 등)이 뜨면 멈추므로 묻지 않게 한다
+export DEBIAN_FRONTEND=noninteractive
+echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | sudo debconf-set-selections
+echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | sudo debconf-set-selections
 
 REPO="https://github.com/bat1120/maple-optimizer.git"
 DIR="$HOME/maple-optimizer"
 
 echo "== 1/4 Docker 설치"
-sudo apt-get update -y
-sudo apt-get install -y docker.io git
-if ! sudo apt-get install -y docker-compose-v2 2>/dev/null; then
-  sudo apt-get install -y docker-compose-plugin
+sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io git
+if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2 2>/dev/null; then
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin
 fi
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
@@ -34,7 +38,7 @@ done
 if command -v netfilter-persistent >/dev/null; then
   sudo netfilter-persistent save
 else
-  sudo apt-get install -y iptables-persistent && sudo netfilter-persistent save
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent && sudo netfilter-persistent save
 fi
 
 echo "== 3/4 저장소"
@@ -65,7 +69,7 @@ else
   echo ".env가 이미 있다 — 그대로 둔다"
 fi
 
-IP=$(curl -fsS https://ifconfig.me || true)
+IP=$(curl -4 -fsS https://ifconfig.me || true)  # IPv4로 — 듀얼스택이면 IPv6가 나와 sslip 주소가 틀렸다(2026-10-17 Lightsail)
 cat <<DONE
 
 설치 끝. 다음 순서:
