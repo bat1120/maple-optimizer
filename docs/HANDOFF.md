@@ -1,9 +1,11 @@
-# 인수인계 (2026-10-08) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
+# 인수인계 (2026-10-17 갱신) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
 
 ## 지금 상태
-- 데모: https://maple-optimizer.onrender.com (Render 무료, `main` 푸시마다 자동 배포, 15분 쉬면 잠든다)
-- 자동 목표 G1~G13은 모두 판정 완료. 남은 GOALS.md 항목은 사람 몫(H1·H2·H3·H5·H6)
-- 마지막 전체 검증: pytest 467 passed · 2 skipped, 웹 테스트 전부 통과
+- 운영: https://52-79-34-11.sslip.io (AWS Lightsail 서울, docker compose api+caddy). 자동 배포는 `DEPLOY_ENABLED=false`(사용자 결정 대기)
+- 옛 데모 https://maple-optimizer.onrender.com 은 아직 켜져 있다(끌지 사용자 결정)
+- AI 상담은 모두에게 공개(일반 IP당 하루 5번), 화면 분석도 공개(하루 20회). 추적은 Langfuse
+- 2026-10-17 점검 후속: 1차(보안·비용 상한)·2차(목표 로드맵 재측정·크확 기준·기준 고지)·3차(롤백·감시·백업)·4차(사용성·문서)
+- 마지막 전체 검증: pytest 590개 안팎 통과 · 2 skipped(Postgres 시험은 TEST_DATABASE_URL 없을 때 건너뜀), 웹 테스트 통과
 
 ## 최근에 만든 것 (2026-10-07)
 | 영역 | 내용 | 주요 파일 |

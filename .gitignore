@@ -29,3 +29,4 @@ tests/goals/
 scripts/verify.ps1
 scripts/rollback.ps1
 design.md
+.deployed-image

@@ -15,8 +15,8 @@
 | 큐브 목표 확률 | `POST /api/enhance/cube` | 공식 확률표(레전드리·무기·200) 정확 열거 |
 | 직작 vs 매물 | `POST /api/craft/compare` | 직작 비용 분포에서 매물 가격의 위치(추옵 미포함) |
 | 예산 최적화 | `POST /api/character/{닉네임}/optimize` | 부위당 1개, 예산 이내 |
-| 경매장 화면 분석 (관리자) | `POST /api/vision/listings` | 사용자가 공유한 웹 경매장 탭 화면을 바뀔 때마다 GPT 비전으로 읽어 평가. 넥슨 서버에는 요청하지 않는다(화면 픽셀만) |
-| AI 에이전트 (관리자) | `POST /api/admin/login`, `POST /api/agent/chat` (SSE) | OpenAI Responses API 함수 호출(기본 `gpt-6-luna`). 숫자는 도구 결과에서만 인용, 대조 안 된 숫자는 경고 |
+| 경매장 화면 분석 | `POST /api/vision/listings` | 공유한 게임·웹 경매장 화면을 GPT 비전으로 읽어 평가(일반 사용자 IP당 하루 AI 판독 20회). 넥슨 서버에는 요청하지 않는다(화면 픽셀만) |
+| AI 상담 | `POST /api/agent/chat` (SSE), `GET /api/agent/quota` | 2026-10-17부터 모두에게(일반 사용자 IP당 하루 5번, 요청당 6만 토큰, 웹 경매장 검색 없음 — 관리자는 제한 없음). OpenAI Responses API 함수 호출(기본 `gpt-6-luna`). 숫자는 도구 결과에서만 인용 |
 
 ## 로컬 실행
 
@@ -36,7 +36,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 |---|---|---|
 | `NEXON_API_KEY` | 저장소 루트 `.env` (git 제외) 또는 환경변수 | 넥슨 Open API 개발 단계 키(5건/초, 1,000건/일). 공개 전에는 서비스 단계 키로 교체 |
 | (배포 후) 같은 키 | VM의 `~/maple-optimizer/.env` | `docker compose`가 `env_file`로 읽는다 (H1) |
-| `OPENAI_API_KEY` | `.env` (로컬·VM) | 관리자 에이전트용 OpenAI API 키 (H5). 없으면 에이전트만 꺼진다 |
+| `OPENAI_API_KEY` | `.env` (로컬·서버) | AI 상담·화면 분석용 OpenAI API 키. 없으면 그 기능만 꺼진다. **OpenAI 대시보드에서 월 사용 한도(hard limit)를 꼭 걸어 둔다** |
 | `OPENAI_MODEL` | `.env` | 기본 `gpt-6-luna`(저가). `gpt-6.1-sol`(중간)·`gpt-6-astra`(상위)로 바꿀 수 있다 |
 | `ADMIN_PASSWORD_HASH` | `.env` | `uv run python -c "from server.admin import make_password_hash as h; print(h('비밀번호'))"` 결과. 비밀번호 원문은 저장하지 않는다 |
 | `SESSION_SECRET` | `.env` | 32자 이상 임의 문자열 (관리자 쿠키 서명) |
@@ -44,12 +44,14 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `VISION_DATASET_DIR` | `.env` | 화면 분석 학습·진단 데이터 폴더(선택). 로컬 `.data/vision`, VM은 캐시 볼륨 안 `/app/.cache/vision` 권장. 비우면 저장 안 함 |
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
-| `DEPLOY_DOMAIN` | GitHub Actions Variables | 서버 주소(예: `52-79-34-11.sslip.io`). Caddy 자동 HTTPS와 배포 뒤 확인에 쓴다 |
+| `DEPLOY_DOMAIN` | GitHub Actions Variables | 서버 주소(예: `52-79-34-11.sslip.io`). Caddy 자동 HTTPS·배포 뒤 확인·바깥 감시(uptime)에 쓴다 |
+| `DATABASE_URL` | 서버 `.env` | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite. 서버 cron이 매일 백업(`deploy/backup.sh`) |
+| `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | `.env` | 일반 사용자 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
+| `AGENT_PUBLIC_DAILY` | `.env` | 일반 사용자 AI 상담 IP당 하루 질문 수(기본 5) |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` | `.env` | AI 상담 추적(Langfuse). 비우면 추적 안 함. 기본 지역 EU |
+| `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
 
 비공개 ghcr 이미지는 배포 잡의 일회용 `GITHUB_TOKEN`(packages: read)으로 받는다 — 따로 만든 읽기 토큰이 필요 없다(2026-10-17).
-| `DATABASE_URL` | Render 환경변수 (`.env`도 가능) | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite(Render는 재시작 때 사라짐) |
-| `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | 환경변수 | 일반 유저 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
-| `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
 
 저장소에는 `.env.example`만 있다. 키 값을 채팅·이슈·로그에 붙이지 않는다.
 
@@ -74,29 +76,27 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 - Postgres 시험: `docker run -d --name pgtest -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:16-alpine` 후
   `TEST_DATABASE_URL=postgresql://postgres:test@127.0.0.1:55432/postgres uv run pytest tests/test_observation_pg.py`
 
-## 데모 배포 (Render 무료, `render.yaml`)
+## 운영 배포 (AWS Lightsail 서울, 2026-10-17~)
 
-1. https://render.com 에 GitHub 계정으로 로그인 → **New → Blueprint** → 이 저장소 선택
-2. 비밀값 입력: `NEXON_API_KEY`, `OPENAI_API_KEY`(없으면 AI 기능만 꺼짐), `ADMIN_PASSWORD_HASH` — `SESSION_SECRET`은 자동 생성
-3. **Apply** → 빌드가 끝나면 `https://<이름>.onrender.com` 에서 열린다. 이후 main 푸시마다 자동 재배포
-
-무료 플랜은 15분 접속이 없으면 잠들고(다음 접속 30초~1분), 재시작하면 캐시가 비워진다. 운영(도메인·상시 가동)은 아래 VM 배포로 옮긴다.
-
-## 배포 (Oracle Always Free ARM VM)
-
-처음 설치(2026-10-17): VM에 SSH로 들어가 `deploy/setup-vm.sh`를 받아 실행한다(Docker·compose, 80·443, 저장소, `.env` 틀).
-Oracle 콘솔의 Security List에서도 TCP 80·443을 연다. 도메인이 없으면 `<IP를 -로 이은 것>.sslip.io`를 DOMAIN으로 쓴다.
+- 주소: https://52-79-34-11.sslip.io (고정 IP 52.79.34.11, Ubuntu 24.04, 월 12달러·메모리 2GB)
+- 처음 설치: 서버에 SSH로 들어가 `deploy/setup-vm.sh`를 받아 실행한다(Docker·compose, 80·443, 저장소, `.env` 틀).
+  Lightsail Networking 탭의 방화벽에서 HTTPS(443)를 연다. 도메인이 없으면 `<IP를 -로 이은 것>.sslip.io`를 DOMAIN으로 쓴다.
+- 배포: `.github/workflows/deploy.yml` — 테스트 → 이미지(`:latest`·`:<커밋>`) → `DEPLOY_ENABLED=true`일 때 SSH로 갱신.
+  새 이미지가 healthy가 되지 않으면 이전 이미지(`.deployed-image`)로 되돌린다. 지금은 `DEPLOY_ENABLED=false`(수동 결정 대기)
+- 감시: `.github/workflows/uptime.yml`이 30분마다 `/api/health` 확인 — 실패하면 GitHub가 메일을 보낸다
+- 백업: 서버 cron이 매일 04:30 `deploy/backup.sh`로 Neon을 `~/backups`에 덤프(14일 보관, 배포 잡이 cron을 등록)
+- 옛 데모 Render(`render.yaml`, https://maple-optimizer.onrender.com)는 아직 켜져 있다 — 끄면 비용 상한·설정이 한 곳으로 모인다
 
 ```bash
 # VM에서 (Docker·compose 설치 후)
 git clone <저장소> ~/maple-optimizer && cd ~/maple-optimizer
 printf 'NEXON_API_KEY=...
 ' > .env
-DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE=ghcr.io/<owner>/maple-optimizer:latest
+DOMAIN=<도메인> docker compose up -d --build     # 또는 CI 이미지: IMAGE=ghcr.io/<owner>/maple-optimizer:<커밋>
 ```
 
 - `Dockerfile`: 웹 빌드 → Python 런타임(uv). amd64·arm64 둘 다. 키는 이미지에 넣지 않고 실행 시 `.env`로 넣는다.
-- `docker-compose.yml`: `api`(FastAPI) + `caddy`(자동 HTTPS, `deploy/Caddyfile`).
+- `docker-compose.yml`: `api`(FastAPI, 헬스체크) + `caddy`(자동 HTTPS·본문 8MB·보안 헤더, `deploy/Caddyfile`). 로그는 10MB×5개.
 - `.github/workflows/deploy.yml`: 테스트 → arm64/amd64 이미지를 ghcr.io에 푸시 → (`DEPLOY_ENABLED=true`일 때) SSH로 VM 갱신.
 
 ## PC가 꺼져도 Claude가 작업하기 (`.github/workflows/claude.yml`)

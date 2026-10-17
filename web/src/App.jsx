@@ -11,7 +11,8 @@ export default function App() {
   const route = useRoute();
   return (
     <>
-      <a className="skip-link" href="#main">본문으로 건너뛰기</a>
+      <a className="skip-link" href="#main"
+         onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>본문으로 건너뛰기</a>
       <TopBar route={route} />
       <main id="main" tabIndex={-1} className={`page page-${route.page}`}>
         {route.page === "home" && <Home />}

@@ -71,13 +71,27 @@ function Skeleton() {
 
 export default function Character({ route }) {
   const { name, tab } = route;
-  const [defense, setDefense] = useState(300);
+  const [defense, setDefense] = useState(300); // 입력칸에 보이는 값(보스 id 또는 방어율)
+  // 계산에 쓰는 값은 입력이 0.5초 멈춘 뒤에 바꾼다(2026-10-17 점검: 한 글자마다 요청이 최대 5건 나가 분당 한도에 걸렸다)
+  const [calcDefense, setCalcDefense] = useState(300);
+  useEffect(() => {
+    const t = setTimeout(() => setCalcDefense(defense), 500);
+    return () => clearTimeout(t);
+  }, [defense]);
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [bosses, setBosses] = useState(null);
 
+  // 캐릭터 정보는 이름이 바뀔 때만, 세팅 순위는 보스가 바뀔 때도 다시 부른다
+  const loadSettings = useCallback(async () => {
+    try {
+      setSettings(await getSettings(name, calcDefense));
+    } catch (e) {
+      setError(e);
+    }
+  }, [name, calcDefense]);
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
@@ -85,16 +99,16 @@ export default function Character({ route }) {
       const s = await getCharacter(name);
       setSummary(s);
       addRecent(name);
-      setSettings(await getSettings(name, defense));
     } catch (e) {
       setError(e);
     } finally {
       setBusy(false);
     }
-  }, [name, defense]);
+  }, [name]);
 
   useEffect(() => { setSummary(null); setSettings(null); }, [name]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (summary) loadSettings(); }, [summary, loadSettings]);
   // 보스 목록은 캐릭터를 불러온 뒤 한 번(목록이 없으면 직접 입력만)
   useEffect(() => {
     if (!summary || bosses) return;
@@ -115,7 +129,7 @@ export default function Character({ route }) {
                        bosses={bosses || []} force={settings?.force} />
           {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다 */}
           <AgentPanel key={name} name={name} initialAuthed title="AI 상담" showQuota
-                      watchProps={{ job: summary.character_class, level: summary.level, defense }} />
+                      watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -142,11 +156,11 @@ export default function Character({ route }) {
           )}
           {tab === "upgrade" && (
             <div className="stack">
-              <RoadmapPanel name={name} defense={defense} autoLoad />
-              <PathsPanel name={name} defense={defense} autoLoad showRefresh={false} />
-              <TargetRoadmapPanel name={name} defense={defense} />
-              <RecommendPanel name={name} defense={defense} autoLoad />
-              <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} /></div>
+              <RoadmapPanel name={name} defense={calcDefense} autoLoad />
+              <PathsPanel name={name} defense={calcDefense} autoLoad showRefresh={false} />
+              <TargetRoadmapPanel name={name} defense={calcDefense} />
+              <RecommendPanel name={name} defense={calcDefense} autoLoad />
+              <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} /></div>
               <p className="card mobile-only muted note-box">
                 <Icon name="monitor" size={16} />
                 PC에서 열면 경매장 화면을 바로 평가할 수 있어요 — 게임 창을 공유하면 툴팁을 읽어 내 캐릭터 기준으로 계산해요(휴대폰 브라우저는 화면 공유를 지원하지 않아요).

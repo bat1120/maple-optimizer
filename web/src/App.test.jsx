@@ -35,3 +35,14 @@ describe("App shell (주소 → 화면)", () => {
     expect(screen.getByRole("heading", { name: "강화 계산기" })).toBeInTheDocument();
   });
 });
+
+describe("본문으로 건너뛰기(2026-10-17 점검: 누르면 첫 화면으로 튕겼다)", () => {
+  it("주소를 바꾸지 않고 본문으로 포커스만 옮긴다", async () => {
+    window.location.hash = "#/calc";
+    render(<App />);
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.click(screen.getByRole("link", { name: "본문으로 건너뛰기" }));
+    expect(window.location.hash).toBe("#/calc");
+    expect(document.activeElement).toBe(document.getElementById("main"));
+  });
+});

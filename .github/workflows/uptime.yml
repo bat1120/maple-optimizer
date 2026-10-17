@@ -1,0 +1,22 @@
+name: uptime
+# 바깥 감시(2026-10-17): 30분마다 운영 주소 /api/health 확인 — 실패하면 GitHub가 저장소 주인에게 메일을 보낸다(추가 가입 없음)
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: ${{ vars.DEPLOY_DOMAIN != '' }}
+    steps:
+      - name: /api/health 200
+        env:
+          DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
+        run: |
+          for i in 1 2 3; do
+            if curl -fsS --max-time 20 "https://$DOMAIN/api/health"; then exit 0; fi
+            sleep 20
+          done
+          echo "운영 서버가 응답하지 않아요: https://$DOMAIN"
+          exit 1

@@ -184,3 +184,22 @@ describe("character page — AI 상담은 모두에게, 일반 사용자는 하�
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
   });
 });
+
+describe("character page — 방어율 입력은 멈춘 뒤에 한 번만 다시 계산(2026-10-17 점검)", () => {
+  it("빠르게 여러 글자를 쳐도 세팅 순위는 한 번만 다시 부르고, 캐릭터 정보는 다시 부르지 않는다", async () => {
+    const f = mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    await screen.findByRole("heading", { name: "내신부레테" });
+    await act(async () => { await new Promise((r) => setTimeout(r, 650)); });
+    const count = (part) => f.mock.calls.filter(([u]) => String(u).includes(part)).length;
+    const summaryCalls = f.mock.calls.filter(([u]) => /\/api\/character\/[^/?]+$/.test(String(u))).length;
+    const settingsCalls = count("/settings");
+    fireEvent.change(screen.getByRole("combobox", { name: "보스" }), { target: { value: "custom" } });
+    const input = await screen.findByLabelText("보스 방어율(%)");
+    for (const v of ["3", "38", "380"]) fireEvent.change(input, { target: { value: v } });
+    await act(async () => { await new Promise((r) => setTimeout(r, 700)); });
+    expect(count("/settings") - settingsCalls).toBeLessThanOrEqual(2);
+    expect(f.mock.calls.filter(([u]) => /\/api\/character\/[^/?]+$/.test(String(u))).length).toBe(summaryCalls);
+    expect(f.mock.calls.at(-1)[0]).toContain("boss_defense=380");
+  });
+});

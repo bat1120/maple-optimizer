@@ -56,7 +56,10 @@ jobs:
           context: .
           platforms: linux/arm64,linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/maple-optimizer:latest
+          # 커밋 해시 태그도 붙인다 — 배포는 해시로, 문제가 생기면 이전 해시로 되돌린다(2026-10-17)
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/maple-optimizer:latest
+            ghcr.io/${{ github.repository_owner }}/maple-optimizer:${{ github.sha }}
 
   deploy:
     # AWS Lightsail(서울) 서버 갱신(2026-10-17). 이미지는 비공개 ghcr — 이 잡의 일회용 GITHUB_TOKEN으로 받는다(따로 만든 토큰 없음)
@@ -73,21 +76,42 @@ jobs:
           GHCR_USER: ${{ github.actor }}
           OWNER: ${{ github.repository_owner }}
           DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
+          SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,OWNER,DEPLOY_DOMAIN
+          envs: GHCR_TOKEN,GHCR_USER,OWNER,DEPLOY_DOMAIN,SHA
           script: |
             set -e
             cd ~/maple-optimizer
             git pull --ff-only                     # docker-compose.yml·Caddyfile 변경도 따라간다
+            REPO="ghcr.io/$OWNER/maple-optimizer"
+            NEW="$REPO:$SHA"
+            PREV=$(cat .deployed-image 2>/dev/null || true)   # 지난번에 잘 뜬 이미지(되돌릴 곳)
+            export DOMAIN="$DEPLOY_DOMAIN"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            export IMAGE="ghcr.io/$OWNER/maple-optimizer:latest" DOMAIN="$DEPLOY_DOMAIN"
-            docker compose pull api
-            docker compose up -d
+            IMAGE="$NEW" docker compose pull api
             docker logout ghcr.io                  # 일회용 토큰이라도 서버에 남기지 않는다
-            docker image prune -f
+            IMAGE="$NEW" docker compose up -d
+            ok=""
+            for i in $(seq 1 18); do               # compose healthcheck가 healthy가 될 때까지 최대 90초
+              st=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q api)" 2>/dev/null || true)
+              if [ "$st" = "healthy" ]; then ok=1; break; fi
+              sleep 5
+            done
+            if [ -z "$ok" ]; then
+              echo "새 이미지가 healthy가 되지 않아 이전 이미지로 되돌려요: ${PREV:-없음}"
+              if [ -n "$PREV" ]; then IMAGE="$PREV" docker compose up -d; fi
+              exit 1
+            fi
+            echo "$NEW" > .deployed-image
+            # 최근 3개 이미지만 남긴다(되돌릴 여지는 남기고 디스크는 채우지 않게)
+            docker images "$REPO" --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' | sort -r | tail -n +4 \
+              | cut -d'|' -f2 | grep -v ':latest$' | xargs -r docker rmi || true
+            # 매일 DB 백업(cron) — 없으면 넣는다
+            ( crontab -l 2>/dev/null | grep -v 'deploy/backup.sh'; \
+              echo "30 4 * * * bash $HOME/maple-optimizer/deploy/backup.sh >> $HOME/backups/backup.log 2>&1" ) | crontab -
       - name: 배포 뒤 /api/health 200
         env:
           DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
