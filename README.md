@@ -82,6 +82,9 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 
 ## 배포 (Oracle Always Free ARM VM)
 
+처음 설치(2026-10-17): VM에 SSH로 들어가 `deploy/setup-vm.sh`를 받아 실행한다(Docker·compose, 80·443, 저장소, `.env` 틀).
+Oracle 콘솔의 Security List에서도 TCP 80·443을 연다. 도메인이 없으면 `<IP를 -로 이은 것>.sslip.io`를 DOMAIN으로 쓴다.
+
 ```bash
 # VM에서 (Docker·compose 설치 후)
 git clone <저장소> ~/maple-optimizer && cd ~/maple-optimizer
