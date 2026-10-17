@@ -59,17 +59,42 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/maple-optimizer:latest
 
   deploy:
+    # AWS Lightsail(서울) 서버 갱신(2026-10-17). 이미지는 비공개 ghcr — 이 잡의 일회용 GITHUB_TOKEN으로 받는다(따로 만든 토큰 없음)
     needs: image
     runs-on: ubuntu-latest
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}   # 서버 준비(H1) 전에는 배포 단계를 건너뛴다
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}   # 서버 준비 전에는 배포 단계를 건너뛴다
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          OWNER: ${{ github.repository_owner }}
+          DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER,OWNER,DEPLOY_DOMAIN
           script: |
+            set -e
             cd ~/maple-optimizer
-            echo "${{ secrets.GHCR_READ_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            IMAGE=ghcr.io/${{ github.repository_owner }}/maple-optimizer:latest docker compose pull api
-            IMAGE=ghcr.io/${{ github.repository_owner }}/maple-optimizer:latest docker compose up -d
+            git pull --ff-only                     # docker-compose.yml·Caddyfile 변경도 따라간다
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export IMAGE="ghcr.io/$OWNER/maple-optimizer:latest" DOMAIN="$DEPLOY_DOMAIN"
+            docker compose pull api
+            docker compose up -d
+            docker logout ghcr.io                  # 일회용 토큰이라도 서버에 남기지 않는다
+            docker image prune -f
+      - name: 배포 뒤 /api/health 200
+        env:
+          DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "https://$DEPLOY_DOMAIN/api/health"; then exit 0; fi
+            sleep 5
+          done
+          echo "배포 뒤 서버가 응답하지 않아요: https://$DEPLOY_DOMAIN"
+          exit 1

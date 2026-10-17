@@ -43,8 +43,10 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 OpenAI를 호출하지 않는다(에이전트·화면 분석 공통) |
 | `VISION_DATASET_DIR` | `.env` | 화면 분석 학습·진단 데이터 폴더(선택). 로컬 `.data/vision`, VM은 캐시 볼륨 안 `/app/.cache/vision` 권장. 비우면 저장 안 함 |
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
-| `GHCR_READ_TOKEN` | GitHub Actions Secrets | VM이 ghcr.io 이미지를 받을 때 쓰는 `read:packages` 토큰 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
+| `DEPLOY_DOMAIN` | GitHub Actions Variables | 서버 주소(예: `52-79-34-11.sslip.io`). Caddy 자동 HTTPS와 배포 뒤 확인에 쓴다 |
+
+비공개 ghcr 이미지는 배포 잡의 일회용 `GITHUB_TOKEN`(packages: read)으로 받는다 — 따로 만든 읽기 토큰이 필요 없다(2026-10-17).
 | `DATABASE_URL` | Render 환경변수 (`.env`도 가능) | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite(Render는 재시작 때 사라짐) |
 | `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | 환경변수 | 일반 유저 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
