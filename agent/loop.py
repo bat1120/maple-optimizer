@@ -6,6 +6,7 @@
 - 실패는 반드시 error 이벤트로 알리고 done으로 끝난다(조용히 끊기지 않게)
 """
 import json
+import logging
 import os
 from collections.abc import Callable, Iterator
 
@@ -13,6 +14,7 @@ from agent.numbers import unverified_numbers
 from agent.tools import ToolBox, openai_tools
 from agent.tracing import NoopTracer, safe
 
+_log = logging.getLogger("uvicorn.error")
 DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
 SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사이트 사용자 누구나 쓴다(2026-10-17 공개, 일반 사용자는 하루 질문 수 제한).
 
@@ -85,13 +87,15 @@ def _brief(items: list, cap: int = 4000) -> list:
 def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int = 8,
               on_usage: Callable[[int], None] | None = None, model: str | None = None,
               exclude_tools: tuple = (), tracer=None, trace_user: str | None = None,
-              trace_meta: dict | None = None, max_tokens: int | None = None) -> Iterator[dict]:
+              trace_meta: dict | None = None, max_tokens: int | None = None,
+              public_errors: bool = False) -> Iterator[dict]:
     """tracer: agent/tracing.py(Langfuse 또는 Noop). 추적이 실패해도 답변 흐름은 그대로다."""
     tracer = tracer or NoopTracer()
     question = messages[-1].get("content") if messages else None
     answer = []
     with safe(lambda: tracer.conversation(user_id=trace_user, metadata=trace_meta, input=question)) as root:
-        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens):
+        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens,
+                       public_errors):
             if ev["type"] == "text":
                 answer.append(ev["text"])
             elif ev["type"] == "error":
@@ -100,7 +104,8 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
         root.update(output="\n".join(answer))
 
 
-def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens=None) -> Iterator[dict]:
+def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens=None,
+         public_errors=False) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
@@ -158,5 +163,8 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
         else:
             yield {"type": "error", "message": f"도구 호출이 {max_turns}번을 넘어 멈췄어요."}
     except Exception as e:  # noqa: BLE001 — 어떤 실패든 사용자에게 보인다
-        yield {"type": "error", "message": f"에이전트 오류: {type(e).__name__}: {e}"}
+        _log.warning("에이전트 오류: %s: %s", type(e).__name__, e)
+        # 공개 사용자에게는 내부 오류 문구(경로·라이브러리 메시지)를 보이지 않는다(2026-10-17) — 자세한 내용은 서버 로그에만
+        msg = "AI 상담 중 오류가 났어요. 잠시 뒤 다시 시도해 주세요." if public_errors else f"에이전트 오류: {type(e).__name__}: {e}"
+        yield {"type": "error", "message": msg}
     yield {"type": "done", "unverified_numbers": []}

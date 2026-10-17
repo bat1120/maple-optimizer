@@ -353,11 +353,11 @@ describe("screen watch public mode (일반 유저, 2026-10-07)", () => {
     vi.useFakeTimers();
     let k = 0;
     const capture = { start: async () => ({ hash: () => tipFrame(k++ < 2 ? 10 : 90), image: () => "data:image/jpeg;base64,AAAA", stop: vi.fn() }) };
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 429, json: async () => ({ code: "VISION_QUOTA", message: "오늘 화면 분석 한도(20회)를 다 썼어요. 내일 다시 써 주세요." }) });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, status: 429, json: async () => ({ code: "VISION_QUOTA", message: "오늘 화면 평가 한도(20회)를 다 썼어요. 내일 다시 써 주세요." }) });
     render(<ScreenWatch name="x" defense={300} capture={capture} admin={false} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     for (let i = 0; i < 4; i++) await act(async () => { vi.advanceTimersByTime(250); });
-    expect(screen.getByRole("alert")).toHaveTextContent("오늘 화면 분석 한도(20회)를 다 썼어요");
+    expect(screen.getByRole("alert")).toHaveTextContent("오늘 화면 평가 한도(20회)를 다 썼어요");
   });
 });
 

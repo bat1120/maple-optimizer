@@ -142,3 +142,38 @@ def test_compose_caps_logs_and_checks_health():
     for name in ("api", "caddy"):
         assert c["services"][name]["logging"]["options"]["max-size"]
     assert "healthcheck" in c["services"]["api"]
+
+
+# ── 남은 보강(2026-10-17): 로그인 무차별 대입·로그아웃·내부 오류 숨김·새 해시 반복 횟수 ──
+def test_login_attempts_are_limited_per_ip(tmp_path):
+    c = _app(tmp_path)
+    codes = [c.post("/api/admin/login", json={"password": "wrong"}).status_code for _ in range(6)]
+    assert codes[:5] == [401] * 5 and codes[5] == 429
+    assert c.post("/api/admin/login", json={"password": "pw"}).status_code == 429  # 잠긴 동안은 맞는 비밀번호도
+
+
+def test_logout_clears_admin_session(tmp_path):
+    c = _app(tmp_path)
+    assert c.post("/api/admin/login", json={"password": "pw"}).status_code == 200
+    assert c.get("/api/admin/session").json() == {"admin": True}
+    assert c.post("/api/admin/logout").status_code == 200
+    assert c.get("/api/admin/session").json() == {"admin": False}
+
+
+def test_public_users_do_not_see_internal_error_text(tmp_path):
+    class Boom:
+        responses = NS(create=lambda **kw: (_ for _ in ()).throw(RuntimeError("secret internal path /app/x.py")))
+    r = _app(tmp_path, Boom()).post("/api/agent/chat", json={"messages": [{"role": "user", "content": "x"}]})
+    assert "secret internal path" not in r.text and "error" in _types(r)
+
+
+def test_new_password_hashes_use_owasp_iterations():
+    from server.admin import check_password, make_password_hash
+    h = make_password_hash("pw")
+    assert int(h.split(":")[1]) >= 600_000 and check_password("pw", h)
+
+
+def test_server_process_does_not_run_as_root():
+    """컨테이너 안 서버는 root가 아닌 app 사용자로 돈다(2026-10-17). 캐시 볼륨 권한은 시작할 때 app에게 넘긴다."""
+    df = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert "useradd" in df and "setpriv" in df and "--reuid=app" in df

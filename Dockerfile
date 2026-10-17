@@ -21,7 +21,10 @@ RUN uv sync --frozen --no-dev
 RUN /app/.venv/bin/python -c "import psycopg"
 COPY --from=web /web/dist web/dist
 # NEXON_API_KEY는 실행 시 환경변수(.env → docker compose env_file)로 넣는다. 이미지에 넣지 않는다.
+# 서버는 root가 아닌 app 사용자로 돈다(2026-10-17). 예전 캐시 볼륨은 root 소유라 시작할 때 app에게 넘긴 뒤
+# setpriv로 사용자를 바꿔 실행한다(util-linux, Debian 기본). uv 캐시가 필요 없게 venv의 uvicorn을 바로 부른다
+RUN useradd --system --uid 10001 --home-dir /app --no-create-home app && mkdir -p /app/.cache && chown -R app:app /app/.cache
 VOLUME ["/app/.cache"]
 EXPOSE 8000
 # 포트: 플랫폼이 PORT를 주면 따르고(Render 등), 없으면 8000(docker compose)
-CMD ["sh", "-c", "exec uv run --no-sync uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]
+CMD ["sh", "-c", "chown -R app:app /app/.cache 2>/dev/null || true; exec setpriv --reuid=app --regid=app --init-groups /app/.venv/bin/uvicorn server.app:default_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]

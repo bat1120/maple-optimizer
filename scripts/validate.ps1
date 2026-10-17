@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $ErrorActionPreference = "Continue"  # uv가 stderr에 알림을 써도 종료코드로만 판정한다
-$out = & uv run pytest -q -rs -p no:cacheprovider --ignore=tests/goals 2>&1 | Out-String
+$out = & uv run pytest -q -rs -p no:cacheprovider --ignore=tests/goals -n 8 2>&1 | Out-String  # 병렬(pytest-xdist): 약 9분 → 3분(2026-10-17)
 $code = $LASTEXITCODE
 $ErrorActionPreference = "Stop"
 $summary = ($out -split "`n" | Where-Object { $_ -match "passed|failed|error|no tests ran" } | Select-Object -Last 1)

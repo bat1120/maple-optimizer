@@ -292,7 +292,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
 
   return (
     <section className="panel">
-      <h3>{admin ? "경매장 화면 분석 (관리자)" : "경매장 화면 평가"}</h3>
+      <h3>{admin ? "경매장 화면 평가 (관리자)" : "경매장 화면 평가"}</h3>
       <p className="muted">
         공유 창에서 '창' 탭을 골라 게임 창을 공유하세요(게임은 창 모드 권장 — 전체 화면은 검게 잡힐 수 있어요). 웹 경매장 탭도 돼요.
         화면이 바뀔 때마다 매물을 읽어 평가하고, 공유한 화면은 분석을 위해 OpenAI로 전송돼요 — 경매장 화면만 공유해 주세요.

@@ -102,7 +102,12 @@ describe("character page", () => {
     await screen.findByRole("heading", { name: "내신부레테" });
     expect(screen.getByRole("tab", { name: "업그레이드" })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
-    expect(f.mock.calls.some((c) => String(c[0]).includes("/roadmap"))).toBe(true);
+    // 업그레이드 탭(2026-10-17 정리): 경로 비교·검색 추천은 바로, 전체 부위 로드맵·목표 배율 로드맵은 펼칠 때 계산
+    expect(f.mock.calls.some((c) => String(c[0]).includes("/paths"))).toBe(true);
+    expect(f.mock.calls.some((c) => String(c[0]).includes("/recommend"))).toBe(true);
+    expect(f.mock.calls.some((c) => String(c[0]).includes("/roadmap?"))).toBe(false);
+    await act(async () => { fireEvent.click(screen.getByText("전체 부위 로드맵 펼치기")); });
+    expect(f.mock.calls.some((c) => String(c[0]).includes("/roadmap?"))).toBe(true);
     expect(screen.queryByRole("button", { name: "경매장 시세 갱신" })).toBeNull();   // 공개 화면에선 관리자 기능 숨김
   });
 

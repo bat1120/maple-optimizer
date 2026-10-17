@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { adminLogin, getAgentQuota, streamAgent } from "./api.js";
 import ScreenWatch from "./ScreenWatch.jsx";
 
-// 관리자 전용 AI 에이전트 채팅. 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
+// AI 상담 채팅(2026-10-17부터 모두에게, 일반 사용자는 하루 횟수 제한). 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
 // 화면 분석에서 읽은 매물을 질문에 붙인다. 엔진 평가 숫자는 붙이지 않는다 — 에이전트가 도구로 다시 계산해야
 // 답변 숫자의 출처 검사가 된다.
 const isListOnly = (i) => !Object.keys(i.read?.total || {}).length && !(i.read?.potentials || []).length;
@@ -62,7 +62,7 @@ function ScreenRequest({ search, note, name, watchProps, onSend, busy }) {
 }
 
 export default function AgentPanel({ name = "", screenItems = [], feeRate = null, initialAuthed = false, watchProps = {},
-                                     title = "AI 에이전트", showQuota = false }) {
+                                     title = "AI 상담", showQuota = false }) {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(initialAuthed);
   const [question, setQuestion] = useState("");
@@ -127,7 +127,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
     <section className="panel">
       <h3>{title}</h3>
       {quota && !quota.admin && <p className="muted small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</p>}
-      <p className="muted small">질문과 답변은 품질 확인을 위해 기록돼요(IP는 남기지 않아요).</p>
+      <p className="muted small">질문과 답변은 품질 확인을 위해 기록돼요 — 답변을 만들려고 OpenAI로, 기록은 Langfuse(EU)로 보내요. 개인정보는 적지 말아 주세요(IP는 남기지 않아요).</p>
       {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
       <div className="chat">
         {log.map((ev, i) => {

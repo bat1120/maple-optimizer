@@ -13,6 +13,7 @@ import TargetRoadmapPanel from "../TargetRoadmapPanel.jsx";
 import RecommendPanel from "../RecommendPanel.jsx";
 import CalcPanels, { CALC_STEPS } from "../calc/CalcPanels.jsx";
 import ScreenWatch from "../ScreenWatch.jsx";
+import LazyPanel from "../ui/LazyPanel.jsx";
 import Icon from "../ui/icons.jsx";
 import { ErrorState, HowTo } from "../ui/Guide.jsx";
 
@@ -156,11 +157,15 @@ export default function Character({ route }) {
           )}
           {tab === "upgrade" && (
             <div className="stack">
-              <RoadmapPanel name={name} defense={calcDefense} autoLoad />
               <PathsPanel name={name} defense={calcDefense} autoLoad showRefresh={false} />
-              <TargetRoadmapPanel name={name} defense={calcDefense} />
               <RecommendPanel name={name} defense={calcDefense} autoLoad />
               <div className="pc-only"><ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} /></div>
+              <LazyPanel label="전체 부위 로드맵" hint="부위마다 잠재·에디를 한 단계씩 올리는 길을 표로 봐요.">
+                <RoadmapPanel name={name} defense={calcDefense} autoLoad />
+              </LazyPanel>
+              <LazyPanel label="목표 배율 로드맵" hint="보스 배율을 목표(예: 50%)까지 올리는 순서를 억당 효율 순으로 쌓아요.">
+                <TargetRoadmapPanel name={name} defense={calcDefense} />
+              </LazyPanel>
               <p className="card mobile-only muted note-box">
                 <Icon name="monitor" size={16} />
                 PC에서 열면 경매장 화면을 바로 평가할 수 있어요 — 게임 창을 공유하면 툴팁을 읽어 내 캐릭터 기준으로 계산해요(휴대폰 브라우저는 화면 공유를 지원하지 않아요).

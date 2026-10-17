@@ -257,15 +257,30 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         """관리자 로그인 상태(쿠키) — 캐릭터 화면이 관리자에게만 AI 상담을 보인다(2026-10-12)."""
         return {"admin": bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())}
 
+    # 로그인 무차별 대입 방어(2026-10-17): IP당 15분에 5번, 사이트 전체 1시간에 30번. 잠긴 동안은 맞는 비밀번호도 막는다
+    login_ip_limiter = SlidingWindow(5, 900.0, clock)
+    login_all_limiter = SlidingWindow(30, 3600.0, clock)
+
     @app.post("/api/admin/login")
     def login(body: LoginIn, request: Request):
         if not (admin_password_hash and session_secret):
             raise ApiError(503, "ADMIN_DISABLED", "관리자 기능이 설정되지 않았습니다(ADMIN_PASSWORD_HASH·SESSION_SECRET).")
+        ip = request.client.host if request.client else "unknown"
+        if not (login_ip_limiter.allow(ip) and login_all_limiter.allow("all")):
+            raise ApiError(429, "LOGIN_LOCKED", "로그인 시도가 너무 많아요. 15분 뒤 다시 시도해 주세요.")
         if not admin.check_password(body.password, admin_password_hash):
+            _log.warning("관리자 로그인 실패")
             raise ApiError(401, "BAD_PASSWORD", "비밀번호가 틀렸습니다.")
         r = JSONResponse({"status": "ok"})
         r.set_cookie(admin.COOKIE, admin.sign_session(session_secret, clock()), max_age=admin.SESSION_TTL,
                      httponly=True, samesite="strict", secure=request.url.scheme == "https")  # 운영은 HTTPS(프록시 헤더)
+        return r
+
+    @app.post("/api/admin/logout")
+    def logout():
+        """관리자 쿠키를 지운다(2026-10-17). 모든 기기에서 한꺼번에 끊으려면 SESSION_SECRET을 바꾼다."""
+        r = JSONResponse({"status": "ok"})
+        r.delete_cookie(admin.COOKIE)
         return r
 
     def _is_admin(request: Request) -> bool:
@@ -307,7 +322,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                                  on_usage=usage.add, max_tokens=None if is_admin else agent_public_request_tokens,
                                  max_turns=8 if is_admin else 6, exclude_tools=() if is_admin else ("refresh_market",),
                                  tracer=agent_tracer, trace_user="admin" if is_admin else who,
-                                 trace_meta={"public": not is_admin})
+                                 trace_meta={"public": not is_admin}, public_errors=not is_admin)
 
         def sse():
             # 도구 계산·모델 응답을 기다리는 동안 agent_ping_seconds마다 SSE 주석을 보내 연결을 살린다
@@ -320,6 +335,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             def work():
                 try:
                     for e in events():
+                        if not is_admin and e.get("type") == "tool_result":
+                            e = {"type": "tool_result", "name": e.get("name")}  # 공개 사용자에게는 도구 결과 본문을 보내지 않는다
                         q.put(e)
                 finally:
                     try:
@@ -472,7 +489,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         except ImageTooLarge:
             raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(4K 해상도 이하로 공유해 주세요).") from None
         except VisionQuota:
-            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 분석 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
+            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 평가 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap, vb = pick(load(body.name, None) if body.name else None, body.boss_defense, body.boss)

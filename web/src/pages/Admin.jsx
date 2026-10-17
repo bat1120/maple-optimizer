@@ -177,7 +177,7 @@ export default function Admin() {
   return (
     <div className="admin">
       <h1>관리자 도구</h1>
-      <p className="muted">매물 직접 입력·효율 계산, 경매장 화면 분석·장비창 채점, AI 상담. 화면 분석·AI는 관리자 로그인이 필요해요.</p>
+      <p className="muted">매물 직접 입력·효율 계산, 경매장 화면 평가·장비창 채점, AI 상담. 화면 평가·AI는 관리자 로그인이 필요해요.</p>
       <form onSubmit={lookup} className="search">
         <label>닉네임<input value={name} onChange={(e) => setName(e.target.value)} /></label>
         <label>보스 방어율(%)

@@ -35,7 +35,7 @@ export default function TopBar({ route }) {
             <Icon name="calc" size={16} />계산기
           </a>
           <a className="nav-link" href="#/scouter" aria-current={route.page === "scouter" ? "page" : undefined}>
-            <Icon name="link" size={16} />환산 도우미
+            <Icon name="link" size={16} />환산 채우기
           </a>
           <button type="button" className="ghost theme-toggle" onClick={cycle} aria-label={`테마: ${THEME_LABEL[theme]}`}
                   title="테마 바꾸기(시스템 → 라이트 → 다크)">
