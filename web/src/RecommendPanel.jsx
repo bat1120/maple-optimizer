@@ -48,6 +48,7 @@ export default function RecommendPanel({ name, defense, autoLoad = false }) {
       {data && (
         <>
           <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅)</p>
+          {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           {data.note && <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>}
           {data.recommendations.length === 0 ? (
             <EmptyState icon="search" title="잠재만 바꿔서 오르는 부위가 없어요.">위의 업그레이드 경로 비교나 계산기 탭의 스타포스 비용을 살펴보세요.</EmptyState>

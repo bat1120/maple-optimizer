@@ -93,8 +93,11 @@ def test_crit_rate_below_100_lowers_index():
     assert low == pytest.approx(1 + 0.94 * 0.85) and low < full    # 100% 밑은 치명타가 덜 터진다
 
 
-def test_removing_crit_rate_line_now_costs_damage():
-    """엠블렘 에디 '크리티컬 확률 +3%' 줄만 빼면 실딜이 줄어야 한다(예전엔 크확 100% 고정이라 0)."""
+def test_crit_loss_counts_only_below_100_percent():
+    """스탯창 크확(직업 스킬 크확이 빠진 값)이 100%를 넘으면 그 여유만큼은 줄어도 손해가 아니다(2026-10-17 점검:
+    레테 보스 세팅 예측 크확 103%인데 '크리티컬 확률 +3%' 줄을 빼면 -1.65%로 잡았다). 여유보다 더 줄면 손해."""
+    import copy
+    import dataclasses
     from engine.market.recommend import _Planner, with_additional
     snap = snapshot(bundle("레테"))
     setting = rank_settings(snap, BOSS, CAT)[0][0]
@@ -102,7 +105,18 @@ def test_removing_crit_rate_line_now_costs_damage():
     em = pl.raw["엠블렘"]
     assert "크리티컬 확률 +3%" in em.additional
     lines = [x for x in em.additional if x != "크리티컬 확률 +3%"]
-    assert pl.ev.index({**pl.items, "엠블렘": with_additional(em, lines, snap.level)}) < pl.base
+    no_crit_line = pl.ev.index({**pl.items, "엠블렘": with_additional(em, lines, snap.level)})
+    without_line_and_other = with_additional(em, lines, snap.level)
+    # 크확이 여유(3%)보다 많이 줄면 손해
+    stats = copy.deepcopy(without_line_and_other.stats)
+    stats.cr -= 10
+    much_less = pl.ev.index({**pl.items, "엠블렘": dataclasses.replace(without_line_and_other, stats=stats)})
+    assert much_less < no_crit_line
+    # 크확 3% 줄만 빼면(여유 안) 남은 줄 차이만 남는다 — 크확 손해로 줄지 않는다
+    stats0 = copy.deepcopy(em.stats)
+    stats0.cr -= 3
+    same_lines_less_crit = pl.ev.index({**pl.items, "엠블렘": dataclasses.replace(em, stats=stats0)})
+    assert same_lines_less_crit == pytest.approx(pl.base)
 
 
 def test_roadmap_keeps_crit_rate_by_default():

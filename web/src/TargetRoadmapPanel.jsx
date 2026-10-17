@@ -12,6 +12,12 @@ export const BOSSES = [
   ["destiny_seren", "데스티니 세렌"], ["champion_kalos", "챔피언 칼로스"], ["champion_seren", "챔피언 세렌"],
   ["champion_blackMage", "챔피언 검은 마법사"],
 ];
+// MapleScouter 보스 → 우리 보스 목록 id(engine/data/bosses.json). 계산(방어율·요구 포스)을 이 보스로 한다(2026-10-17 —
+// 전에는 패널 보스가 MapleScouter 확인에만 쓰이고 계산은 페이지 위쪽 보스였다). 목록에 없는 보스는 위쪽 보스로 계산
+export const ENGINE_BOSS = {
+  extreme_lotus: "lotus-extreme", extreme_adversary: "adversary-extreme", extreme_kaling: "kaling-extreme",
+  extreme_kalos: "kalos-extreme", extreme_seren: "seren-extreme-2", extreme_blackMage: "blackmage-extreme",
+};
 
 function stepLabel(s) {
   if (s.path === "스타포스") return `${s.name} ${s.from_star}→${s.to_star}성`;
@@ -34,7 +40,7 @@ export default function TargetRoadmapPanel({ name, defense }) {
   const load = async () => {
     setBusy(true); setError(null); setSent(null);
     try {
-      setData(await getTargetRoadmap(name, defense, { current: Number(current), target: Number(target), fragmentMan: fragMan }));
+      setData(await getTargetRoadmap(name, ENGINE_BOSS[boss] || defense, { current: Number(current), target: Number(target), fragmentMan: fragMan }));
     } catch (e) {
       setError(e);
     } finally {
@@ -66,12 +72,13 @@ export default function TargetRoadmapPanel({ name, defense }) {
           placeholder="넣으면 HEXA 포함" onChange={(e) => setFragMan(e.target.value)} style={{ width: "8em" }} /></label>
         <button type="button" onClick={load} disabled={!name || busy || !(Number(current) > 0)}>{busy ? "계산 중…" : "로드맵 만들기"}</button>
       </div>
+      {!ENGINE_BOSS[boss] && <p className="muted small">이 보스는 계산용 보스 목록에 없어서, 위쪽에서 고른 보스 기준으로 계산해요.</p>}
       {error && <p role="alert" className="error">{error.message}</p>}
       {data && (
         <>
           <p>
             필요한 딜 <strong>×{data.needed_multiplier.toFixed(3)}</strong> · 로드맵 끝 <strong>{data.final_ratio.toFixed(2)}%</strong>
-            {data.reached ? " (목표 도달)" : " (이 계산으로는 목표에 못 미쳐요)"} · 누적 <strong>{data.total_cost_text}</strong>
+            {data.reached ? " (목표 도달)" : data.stopped_at_max_steps ? " (단계 수 상한에서 멈췄어요 — 더 쌓으면 갈 수 있어요)" : " (이 계산으로는 목표에 못 미쳐요)"} · 누적 <strong>{data.total_cost_text}</strong>
           </p>
           <table aria-label="목표 배율 로드맵">
             <thead><tr><th>#</th><th>단계</th><th className="num">실딜</th><th className="num">비용</th><th className="num">누적 배율</th><th className="num">누적 비용</th></tr></thead>
@@ -95,6 +102,7 @@ export default function TargetRoadmapPanel({ name, defense }) {
           )}
           {sent?.ok && <p className="muted small">MapleScouter 탭을 열었어요 — 지금 배율을 읽고, 변화량을 넣고, 다시 읽어요(30초~1분). 결과는 그 탭 위쪽 알림에 떠요.</p>}
           {sent && !sent.ok && <p className="error small">{sent.error}</p>}
+          {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>
         </>
       )}

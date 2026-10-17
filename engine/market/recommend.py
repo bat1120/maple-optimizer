@@ -179,7 +179,7 @@ class _Planner:
         self.miracle = miracle  # 미라클 타임: 큐브 등급 상승 확률 2배
         job = job_profile(snap.character_class)
         self.snap, self.main, self.mains = snap, job.mains[0], job.mains
-        self.useful = {self.main, job.attack, "BOSS", "IED", "CD", "DMG"}
+        self.useful = {*job.mains, job.attack, "BOSS", "IED", "CD", "DMG"}  # 제논은 STR·DEX·LUK 모두(2026-10-17)
         self.ev = Evaluator(snap, setting, boss, catalog)
         self.raw = self.ev.base_items()
         self._raw_base, self._fd_cache = self.ev.index(self.raw), {}

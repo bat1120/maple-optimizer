@@ -90,3 +90,12 @@ describe("recommend panel", () => {
     expect(cards[1]).toHaveTextContent("유지: 스킬 재사용 대기시간 -2초");
   });
 });
+
+describe("recommend panel — 낮은 방어율 계수 경고(2026-10-17)", () => {
+  it("basis_warning이 있으면 접지 않고 바로 보여 준다", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...body, basis_warning: "방무 위주 추천은 확인해 주세요" }) });
+    render(<RecommendPanel name="내신부레테" defense={300} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "검색 추천 받기" })); });
+    expect(screen.getByRole("note")).toHaveTextContent("방무 위주 추천은 확인해 주세요");
+  });
+});

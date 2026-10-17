@@ -135,6 +135,7 @@ export default function PathsPanel({ name, defense, autoLoad = false, showRefres
       {data && (
         <>
           <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅) · 관측 매물 {data.observed_count}건{data.events ? ` · ${data.events.label}` : ""}</p>
+          {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           {data.note && <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>}
           {data.all.length === 0 && (
             <EmptyState icon="layers" title="비교할 경로가 아직 없어요">관측 매물이 쌓이거나 큐브로 오를 단계가 있으면 여기에 나와요.</EmptyState>

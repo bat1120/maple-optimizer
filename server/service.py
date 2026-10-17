@@ -20,6 +20,36 @@ def boss(defense: "float | BossProfile") -> BossProfile:
     return BossProfile(f"방어율 {defense:g}%", defense)
 
 
+# 계산 기준 고지(2026-10-17 점검) — 추천 화면마다 붙인다
+BASIS_NOTE = ("실딜은 넥슨 스탯창(버프·도핑 없음) 기준이에요. 보스전 버프·도핑이 빠져 있어 방어율 무시·크리티컬 데미지 가치가 "
+              "버프를 켠 기준(MapleScouter 등)보다 크게 나올 수 있어요. 크리티컬 확률은 스탯창 값을 하한으로 봐요.")
+LOW_ARMOR = 0.5  # 방어율 계수(1 − 방어율×(1 − 방무))가 이보다 작으면 방무 줄 가치가 크게 부풀어 경고
+
+
+def _basis_warning(snap, setting, b) -> str | None:
+    from engine.stats.evaluate import predict_setting
+    pred = predict_setting(snap, setting, CATALOG)
+    armor = max(0.0, 1 - b.defense / 100 * (1 - pred.ied / 100))
+    if armor >= LOW_ARMOR:
+        return None
+    return (f"이 캐릭터는 스탯창 방어율 무시가 {pred.ied:.1f}%라, 방어율 {b.defense:g}% 보스에서 들어가는 피해가 {armor * 100:.0f}%뿐이에요. "
+            "이럴 때는 방어율 무시 줄 하나의 가치가 아주 크게 계산돼요 — 버프·도핑으로 오르는 방어율 무시가 빠진 값이라 "
+            "실제보다 과장됐을 수 있으니, 방무 위주 추천은 환산 사이트로 한 번 더 확인해 주세요.")
+
+
+def with_basis(fn):
+    """추천 결과(note·evaluation_setting·boss가 있는 dict)에 계산 기준 고지와 낮은 방어율 계수 경고를 붙인다."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(snap, defense, *args, **kwargs):
+        r = fn(snap, defense, *args, **kwargs)
+        r["note"] = f"{r.get('note') or ''} {BASIS_NOTE}".strip()
+        r["basis_warning"] = _basis_warning(snap, Setting(**r["evaluation_setting"]), boss(defense))
+        return r
+    return wrapper
+
+
 def choose(snap: CharacterSnapshot | None, defense: float, boss_id: str | None = None,
            arcane_force: int | None = None, authentic_force: int | None = None):
     """(스냅샷, 보스). boss_id가 있으면 보스 목록(engine/data/bosses.json)의 방어율·요구 포스, 없으면 방어율 숫자만.
@@ -300,6 +330,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
     return out
 
 
+@with_basis
 def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, current_ratio: float,
                    target_ratio: float, events=None) -> dict:
     """목표 배율 로드맵 + MapleScouter에 한꺼번에 넣을 변화량(큐브·스타포스·HEXA 스탯·심볼. HEXA 코어는 칸이 없어 빠진다)."""
@@ -343,7 +374,8 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
             "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
             "scouter": scouter, "hexa_core_multiplier": mult_core,
-            "note": ("배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
+            "note": ("스페어 값·썬데이 이벤트·추옵(환생의 불꽃)은 아직 로드맵에 넣지 않아요 — 실제 비용은 이보다 클 수 있어요. "
+                     "배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
                      "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "
                      "큐브·HEXA는 부위·코어마다 한 단계. 경매장 구매는 넣지 않았어요. MapleScouter에 넣는 변화량에는 HEXA 코어가 빠져요"
                      "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
@@ -384,6 +416,7 @@ def _cooldown(snap: CharacterSnapshot, cooldown_main_pct: float | None, setting=
     return src, "이 직업은 출처 있는 쿨감 수치를 못 찾아 실딜에 넣지 않았어요 — 쿨감 1초 = 주스탯 몇 %인지 직접 입력하면 넣어요."
 
 
+@with_basis
 def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_main_pct: float | None = None) -> dict:
     """게임 경매장 검색 조건 카드(잠재·에디). 평가는 언제나 보스 실딜 최적 세팅 기준(사냥 세팅이어도).
     제네시스·데스티니 무기처럼 경매장에서 살 수 없는 템은 빠진다(로드맵에서 큐브 경로로 본다)."""
@@ -414,6 +447,7 @@ def recommend(snap: CharacterSnapshot, defense: float, top: int = 5, cooldown_ma
                      "쿨감 줄은 유지해요 — " + cd_note)}
 
 
+@with_basis
 def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None = None,
           cooldown_main_pct: float | None = None, top: int = 30, events=None) -> dict:
     """업그레이드 경로 비교: 구매·직작·지금 템 큐브·스타포스·추옵·HEXA·심볼을 억당 실딜로(세트 효과 반영)."""
@@ -424,11 +458,15 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
     events = events or Events()
     r = upgrade_paths(snap, chosen, b, CATALOG, observed, cooldown_main_pct, events)
     fmt = lambda ps: [{**p, "cost_text": meso_text(p["cost"])} for p in ps]  # noqa: E731
+    # 딜 지분 자료가 없는 직업은 HEXA 코어 경로가 조용히 빠졌다(2026-10-17 점검) — 빠졌다고 알린다
+    from engine.market.hexa_core_paths import job_shares
+    hexa_note = ("HEXA 코어 = 이 직업은 딜 지분 자료가 없어(연무장 기록·직업 기준값 모두 없음) 계산하지 않았어요. "
+                 if snap.hexa_cores and not snap.own_shares and not (job_shares(snap.character_class) or {}).get("shares") else "")
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b),
             "events": {**asdict(events), "label": events.label()},
             "all": fmt(balanced(r["all"], max(1, top // 4))),
             "best_by_slot": fmt(r["best_by_slot"]), "observed_count": len(observed or []),
-            "note": ("구매 = 관측 매물을 그대로 끼운 실딜(세트 개수를 다시 세서 세트 효과 변화 포함, set_change), 다른 월드 매물은 +10%. "
+            "note": (hexa_note + "구매 = 관측 매물을 그대로 끼운 실딜(세트 개수를 다시 세서 세트 효과 변화 포함, set_change), 다른 월드 매물은 +10%. "
                      "직작 = 관측 매물 가격 + 그 매물 등급에서 단계까지 메소 재설정 평균. 큐브 = 지금 템에 메소 재설정 평균. "
                      "스타포스 = 지금 템을 목표 성까지 메소 기대값(강화 + 흔적 복구 메소, 고른 이벤트 반영). 파괴되면 같은 장비가 복구에 필요해요"
                      "(18성 이하 1개·19~20성 2개·21성 3개·22성 이상 4개) — expected_spares가 평균 스페어 개수, 스페어 값을 넣으면 비용에 더해요. "
@@ -444,6 +482,7 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
                      "sold=true는 판매 완료 체결가(시세), false는 판매 중 호가. 비용은 평균 기대값이고 지금 템 판매 대금은 빼지 않았어요.")}
 
 
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

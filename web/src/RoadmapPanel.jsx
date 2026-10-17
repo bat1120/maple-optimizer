@@ -57,6 +57,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false }) {
       {data && (
         <>
           <p className="muted small">{settingLabel(data.evaluation_setting)} 기준(보스 세팅)</p>
+          {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           <details className="note"><summary>계산 기준 보기</summary><p className="muted small">{data.note}</p></details>
           {data.value_ranking?.length > 0 && (
             <>

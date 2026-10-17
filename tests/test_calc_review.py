@@ -149,7 +149,7 @@ def test_setting_comparison_counts_crit_rate_loss():
     base = evaluate_setting(snap, setting, BOSS, CAT)
     it = preset_items(snap, setting.equipment)["모자"]
     stats = copy.deepcopy(it.stats)
-    stats.cr -= 10
+    stats.cr -= 100  # 100% 아래로 떨어질 만큼(여유분 안의 감소는 손해가 아니다 — 2026-10-17)
     worse = dataclasses.replace(it, stats=stats)
     assert swap_item(snap, setting, "모자", worse, BOSS, CAT) < base * 0.99
 
@@ -166,3 +166,12 @@ def test_cube_cost_counts_lines_rolled_at_tier_up():
 def test_hexa_reset_expectation_converges_to_namu_table():
     from engine.stats.hexa import reach_cost
     assert reach_cost(10, 0.0)["fragments"] == pytest.approx(145148.2, rel=1e-5)  # 나무위키 기대값표 10레벨 '14만 5148개'
+
+
+def test_xenon_counts_all_three_main_stats_as_useful():
+    """제논은 STR·DEX·LUK 모두 주스탯 — DEX%·LUK% 줄도 큐브 도달 확률에 넣는다(2026-10-17 점검: 상의 레전 2줄 34.55억 → 23.78억)."""
+    from engine.market.recommend import _Planner
+    snap = snapshot(bundle("제논"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    pl = _Planner(snap, setting, BOSS, CAT, None)
+    assert pl.is_useful("DEX +9%") and pl.is_useful("LUK +9%") and pl.is_useful("STR +9%")
