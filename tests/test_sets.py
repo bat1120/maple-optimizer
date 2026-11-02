@@ -142,5 +142,5 @@ def test_challenger_tiers_for_every_branch_from_common_table():
     mage = CAT.tiers["도전자의 장비 세트(마법사)"]
     for b in ("전사", "궁수", "도적", "해적"):
         tiers = CAT.tiers[f"도전자의 장비 세트({b})"]
-        assert sorted(tiers) == [2, 3, 4, 5, 6, 7]  # 8세트는 마법사 API 실측만 있어 다른 직업군엔 넣지 않는다
-        assert all(tiers[n] == mage[n] for n in tiers)
+        # 2026-11-03 넥슨 API 실측(히어로·보우마스터·섀도어·듀얼블레이더·캡틴 착용자 set_option_full): 2~8세트가 마법사와 같다
+        assert tiers == mage
