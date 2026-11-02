@@ -91,3 +91,56 @@ def test_lete_buying_eternel_mage_shoes_adds_an_eternel_piece():
     after = count_sets(swapped, branches, CAT)
     assert after["에테르넬 세트(마법사)"] == before["에테르넬 세트(마법사)"] + 1
     assert after["도전자의 장비 세트(마법사)"] == before["도전자의 장비 세트(마법사)"] - 1
+
+
+# 도전자 장비: 이름은 직업 공통, 세트는 직업군별(넥슨 API 실측: '도전자의 장비 세트(마법사)').
+# 나무위키 '아이템 버닝'(2026-11-02 확인): 구성 8부위(모자·상의·하의·신발·장갑·망토·어깨장식·무기),
+# 세트 효과 표는 직업군 구분 없이 하나, 제네시스 무기는 럭키 아이템으로 세트 효과가 줄지 않는다.
+CHALLENGER_PIECES = ("도전자의 모자", "도전자의 상의", "도전자의 하의", "도전자의 신발",
+                     "도전자의 장갑", "도전자의 망토", "도전자의 어깨장식")
+
+
+def _lete_items():
+    s = snapshot(bundle("레테"))
+    return list(s.equipment_presets[s.active_equipment_preset].values())
+
+
+def test_challenger_pieces_are_job_common_templates():
+    for name in CHALLENGER_PIECES:
+        assert CAT.items[name] == "도전자의 장비 세트({branch})"
+
+
+def test_challenger_set_name_follows_character_branch():
+    items = _lete_items()
+    mage = count_sets(items, ("마법사",), CAT)["도전자의 장비 세트(마법사)"]
+    assert mage == _api_counts(bundle("레테"))["도전자의 장비 세트(마법사)"]
+    for b in ("전사", "궁수", "도적", "해적"):
+        counts = count_sets(items, (b,), CAT)
+        assert counts[f"도전자의 장비 세트({b})"] == mage
+        assert "도전자의 장비 세트(마법사)" not in counts
+        assert not any("{" in k for k in counts)
+
+
+def test_two_branch_job_does_not_guess_challenger_branch():
+    # 제논 API는 착용 장비 이름의 직업군 세트로만 센다(픽스처: 루타비스·앱솔랩스·에테르넬 모두 (도적)만).
+    # 도전자 장비 이름엔 직업군이 없어 도적·해적 중 어느 쪽인지 근거가 없다 → 세지 않는다.
+    counts = count_sets(_lete_items(), ("도적", "해적"), CAT)
+    assert not any(k.startswith("도전자의 장비 세트") for k in counts)
+
+
+def test_challenger_lucky_comes_from_genesis_weapon_not_emblem():
+    import dataclasses
+    items = _lete_items()
+    assert "골드 서머너 엠블렘" not in CAT.items
+    no_emblem = [dataclasses.replace(it, name="테스트 엠블렘") if it.slot == "엠블렘" else it for it in items]
+    assert count_sets(no_emblem, ("마법사",), CAT)["도전자의 장비 세트(마법사)"] == 8
+    plain_weapon = [dataclasses.replace(it, name="테스트 무기") if it.slot == "무기" else it for it in items]
+    assert count_sets(plain_weapon, ("마법사",), CAT)["도전자의 장비 세트(마법사)"] == 7
+
+
+def test_challenger_tiers_for_every_branch_from_common_table():
+    mage = CAT.tiers["도전자의 장비 세트(마법사)"]
+    for b in ("전사", "궁수", "도적", "해적"):
+        tiers = CAT.tiers[f"도전자의 장비 세트({b})"]
+        assert sorted(tiers) == [2, 3, 4, 5, 6, 7]  # 8세트는 마법사 API 실측만 있어 다른 직업군엔 넣지 않는다
+        assert all(tiers[n] == mage[n] for n in tiers)
