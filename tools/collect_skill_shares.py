@@ -62,6 +62,15 @@ def collect(c: NexonClient, job: str, top: int, day: str) -> dict | None:
             "shares": {k: v for k, v in sorted(med.items(), key=lambda kv: -kv[1]) if v > 0}}
 
 
+def merge_job(data: dict, job: str, r: dict) -> bool:
+    """표본이 기존보다 적은 결과로 덮어쓰지 않는다(2026-11-02: 렌 6명 → 1명으로 덮일 뻔). 바꿨으면 True."""
+    old = data["jobs"].get(job)
+    if old and r["samples"] < old.get("samples", 0):
+        return False
+    data["jobs"][job] = r
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("jobs", nargs="+")
@@ -75,8 +84,8 @@ def main() -> None:
     for job in a.jobs:
         r = collect(c, job, a.top, day)
         print(job, "없음" if r is None else f"{r['samples']}명, 스킬 {len(r['shares'])}개")
-        if r:
-            data["jobs"][job] = r
+        if r and not merge_job(data, job, r):
+            print(f"  {job}: 기존 {data['jobs'][job]['samples']}명보다 적어 유지")
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
