@@ -2,7 +2,9 @@
 
 매핑·단계 표는 `engine/data/`의 생성 데이터(tools/derive_set_data.py)다.
 무기 규칙(실측): 제네시스·데스티니 무기는 직업군 에테르넬 세트에 +1, 루타비스·앱솔랩스·아케인셰이드
-직업군 세트에는 그 세트 장비가 3개 이상일 때 +1(럭키 아이템).
+·도전자의 장비 직업군 세트에는 그 세트 장비가 3개 이상일 때 +1(럭키 아이템).
+도전자 장비는 이름이 직업 공통이라 세트 이름이 '도전자의 장비 세트({branch})' 템플릿이고, 캐릭터 직업군으로 채운다.
+직업군이 둘(제논)이면 어느 쪽인지 근거가 없어 세지 않는다(나무위키 '아이템 버닝'·API 실측, 2026-11-02).
 """
 import collections
 import json
@@ -16,7 +18,7 @@ from engine.stats.snapshot import Item
 
 DATA = pathlib.Path(__file__).resolve().parent.parent / "data"
 SPECIAL_WEAPON = ("제네시스", "데스티니")
-LUCKY_SETS = ("루타비스", "앱솔랩스", "아케인셰이드")
+LUCKY_SETS = ("루타비스", "앱솔랩스", "아케인셰이드", "도전자의 장비")
 LUCKY_MIN = 3
 # 장비가 아닌 출처(펫·캐시·심볼 등)의 세트. 장비 교체와 무관해 잔차가 흡수한다.
 EXTERNAL_SETS = ("쁘띠", "마스터 ", "소멸의 여로", "별하늘", "크리스마스", "폼폼", "컬러링", "인형의 꿈",
@@ -45,6 +47,8 @@ def count_sets(items: Iterable[Item], branches: tuple[str, ...], catalog: SetCat
         if special and it is weapon:
             continue
         name = catalog.items.get(it.name)
+        if name and "{branch}" in name:
+            name = name.format(branch=branches[0]) if len(branches) == 1 else None
         if name:
             counts[name] += 1
     if special:
