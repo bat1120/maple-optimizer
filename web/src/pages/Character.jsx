@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getAdminSession, getBosses, getCharacter, getSettings } from "../api.js";
+import { getBosses, getCharacter, getSettings } from "../api.js";
 import AgentPanel from "../AgentPanel.jsx";
 import { hashFor, navigate } from "../router.js";
 import { addRecent } from "../recent.js";
@@ -82,11 +82,20 @@ function Skeleton() {
 }
 
 // 접어 두는 구역(2026-10-11 심사 2회차: 1위가 셋으로 갈려 '무엇부터'가 흐려졌다 → 가격 대비 순위만 펼친다)
+// 처음 펼칠 때 그린다(그 전엔 계산 요청도 안 나간다) — 2026-10-17 점검: 탭을 열자마자 요청이 몰려 분당 한도에 걸렸다.
+// 한 번 펼친 뒤엔 접어도 그대로 둔다(화면 평가의 공유 세션·읽은 매물이 사라지지 않게).
 function Fold({ title, children, open, onToggle, foldRef }) {
+  const [seen, setSeen] = useState(!!open);
+  useEffect(() => { if (open) setSeen(true); }, [open]);
+  const toggle = (e) => {
+    const o = e.currentTarget.open;
+    if (o) setSeen(true);
+    onToggle?.(o);
+  };
   return (
-    <details className="fold" ref={foldRef} open={open} onToggle={onToggle && ((e) => onToggle(e.currentTarget.open))}>
+    <details className="fold" ref={foldRef} open={open} onToggle={toggle}>
       <summary>{title}</summary>
-      {children}
+      {seen ? children : null}
     </details>
   );
 }
@@ -116,7 +125,13 @@ function NotFound({ name }) {
 
 export default function Character({ route }) {
   const { name, tab } = route;
-  const [defense, setDefense] = useState(300);
+  const [defense, setDefense] = useState(300); // 입력칸에 보이는 값(보스 id 또는 방어율)
+  // 계산에 쓰는 값은 입력이 0.5초 멈춘 뒤에 바꾼다(2026-10-17 점검: 한 글자마다 요청이 최대 5건 나가 분당 한도에 걸렸다)
+  const [calcDefense, setCalcDefense] = useState(300);
+  useEffect(() => {
+    const t = setTimeout(() => setCalcDefense(defense), 500);
+    return () => clearTimeout(t);
+  }, [defense]);
   // 순위 카드 [이 조건으로 찾은 매물 평가하기] → 화면 공유 평가 칸을 열고 찾는 조건을 보여 준다(2026-10-17)
   const [watchOpen, setWatchOpen] = useState(false);
   const [watchTarget, setWatchTarget] = useState(null);
@@ -131,8 +146,15 @@ export default function Character({ route }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [bosses, setBosses] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(null); // 관리자 로그인(쿠키)이면 맨 위에 AI 상담(2026-10-12). 캐릭터를 불러온 뒤 한 번 확인
 
+  // 캐릭터 정보는 이름이 바뀔 때만, 세팅 순위는 보스가 바뀔 때도 다시 부른다
+  const loadSettings = useCallback(async () => {
+    try {
+      setSettings(await getSettings(name, calcDefense));
+    } catch (e) {
+      setError(e);
+    }
+  }, [name, calcDefense]);
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
@@ -140,20 +162,16 @@ export default function Character({ route }) {
       const s = await getCharacter(name);
       setSummary(s);
       addRecent(name);
-      setSettings(await getSettings(name, defense));
     } catch (e) {
       setError(e);
     } finally {
       setBusy(false);
     }
-  }, [name, defense]);
+  }, [name]);
 
   useEffect(() => { setSummary(null); setSettings(null); }, [name]);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => {
-    if (!summary || isAdmin !== null) return;
-    getAdminSession().then((r) => setIsAdmin(r?.admin === true)).catch(() => setIsAdmin(false));
-  }, [summary, isAdmin]);
+  useEffect(() => { if (summary) loadSettings(); }, [summary, loadSettings]);
   // 보스 목록은 캐릭터를 불러온 뒤 한 번(목록이 없으면 직접 입력만)
   useEffect(() => {
     if (!summary || bosses) return;
@@ -172,15 +190,14 @@ export default function Character({ route }) {
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
-          {isAdmin && (
-            <AgentPanel key={name} name={name} initialAuthed title="AI 상담"
-                        watchProps={{ job: summary.character_class, level: summary.level, defense }} />
-          )}
+          {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다 */}
+          <AgentPanel key={name} name={name} initialAuthed title="AI 상담" showQuota
+                      watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
           {/* 추천 상자 하나에 두 줄(2026-10-11 심사 5회차: 띠 두 개가 모양이 달라 별개 부품처럼 보였다) */}
           {tab === "summary" && (
             <div className="picks">
               <FreeSwitch ranking={settings?.ranking} />
-              <TopPick name={name} defense={defense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
+              <TopPick name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
             </div>
           )}
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
@@ -214,17 +231,17 @@ export default function Character({ route }) {
           {tab === "upgrade" && (
             <div className="stack">
               {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
-              <RoadmapPanel name={name} defense={defense} autoLoad active={summary.active_setting} onEvaluate={evaluate} />
+              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} />
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
-              <Fold title="실딜만 보고 고르기 — 가격은 안 봐요"><RecommendPanel name={name} defense={defense} autoLoad /></Fold>
-              <Fold title="방법별 비교 — 구매·직작·큐브·강화"><PathsPanel name={name} defense={defense} autoLoad showRefresh={false} /></Fold>
-              <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={defense} /></Fold>
+              <Fold title="실딜만 보고 고르기 — 가격은 안 봐요"><RecommendPanel name={name} defense={calcDefense} autoLoad /></Fold>
+              <Fold title="방법별 비교 — 구매·직작·큐브·강화"><PathsPanel name={name} defense={calcDefense} autoLoad showRefresh={false} /></Fold>
+              <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={calcDefense} /></Fold>
               <h3 className="section-label">고급 도구</h3>
               <div className="pc-only">
                 <Fold title="게임 경매장 화면을 읽어 매물 평가 (PC 전용)" open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
-                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={defense} admin={false} target={watchTarget} />
+                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
                 </Fold>
               </div>
               <p className="card mobile-only muted note-box">

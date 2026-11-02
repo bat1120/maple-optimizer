@@ -55,3 +55,31 @@ describe("목표 배율 로드맵 패널", () => {
     } finally { window.postMessage = orig; }
   });
 });
+
+describe("목표 배율 로드맵 — 고른 보스로 계산(2026-10-17 점검: 패널 보스가 계산에 안 들어갔다)", () => {
+  it("익스트림 칼로스를 고르면 그 보스(kalos-extreme)로 계산을 요청한다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
+    render(<TargetRoadmapPanel name="천지만물렌" defense={300} />);
+    fireEvent.change(screen.getByLabelText("보스"), { target: { value: "extreme_kalos" } });
+    fireEvent.change(screen.getByLabelText("지금 배율(%)"), { target: { value: "34.52" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "로드맵 만들기" })); });
+    expect(f.mock.calls[0][0]).toContain("boss=kalos-extreme");
+    expect(f.mock.calls[0][0]).not.toContain("boss_defense");
+  });
+  it("우리 목록에 없는 보스면 페이지 위쪽 보스로 계산한다고 알린다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
+    render(<TargetRoadmapPanel name="천지만물렌" defense={300} />);
+    fireEvent.change(screen.getByLabelText("보스"), { target: { value: "champion_seren" } });
+    expect(screen.getByText(/위쪽에서 고른 보스 기준으로 계산/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("지금 배율(%)"), { target: { value: "34.52" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "로드맵 만들기" })); });
+    expect(f.mock.calls[0][0]).toContain("boss_defense=300");
+  });
+  it("단계 상한에서 멈추면 '불가능'이 아니라 상한이라고 알린다", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...DATA, stopped_at_max_steps: true }));
+    render(<TargetRoadmapPanel name="천지만물렌" defense={300} />);
+    fireEvent.change(screen.getByLabelText("지금 배율(%)"), { target: { value: "34.52" } });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "로드맵 만들기" })); });
+    expect(screen.getByText(/단계 수 상한/)).toBeInTheDocument();
+  });
+});

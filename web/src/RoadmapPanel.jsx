@@ -69,6 +69,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
             <span className="basis-k">계산 기준</span> 보스 세팅 <strong>{settingLabel(data.evaluation_setting)}</strong>
             {active && settingLabel(active) !== settingLabel(data.evaluation_setting) && <span className="muted"> — 지금 착용과 달라요</span>}
           </p>
+          {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           <details className="note basis">
             <summary>계산 방법 · 큐브 메소 재설정 비용 기준</summary>
             <p className="muted small">{data.note}</p>

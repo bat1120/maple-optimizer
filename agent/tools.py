@@ -98,11 +98,11 @@ TOOL_DEFS.append(
          "required": ["category"]}})
 
 
-def openai_tools() -> list[dict]:
+def openai_tools(exclude: tuple = ()) -> list[dict]:
     """Responses API 함수 도구 형식(평평한 구조). 선택 필드가 있어 strict 정규화를 끈다."""
     # 최상위 인자는 정의된 것만 받는다(소형 모델이 없는 인자를 지어내는 것을 줄인다). strict는 선택 필드 때문에 끈다.
     return [{"type": "function", "name": t["name"], "description": t["description"],
-             "parameters": {**t["input_schema"], "additionalProperties": False}, "strict": False} for t in TOOL_DEFS]
+             "parameters": {**t["input_schema"], "additionalProperties": False}, "strict": False} for t in TOOL_DEFS if t["name"] not in exclude]
 
 
 class ToolBox:

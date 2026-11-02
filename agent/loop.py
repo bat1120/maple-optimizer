@@ -6,14 +6,17 @@
 - 실패는 반드시 error 이벤트로 알리고 done으로 끝난다(조용히 끊기지 않게)
 """
 import json
+import logging
 import os
 from collections.abc import Callable, Iterator
 
 from agent.numbers import unverified_numbers
 from agent.tools import ToolBox, openai_tools
+from agent.tracing import NoopTracer, safe
 
+_log = logging.getLogger("uvicorn.error")
 DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
-SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 관리자 한 명이 쓴다.
+SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사이트 사용자 누구나 쓴다(2026-10-17 공개, 일반 사용자는 하루 질문 수 제한).
 
 실측값 원칙 — 어떤 규칙보다 먼저다:
 - 답변에 쓰는 사실(수치·옵션 문장·아이템 이름·시세·확률·게임 규칙)은 실제로 측정·관측된 것만 쓴다:
@@ -50,6 +53,7 @@ SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 관
 - 첨부 매물의 price가 null이고 list_prices(같은 이름 목록 행 가격 후보)가 있으면, 후보 가격마다 evaluate_listings로 억당을 계산해 보여 주고 툴팁이 어느 행인지 확인을 부탁한다.
 - 경매장 판매 수수료(기본 5%, MVP 실버 이상·PC방 3%)는 사는 가격엔 붙지 않고 지금 템 판매 대금에서 빠진다. 도구가 net_resale·net_cost로 반영한다. 사용자가 MVP 실버 이상·PC방이라고 하면 fee_rate 0.03을 넣는다.
 - special_ring_note가 붙은 매물(특수 반지)은 스킬 효과가 실딜 계산에 없다. 실딜 수치로 사라/말라 하지 말고, 반지 레벨(special_ring_level)과 가격으로 지금 낀 반지와 비교해 말한다.
+- 매물 결과에 resale_note가 있으면(지금 낀 템이 PC방 템이라 팔 수 없음) 판매 대금 0으로 계산됐다고 그대로 전한다.
 - 가격은 도구 결과의 price_text를 글자 그대로 옮긴다. 메소 숫자를 직접 억·만으로 바꾸지 않는다(자릿수 실수 방지).
 - 도구가 held로 돌려준 매물은 평가 숫자를 만들지 말고 reason을 그대로 전한다.
 - 질문에 "[경매장 화면에서 읽은 매물]" JSON이 붙어 있으면 그 매물을 evaluate_listings로 평가한 뒤, 억당 효율이 높은 순으로 살지 말지 판단한다. price가 null인 매물은 가격을 물어본다.
@@ -69,20 +73,62 @@ def _refusal(output) -> str | None:
     return None
 
 
+def _brief(items: list, cap: int = 4000) -> list:
+    """추적에 보낼 입력 요약: 메시지·도구 결과 문자열은 cap 글자까지, SDK 객체는 종류·이름만."""
+    out = []
+    for it in items:
+        if isinstance(it, dict):
+            out.append({k: (v[:cap] if isinstance(v, str) else v) for k, v in it.items()})
+        else:
+            out.append({"type": getattr(it, "type", type(it).__name__), "name": getattr(it, "name", None)})
+    return out
+
+
 def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int = 8,
-              on_usage: Callable[[int], None] | None = None, model: str | None = None) -> Iterator[dict]:
+              on_usage: Callable[[int], None] | None = None, model: str | None = None,
+              exclude_tools: tuple = (), tracer=None, trace_user: str | None = None,
+              trace_meta: dict | None = None, max_tokens: int | None = None,
+              public_errors: bool = False) -> Iterator[dict]:
+    """tracer: agent/tracing.py(Langfuse 또는 Noop). 추적이 실패해도 답변 흐름은 그대로다."""
+    tracer = tracer or NoopTracer()
+    question = messages[-1].get("content") if messages else None
+    answer = []
+    with safe(lambda: tracer.conversation(user_id=trace_user, metadata=trace_meta, input=question)) as root:
+        for ev in _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens,
+                       public_errors):
+            if ev["type"] == "text":
+                answer.append(ev["text"])
+            elif ev["type"] == "error":
+                root.update(level="ERROR", status_message=ev["message"])
+            yield ev
+        root.update(output="\n".join(answer))
+
+
+def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, tracer, max_tokens=None,
+         public_errors=False) -> Iterator[dict]:
     model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
     seen: list = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
+    spent = 0
     try:
         for _ in range(max_turns):
-            resp = client.responses.create(
-                model=model, instructions=SYSTEM, tools=openai_tools(), input=items,
-                reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
-            )
+            with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:
+                resp = client.responses.create(
+                    model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
+                    reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
+                )
+                usage = getattr(resp, "usage", None)
+                gen.update(output=getattr(resp, "output_text", "") or [getattr(it, "name", None) for it in resp.output
+                                                                       if getattr(it, "type", None) == "function_call"],
+                           usage_details={"input": int(usage.input_tokens), "output": int(usage.output_tokens)} if usage else None)
             if on_usage and getattr(resp, "usage", None):
                 on_usage(int(resp.usage.input_tokens) + int(resp.usage.output_tokens))
+            if getattr(resp, "usage", None):
+                spent += int(resp.usage.input_tokens) + int(resp.usage.output_tokens)
+            if max_tokens and spent > max_tokens:  # 질문 한 번이 하루 한도를 다 쓰지 못하게(공개 사용자, 2026-10-17)
+                yield {"type": "error", "message": "질문 한 번에 쓸 수 있는 AI 양을 넘었어요. 질문을 더 짧게 나눠 물어봐 주세요."}
+                break
             refusal = _refusal(resp.output)
             if refusal:
                 yield {"type": "error", "message": f"요청이 거절됐어요: {refusal}"}
@@ -106,7 +152,10 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
                     args = {}
                 else:
                     yield {"type": "tool_call", "name": call.name, "input": args}
-                    out = toolbox.run(call.name, args)
+                    with safe(lambda: tracer.observe(call.name, as_type="tool", input=args)) as t:
+                        out = toolbox.run(call.name, args)
+                        failed = isinstance(out, dict) and "error" in out
+                        t.update(output=out, **({"level": "ERROR", "status_message": str(out["error"])} if failed else {}))
                 seen += [args, out]
                 yield {"type": "tool_result", "name": call.name, "result": out}
                 items.append({"type": "function_call_output", "call_id": call.call_id,
@@ -114,5 +163,8 @@ def run_agent(client, toolbox: ToolBox, messages: list[dict], *, max_turns: int 
         else:
             yield {"type": "error", "message": f"도구 호출이 {max_turns}번을 넘어 멈췄어요."}
     except Exception as e:  # noqa: BLE001 — 어떤 실패든 사용자에게 보인다
-        yield {"type": "error", "message": f"에이전트 오류: {type(e).__name__}: {e}"}
+        _log.warning("에이전트 오류: %s: %s", type(e).__name__, e)
+        # 공개 사용자에게는 내부 오류 문구(경로·라이브러리 메시지)를 보이지 않는다(2026-10-17) — 자세한 내용은 서버 로그에만
+        msg = "AI 상담 중 오류가 났어요. 잠시 뒤 다시 시도해 주세요." if public_errors else f"에이전트 오류: {type(e).__name__}: {e}"
+        yield {"type": "error", "message": msg}
     yield {"type": "done", "unverified_numbers": []}

@@ -10,6 +10,13 @@ from engine.stats.sets import SetCatalog
 from engine.stats.snapshot import CharacterSnapshot, Item, Setting
 
 
+def effective_crit(pred_cr: float, base_cr: float) -> float:
+    """실효 크확(%). 지금 상태를 max(100%, 스탯창 예측 크확)으로 본다 — 스탯창에는 직업 스킬 크확이 빠져 있어
+    스탯창 값은 하한이다. 그래서 100%를 넘는 여유만큼은 줄어도 손해가 아니고, 그보다 더 줄면 덜 터진다(2026-10-17 점검:
+    레테 보스 세팅 103%인데 크확 3% 줄을 빼면 -1.65%로 잡았다)."""
+    return min(100.0, max(100.0, base_cr) + pred_cr - base_cr)
+
+
 def _index(snap: CharacterSnapshot, setting: Setting, items: dict[str, Item], boss: BossProfile,
            catalog: SetCatalog) -> float:
     cal = calibrate(snap, catalog)
@@ -17,7 +24,7 @@ def _index(snap: CharacterSnapshot, setting: Setting, items: dict[str, Item], bo
     # 실효 크확(Evaluator.index와 같게, 2026-10-11): 그 세팅의 원래 장비를 100%로 보고 교체로 줄어든 만큼만 뺀다
     # (기준을 지금 착용 세팅으로 하면 크확을 덜 찍은 보스 하이퍼 프리셋이 밀려 실제 보스 세팅이 1등에서 빠졌다)
     base_cr = predict(cal, sources_for(snap, setting, catalog, preset_items(snap, setting.equipment))).cr
-    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss, min(100.0, 100.0 + pred.cr - base_cr),
+    return boss_index(pred, job_profile(snap.character_class), items["무기"].part, boss, effective_crit(pred.cr, base_cr),
                       force_mult(boss, character_force(snap, setting)))
 
 
@@ -72,6 +79,6 @@ class Evaluator:
         # 실효 크확: 지금 상태를 딱 100%(여유 없음)로 보고 변경으로 줄어든 만큼만 뺀다 — 크확을 깎는 큐브·교체가 손해로 잡힌다
         if self._base_cr is None:
             self._base_cr = predict(self._cal, sources_for(self.snap, self.setting, self.catalog, self.base_items())).cr
-        crit_rate = min(100.0, 100.0 + pred.cr - self._base_cr)
+        crit_rate = effective_crit(pred.cr, self._base_cr)
         fm = force_mult(self.boss, character_force(self.snap, self.setting, (extra or {}).get("force")))
         return boss_index(pred, self._job, items["무기"].part, self.boss, crit_rate, fm)

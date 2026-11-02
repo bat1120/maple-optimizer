@@ -22,3 +22,11 @@ services:
         sync: false
       - key: AGENT_DAILY_TOKEN_BUDGET
         value: "200000"
+      - key: AGENT_PUBLIC_DAILY       # 일반 사용자 IP당 하루 AI 질문 수(관리자는 제한 없음)
+        value: "5"
+      - key: LANGFUSE_PUBLIC_KEY      # AI 상담 추적(Langfuse 프로젝트 설정의 API 키). 비우면 추적 안 함
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_BASE_URL        # EU https://cloud.langfuse.com(기본) · US https://us.cloud.langfuse.com
+        sync: false

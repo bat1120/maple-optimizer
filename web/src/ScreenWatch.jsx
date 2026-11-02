@@ -316,7 +316,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
 
   return (
     <section className="panel">
-      <h3>{admin ? "경매장 화면 분석 (관리자)" : "경매장 화면 평가"}</h3>
+      <h3>{admin ? "경매장 화면 평가 (관리자)" : "경매장 화면 평가"}</h3>
       {target && (
         <div className="watch-target" role="note" aria-label="찾는 조건">
           <span className="cond-head">게임 경매장 › 상세 검색에서 이 조건으로 찾으세요</span>

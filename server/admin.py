@@ -15,7 +15,7 @@ COOKIE = "mo_admin"
 SESSION_TTL = 12 * 3600
 
 
-def make_password_hash(password: str, iterations: int = 200_000) -> str:
+def make_password_hash(password: str, iterations: int = 600_000) -> str:  # OWASP 2023 권장(2026-10-17, 예전 20만 해시도 그대로 확인됨)
     salt = secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), iterations).hex()
     # 구분자는 ":" — "$"는 docker compose가 env_file 값에서 변수로 치환해 해시가 깨진다(2026-10-04)

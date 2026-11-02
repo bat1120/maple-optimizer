@@ -116,11 +116,18 @@ describe("character page", () => {
     await screen.findByRole("heading", { name: "내신부레테" });
     expect(screen.getByRole("tab", { name: "업그레이드" })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
-    expect(f.mock.calls.some((c) => String(c[0]).includes("/roadmap"))).toBe(true);
+    // 업그레이드 탭: 가격 대비 순위(로드맵)만 바로 계산, 나머지는 펼칠 때(2026-10-17 점검: 들어가자마자 요청이 몰려 분당 한도)
+    const called = (k) => f.mock.calls.some((c) => String(c[0]).includes(k));
+    expect(called("/roadmap?")).toBe(true);
+    expect(called("/paths")).toBe(false);
+    expect(called("/recommend")).toBe(false);
+    const paths = screen.getByText("방법별 비교 — 구매·직작·큐브·강화").closest("details");
+    await act(async () => { paths.open = true; fireEvent(paths, new Event("toggle")); });
+    expect(called("/paths")).toBe(true);
     expect(screen.queryByRole("button", { name: "경매장 시세 갱신" })).toBeNull();   // 공개 화면에선 관리자 기능 숨김
   });
 
-  it("공개 화면에서는 화면 분석·AI 상담이 없다", async () => {
+  it("공개 화면 요약 탭에는 화면 분석 버튼·관리자 로그인이 없다", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     await screen.findByRole("heading", { name: "내신부레테" });
@@ -158,9 +165,12 @@ describe("character page", () => {
   it("업그레이드 탭: PC용 경매장 화면 평가(일반 유저 모드)와 휴대폰 안내", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    expect(await screen.findByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
+    const watch = (await screen.findByText("게임 경매장 화면을 읽어 매물 평가 (PC 전용)")).closest("details");
+    expect(watch).not.toHaveAttribute("open");
+    expect(screen.queryByRole("heading", { name: "경매장 화면 평가" })).toBeNull();   // 펼치기 전엔 그리지 않는다
+    await act(async () => { watch.open = true; fireEvent(watch, new Event("toggle")); });
+    expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
-    expect(screen.getByRole("heading", { name: "경매장 화면 평가" }).closest("details")).not.toHaveAttribute("open");
     expect(screen.getByText(/매물을 평가하는 기능은 PC에서만/)).toBeInTheDocument();
   });
 
@@ -173,7 +183,7 @@ describe("character page", () => {
     expect(screen.getByText(/칸을 누르면 잠재·에디 옵션이 열려요/)).toBeInTheDocument();
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
     expect(screen.getByText(/무엇을 바꾸면 보스 실딜이 오르는지/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "업그레이드 경로 비교" })).toBeInTheDocument();
+    expect(screen.getByText("방법별 비교 — 구매·직작·큐브·강화")).toBeInTheDocument();
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
     expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();
   });
@@ -208,7 +218,7 @@ describe("character page", () => {
       return ok(SUMMARY);
     });
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    const watch = (await screen.findByRole("heading", { name: "경매장 화면 평가" })).closest("details");
+    const watch = (await screen.findByText("게임 경매장 화면을 읽어 매물 평가 (PC 전용)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
     fireEvent.click(await screen.findByRole("button", { name: "이 조건으로 찾은 매물 평가하기" }));
     expect(watch).toHaveAttribute("open");
@@ -227,23 +237,26 @@ describe("character page", () => {
   it("업그레이드 탭은 가격 대비 순위만 펼치고, 검색 추천·경로 비교·목표 배율은 접어 둔다", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    await screen.findByRole("heading", { name: "내신부레테" });
-    for (const t of ["경매장 검색 추천", "업그레이드 경로 비교", "목표 배율 로드맵"]) {
-      const d = screen.getByRole("heading", { name: t }).closest("details");
+    expect((await screen.findByRole("heading", { name: "가격 대비 업그레이드 순위" })).closest("details")).toBeNull();
+    for (const t of ["실딜만 보고 고르기 — 가격은 안 봐요", "방법별 비교 — 구매·직작·큐브·강화", "목표 보스 배율까지의 순서"]) {
+      const d = screen.getByText(t).closest("details");
       expect(d).not.toBeNull();
       expect(d).not.toHaveAttribute("open");
     }
-    expect(screen.getByRole("heading", { name: "가격 대비 업그레이드 순위" }).closest("details")).toBeNull();
+    for (const h of ["경매장 검색 추천", "업그레이드 경로 비교", "목표 배율 로드맵"]) {
+      expect(screen.queryByRole("heading", { name: h })).toBeNull();   // 펼치기 전엔 그리지도, 계산하지도 않는다
+    }
   });
 });
 
-describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-12)", () => {
+describe("character page — AI 상담은 모두에게, 일반 사용자는 하루 횟수 제한(2026-10-17)", () => {
   const withSession = (admin) => vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
     if (String(url).includes("/api/admin/session")) return ok({ admin });
+    if (String(url).includes("/api/agent/quota")) return ok(admin ? { admin: true, limit: null, remaining: null } : { admin: false, limit: 5, remaining: 3 });
     if (String(url).includes("/settings")) return ok(SETTINGS);
     return ok(SUMMARY);
   });
-  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문", async () => {
+  it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문, 횟수 제한 표시 없음", async () => {
     withSession(true);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     const ai = await screen.findByRole("heading", { name: "AI 상담" });
@@ -251,11 +264,32 @@ describe("character page — 관리자에게만 AI 상담을 맨 위에(2026-10-
     expect(ai.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
     expect(screen.getByRole("button", { name: "지금 뭐부터 올리면 돼?" })).toBeInTheDocument();
+    expect(screen.queryByText(/오늘 남은 질문/)).toBeNull();
   });
-  it("관리자가 아니면 AI 상담이 없다", async () => {
+  it("일반 사용자도 AI 상담을 쓰고, 오늘 남은 질문 수를 본다", async () => {
     withSession(false);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    expect(await screen.findByRole("heading", { name: "AI 상담" })).toBeInTheDocument();
+    expect(await screen.findByText(/오늘 남은 질문 3\/5회/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
+  });
+});
+
+describe("character page — 방어율 입력은 멈춘 뒤에 한 번만 다시 계산(2026-10-17 점검)", () => {
+  it("빠르게 여러 글자를 쳐도 세팅 순위는 한 번만 다시 부르고, 캐릭터 정보는 다시 부르지 않는다", async () => {
+    const f = mockApi();
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     await screen.findByRole("heading", { name: "내신부레테" });
-    expect(screen.queryByRole("heading", { name: "AI 상담" })).toBeNull();
+    await act(async () => { await new Promise((r) => setTimeout(r, 650)); });
+    const count = (part) => f.mock.calls.filter(([u]) => String(u).includes(part)).length;
+    const summaryCalls = f.mock.calls.filter(([u]) => /\/api\/character\/[^/?]+$/.test(String(u))).length;
+    const settingsCalls = count("/settings");
+    fireEvent.change(screen.getByRole("combobox", { name: "보스" }), { target: { value: "custom" } });
+    const input = await screen.findByLabelText("보스 방어율(%)");
+    for (const v of ["3", "38", "380"]) fireEvent.change(input, { target: { value: v } });
+    await act(async () => { await new Promise((r) => setTimeout(r, 700)); });
+    expect(count("/settings") - settingsCalls).toBeLessThanOrEqual(2);
+    expect(f.mock.calls.filter(([u]) => /\/api\/character\/[^/?]+$/.test(String(u))).length).toBe(summaryCalls);
+    expect(f.mock.calls.at(-1)[0]).toContain("boss_defense=380");
   });
 });

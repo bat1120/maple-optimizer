@@ -32,7 +32,8 @@ def _kind(it: Item) -> str:
 
 
 def eligible(it: Item) -> bool:
-    return (it.starforce > 0 and not it.amazing and not it.name.startswith(_SKIP_NAMES)
+    from engine.enhance.fixed import fixed_reason
+    return (it.starforce > 0 and not it.amazing and not it.name.startswith(_SKIP_NAMES) and fixed_reason(it) is None
             and it.slot.rstrip("0123456789") not in _SKIP_SLOTS and any(it.sf_option.get(k) for k in STATS))
 
 

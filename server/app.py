@@ -57,10 +57,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
-               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0,
+               vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5, agent_public_request_tokens: int = 60000, agent_tracer=None,
                vision_frames_per_min: int = 240) -> FastAPI:
-    app = FastAPI(title="maple-optimizer")
+    app = FastAPI(title="maple-optimizer", docs_url=None, redoc_url=None, openapi_url=None)  # 운영에 API 목록 노출 안 함
     usage = admin.UsageStore(db_path, clock)
+    if agent_tracer is None:  # AI 상담 추적(Langfuse) — 키가 없으면 아무것도 안 한다(agent/tracing.py)
+        from agent.tracing import from_env
+        agent_tracer = from_env()
     cache = BundleCache(db_path, clock)
     from server.market import PriceStore
     prices = PriceStore(db_path, clock)
@@ -84,9 +87,17 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     import secrets as _secrets
     quota_secret = (session_secret or _secrets.token_hex(32)).encode()
 
-    def _quota_who(ip: str) -> str:
+    def _quota_who(ip: str, kind: str = "vision") -> str:
         day = int((clock() + 9 * 3600) // 86400)  # KST 날짜 — 날이 바뀌면 같은 IP도 다른 해시
-        return hmac.new(quota_secret, f"vision-quota|{day}|{ip}".encode(), hashlib.sha256).hexdigest()
+        return hmac.new(quota_secret, f"{kind}-quota|{day}|{ip}".encode(), hashlib.sha256).hexdigest()
+
+    def _quota_take(who: str) -> int:
+        """공개 한도 차감(2026-10-17): DB가 안 되면 막는다(fail-closed) — 그동안 한도가 없어지는 걸 막는다."""
+        try:
+            return observations.quota_take(who)
+        except Exception as e:
+            _log.warning("한도 차감 실패: %s", type(e).__name__)
+            raise ApiError(503, "QUOTA_UNAVAILABLE", "잠시 사용 횟수를 확인할 수 없어요. 조금 뒤 다시 시도해 주세요.") from None
 
     def _quota_used(who: str) -> int:
         try:
@@ -230,33 +241,76 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     class LoginIn(BaseModel):
         password: str
 
+    # 공개 AI 상담 입력(2026-10-17 점검): 역할은 user·assistant만, 내용은 글자만, 수·길이 상한 — 시스템 지시 덮어쓰기·
+    # 이미지 끼워 넣기·초대형 입력으로 키를 범용으로 쓰거나 토큰 한도를 한 번에 태우지 못하게
+    from typing import Literal
+
+    class ChatMsg(BaseModel):
+        role: Literal["user", "assistant"]
+        content: str = Field(min_length=1, max_length=12000)
+
     class ChatIn(BaseModel):
-        messages: list[dict]
+        messages: list[ChatMsg] = Field(min_length=1, max_length=20)
 
     @app.get("/api/admin/session")
     def admin_session(request: Request):
         """관리자 로그인 상태(쿠키) — 캐릭터 화면이 관리자에게만 AI 상담을 보인다(2026-10-12)."""
         return {"admin": bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())}
 
+    # 로그인 무차별 대입 방어(2026-10-17): IP당 15분에 5번, 사이트 전체 1시간에 30번. 잠긴 동안은 맞는 비밀번호도 막는다
+    login_ip_limiter = SlidingWindow(5, 900.0, clock)
+    login_all_limiter = SlidingWindow(30, 3600.0, clock)
+
     @app.post("/api/admin/login")
-    def login(body: LoginIn):
+    def login(body: LoginIn, request: Request):
         if not (admin_password_hash and session_secret):
             raise ApiError(503, "ADMIN_DISABLED", "관리자 기능이 설정되지 않았습니다(ADMIN_PASSWORD_HASH·SESSION_SECRET).")
+        ip = request.client.host if request.client else "unknown"
+        if not (login_ip_limiter.allow(ip) and login_all_limiter.allow("all")):
+            raise ApiError(429, "LOGIN_LOCKED", "로그인 시도가 너무 많아요. 15분 뒤 다시 시도해 주세요.")
         if not admin.check_password(body.password, admin_password_hash):
+            _log.warning("관리자 로그인 실패")
             raise ApiError(401, "BAD_PASSWORD", "비밀번호가 틀렸습니다.")
         r = JSONResponse({"status": "ok"})
         r.set_cookie(admin.COOKIE, admin.sign_session(session_secret, clock()), max_age=admin.SESSION_TTL,
-                     httponly=True, samesite="strict")
+                     httponly=True, samesite="strict", secure=request.url.scheme == "https")  # 운영은 HTTPS(프록시 헤더)
         return r
+
+    @app.post("/api/admin/logout")
+    def logout():
+        """관리자 쿠키를 지운다(2026-10-17). 모든 기기에서 한꺼번에 끊으려면 SESSION_SECRET을 바꾼다."""
+        r = JSONResponse({"status": "ok"})
+        r.delete_cookie(admin.COOKIE)
+        return r
+
+    def _is_admin(request: Request) -> bool:
+        return bool(session_secret) and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())
+
+    def _agent_who(request: Request) -> str:
+        return _quota_who(request.client.host if request.client else "unknown", "agent")
+
+    @app.get("/api/agent/quota")
+    def agent_quota(request: Request):
+        """AI 상담 남은 횟수(2026-10-17 공개): 관리자는 제한 없음, 일반 사용자는 IP당 하루 agent_public_daily번."""
+        if _is_admin(request):
+            return {"admin": True, "limit": None, "remaining": None}
+        return {"admin": False, "limit": agent_public_daily,
+                "remaining": max(0, agent_public_daily - _quota_used(_agent_who(request)))}
 
     @app.post("/api/agent/chat")
     def agent_chat(body: ChatIn, request: Request):
-        if not (session_secret and admin.valid_session(request.cookies.get(admin.COOKIE), session_secret, clock())):
-            raise ApiError(401, "UNAUTHORIZED", "관리자 로그인이 필요합니다.")
+        # 모두에게 연다(2026-10-17 사용자). 일반 사용자는 IP당 하루 질문 수 제한 + 웹 경매장 검색(refresh_market) 없음
+        is_admin = _is_admin(request)
         if agent_client is None:
             raise ApiError(503, "AGENT_DISABLED", "에이전트가 설정되지 않았습니다(OPENAI_API_KEY).")
+        if sum(len(m.content) for m in body.messages) > 40000:
+            raise ApiError(422, "INVALID_INPUT", "대화가 너무 길어요. 새 대화로 다시 물어봐 주세요.")
         from agent.loop import run_agent
         from agent.tools import ToolBox
+        who = None if is_admin else _agent_who(request)
+        if who is not None and _quota_take(who) > agent_public_daily:  # 먼저 차감하고 비교(동시 요청 틈 없음), DB 오류면 막는다
+            raise ApiError(429, "AGENT_QUOTA", f"오늘 AI 상담 한도({agent_public_daily}번)를 다 썼어요. 내일 다시 써 주세요.")
+        messages = [m.model_dump() for m in body.messages]
 
         def events():
             if usage.used() >= agent_daily_token_budget:
@@ -264,8 +318,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 yield {"type": "done", "unverified_numbers": []}
                 return
             yield from run_agent(agent_client, ToolBox(lambda name, date=None: load(name, date), market=prices.rows,
-                                                      refresh=_agent_refresh), body.messages,
-                                 on_usage=usage.add)
+                                                      refresh=_agent_refresh if is_admin else None), messages,
+                                 on_usage=usage.add, max_tokens=None if is_admin else agent_public_request_tokens,
+                                 max_turns=8 if is_admin else 6, exclude_tools=() if is_admin else ("refresh_market",),
+                                 tracer=agent_tracer, trace_user="admin" if is_admin else who,
+                                 trace_meta={"public": not is_admin}, public_errors=not is_admin)
 
         def sse():
             # 도구 계산·모델 응답을 기다리는 동안 agent_ping_seconds마다 SSE 주석을 보내 연결을 살린다
@@ -278,8 +335,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             def work():
                 try:
                     for e in events():
+                        if not is_admin and e.get("type") == "tool_result":
+                            e = {"type": "tool_result", "name": e.get("name")}  # 공개 사용자에게는 도구 결과 본문을 보내지 않는다
                         q.put(e)
                 finally:
+                    try:
+                        agent_tracer.flush()  # 무료 서버는 곧 잠들 수 있다 — 대화가 끝나면 바로 보낸다
+                    except Exception as e:  # noqa: BLE001
+                        _log.warning("추적 전송 실패: %s", type(e).__name__)
                     q.put(end)
 
             threading.Thread(target=work, daemon=True).start()
@@ -416,29 +479,29 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요.")
         if not body.image.startswith("data:image/"):
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
-        from server.vision import VisionError, VisionQuota, analyze_frame
+        from server.vision import ImageTooLarge, VisionError, VisionQuota, analyze_frame
         ip = request.client.host if request.client else "unknown"
         who = _quota_who(ip)
-        allow_ai = None if is_admin else (lambda: _quota_used(who) < vision_public_daily)
+        allow_ai = None if is_admin else (lambda: _quota_take(who) <= vision_public_daily)  # AI 부르기 직전에 차감
         try:
             data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
                                  tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai)
+        except ImageTooLarge:
+            raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(4K 해상도 이하로 공유해 주세요).") from None
         except VisionQuota:
-            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 분석 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
+            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 평가 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
-        if not is_admin and not data.get("cached") and not data.get("skipped"):
-            try:
-                observations.quota_add(who)
-            except Exception as e:
-                _log.warning("한도 기록 실패: %s", type(e).__name__)
         snap, vb = pick(load(body.name, None) if body.name else None, body.boss_defense, body.boss)
         setting = Setting(**body.setting) if body.setting else None
         from server.vision import normalize_fee
         for x in data["listings"]:
-            prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
+            # 공개 사용자 판독은 공용 시세(추천에 쓰임)에 넣지 않는다 — 조작한 툴팁으로 모두의 추천을 오염시키지 않게(2026-10-17).
+            # 지우지 않는 관측 기록에는 출처를 '공개화면'으로 따로 남긴다
+            if is_admin:
+                prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
             try:
-                observations.record(x)  # 영구 관측 기록(IP·이미지 없음)
+                observations.record(x if is_admin else {**x, "source": "공개화면"})  # 영구 관측 기록(IP·이미지 없음)
             except Exception as e:  # DB가 잠깐 안 돼도 평가는 계속한다
                 _log.warning("관측 기록 실패: %s", type(e).__name__)
         if is_admin and not data.get("cached"):
@@ -555,6 +618,7 @@ def default_app() -> FastAPI:
                       auction_mcp_command=_env("AUCTION_MCP_CMD"),
                       vision_dataset_dir=_env("VISION_DATASET_DIR"),
                       vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
+                      agent_public_daily=int(_env("AGENT_PUBLIC_DAILY") or 5),
                       vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240))
 
 

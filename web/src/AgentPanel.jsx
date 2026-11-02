@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { adminLogin, streamAgent } from "./api.js";
+import { useEffect, useState } from "react";
+import { adminLogin, getAgentQuota, streamAgent } from "./api.js";
 import ScreenWatch from "./ScreenWatch.jsx";
 
-// 관리자 전용 AI 에이전트 채팅. 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
+// AI 상담 채팅(2026-10-17부터 모두에게, 일반 사용자는 하루 횟수 제한). 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
 // 화면 분석에서 읽은 매물을 질문에 붙인다. 엔진 평가 숫자는 붙이지 않는다 — 에이전트가 도구로 다시 계산해야
 // 답변 숫자의 출처 검사가 된다.
 const isListOnly = (i) => !Object.keys(i.read?.total || {}).length && !(i.read?.potentials || []).length;
@@ -62,7 +62,7 @@ function ScreenRequest({ search, note, name, watchProps, onSend, busy }) {
 }
 
 export default function AgentPanel({ name = "", screenItems = [], feeRate = null, initialAuthed = false, watchProps = {},
-                                     title = "AI 에이전트" }) {
+                                     title = "AI 상담", showQuota = false }) {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(initialAuthed);
   const [question, setQuestion] = useState("");
@@ -70,6 +70,9 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   const [log, setLog] = useState([]); // 화면 표시용 이벤트
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [quota, setQuota] = useState(null); // 일반 사용자 하루 질문 수(2026-10-17 공개) — 관리자는 제한 없음
+  const loadQuota = () => { if (showQuota) getAgentQuota().then(setQuota).catch(() => setQuota(null)); };
+  useEffect(loadQuota, [showQuota]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (e) => {
     e.preventDefault();
@@ -86,7 +89,8 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   // text: 화면에 보일 질문, items: 같이 보낼 화면 매물(채팅 안 화면 요청 카드에서 온 것 또는 아래 화면 평가)
   const ask = async (text, items = screenItems) => {
     if (!text.trim() || busy) return;
-    const messages = [...history, { role: "user", content: withScreenItems(text.trim(), name, items, feeRate) }];
+    // 서버는 메시지 20개까지만 받는다(2026-10-17) — 최근 18개(질문·답 9쌍)에 새 질문을 붙인다
+    const messages = [...history.slice(-18), { role: "user", content: withScreenItems(text.trim(), name, items, feeRate) }];
     setLog((l) => [...l, { type: "user", text: text.trim() }]);
     setQuestion("");
     setBusy(true);
@@ -104,6 +108,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
       if (err.status === 401) setAuthed(false);
     } finally {
       setBusy(false);
+      loadQuota();
     }
   };
   const send = (e) => { e.preventDefault(); ask(question); };
@@ -121,6 +126,8 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
   return (
     <section className="panel">
       <h3>{title}</h3>
+      {quota && !quota.admin && <p className="muted small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</p>}
+      <p className="muted small">질문과 답변은 품질 확인을 위해 기록돼요 — 답변을 만들려고 OpenAI로, 기록은 Langfuse(EU)로 보내요. 개인정보는 적지 말아 주세요(IP는 남기지 않아요).</p>
       {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
       <div className="chat">
         {log.map((ev, i) => {

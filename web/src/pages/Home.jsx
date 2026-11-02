@@ -84,7 +84,7 @@ export default function Home() {
             <Icon name="chevron" size={16} className="index-go" />
           </a>
           <a className="index-row" href="#/scouter">
-            <strong>환산 주스탯 도우미</strong>
+            <strong>환산 채우기</strong>
             <span className="muted small">경매장 화면 평가에서 읽은 매물을 MapleScouter 입력 화면에 옮기는 방법</span>
             <Icon name="chevron" size={16} className="index-go" />
           </a>

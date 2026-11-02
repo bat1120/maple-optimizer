@@ -1,9 +1,11 @@
-# 인수인계 (2026-10-08) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
+# 인수인계 (2026-10-17 갱신) — 클라우드 세션에서 이어서 작업할 때 먼저 읽기
 
 ## 지금 상태
-- 데모: https://maple-optimizer.onrender.com (Render 무료, `main` 푸시마다 자동 배포, 15분 쉬면 잠든다)
-- 자동 목표 G1~G13은 모두 판정 완료. 남은 GOALS.md 항목은 사람 몫(H1·H2·H3·H5·H6)
-- 마지막 전체 검증: pytest 467 passed · 2 skipped, 웹 테스트 전부 통과
+- 운영: https://52-79-34-11.sslip.io (AWS Lightsail 서울, docker compose api+caddy). 자동 배포는 `DEPLOY_ENABLED=false`(사용자 결정 대기)
+- 옛 데모 https://maple-optimizer.onrender.com 은 아직 켜져 있다(끌지 사용자 결정)
+- AI 상담은 모두에게 공개(일반 IP당 하루 5번), 화면 분석도 공개(하루 20회). 추적은 Langfuse
+- 2026-10-17 점검 후속: 1차(보안·비용 상한)·2차(목표 로드맵 재측정·크확 기준·기준 고지)·3차(롤백·감시·백업)·4차(사용성·문서)
+- 마지막 전체 검증: pytest 590개 안팎 통과 · 2 skipped(Postgres 시험은 TEST_DATABASE_URL 없을 때 건너뜀), 웹 테스트 통과
 
 ## 최근에 만든 것 (2026-10-07)
 | 영역 | 내용 | 주요 파일 |
@@ -26,8 +28,11 @@
 - 보스 목록·포스 보정(2026-10-11, `engine/data/bosses.json`·`engine/stats/force.py`): 보스 id(`boss=`)로 방어율·요구 포스, 포스는 넥슨 stat '아케인포스'·'어센틱포스'.
   남은 것: 11레벨 지역 보스 데미지 +20%(최종뎀/데미지% 출처 없음 — 미반영), 발드릭스(나무 방어율 칸 비어 있음 — 목록에 없음),
   칭호 포스의 장비 프리셋별 차이(미반영), 어센틱 격차표 행 사이 값(바로 아래 행으로 봄)
-- AI 상담(2026-10-12): 관리자 로그인이면 캐릭터 화면 맨 위에. AI가 request_auction_screen을 부르면 채팅 안 [화면 연결] →
-  [매물 N개 AI에게 보내기]. 일반 사용자 공개는 비용 때문에 보류(사용자 결정)
+- AI 상담: 캐릭터 화면 맨 위에 모두에게(2026-10-17 공개). 일반 사용자는 IP당 하루 AGENT_PUBLIC_DAILY(기본 5)번,
+  refresh_market 없음. 하루 토큰 한도(AGENT_DAILY_TOKEN_BUDGET, 기본 20만)는 관리자와 같이 쓴다 — 일반 사용자가 다 쓰면 관리자도 막힌다.
+  AI가 request_auction_screen을 부르면 채팅 안 [화면 연결] → [매물 N개 AI에게 보내기]
+- AI 추적(2026-10-17, `agent/tracing.py`): LANGFUSE_PUBLIC_KEY·LANGFUSE_SECRET_KEY(·LANGFUSE_BASE_URL)가 있으면 Langfuse로
+  대화(agent)·모델 호출(generation)·도구(tool)를 보낸다. user_id는 'admin' 또는 날짜별 해시. 키가 없으면 아무것도 안 한다
 - MapleScouter 자동 채우기(확장·북마클릿) 유지 여부 — 약관 제15조 위험, 사용자 결정 대기
 
 ## 클라우드에서 못 하는 것 (이 PC에서 해야 함)
