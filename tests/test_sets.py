@@ -121,11 +121,19 @@ def test_challenger_set_name_follows_character_branch():
         assert not any("{" in k for k in counts)
 
 
-def test_two_branch_job_does_not_guess_challenger_branch():
-    # 제논 API는 착용 장비 이름의 직업군 세트로만 센다(픽스처: 루타비스·앱솔랩스·에테르넬 모두 (도적)만).
-    # 도전자 장비 이름엔 직업군이 없어 도적·해적 중 어느 쪽인지 근거가 없다 → 세지 않는다.
+def test_xenon_challenger_set_counts_as_thief():
+    # 넥슨 API 실측(2026-11-03, 랭킹 레지스탕스-제논 착용자 4명): 도전자·에테르넬 모두 '(도적)'으로만 센다
     counts = count_sets(_lete_items(), ("도적", "해적"), CAT)
-    assert not any(k.startswith("도전자의 장비 세트") for k in counts)
+    mage = count_sets(_lete_items(), ("마법사",), CAT)["도전자의 장비 세트(마법사)"]
+    assert counts["도전자의 장비 세트(도적)"] == mage
+    assert not any(k.startswith("도전자의 장비 세트(해적)") for k in counts)
+
+
+def test_xenon_destiny_weapon_counts_only_thief_eternel():
+    b = bundle("제논")
+    eng, api = _engine_counts(b), _api_counts(b)
+    assert "에테르넬 세트(해적)" not in eng
+    assert eng["에테르넬 세트(도적)"] == api["에테르넬 세트(도적)"]
 
 
 def test_challenger_lucky_comes_from_genesis_weapon_not_emblem():

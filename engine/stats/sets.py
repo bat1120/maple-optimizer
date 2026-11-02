@@ -4,7 +4,7 @@
 무기 규칙(실측): 제네시스·데스티니 무기는 직업군 에테르넬 세트에 +1, 루타비스·앱솔랩스·아케인셰이드
 ·도전자의 장비 직업군 세트에는 그 세트 장비가 3개 이상일 때 +1(럭키 아이템).
 도전자 장비는 이름이 직업 공통이라 세트 이름이 '도전자의 장비 세트({branch})' 템플릿이고, 캐릭터 직업군으로 채운다.
-직업군이 둘(제논)이면 어느 쪽인지 근거가 없어 세지 않는다(나무위키 '아이템 버닝'·API 실측, 2026-11-02).
+직업군이 둘인 제논(도적·해적)은 API가 도전자·에테르넬 세트를 '(도적)'으로만 센다(2026-11-03 실측, 착용자 4명) — 첫 직업군을 쓴다.
 """
 import collections
 import json
@@ -48,12 +48,12 @@ def count_sets(items: Iterable[Item], branches: tuple[str, ...], catalog: SetCat
             continue
         name = catalog.items.get(it.name)
         if name and "{branch}" in name:
-            name = name.format(branch=branches[0]) if len(branches) == 1 else None
+            name = name.format(branch=branches[0])
         if name:
             counts[name] += 1
     if special:
+        counts[f"에테르넬 세트({branches[0]})"] += 1
         for b in branches:
-            counts[f"에테르넬 세트({b})"] += 1
             for prefix in LUCKY_SETS:
                 key = f"{prefix} 세트({b})"
                 if counts.get(key, 0) >= LUCKY_MIN:
