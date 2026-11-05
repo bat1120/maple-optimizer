@@ -65,10 +65,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from agent.tracing import from_env
         agent_tracer = from_env()
     cache = BundleCache(db_path, clock)
-    from server.market import PriceStore
-    prices = PriceStore(db_path, clock)
-    from server.observations import open_log
+    from server.observations import PUBLIC_SOURCE, open_log
     observations = open_log(db_path, clock)  # 지우지 않는 관측 기록 — DATABASE_URL(Neon)이면 Postgres
+    prices = observations  # 지금 시세 = 관측 기록의 최근 30일(rows) — 서버가 다시 떠도 남는다(2026-10-13)
     from server.dataset import DatasetStore
     dataset = DatasetStore(vision_dataset_dir, clock) if vision_dataset_dir else None
     from server.vision import FrameCache
@@ -497,11 +496,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         from server.vision import normalize_fee
         for x in data["listings"]:
             # 공개 사용자 판독은 공용 시세(추천에 쓰임)에 넣지 않는다 — 조작한 툴팁으로 모두의 추천을 오염시키지 않게(2026-10-17).
-            # 지우지 않는 관측 기록에는 출처를 '공개화면'으로 따로 남긴다
-            if is_admin:
-                prices.record(x)  # 관측 시세: 화면에서 읽은 가격만 쌓는다
+            # 지우지 않는 관측 기록에는 출처를 '공개화면'으로 따로 남기고, 지금 시세(rows)는 이 출처를 읽지 않는다
             try:
-                observations.record(x if is_admin else {**x, "source": "공개화면"})  # 영구 관측 기록(IP·이미지 없음)
+                observations.record(x if is_admin else {**x, "source": PUBLIC_SOURCE})  # 영구 관측 기록(IP·이미지 없음)
             except Exception as e:  # DB가 잠깐 안 돼도 평가는 계속한다
                 _log.warning("관측 기록 실패: %s", type(e).__name__)
         if is_admin and not data.get("cached"):

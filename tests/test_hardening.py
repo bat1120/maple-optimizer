@@ -127,8 +127,9 @@ def test_public_screen_reads_do_not_feed_shared_prices(tmp_path):
     assert c.post("/api/vision/listings", json={"image": "data:image/jpeg;base64,AAAA"}).status_code == 200
     import sqlite3
     db = sqlite3.connect(tmp_path / "c.sqlite3")
-    assert db.execute("SELECT COUNT(*) FROM observed").fetchone()[0] == 0  # 공용 시세(server/market.py)
     assert [r[0] for r in db.execute("SELECT source FROM observations")] == ["공개화면"]
+    assert c.post("/api/admin/login", json={"password": "pw"}).status_code == 200
+    assert c.get("/api/market/observed").json()["count"] == 0  # 공용 시세 = 관측 기록의 rows(2026-10-13)
 
 
 def test_caddy_limits_body_and_sends_security_headers():
