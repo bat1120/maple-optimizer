@@ -6,6 +6,7 @@
 import datetime as dt
 import hashlib
 import hmac
+import pathlib
 import secrets
 import sqlite3
 import threading
@@ -50,6 +51,7 @@ class UsageStore:
     """하루(KST) 단위 에이전트 토큰 사용량."""
 
     def __init__(self, path: str, clock: Callable[[], float]):
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.Lock()  # 연결 하나를 작업 스레드들이 같이 쓴다(cache.py와 같은 이유)
         self._db.execute("CREATE TABLE IF NOT EXISTS agent_usage (day TEXT PRIMARY KEY, tokens INTEGER)")

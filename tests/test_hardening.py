@@ -192,3 +192,8 @@ def test_observation_log_falls_back_to_sqlite_when_postgres_is_unreachable(tmp_p
     monkeypatch.setenv("DATABASE_URL", "postgresql://x:y@127.0.0.1:1/none?connect_timeout=2")
     log = observations.open_log(str(tmp_path / "o.sqlite3"), lambda: 1_800_000_000.0)
     assert log.backend == "sqlite"
+
+
+def test_app_starts_when_cache_folder_does_not_exist_yet(tmp_path):
+    """새로 받은 저장소에는 .cache가 없다 — 사용량 저장소가 폴더 없이 DB를 열다 서버가 못 뜨던 것(2026-11-05)."""
+    create_app(lambda n, d: bundle("레테"), str(tmp_path / "new" / "c.sqlite3"))
