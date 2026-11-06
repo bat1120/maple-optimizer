@@ -25,8 +25,8 @@ export default function ProfileCard({ name, summary, best = null, defense, onDef
         {/* 숫자 칸: 레퍼런스(환산주스탯·츄츄지지)처럼 세로선으로 나눈 칸, 핵심 숫자는 주황 */}
         <dl className="kpi-strip">
           {/* 기본은 보스 세팅(2026-10-17 사용자). 세팅 순위가 오기 전엔 지금 착용 값 */}
-          <div className="kpi kpi-primary"><dt>스탯 공격력{best ? "(보스 세팅)" : ""}</dt><dd>{formatBig(best ? best.stat_attack : summary.stat_attack?.engine)}</dd></div>
-          <div className="kpi"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
+          {/* 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자). 세팅별 전투력은 API에 없고 계산하지 않는다 */}
+          <div className="kpi kpi-primary"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
           <div className="kpi"><dt>{best ? "보스 세팅" : "지금 착용 중인 세팅"}</dt>
             <dd className="kpi-text">{settingLabel(best ? best.setting : summary.active_setting)}
               {best && settingLabel(best.setting) !== settingLabel(summary.active_setting) && (

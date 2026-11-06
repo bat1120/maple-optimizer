@@ -189,7 +189,7 @@ describe("character page", () => {
   });
 
   // 2026-10-17 사용자: 처음 들어가면 보스 최적 세팅으로 보여 준다(지금 착용은 작게 같이)
-  it("기본은 보스 세팅: 프로필 스공·세팅, 주요 스탯, 장비창 프리셋이 보스 1위 조합 기준", async () => {
+  it("기본은 보스 세팅: 프로필 세팅, 주요 스탯, 장비창 프리셋이 보스 1위 조합 기준", async () => {
     const best = { setting: { equipment: 1, hyper: 3, ability: 2 }, stat_attack: 222000000,
                    final: { ...SUMMARY.final, boss: 333 } };
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
@@ -201,7 +201,11 @@ describe("character page", () => {
     expect(await screen.findByText("보스 세팅")).toBeInTheDocument();
     expect(screen.getByText("장비 1 · 하이퍼 3 · 어빌 2")).toBeInTheDocument();
     expect(screen.getByText(/지금 착용: 장비 2 · 하이퍼 1 · 어빌 1/)).toBeInTheDocument();
-    expect(screen.getByText("2억 2,200만")).toBeInTheDocument();
+    // 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자) — 스탯 공격력은 첫 화면에 없다
+    expect(screen.getByText("전투력(인게임 기록)")).toBeInTheDocument();
+    expect(screen.getByText("9,876만")).toBeInTheDocument();
+    expect(screen.queryByText(/스탯 공격력/)).toBeNull();
+    expect(screen.queryByText("2억 2,200만")).toBeNull();
     expect(screen.getByText("333%")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "프리셋 1" })).toHaveAttribute("aria-pressed", "true");
   });
