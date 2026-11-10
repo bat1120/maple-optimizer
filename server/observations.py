@@ -41,6 +41,11 @@ def _row(read: dict, now: float) -> dict | None:
             "job_groups": json.dumps(read["job_groups"], ensure_ascii=False) if read.get("job_groups") is not None else None}
 
 
+def _is_dead(conn) -> bool:
+    """psycopg 연결이 닫혔거나 깨졌는지(서버가 끊음). sqlite3 연결엔 이 속성이 없어 False."""
+    return bool(getattr(conn, "closed", False) or getattr(conn, "broken", False))
+
+
 class ObservationLog:
     def __init__(self, conn, placeholder: str, backend: str, clock: Callable[[], float], serial: str,
                  reconnect: Callable | None = None, retry_on: tuple = (), no_retry: tuple = ()):
@@ -80,6 +85,11 @@ class ObservationLog:
                         raise
                     self._conn = self._reconnect()
                 except Exception:
+                    # 오류 종류가 재연결 대상이 아니어도 연결이 끊겼으면 다시 붙어 한 번 더 한다(2026-11-10 운영 500 재현:
+                    # DB가 놀던 연결을 끊을 때 오류 종류가 InternalError 등이면 첫 요청이 바로 500, 다음 요청에야 재연결)
+                    if not attempt and self._reconnect is not None and _is_dead(self._conn):
+                        self._conn = self._reconnect()
+                        continue
                     try:
                         self._conn.rollback()
                     except Exception:

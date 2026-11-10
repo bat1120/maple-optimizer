@@ -282,3 +282,54 @@ def test_no_retry_errors_are_not_retried_on_a_new_connection(tmp_path):
     with pytest.raises(Locked):
         log._run(fn)
     assert len(calls) == 1 and len(opened) == 1
+
+
+def test_reconnects_when_server_killed_connection_with_non_retry_error(tmp_path):
+    """DB가 놀던 연결을 끊으면 오류 종류가 재연결 대상(OperationalError)이 아닐 수 있다(예: 25P03 InternalError).
+    2026-11-10 운영에서 첫 요청이 0.16초 만에 500, 다음 요청은 재연결해 200 — 연결이 깨졌으면 종류와 상관없이 다시 붙는다."""
+    import sqlite3
+    path = str(tmp_path / "k.sqlite3")
+    opened = []
+
+    class Killed(Exception):
+        pass
+
+    class Conn:
+        def __init__(self):
+            self.real = sqlite3.connect(path, check_same_thread=False)
+            self.kill, self.broken = False, False
+        def cursor(self):
+            if self.kill:
+                self.broken = True
+                raise Killed("terminating connection due to idle-in-transaction timeout")
+            return self.real.cursor()
+        def commit(self):
+            self.real.commit()
+        def rollback(self):
+            pass
+
+    def connect():
+        c = Conn()
+        opened.append(c)
+        return c
+
+    log = ObservationLog(connect(), "?", "sqlite", lambda: 1_800_000_000.0, "INTEGER PRIMARY KEY AUTOINCREMENT",
+                         reconnect=connect, retry_on=(ConnectionError,))
+    opened[0].kill = True
+    assert log.stats()["total"] == 0 and len(opened) == 2
+
+
+def test_non_retry_error_on_live_connection_is_not_retried(tmp_path):
+    """연결이 멀쩡한 오류(예: SQL 오류)는 다시 연결하지 않고 그대로 올린다."""
+    import sqlite3
+
+    import pytest
+    opened = []
+    def connect():
+        opened.append(1)
+        return sqlite3.connect(str(tmp_path / "l.sqlite3"), check_same_thread=False)
+    log = ObservationLog(connect(), "?", "sqlite", lambda: 1.0, "INTEGER PRIMARY KEY AUTOINCREMENT",
+                         reconnect=connect, retry_on=(ConnectionError,))
+    with pytest.raises(sqlite3.OperationalError):
+        log._run(lambda cur: cur.execute("SELECT * FROM no_such_table"))
+    assert len(opened) == 1
