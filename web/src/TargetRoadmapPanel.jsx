@@ -40,7 +40,7 @@ export default function TargetRoadmapPanel({ name, defense }) {
   };
 
   const load = async () => {
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); setCopied(false);  // 새 로드맵은 아직 복사 안 함
     try {
       setData(await getTargetRoadmap(name, ENGINE_BOSS[boss] || defense, { current: Number(current), target: Number(target), fragmentMan: fragMan }));
     } catch (e) {

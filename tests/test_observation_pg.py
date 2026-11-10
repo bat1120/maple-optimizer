@@ -56,3 +56,48 @@ def test_postgres_rows_last_30_days_and_adds_new_columns_to_old_table():
     rows = log.rows()
     assert [r["name"] for r in rows] == ["에테르넬 메이지글러브"] and rows[0]["seen_at"] == now[0]
     assert ObservationLog.postgres(URL, clock=lambda: now[0]).count() == 3  # 다시 열어도(칸 더하기 반복) 된다
+
+
+def test_postgres_restart_does_not_alter_when_columns_exist(monkeypatch):
+    """서버를 다시 띄울 때 칸이 이미 있으면 ALTER(표 전체 잠금)를 하지 않는다 — 다른 연결이 표를 잡고 있어도 바로 뜬다."""
+    import psycopg
+    with psycopg.connect(URL) as c:
+        c.execute("DROP TABLE IF EXISTS observations")
+    ObservationLog.postgres(URL, clock=lambda: 1_800_000_000.0)       # 표·칸·색인을 만든다
+    holder = psycopg.connect(URL)
+    holder.execute("SELECT count(*) FROM observations")               # 트랜잭션을 열어 둔 채(idle in transaction)
+    monkeypatch.setenv("PGOPTIONS", "-c lock_timeout=3s")             # 예전처럼 ALTER하면 멈추지 않고 3초 뒤 실패하게
+    try:
+        log = ObservationLog.postgres(URL, clock=lambda: 1_800_000_000.0)
+        assert log.count() == 0
+    finally:
+        holder.rollback()
+        holder.close()
+
+
+def test_postgres_missing_column_lock_timeout_fails_start_without_retry_or_sqlite(monkeypatch, tmp_path):
+    """칸을 더해야 하는데 표가 잠겨 있으면: 다시 연결해 또 기다리지 않고, SQLite로 갈라지지 않고 시작을 실패한다."""
+    import time
+
+    import psycopg
+    import pytest as _pytest
+
+    from server import observations
+    with psycopg.connect(URL) as c:
+        c.execute("DROP TABLE IF EXISTS observations")
+    ObservationLog.postgres(URL, clock=lambda: 1_800_000_000.0)
+    with psycopg.connect(URL) as c:
+        c.execute("ALTER TABLE observations DROP COLUMN job_groups")
+    holder = psycopg.connect(URL)
+    holder.execute("SELECT count(*) FROM observations")
+    monkeypatch.setenv("DATABASE_URL", URL)
+    monkeypatch.setattr(observations, "DDL_LOCK_TIMEOUT", "1s")
+    try:
+        t = time.monotonic()
+        with _pytest.raises(psycopg.errors.LockNotAvailable):
+            observations.open_log(str(tmp_path / "x.sqlite3"), lambda: 1_800_000_000.0)
+        assert time.monotonic() - t < 1.9                             # 한 번만 기다린다(다시 시도 없음)
+        assert not (tmp_path / "x.sqlite3").exists()
+    finally:
+        holder.rollback()
+        holder.close()

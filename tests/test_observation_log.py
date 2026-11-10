@@ -196,3 +196,89 @@ def test_reads_close_their_transaction(tmp_path):
         before = conn.commits
         read()
         assert conn.commits == before + 1, read
+
+
+def test_rows_keep_main_and_other_world_copies_apart(tmp_path):
+    """같은 템·같은 가격이라도 다른 월드 매물은 따로 — 나중에 본 다른 월드 줄이 본월드 매물을 지우면 안 된다(2026-11-10 리뷰)."""
+    now = [1_800_000_000.0]
+    log = _log(tmp_path, now)
+    log.record(READ)
+    now[0] += 60
+    log.record({**READ, "other_world": True})
+    rows = log.rows()
+    assert sorted(r["other_world"] for r in rows) == [False, True]
+
+
+def test_rows_cached_briefly_but_new_record_shows_at_once(tmp_path):
+    """지금 시세는 요청마다 DB를 다시 읽지 않는다(짧게 재사용). 새 관측을 기록하면 바로 보인다."""
+    now = [1_800_000_000.0]
+    log = _log(tmp_path, now)
+    log.record(READ)
+    first = log.rows()
+    first[0]["price"] = 1                                               # 돌려준 값을 고쳐도 캐시는 그대로
+    assert log.rows()[0]["price"] == READ["price"]
+    log.record({**READ, "price": 11_000_000_000})
+    assert len(log.rows()) == 2
+
+
+def test_rows_cache_expires(tmp_path):
+    now = [1_800_000_000.0]
+    log = _log(tmp_path, now)
+    log.record(READ)
+    assert len(log.rows()) == 1
+    now[0] += 31 * 86400                                                # 30일이 지나면 캐시를 넘어서도 빠진다
+    assert log.rows() == []
+
+
+def test_seen_at_index_exists(tmp_path):
+    log = _log(tmp_path, [1.0])
+    names = log._run(lambda cur: [r[1] for r in cur.execute("PRAGMA index_list(observations)").fetchall()])
+    assert "observations_seen_at" in names
+
+
+def test_rows_read_before_concurrent_record_is_not_cached(tmp_path):
+    """시세를 읽은 직후·캐시에 넣기 전에 다른 요청이 기록해도, 옛 결과가 캐시로 남지 않는다(2026-11-10 crash-out)."""
+    now = [1_800_000_000.0]
+    log = _log(tmp_path, now)
+    log.record(READ)
+    orig, done = log._run, []
+    def run(fn):
+        out = orig(fn)
+        if fn.__name__ == "q" and not done:
+            done.append(1)
+            log.record({**READ, "price": 11_000_000_000})
+        return out
+    log._run = run
+    log.rows()
+    log._run = orig
+    assert len(log.rows()) == 2
+
+
+def test_rows_nested_lists_are_not_shared_with_cache(tmp_path):
+    log = _log(tmp_path, [1_800_000_000.0])
+    log.record(READ)
+    log.rows()[0]["potential_lines"].append("조작")
+    assert log.rows()[0]["potential_lines"] == READ["potential_lines"]
+
+
+def test_no_retry_errors_are_not_retried_on_a_new_connection(tmp_path):
+    """잠금 대기 초과처럼 연결 오류의 하위 종류라도 no_retry면 다시 연결해 또 기다리지 않는다."""
+    import sqlite3
+
+    class Locked(ConnectionError):
+        pass
+
+    opened = []
+    def connect():
+        opened.append(1)
+        return sqlite3.connect(str(tmp_path / "n.sqlite3"), check_same_thread=False)
+    log = ObservationLog(connect(), "?", "sqlite", lambda: 1.0, "INTEGER PRIMARY KEY AUTOINCREMENT",
+                         reconnect=connect, retry_on=(ConnectionError,), no_retry=(Locked,))
+    calls = []
+    def fn(cur):
+        calls.append(1)
+        raise Locked("lock timeout")
+    import pytest
+    with pytest.raises(Locked):
+        log._run(fn)
+    assert len(calls) == 1 and len(opened) == 1
