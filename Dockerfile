@@ -1,5 +1,7 @@
 # 2단계 빌드: (1) 웹 빌드 (2) Python 런타임. 베이스 이미지는 amd64·arm64(Oracle Ampere) 모두 지원한다.
-FROM node:20-alpine AS web
+# 웹 결과물(정적 파일)은 CPU와 상관없다 — 빌드 장비 아키텍처에서 한 번만 만든다. arm64를 QEMU로 흉내 내며
+# npm ci를 돌리면 멈춰 이미지 잡이 6시간 제한에 걸려 취소됐다(2026-11-10, 두 번)
+FROM --platform=$BUILDPLATFORM node:20-alpine AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
