@@ -34,8 +34,13 @@ for raw in sys.stdin:
             text = "브라우저 확장이 연결되지 않았습니다. 크롬에서 경매장에 로그인해 주세요."
         else:
             sold = p["arguments"].get("sold", False)
-            text = json.dumps({"total": 1, "page": 1, "totalPages": 1, "hasNext": False, "searchKey": "k",
-                               "items": [SOLD if sold else ITEM], "searchRemaining": 87}, ensure_ascii=False)
+            if os.environ.get("FAKE_MCP_ITEMS"):  # 테스트가 고른 매물 목록(JSON 파일) — 판매 완료 검색엔 SOLD만, 아니면 나머지
+                with open(os.environ["FAKE_MCP_ITEMS"], encoding="utf-8") as f:
+                    items = [x for x in json.load(f) if (x.get("status") == "SOLD") == bool(sold)]
+            else:
+                items = [SOLD if sold else ITEM]
+            text = json.dumps({"total": len(items), "page": 1, "totalPages": 1, "hasNext": False, "searchKey": "k",
+                               "items": items, "searchRemaining": 87}, ensure_ascii=False)
         reply(msg["id"], {"content": [{"type": "text", "text": text}]})
     else:
         reply(msg["id"], {})
