@@ -491,6 +491,23 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
 
 
 @with_basis
+def swaps(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, per_slot: int = 3) -> dict:
+    """다른 템으로 갈아타기(2026-11-13): 부위마다 다른 템(다른 세트)을 끼면 실딜이 어떻게 되는지와 손익분기."""
+    from engine.market.swaps import swap_candidates
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    rows = swap_candidates(snap, chosen, b, CATALOG, cooldown_main_pct, per_slot=per_slot)
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b), "swaps": rows,
+            "note": ("다른 템으로 갈아탔을 때의 보스 실딜(지금 = 0%). 세트 개수를 템 이름으로 다시 세서 세트 효과 변화가 들어가요(set_change). "
+                     "그 템의 기본 옵션·주문서 칸 수·추옵은 넥슨 API 실측(그 템을 낀 캐릭터들의 장비)이고, 스타포스는 성별 표예요. "
+                     "same = 성·잠재·에디·추옵 수치·주문서(칸 수 비율)를 지금 템 그대로 옮겼을 때. "
+                     "flame = 추옵만 그 템 착용자들의 실제 추옵으로 바꿔 본 분포(better_share = 지금보다 나은 비율). "
+                     "potential.break_even = 그 템에 그 잠재 단계(이상)를 띄우면 처음으로 지금보다 나아지는 단계. "
+                     "레벨이 높은 템은 잠재·추옵 줄 수치가 더 높게 나올 수 있어 same은 보수적이에요. 익셉셔널은 옮기지 않아요. "
+                     "경매장에서 살 수 있는지는 확인된 구매 불가 템만 뺐어요.")}
+
+
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

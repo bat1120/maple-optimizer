@@ -192,6 +192,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return service.roadmap(snap, b, cooldown_main_pct, prices.rows(), miracle=miracle)
 
+    @app.get("/api/character/{name}/swaps")
+    def swaps(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
+              boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None, per_slot: int = 3):
+        """다른 템으로 갈아타기: 부위마다 다른 템(세트)을 끼면 실딜이 어떻게 되는지와 손익분기(잠재·추옵)."""
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)))
+
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):
         snap, b = pick(load(name, date), body.boss_defense, body.boss, body.arcane_force, body.authentic_force)

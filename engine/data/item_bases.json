@@ -1,0 +1,13504 @@
+{
+ "_source": "tests/fixtures 착용 장비(넥슨 Open API 실측) — tools/derive_item_bases.py",
+ "items": {
+  "2024 싸전귀 레전드": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 1,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 1,
+    "max_hp": 250,
+    "max_mp": 250,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "HYPER BURNING MAX": {
+   "part": "훈장",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 6,
+    "dex": 6,
+    "int": 6,
+    "luk": 6,
+    "magic_power": 6,
+    "str": 6
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "MVP 블랙 정령의 펜던트": {
+   "part": "펜던트",
+   "level": 0,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "SS급 마스터 쥬얼링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 20,
+    "dex": 30,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 20,
+    "max_hp": 3000,
+    "max_mp": 3000,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 9,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "THE BLACK": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 10,
+    "boss_damage": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "THE RED": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "boss_damage": 5,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 7,
+    "max_hp": 350,
+    "max_mp": 350,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "☆메이프릴 아일랜드☆": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "가디언 엔젤 링": {
+   "part": "반지",
+   "level": 160,
+   "set": "보스 장신구 세트",
+   "base": {
+    "attack_power": 2,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 2,
+    "max_hp": 200,
+    "max_mp": 200,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "가디언의 마이스터 임모탈 링": {
+   "part": "반지",
+   "level": 90,
+   "set": "임모탈 마이스터 히어로 세트",
+   "base": {
+    "armor": 150,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "거대한 공포": {
+   "part": "반지",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 4,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 4,
+    "max_hp": 250,
+    "max_mp": 250,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 34,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "결속의 반지": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 10,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 10,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "고통의 근원": {
+   "part": "펜던트",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "armor": 200,
+    "attack_power": 3,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 3,
+    "max_hp_rate": 5,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 31,
+   "flames": [
+    {
+     "dex": 35,
+     "int": 25,
+     "luk": 96,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "int": 30,
+     "speed": 5,
+     "all_stat": 6
+    },
+    {
+     "max_hp": 3360,
+     "attack_power": 6,
+     "armor": 36,
+     "jump": 5
+    },
+    {
+     "str": 35,
+     "dex": 30,
+     "luk": 110,
+     "all_stat": 4
+    },
+    {
+     "dex": 30,
+     "int": 109,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 20,
+     "max_mp": 1920,
+     "speed": 4,
+     "jump": 5
+    },
+    {
+     "str": 25,
+     "dex": 88,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 79,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 60,
+     "luk": 30,
+     "magic_power": 7,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 79,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 20,
+     "int": 95,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 65,
+     "luk": 74,
+     "all_stat": 6
+    },
+    {
+     "str": 100,
+     "dex": 30,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 109,
+     "dex": 30,
+     "int": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 109,
+     "int": 25,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 114,
+     "dex": 30,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "dex": 25,
+     "int": 79,
+     "speed": 6,
+     "all_stat": 7
+    },
+    {
+     "dex": 30,
+     "int": 84,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 109,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 84,
+     "int": 45,
+     "all_stat": 7
+    },
+    {
+     "str": 84,
+     "dex": 45,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 75,
+     "luk": 60,
+     "all_stat": 6
+    },
+    {
+     "str": 75,
+     "luk": 30,
+     "max_hp": 1440,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 30,
+     "luk": 95,
+     "all_stat": 5
+    },
+    {
+     "str": 75,
+     "dex": 30,
+     "int": 25,
+     "luk": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 84,
+     "speed": 5,
+     "all_stat": 6
+    },
+    {
+     "int": 30,
+     "luk": 84,
+     "speed": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 104,
+     "int": 30,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 91,
+     "int": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "luk": 70,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "int": 79,
+     "luk": 70,
+     "all_stat": 7
+    }
+   ]
+  },
+  "골드 나이트 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "골드 메이플리프 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "골드 서머너 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "골드 크리스탈 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "골드 키네시스 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": "모라스 세트",
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "골드 히어로즈 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "골든 클로버 벨트": {
+   "part": "벨트",
+   "level": 140,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 150,
+    "attack_power": 1,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 1,
+    "max_hp": 150,
+    "max_mp": 150,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "dex": 20,
+     "int": 16,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "str": 76,
+     "dex": 40,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "int": 20,
+     "luk": 20,
+     "max_mp": 1680
+    },
+    {
+     "str": 12,
+     "dex": 36,
+     "int": 36,
+     "luk": 60
+    }
+   ]
+  },
+  "그리드 펜던트": {
+   "part": "펜던트",
+   "level": 75,
+   "set": null,
+   "base": {
+    "armor": 100,
+    "dex": 3,
+    "int": 3,
+    "luk": 3,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 7,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 37,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {
+     "jump": 1,
+     "all_stat": 4
+    },
+    {},
+    {},
+    {},
+    {},
+    {
+     "all_stat": 2
+    },
+    {},
+    {},
+    {},
+    {
+     "armor": 12,
+     "all_stat": 3
+    },
+    {},
+    {
+     "int": 8,
+     "armor": 12
+    },
+    {},
+    {
+     "attack_power": 3,
+     "all_stat": 4
+    },
+    {},
+    {
+     "jump": 2
+    },
+    {},
+    {},
+    {
+     "str": 2,
+     "int": 2,
+     "armor": 4,
+     "all_stat": 3
+    },
+    {
+     "attack_power": 3,
+     "all_stat": 4
+    },
+    {
+     "all_stat": 4
+    },
+    {},
+    {
+     "str": 6,
+     "int": 8,
+     "luk": 6,
+     "attack_power": 3,
+     "all_stat": 3
+    },
+    {
+     "dex": 2,
+     "int": 2,
+     "attack_power": 3,
+     "all_stat": 2
+    },
+    {
+     "max_hp": 210,
+     "all_stat": 3
+    },
+    {},
+    {},
+    {
+     "jump": 1
+    },
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "근원의 속삭임": {
+   "part": "반지",
+   "level": 250,
+   "set": "광휘의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 5,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "전사",
+    "해적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "글로리온 링 : 가디언": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 20,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 20,
+    "max_hp": 2000,
+    "max_mp": 2000,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "글로리온 링 : 슈프림": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 25,
+    "dex": 40,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 25,
+    "max_hp": 4000,
+    "max_mp": 4000,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 26,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "금빛 검수 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "금빛 천지인 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "금빛 풍수사 엠블렘": {
+   "part": "엠블렘",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "노블 브레이슬릿": {
+   "part": "브레이슬릿",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "녹스 마법깃펜": {
+   "part": "마법깃펜",
+   "level": 100,
+   "set": null,
+   "base": {
+    "int": 10,
+    "luk": 10,
+    "magic_power": 3
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "데스티니 가즈": {
+   "part": "아대",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 189,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "luk": 72,
+     "attack_power": 136,
+     "magic_power": 81,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 대거": {
+   "part": "단검",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 9,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "int": 88,
+     "luk": 28,
+     "attack_power": 251,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 데스페라도": {
+   "part": "데스페라도",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 373,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "max_hp": 3040,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 84,
+     "max_mp": 2800,
+     "attack_power": 268,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 듀얼보우건": {
+   "part": "듀얼 보우건",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 70,
+     "int": 35,
+     "luk": 35,
+     "attack_power": 251,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "데스티니 라즐리": {
+   "part": "태도",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 370,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 57,
+     "luk": 21,
+     "attack_power": 193
+    }
+   ]
+  },
+  "데스티니 라피스": {
+   "part": "대검",
+   "level": 250,
+   "set": null,
+   "base": {
+    "armor": 290,
+    "attack_power": 375,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 57,
+     "luk": 21,
+     "attack_power": 193
+    }
+   ]
+  },
+  "데스티니 보우": {
+   "part": "활",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 35,
+     "luk": 35,
+     "attack_power": 251,
+     "armor": 60,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "데스티니 브레스 슈터": {
+   "part": "브레스 슈터",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 9,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 60,
+     "attack_power": 251,
+     "boss_damage": 10,
+     "damage": 6
+    }
+   ]
+  },
+  "데스티니 블래스트캐논": {
+   "part": "핸드캐논",
+   "level": 250,
+   "set": null,
+   "base": {
+    "armor": 290,
+    "attack_power": 382,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 48,
+     "int": 48,
+     "attack_power": 275,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 소울슈터": {
+   "part": "소울슈터",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 280,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 28,
+     "int": 28,
+     "attack_power": 201,
+     "boss_damage": 10,
+     "all_stat": 5
+    }
+   ]
+  },
+  "데스티니 스태프": {
+   "part": "스태프",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 275,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 190,
+    "luk": 190,
+    "magic_power": 445
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 49,
+     "dex": 84,
+     "luk": 35,
+     "magic_power": 320,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 35,
+     "int": 70,
+     "magic_power": 320,
+     "boss_damage": 12
+    },
+    {
+     "int": 42,
+     "luk": 42,
+     "attack_power": 117,
+     "magic_power": 320,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 에너지체인": {
+   "part": "에너지소드",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 280,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "int": 48,
+     "attack_power": 201,
+     "boss_damage": 10,
+     "all_stat": 6
+    }
+   ]
+  },
+  "데스티니 에인션트 보우": {
+   "part": "에인션트 보우",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 28,
+     "dex": 72,
+     "luk": 28,
+     "attack_power": 251,
+     "boss_damage": 8
+    }
+   ]
+  },
+  "데스티니 완드": {
+   "part": "완드",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 260,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 190,
+    "luk": 190,
+    "magic_power": 439
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "int": 72,
+     "magic_power": 315,
+     "damage": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "데스티니 차크람": {
+   "part": "차크람",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 35,
+     "luk": 35,
+     "max_hp": 3500,
+     "attack_power": 251,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "데스티니 체인": {
+   "part": "체인",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 349,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "luk": 48,
+     "attack_power": 251,
+     "damage": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "데스티니 케인": {
+   "part": "케인",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 358,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "luk": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "attack_power": 257,
+     "boss_damage": 12,
+     "all_stat": 5
+    }
+   ]
+  },
+  "데스티니 클로": {
+   "part": "너클",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 280,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 9,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "max_hp": 3500,
+     "attack_power": 201,
+     "boss_damage": 10,
+     "all_stat": 6
+    },
+    {
+     "max_mp": 3500,
+     "attack_power": 201,
+     "boss_damage": 12,
+     "damage": 6
+    }
+   ]
+  },
+  "데스티니 투핸드소드": {
+   "part": "두손검",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 373,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 77,
+     "dex": 42,
+     "luk": 35,
+     "attack_power": 268,
+     "boss_damage": 10
+    },
+    {
+     "luk": 60,
+     "max_mp": 4200,
+     "attack_power": 268,
+     "boss_damage": 12
+    },
+    {
+     "str": 42,
+     "dex": 42,
+     "attack_power": 268,
+     "magic_power": 158,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 폴암": {
+   "part": "폴암",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 334,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 9,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 42,
+     "luk": 42,
+     "max_mp": 3500,
+     "attack_power": 240,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "데스티니 피스톨": {
+   "part": "건",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 273,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 28,
+     "luk": 28,
+     "attack_power": 196,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "데스티니 해머": {
+   "part": "한손둔기",
+   "level": 250,
+   "set": null,
+   "base": {
+    "attack_power": 358,
+    "boss_damage": 30,
+    "dex": 190,
+    "ignore_monster_armor": 20,
+    "str": 190
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 28,
+     "luk": 100,
+     "attack_power": 257,
+     "boss_damage": 14
+    }
+   ]
+  },
+  "데아 시두스 이어링": {
+   "part": "귀고리",
+   "level": 130,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 50,
+    "attack_power": 2,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 2,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 42,
+     "attack_power": 6,
+     "jump": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "luk": 40,
+     "attack_power": 5
+    },
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "speed": 4,
+     "all_stat": 5
+    }
+   ]
+  },
+  "데이브레이크 펜던트": {
+   "part": "펜던트",
+   "level": 140,
+   "set": "여명의 보스 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 2,
+    "dex": 8,
+    "int": 8,
+    "luk": 8,
+    "magic_power": 2,
+    "max_hp_rate": 5,
+    "str": 8
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 44,
+   "flames": [
+    {
+     "str": 32,
+     "luk": 40,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "dex": 20,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "str": 68,
+     "dex": 20,
+     "int": 32,
+     "all_stat": 7
+    },
+    {
+     "str": 100,
+     "int": 20,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "int": 16,
+     "luk": 64,
+     "max_hp": 2520,
+     "attack_power": 6
+    },
+    {
+     "str": 20,
+     "int": 20,
+     "luk": 80,
+     "all_stat": 5
+    },
+    {
+     "dex": 24,
+     "int": 64,
+     "magic_power": 6,
+     "all_stat": 6
+    },
+    {
+     "int": 48,
+     "max_hp": 2100,
+     "magic_power": 5,
+     "all_stat": 4
+    },
+    {
+     "str": 20,
+     "dex": 32,
+     "luk": 12,
+     "max_hp": 2100,
+     "attack_power": 5
+    },
+    {
+     "str": 16,
+     "dex": 76,
+     "int": 20,
+     "luk": 16,
+     "all_stat": 4
+    },
+    {
+     "dex": 56,
+     "int": 16,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 20,
+     "dex": 20,
+     "int": 88,
+     "all_stat": 6
+    },
+    {
+     "dex": 68,
+     "int": 28,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 16,
+     "int": 64,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "int": 20,
+     "luk": 68,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 68,
+     "int": 20,
+     "max_mp": 2100,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "int": 20,
+     "luk": 16,
+     "all_stat": 6
+    },
+    {
+     "str": 48,
+     "dex": 16,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "str": 68,
+     "dex": 20,
+     "int": 40,
+     "all_stat": 6
+    },
+    {
+     "str": 76,
+     "dex": 20,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 96,
+     "dex": 24,
+     "int": 24,
+     "all_stat": 6
+    },
+    {
+     "dex": 56,
+     "int": 64,
+     "all_stat": 5
+    },
+    {
+     "int": 68,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "dex": 16,
+     "int": 88,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "dex": 96,
+     "int": 20,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 60,
+     "magic_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 64,
+     "dex": 16,
+     "luk": 16,
+     "all_stat": 6
+    },
+    {
+     "int": 64,
+     "luk": 24,
+     "max_mp": 1680,
+     "all_stat": 6
+    },
+    {
+     "str": 68,
+     "dex": 68,
+     "all_stat": 7
+    },
+    {
+     "str": 80,
+     "dex": 20,
+     "int": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "dex": 20,
+     "luk": 92,
+     "all_stat": 6
+    },
+    {
+     "str": 64,
+     "dex": 24,
+     "armor": 48,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 16,
+     "luk": 60,
+     "all_stat": 6
+    },
+    {
+     "str": 40,
+     "dex": 20,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "str": 72,
+     "dex": 20,
+     "luk": 44,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 32,
+     "int": 36,
+     "luk": 16,
+     "all_stat": 6
+    },
+    {
+     "str": 92,
+     "dex": 20,
+     "int": 24,
+     "all_stat": 6
+    },
+    {
+     "dex": 68,
+     "luk": 20,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 24,
+     "int": 24,
+     "luk": 88,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "int": 56,
+     "magic_power": 5,
+     "all_stat": 6
+    },
+    {
+     "int": 48,
+     "max_hp": 2100,
+     "magic_power": 5,
+     "all_stat": 4
+    },
+    {
+     "int": 48,
+     "max_hp": 2100,
+     "magic_power": 5,
+     "all_stat": 4
+    },
+    {
+     "int": 48,
+     "max_hp": 2100,
+     "magic_power": 5,
+     "all_stat": 4
+    },
+    {
+     "int": 48,
+     "max_hp": 2100,
+     "magic_power": 5,
+     "all_stat": 4
+    }
+   ]
+  },
+  "도미네이터 펜던트": {
+   "part": "펜던트",
+   "level": 140,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 3,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 3,
+    "max_hp_rate": 10,
+    "max_mp_rate": 10,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 23,
+   "flames": [
+    {
+     "str": 68,
+     "dex": 20,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "str": 64,
+     "int": 16,
+     "max_hp": 2100,
+     "all_stat": 6
+    },
+    {
+     "str": 56,
+     "dex": 16,
+     "max_hp": 2520,
+     "attack_power": 5
+    },
+    {
+     "dex": 40,
+     "int": 16,
+     "luk": 24,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 32,
+     "dex": 16,
+     "luk": 16,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 40,
+     "int": 40,
+     "jump": 5,
+     "all_stat": 5
+    },
+    {},
+    {
+     "str": 60,
+     "dex": 20,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "dex": 24,
+     "int": 96,
+     "all_stat": 5
+    },
+    {
+     "str": 24,
+     "int": 72,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 24,
+     "dex": 40,
+     "luk": 24,
+     "max_mp": 2100,
+     "all_stat": 5
+    },
+    {
+     "str": 16,
+     "int": 56,
+     "max_mp": 2100,
+     "all_stat": 6
+    },
+    {
+     "dex": 16,
+     "int": 24,
+     "luk": 72,
+     "all_stat": 4
+    },
+    {
+     "str": 80,
+     "dex": 20,
+     "int": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 64,
+     "dex": 20,
+     "int": 24,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "dex": 48,
+     "max_mp": 2520,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 68,
+     "luk": 16,
+     "all_stat": 6
+    },
+    {
+     "dex": 16,
+     "int": 24,
+     "luk": 80,
+     "all_stat": 5
+    },
+    {
+     "str": 68,
+     "int": 20,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 16,
+     "luk": 24,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 16,
+     "luk": 24,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 16,
+     "luk": 24,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 16,
+     "luk": 24,
+     "magic_power": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 망토": {
+   "part": "망토",
+   "level": 160,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 모자": {
+   "part": "모자",
+   "level": 150,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 180,
+    "ignore_monster_armor": 10,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 2,
+    "max_hp": 360,
+    "max_mp": 360
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 상의": {
+   "part": "상의",
+   "level": 150,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 120,
+    "ignore_monster_armor": 5,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 2
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 신발": {
+   "part": "신발",
+   "level": 160,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 150,
+    "int": 20,
+    "jump": 7,
+    "luk": 20,
+    "magic_power": 5,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 어깨장식": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "도전자의 장갑": {
+   "part": "장갑",
+   "level": 160,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 150,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 5
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "도전자의 하의": {
+   "part": "하의",
+   "level": 150,
+   "set": "도전자의 장비 세트({branch})",
+   "base": {
+    "armor": 120,
+    "ignore_monster_armor": 5,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 2
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "라이징 썬 펜던트": {
+   "part": "펜던트",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 185,
+    "attack_power": 2,
+    "dex": 16,
+    "int": 16,
+    "luk": 16,
+    "magic_power": 2,
+    "max_hp": 180,
+    "max_mp": 180,
+    "str": 16
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "레드 매지션 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 100,
+   "set": null,
+   "base": {
+    "armor": 20,
+    "int": 2,
+    "luk": 1
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 3,
+     "int": 3
+    },
+    {
+     "dex": 6,
+     "max_mp": 1200,
+     "armor": 24
+    },
+    {
+     "str": 6,
+     "dex": 6,
+     "speed": 3
+    },
+    {
+     "dex": 15,
+     "luk": 39,
+     "magic_power": 3
+    },
+    {
+     "dex": 12,
+     "attack_power": 4,
+     "magic_power": 2
+    }
+   ]
+  },
+  "레드 아처 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 100,
+   "set": null,
+   "base": {
+    "armor": 20,
+    "dex": 2,
+    "str": 1
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "luk": 12
+    }
+   ]
+  },
+  "레드 워리어 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 100,
+   "set": null,
+   "base": {
+    "armor": 20,
+    "dex": 1,
+    "str": 2
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 24,
+     "luk": 12
+    },
+    {
+     "str": 3,
+     "luk": 3
+    },
+    {
+     "armor": 18
+    }
+   ]
+  },
+  "레드 파이렛 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 100,
+   "set": null,
+   "base": {
+    "armor": 20,
+    "dex": 1,
+    "str": 2
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "dex": 6
+    },
+    {
+     "str": 9,
+     "luk": 9
+    },
+    {
+     "all_stat": 3
+    }
+   ]
+  },
+  "레이븐혼 체이서글러브": {
+   "part": "장갑",
+   "level": 140,
+   "set": null,
+   "base": {
+    "armor": 50,
+    "attack_power": 5,
+    "dex": 16,
+    "luk": 16,
+    "max_hp": 350
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "루즈 컨트롤 머신 마크": {
+   "part": "얼굴장식",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "armor": 200,
+    "attack_power": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 36,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 30,
+     "luk": 95,
+     "all_stat": 5
+    },
+    {
+     "str": 79,
+     "int": 25,
+     "max_hp": 1920,
+     "all_stat": 6
+    },
+    {
+     "str": 70,
+     "dex": 25,
+     "max_mp": 2400,
+     "all_stat": 6
+    },
+    {
+     "int": 45,
+     "max_hp": 2880,
+     "attack_power": 6,
+     "speed": 3
+    },
+    {
+     "str": 25,
+     "dex": 20,
+     "luk": 90,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 20,
+     "int": 104,
+     "all_stat": 6
+    },
+    {
+     "int": 84,
+     "luk": 30,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 70,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 124,
+     "int": 20,
+     "luk": 25
+    },
+    {
+     "str": 25,
+     "int": 104,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "dex": 84,
+     "int": 30,
+     "speed": 6,
+     "all_stat": 6
+    },
+    {
+     "dex": 25,
+     "int": 100,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 25,
+     "int": 25,
+     "luk": 80,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "int": 30,
+     "attack_power": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 114,
+     "dex": 25,
+     "int": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 79,
+     "luk": 25,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 114,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 114,
+     "dex": 25,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 30,
+     "int": 91,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "int": 105,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "int": 109,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 109,
+     "int": 25,
+     "all_stat": 6
+    },
+    {
+     "dex": 79,
+     "int": 25,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 89,
+     "int": 35,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 109,
+     "int": 25,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 84,
+     "dex": 75,
+     "all_stat": 7
+    },
+    {
+     "str": 79,
+     "dex": 25,
+     "armor": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 30,
+     "luk": 114,
+     "all_stat": 6
+    },
+    {
+     "str": 74,
+     "dex": 20,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 95,
+     "int": 30,
+     "luk": 20,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 20,
+     "luk": 95,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 70,
+     "all_stat": 6
+    },
+    {
+     "str": 100,
+     "dex": 30,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 91,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "int": 25,
+     "luk": 100,
+     "all_stat": 6
+    },
+    {
+     "dex": 25,
+     "int": 100,
+     "luk": 30,
+     "all_stat": 6
+    }
+   ]
+  },
+  "리스트레인트 링": {
+   "part": "반지",
+   "level": 110,
+   "set": null,
+   "base": {
+    "attack_power": 4,
+    "dex": 4,
+    "int": 4,
+    "luk": 4,
+    "magic_power": 4,
+    "str": 4
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 36,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "링 오브 썸": {
+   "part": "반지",
+   "level": 110,
+   "set": null,
+   "base": {
+    "attack_power": 4,
+    "dex": 4,
+    "int": 4,
+    "luk": 4,
+    "magic_power": 4,
+    "str": 4
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "마력이 깃든 안대": {
+   "part": "눈장식",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "armor": 300,
+    "attack_power": 3,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 3,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 34,
+   "flames": [
+    {
+     "str": 30,
+     "int": 20,
+     "luk": 104,
+     "all_stat": 6
+    },
+    {
+     "str": 75,
+     "int": 30,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 86,
+     "dex": 25,
+     "int": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "int": 30,
+     "max_hp": 2880,
+     "attack_power": 6,
+     "speed": 5
+    },
+    {
+     "str": 30,
+     "dex": 25,
+     "luk": 100,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 84,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "int": 80,
+     "max_mp": 2880,
+     "all_stat": 6
+    },
+    {
+     "dex": 100,
+     "int": 30,
+     "luk": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 80,
+     "int": 25,
+     "luk": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 20,
+     "int": 80,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 95,
+     "int": 20,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 15,
+     "int": 85,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "luk": 75,
+     "speed": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 79,
+     "dex": 25,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 105,
+     "dex": 30,
+     "int": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 100,
+     "int": 25,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 114,
+     "dex": 30,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 93,
+     "all_stat": 5
+    },
+    {
+     "int": 70,
+     "luk": 25,
+     "max_hp": 1920,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 84,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 105,
+     "int": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 100,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "dex": 94,
+     "int": 25,
+     "luk": 15,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "dex": 30,
+     "armor": 54,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "luk": 84,
+     "all_stat": 7
+    },
+    {
+     "str": 79,
+     "int": 25,
+     "speed": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 25,
+     "luk": 109,
+     "all_stat": 6
+    },
+    {
+     "str": 79,
+     "dex": 55,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 99,
+     "int": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 30,
+     "int": 30,
+     "luk": 90,
+     "all_stat": 6
+    },
+    {
+     "str": 86,
+     "dex": 25,
+     "luk": 25,
+     "all_stat": 7
+    },
+    {
+     "str": 25,
+     "dex": 84,
+     "int": 55,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "luk": 75,
+     "magic_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 84,
+     "magic_power": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "마이스터 올마이티링": {
+   "part": "반지",
+   "level": 75,
+   "set": null,
+   "base": {
+    "armor": 28,
+    "dex": 6,
+    "int": 6,
+    "luk": 6,
+    "str": 6
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 11,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "마이스터 이어링": {
+   "part": "귀고리",
+   "level": 140,
+   "set": "마이스터 세트",
+   "base": {
+    "armor": 70,
+    "attack_power": 4,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 4,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 7,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 10,
+   "flames": [
+    {
+     "str": 16,
+     "dex": 48,
+     "luk": 16,
+     "max_hp": 2520,
+     "attack_power": 5
+    },
+    {
+     "dex": 40,
+     "luk": 48,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 40,
+     "magic_power": 6,
+     "all_stat": 6
+    },
+    {},
+    {
+     "str": 16,
+     "dex": 16,
+     "int": 40,
+     "luk": 32,
+     "all_stat": 6
+    },
+    {
+     "dex": 32,
+     "int": 48,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 64,
+     "int": 24,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 40,
+     "speed": 6,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 56,
+     "int": 36,
+     "all_stat": 6
+    },
+    {
+     "dex": 24,
+     "int": 20,
+     "luk": 84,
+     "all_stat": 5
+    }
+   ]
+  },
+  "마이스터링": {
+   "part": "반지",
+   "level": 140,
+   "set": "마이스터 세트",
+   "base": {
+    "armor": 150,
+    "attack_power": 1,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 1,
+    "max_hp": 200,
+    "max_mp": 200,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 43,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "매커네이터 펜던트": {
+   "part": "펜던트",
+   "level": 120,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 1,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 1,
+    "max_hp": 250,
+    "max_mp": 250,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "전사",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 87,
+     "int": 28,
+     "luk": 24,
+     "all_stat": 4
+    },
+    {
+     "str": 48,
+     "int": 20,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "dex": 68,
+     "int": 20,
+     "luk": 20,
+     "max_mp": 1800
+    }
+   ]
+  },
+  "메이플 어택": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 23,
+    "int": 23,
+    "luk": 23,
+    "magic_power": 7,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 23
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "메이플 트레져 리스트아머": {
+   "part": "리스트밴드",
+   "level": 110,
+   "set": null,
+   "base": {
+    "attack_power": 6,
+    "dex": 9,
+    "str": 9
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "몽환의 벨트": {
+   "part": "벨트",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "armor": 150,
+    "attack_power": 6,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 6,
+    "max_hp": 150,
+    "max_mp": 150,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 34,
+   "flames": [
+    {
+     "str": 30,
+     "int": 24,
+     "luk": 120,
+     "all_stat": 6
+    },
+    {
+     "str": 96,
+     "int": 30,
+     "luk": 55,
+     "all_stat": 6
+    },
+    {
+     "str": 102,
+     "dex": 36,
+     "int": 36,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 54,
+     "luk": 24,
+     "max_hp": 3600,
+     "attack_power": 6
+    },
+    {
+     "str": 30,
+     "int": 24,
+     "luk": 120,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 36,
+     "int": 91,
+     "luk": 30,
+     "all_stat": 7
+    },
+    {
+     "str": 30,
+     "dex": 30,
+     "int": 104,
+     "all_stat": 6
+    },
+    {
+     "dex": 126,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 102,
+     "int": 30,
+     "luk": 66,
+     "all_stat": 6
+    },
+    {
+     "dex": 44,
+     "int": 102,
+     "luk": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 110,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "int": 102,
+     "luk": 80,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 30,
+     "luk": 115,
+     "all_stat": 5
+    },
+    {
+     "str": 121,
+     "dex": 30,
+     "luk": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 121,
+     "dex": 30,
+     "luk": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 133,
+     "dex": 42,
+     "luk": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 143,
+     "int": 30,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 98,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 55,
+     "int": 96,
+     "all_stat": 7
+    },
+    {
+     "dex": 30,
+     "int": 126,
+     "luk": 30,
+     "all_stat": 4
+    },
+    {
+     "dex": 126,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 66,
+     "dex": 102,
+     "int": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 18,
+     "dex": 109,
+     "int": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 126,
+     "dex": 30,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 36,
+     "luk": 138,
+     "all_stat": 6
+    },
+    {
+     "str": 102,
+     "dex": 36,
+     "max_hp": 3600,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 36,
+     "luk": 132,
+     "all_stat": 6
+    },
+    {
+     "str": 109,
+     "int": 24,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 113,
+     "luk": 36,
+     "max_hp": 3600,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "dex": 30,
+     "luk": 120,
+     "all_stat": 5
+    },
+    {
+     "str": 121,
+     "dex": 30,
+     "int": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 110,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 42,
+     "luk": 116,
+     "all_stat": 5
+    },
+    {
+     "int": 91,
+     "luk": 36,
+     "all_stat": 6
+    }
+   ]
+  },
+  "미카엘라의 새 안경": {
+   "part": "눈장식",
+   "level": 90,
+   "set": "파티 퀘스트  세트",
+   "base": {
+    "attack_power": 2,
+    "dex": 2,
+    "int": 2,
+    "luk": 2,
+    "magic_power": 2,
+    "str": 2
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "jump": 1,
+     "all_stat": 2
+    },
+    {
+     "all_stat": 3
+    },
+    {},
+    {},
+    {
+     "max_hp": 1080
+    },
+    {
+     "dex": 3,
+     "luk": 3
+    },
+    {
+     "all_stat": 3
+    }
+   ]
+  },
+  "미카엘의 새 안경": {
+   "part": "눈장식",
+   "level": 75,
+   "set": "파티 퀘스트  세트",
+   "base": {
+    "dex": 3,
+    "int": 3,
+    "luk": 3,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 8,
+     "max_mp": 210,
+     "jump": 1,
+     "all_stat": 3
+    }
+   ]
+  },
+  "미트라의 분노 : 궁수": {
+   "part": "엠블렘",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 40,
+    "magic_power": 5,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 6,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "미트라의 분노 : 도적": {
+   "part": "엠블렘",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 40,
+    "luk": 40,
+    "magic_power": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "미트라의 분노 : 마법사": {
+   "part": "엠블렘",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "미트라의 분노 : 전사": {
+   "part": "엠블렘",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 40,
+    "magic_power": 5,
+    "max_hp": 700,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 8,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "미트라의 분노 : 해적": {
+   "part": "엠블렘",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 40,
+    "magic_power": 5,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 7,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "버서커의 마이스터 임모탈 링": {
+   "part": "반지",
+   "level": 90,
+   "set": "임모탈 마이스터 히어로 세트",
+   "base": {
+    "armor": 30,
+    "attack_power": 3,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 11,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "버서크 체인": {
+   "part": "쇠사슬",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "베어스 그린 펜던트": {
+   "part": "펜던트",
+   "level": 100,
+   "set": null,
+   "base": {
+    "armor": 65,
+    "max_hp": 45,
+    "max_mp": 45,
+    "str": 4
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 12,
+     "luk": 30,
+     "jump": 2,
+     "all_stat": 4
+    },
+    {
+     "str": 12,
+     "luk": 12,
+     "armor": 12
+    },
+    {
+     "str": 6,
+     "dex": 9,
+     "int": 12,
+     "luk": 15
+    },
+    {
+     "str": 6,
+     "dex": 18
+    },
+    {
+     "int": 3,
+     "luk": 3
+    }
+   ]
+  },
+  "베어스 레드 펜던트": {
+   "part": "펜던트",
+   "level": 110,
+   "set": null,
+   "base": {
+    "armor": 105,
+    "max_hp": 90,
+    "max_mp": 90,
+    "str": 8
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "speed": 2
+    }
+   ]
+  },
+  "벤젼스 링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 20,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "전사",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "분노한 자쿰의 벨트": {
+   "part": "벨트",
+   "level": 150,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 150,
+    "attack_power": 1,
+    "dex": 18,
+    "int": 18,
+    "luk": 18,
+    "magic_power": 1,
+    "max_hp": 150,
+    "max_mp": 150,
+    "str": 18
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "해적"
+   ],
+   "wearers": 6,
+   "flames": [
+    {
+     "int": 44,
+     "luk": 20,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "str": 68,
+     "dex": 36,
+     "int": 16,
+     "all_stat": 6
+    },
+    {
+     "int": 44,
+     "luk": 20,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "int": 44,
+     "luk": 20,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "int": 44,
+     "luk": 20,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "int": 44,
+     "luk": 20,
+     "armor": 40,
+     "all_stat": 5
+    }
+   ]
+  },
+  "불멸의 유산": {
+   "part": "훈장",
+   "level": 250,
+   "set": "광휘의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "boss_damage": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "전사",
+    "해적"
+   ],
+   "wearers": 15,
+   "flames": [
+    {
+     "str": 156,
+     "dex": 42,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 42,
+     "dex": 35,
+     "luk": 149,
+     "all_stat": 7
+    },
+    {
+     "dex": 151,
+     "int": 42,
+     "luk": 49,
+     "all_stat": 5
+    },
+    {
+     "dex": 100,
+     "int": 28,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 142,
+     "dex": 28,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 149,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 142,
+     "int": 35,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 156,
+     "int": 42,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "dex": 149,
+     "int": 28,
+     "luk": 49,
+     "all_stat": 7
+    },
+    {
+     "str": 114,
+     "luk": 102,
+     "all_stat": 7
+    },
+    {
+     "str": 35,
+     "int": 35,
+     "luk": 154,
+     "all_stat": 7
+    },
+    {
+     "str": 114,
+     "int": 42,
+     "speed": 5,
+     "all_stat": 7
+    },
+    {
+     "str": 35,
+     "dex": 161,
+     "int": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 156,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "int": 42,
+     "luk": 149,
+     "all_stat": 6
+    }
+   ]
+  },
+  "블랙빈 마크": {
+   "part": "눈장식",
+   "level": 135,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 120,
+    "attack_power": 1,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 1,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 9,
+   "flames": [
+    {
+     "str": 110,
+     "dex": 24,
+     "int": 24,
+     "luk": 20
+    },
+    {
+     "int": 35,
+     "luk": 42,
+     "max_hp": 2340,
+     "attack_power": 6
+    },
+    {
+     "str": 51,
+     "int": 16,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 16,
+     "dex": 44,
+     "int": 21,
+     "all_stat": 6
+    },
+    {
+     "str": 62,
+     "int": 20,
+     "armor": 42,
+     "all_stat": 4
+    },
+    {
+     "dex": 20,
+     "int": 47,
+     "luk": 32,
+     "all_stat": 4
+    },
+    {
+     "str": 51,
+     "dex": 16,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 16,
+     "dex": 36,
+     "int": 24,
+     "luk": 44,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "int": 20,
+     "luk": 16,
+     "attack_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "블루 엘리멘탈 글로브": {
+   "part": "장갑",
+   "level": 110,
+   "set": null,
+   "base": {
+    "armor": 45,
+    "int": 5,
+    "luk": 5
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "speed": 3,
+     "jump": 3,
+     "all_stat": 3
+    }
+   ]
+  },
+  "빅토리아컵": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 21,
+    "int": 21,
+    "luk": 21,
+    "magic_power": 7,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 21
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "샤이니 레드 매지션 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 26,
+    "int": 3,
+    "luk": 3,
+    "magic_power": 3
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "int": 28
+    }
+   ]
+  },
+  "샤이니 레드 시프 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 26,
+    "attack_power": 3,
+    "dex": 3,
+    "luk": 3
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 12,
+     "luk": 12,
+     "attack_power": 4,
+     "armor": 21
+    }
+   ]
+  },
+  "샤이니 레드 아처 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 26,
+    "attack_power": 3,
+    "dex": 3,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "jump": 3,
+     "all_stat": 4
+    },
+    {
+     "str": 8,
+     "int": 8,
+     "all_stat": 3
+    },
+    {
+     "jump": 3,
+     "all_stat": 5
+    }
+   ]
+  },
+  "샤이니 레드 워리어 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 26,
+    "attack_power": 3,
+    "dex": 3,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 21,
+     "dex": 12,
+     "luk": 12
+    },
+    {
+     "str": 34,
+     "dex": 12,
+     "int": 8
+    }
+   ]
+  },
+  "샤이니 레드 파이렛 마이스터 심볼": {
+   "part": "얼굴장식",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 26,
+    "attack_power": 3,
+    "dex": 3,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 8,
+     "int": 8,
+     "max_mp": 780,
+     "attack_power": 3,
+     "all_stat": 4
+    },
+    {
+     "str": 43,
+     "dex": 8,
+     "max_mp": 780
+    }
+   ]
+  },
+  "스칼렛 숄더": {
+   "part": "어깨장식",
+   "level": 135,
+   "set": null,
+   "base": {
+    "armor": 125,
+    "attack_power": 7,
+    "dex": 12,
+    "int": 12,
+    "luk": 12,
+    "magic_power": 7,
+    "max_hp": 400,
+    "str": 12
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 71,
+     "int": 16,
+     "all_stat": 5
+    }
+   ]
+  },
+  "스페셜 정령의 펜던트": {
+   "part": "펜던트",
+   "level": 0,
+   "set": null,
+   "base": {
+    "dex": 2,
+    "int": 2,
+    "luk": 2,
+    "str": 2
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "신비한 한글의 기운": {
+   "part": "훈장",
+   "level": 101,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "실버블라썸 링": {
+   "part": "반지",
+   "level": 110,
+   "set": "보스 장신구 세트",
+   "base": {
+    "attack_power": 2,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 2,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "아스트라 금강석 선추": {
+   "part": "선추",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 10,
+    "luk": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 노바의 정수": {
+   "part": "용의 정수",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 데카코어 컨트롤러": {
+   "part": "컨트롤러",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 렐릭": {
+   "part": "렐릭",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 로자리오": {
+   "part": "로자리오",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 루비 실드": {
+   "part": "방패",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 림리스": {
+   "part": "화약통",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 마법 화살": {
+   "part": "마법화살",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 매그넘": {
+   "part": "매그넘",
+   "level": 200,
+   "set": "에스페라 세트",
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 매직윙": {
+   "part": "매직윙",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 백호추": {
+   "part": "무게추",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 베인 실드": {
+   "part": "방패",
+   "level": 200,
+   "set": "에스페라 세트",
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 불스아이": {
+   "part": "활골무",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 15,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 블레이드": {
+   "part": "블레이드",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 225,
+    "dex": 30,
+    "luk": 100,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 10,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 사옥 노리개": {
+   "part": "노리개",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 사파이어": {
+   "part": "보석",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 소울링": {
+   "part": "소울링",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 아케인 실드": {
+   "part": "방패",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "아스트라 엄브럴 실드": {
+   "part": "방패",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 여우구슬": {
+   "part": "여우구슬",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 옵시디언": {
+   "part": "보석",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 웨폰 벨트": {
+   "part": "웨폰 벨트",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 카르트": {
+   "part": "카드",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 토파즈": {
+   "part": "보석",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 트랜스미터": {
+   "part": "무기 전송장치",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 패스": {
+   "part": "패스 오브 어비스",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 페더": {
+   "part": "화살깃",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 포스실드": {
+   "part": "포스실드",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "max_hp": 1000,
+    "max_mp": 110,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "아스트라 프로미넌트 실드": {
+   "part": "방패",
+   "level": 200,
+   "set": null,
+   "base": {
+    "int": 20,
+    "luk": 20,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 5,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아스트라 헥스시커": {
+   "part": "헥스시커",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 7,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아울스 퍼플 펜던트": {
+   "part": "펜던트",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 185,
+    "int": 16,
+    "max_hp": 180,
+    "max_mp": 180
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 35,
+     "max_mp": 1560,
+     "all_stat": 3
+    }
+   ]
+  },
+  "아케인셰이드 나이트글러브": {
+   "part": "장갑",
+   "level": 200,
+   "set": "아케인셰이드 세트(전사)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 113,
+     "dex": 36,
+     "int": 55,
+     "all_stat": 6
+    },
+    {
+     "str": 91,
+     "int": 55,
+     "luk": 36,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 나이트숄더": {
+   "part": "어깨장식",
+   "level": 200,
+   "set": "아케인셰이드 세트(전사)",
+   "base": {
+    "armor": 300,
+    "attack_power": 20,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 20,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "아케인셰이드 나이트슈즈": {
+   "part": "신발",
+   "level": 200,
+   "set": "아케인셰이드 세트(전사)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "jump": 7,
+    "speed": 10,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 91,
+     "int": 36,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 120,
+     "int": 30,
+     "luk": 24,
+     "all_stat": 4
+    }
+   ]
+  },
+  "아케인셰이드 나이트케이프": {
+   "part": "망토",
+   "level": 200,
+   "set": "아케인셰이드 세트(전사)",
+   "base": {
+    "armor": 450,
+    "attack_power": 6,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 6,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 126,
+     "int": 36,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "str": 121,
+     "dex": 36,
+     "luk": 30,
+     "all_stat": 5
+    }
+   ]
+  },
+  "아케인셰이드 메이지글러브": {
+   "part": "장갑",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 250,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 9
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 30,
+     "int": 149,
+     "all_stat": 5
+    },
+    {
+     "dex": 55,
+     "int": 91,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 30,
+     "int": 168,
+     "luk": 36
+    },
+    {
+     "int": 44,
+     "max_hp": 3000,
+     "speed": 4
+    },
+    {
+     "dex": 30,
+     "int": 74,
+     "magic_power": 6,
+     "all_stat": 7
+    }
+   ]
+  },
+  "아케인셰이드 메이지숄더": {
+   "part": "어깨장식",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 300,
+    "attack_power": 20,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 20,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "아케인셰이드 메이지슈즈": {
+   "part": "신발",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 250,
+    "int": 40,
+    "jump": 7,
+    "luk": 40,
+    "magic_power": 9,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "int": 102,
+     "luk": 36,
+     "armor": 66,
+     "all_stat": 5
+    },
+    {
+     "int": 85,
+     "luk": 30,
+     "jump": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 24,
+     "int": 115,
+     "all_stat": 5
+    },
+    {
+     "dex": 30,
+     "int": 121,
+     "luk": 36,
+     "all_stat": 4
+    },
+    {
+     "dex": 30,
+     "int": 85,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 63,
+     "int": 60,
+     "luk": 96
+    },
+    {
+     "dex": 91,
+     "int": 91,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 메이지슈트": {
+   "part": "한벌옷",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 500,
+    "ignore_monster_armor": 10,
+    "int": 85,
+    "luk": 85,
+    "magic_power": 9
+   },
+   "variants": 1,
+   "slots": 13,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 79,
+     "luk": 24,
+     "magic_power": 6
+    }
+   ]
+  },
+  "아케인셰이드 메이지케이프": {
+   "part": "망토",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 450,
+    "attack_power": 6,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 6,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 30,
+     "int": 120,
+     "luk": 24,
+     "all_stat": 5
+    },
+    {
+     "str": 24,
+     "int": 90,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "int": 102,
+     "luk": 36,
+     "armor": 55,
+     "all_stat": 5
+    },
+    {
+     "str": 36,
+     "int": 110,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 55,
+     "int": 66,
+     "magic_power": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 33,
+     "max_mp": 2400,
+     "speed": 5,
+     "all_stat": 4
+    },
+    {
+     "str": 24,
+     "int": 114,
+     "luk": 24,
+     "all_stat": 4
+    }
+   ]
+  },
+  "아케인셰이드 메이지햇": {
+   "part": "모자",
+   "level": 200,
+   "set": "아케인셰이드 세트(마법사)",
+   "base": {
+    "armor": 600,
+    "ignore_monster_armor": 15,
+    "int": 65,
+    "luk": 65,
+    "magic_power": 7
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 24,
+     "int": 114,
+     "luk": 24,
+     "all_stat": 5
+    },
+    {
+     "int": 80,
+     "luk": 36,
+     "magic_power": 3,
+     "all_stat": 3
+    }
+   ]
+  },
+  "아케인셰이드 시프글러브": {
+   "part": "장갑",
+   "level": 200,
+   "set": "아케인셰이드 세트(도적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "luk": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 55,
+     "max_hp": 2400,
+     "speed": 5
+    },
+    {
+     "str": 24,
+     "dex": 30,
+     "int": 30,
+     "luk": 90,
+     "all_stat": 7
+    },
+    {
+     "int": 91,
+     "luk": 102,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 시프숄더": {
+   "part": "어깨장식",
+   "level": 200,
+   "set": "아케인셰이드 세트(도적)",
+   "base": {
+    "armor": 300,
+    "attack_power": 20,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 20,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아케인셰이드 시프슈즈": {
+   "part": "신발",
+   "level": 200,
+   "set": "아케인셰이드 세트(도적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "jump": 7,
+    "luk": 40,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 18,
+     "int": 48,
+     "luk": 85,
+     "armor": 77
+    },
+    {
+     "str": 30,
+     "luk": 96,
+     "attack_power": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "아케인셰이드 시프케이프": {
+   "part": "망토",
+   "level": 200,
+   "set": "아케인셰이드 세트(도적)",
+   "base": {
+    "armor": 450,
+    "attack_power": 6,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 6,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 51,
+     "luk": 90
+    },
+    {
+     "str": 24,
+     "dex": 36,
+     "luk": 115,
+     "all_stat": 4
+    },
+    {
+     "str": 36,
+     "dex": 30,
+     "luk": 132,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 시프햇": {
+   "part": "모자",
+   "level": 200,
+   "set": "아케인셰이드 세트(도적)",
+   "base": {
+    "armor": 600,
+    "attack_power": 7,
+    "dex": 65,
+    "ignore_monster_armor": 15,
+    "luk": 65
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 24,
+     "int": 36,
+     "luk": 115,
+     "all_stat": 5
+    }
+   ]
+  },
+  "아케인셰이드 아처글러브": {
+   "part": "장갑",
+   "level": 200,
+   "set": "아케인셰이드 세트(궁수)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 36,
+     "dex": 102,
+     "int": 30,
+     "luk": 30,
+     "attack_power": 5
+    },
+    {
+     "str": 55,
+     "dex": 96,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 126,
+     "luk": 30,
+     "all_stat": 5
+    }
+   ]
+  },
+  "아케인셰이드 아처숄더": {
+   "part": "어깨장식",
+   "level": 200,
+   "set": "아케인셰이드 세트(궁수)",
+   "base": {
+    "armor": 300,
+    "attack_power": 20,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 20,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "아케인셰이드 아처슈즈": {
+   "part": "신발",
+   "level": 200,
+   "set": "아케인셰이드 세트(궁수)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "jump": 7,
+    "speed": 10,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 36,
+     "dex": 91,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 104,
+     "luk": 30,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 아처케이프": {
+   "part": "망토",
+   "level": 200,
+   "set": "아케인셰이드 세트(궁수)",
+   "base": {
+    "armor": 450,
+    "attack_power": 6,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 6,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 36,
+     "dex": 162,
+     "int": 36,
+     "luk": 24
+    },
+    {
+     "str": 24,
+     "dex": 109,
+     "luk": 30,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 투핸드엑스": {
+   "part": "두손도끼",
+   "level": 200,
+   "set": "아케인셰이드 세트(전사)",
+   "base": {
+    "attack_power": 295,
+    "boss_damage": 30,
+    "dex": 100,
+    "ignore_monster_armor": 20,
+    "str": 100
+   },
+   "variants": 1,
+   "slots": 9,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "max_hp": 3000,
+     "attack_power": 182,
+     "armor": 55,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "아케인셰이드 파이렛글러브": {
+   "part": "장갑",
+   "level": 200,
+   "set": "아케인셰이드 세트(해적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 30,
+     "dex": 145,
+     "int": 30,
+     "luk": 30
+    }
+   ]
+  },
+  "아케인셰이드 파이렛숄더": {
+   "part": "어깨장식",
+   "level": 200,
+   "set": "아케인셰이드 세트(해적)",
+   "base": {
+    "armor": 300,
+    "attack_power": 20,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 20,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "아케인셰이드 파이렛슈즈": {
+   "part": "신발",
+   "level": 200,
+   "set": "아케인셰이드 세트(해적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 9,
+    "dex": 40,
+    "jump": 7,
+    "speed": 10,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 90,
+     "dex": 24,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 85,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 6
+    }
+   ]
+  },
+  "아케인셰이드 파이렛케이프": {
+   "part": "망토",
+   "level": 200,
+   "set": "아케인셰이드 세트(해적)",
+   "base": {
+    "armor": 450,
+    "attack_power": 6,
+    "dex": 35,
+    "int": 35,
+    "luk": 35,
+    "magic_power": 6,
+    "str": 35
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 96,
+     "dex": 30,
+     "luk": 66,
+     "all_stat": 5
+    },
+    {
+     "dex": 85,
+     "int": 30,
+     "all_stat": 5
+    }
+   ]
+  },
+  "아쿠아틱 레터 눈장식": {
+   "part": "눈장식",
+   "level": 100,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 1,
+    "dex": 6,
+    "int": 6,
+    "luk": 6,
+    "magic_power": 1,
+    "str": 6
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 30,
+     "dex": 30,
+     "int": 18,
+     "luk": 18,
+     "all_stat": 5
+    },
+    {
+     "dex": 18,
+     "int": 18,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "speed": 5,
+     "jump": 3
+    }
+   ]
+  },
+  "앱솔랩스 나이트글러브": {
+   "part": "장갑",
+   "level": 160,
+   "set": "앱솔랩스 세트(전사)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "int": 25,
+     "luk": 25,
+     "max_hp": 3360,
+     "attack_power": 6,
+     "jump": 6
+    },
+    {
+     "str": 74,
+     "dex": 20,
+     "magic_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 104,
+     "dex": 30,
+     "int": 20,
+     "all_stat": 7
+    }
+   ]
+  },
+  "앱솔랩스 나이트숄더": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "앱솔랩스 세트(전사)",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "앱솔랩스 나이트슈즈": {
+   "part": "신발",
+   "level": 160,
+   "set": "앱솔랩스 세트(전사)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "jump": 7,
+    "speed": 10,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "int": 20,
+     "luk": 20,
+     "max_hp": 2880,
+     "attack_power": 6,
+     "magic_power": 6
+    },
+    {
+     "str": 84,
+     "int": 30,
+     "max_hp": 2400,
+     "all_stat": 5
+    },
+    {
+     "str": 84,
+     "luk": 30,
+     "armor": 45,
+     "all_stat": 5
+    },
+    {
+     "str": 105,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 6
+    }
+   ]
+  },
+  "앱솔랩스 나이트케이프": {
+   "part": "망토",
+   "level": 160,
+   "set": "앱솔랩스 세트(전사)",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 45,
+     "int": 20,
+     "luk": 25,
+     "max_hp": 2880,
+     "attack_power": 6
+    },
+    {
+     "str": 99,
+     "dex": 20,
+     "int": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 70,
+     "luk": 25,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 123,
+     "dex": 30,
+     "luk": 30,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 메이지글러브": {
+   "part": "장갑",
+   "level": 160,
+   "set": "앱솔랩스 세트(마법사)",
+   "base": {
+    "armor": 150,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 5
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "int": 20,
+     "luk": 65,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 83,
+     "all_stat": 6
+    },
+    {
+     "int": 75,
+     "luk": 30,
+     "magic_power": 6,
+     "all_stat": 4
+    }
+   ]
+  },
+  "앱솔랩스 메이지숄더": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "앱솔랩스 세트(마법사)",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "앱솔랩스 메이지슈즈": {
+   "part": "신발",
+   "level": 160,
+   "set": "앱솔랩스 세트(마법사)",
+   "base": {
+    "armor": 150,
+    "int": 20,
+    "jump": 7,
+    "luk": 20,
+    "magic_power": 5,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "int": 84,
+     "luk": 30,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 84,
+     "attack_power": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "앱솔랩스 메이지케이프": {
+   "part": "망토",
+   "level": 160,
+   "set": "앱솔랩스 세트(마법사)",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 25,
+     "dex": 20,
+     "int": 90,
+     "all_stat": 7
+    },
+    {
+     "str": 30,
+     "int": 95,
+     "luk": 20,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 시프글러브": {
+   "part": "장갑",
+   "level": 160,
+   "set": "앱솔랩스 세트(도적)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "luk": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 63,
+     "dex": 30,
+     "luk": 75,
+     "all_stat": 7
+    },
+    {
+     "str": 30,
+     "dex": 25,
+     "luk": 109,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 35,
+     "luk": 91,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 시프숄더": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "앱솔랩스 세트(도적)",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "앱솔랩스 시프슈즈": {
+   "part": "신발",
+   "level": 160,
+   "set": "앱솔랩스 세트(도적)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "jump": 7,
+    "luk": 20,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 79,
+     "luk": 79,
+     "all_stat": 7
+    },
+    {
+     "str": 15,
+     "dex": 25,
+     "luk": 94,
+     "all_stat": 6
+    },
+    {
+     "str": 50,
+     "dex": 20,
+     "luk": 75,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 시프캡": {
+   "part": "모자",
+   "level": 160,
+   "set": "앱솔랩스 세트(도적)",
+   "base": {
+    "armor": 400,
+    "attack_power": 3,
+    "dex": 45,
+    "ignore_monster_armor": 10,
+    "luk": 45
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 30,
+     "dex": 25,
+     "luk": 109,
+     "all_stat": 6
+    }
+   ]
+  },
+  "앱솔랩스 시프케이프": {
+   "part": "망토",
+   "level": 160,
+   "set": "앱솔랩스 세트(도적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 60,
+     "dex": 30,
+     "luk": 84,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "luk": 79,
+     "speed": 5,
+     "all_stat": 6
+    },
+    {
+     "int": 25,
+     "luk": 79,
+     "jump": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "앱솔랩스 아처글러브": {
+   "part": "장갑",
+   "level": 160,
+   "set": "앱솔랩스 세트(궁수)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 54,
+     "int": 20,
+     "armor": 45,
+     "all_stat": 5
+    },
+    {
+     "str": 36,
+     "dex": 45,
+     "int": 25,
+     "luk": 20,
+     "magic_power": 3
+    },
+    {
+     "dex": 99,
+     "int": 25,
+     "luk": 20,
+     "all_stat": 4
+    }
+   ]
+  },
+  "앱솔랩스 아처숄더": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "앱솔랩스 세트(궁수)",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  },
+  "앱솔랩스 아처슈즈": {
+   "part": "신발",
+   "level": 160,
+   "set": "앱솔랩스 세트(궁수)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "jump": 7,
+    "speed": 10,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 65,
+     "dex": 45,
+     "luk": 25,
+     "attack_power": 3
+    },
+    {
+     "str": 25,
+     "dex": 86,
+     "int": 25,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 아처케이프": {
+   "part": "망토",
+   "level": 160,
+   "set": "앱솔랩스 세트(궁수)",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 15,
+     "int": 27,
+     "luk": 15,
+     "armor": 45,
+     "all_stat": 6
+    },
+    {
+     "dex": 82,
+     "int": 30,
+     "luk": 25,
+     "all_stat": 5
+    }
+   ]
+  },
+  "앱솔랩스 아처후드": {
+   "part": "모자",
+   "level": 160,
+   "set": "앱솔랩스 세트(궁수)",
+   "base": {
+    "armor": 400,
+    "attack_power": 3,
+    "dex": 45,
+    "ignore_monster_armor": 10,
+    "str": 45
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 20,
+     "int": 36,
+     "luk": 36
+    }
+   ]
+  },
+  "앱솔랩스 파이렛글러브": {
+   "part": "장갑",
+   "level": 160,
+   "set": "앱솔랩스 세트(해적)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 84,
+     "dex": 30,
+     "attack_power": 3,
+     "all_stat": 6
+    },
+    {
+     "str": 84,
+     "dex": 25,
+     "int": 30,
+     "luk": 25,
+     "all_stat": 7
+    }
+   ]
+  },
+  "앱솔랩스 파이렛숄더": {
+   "part": "어깨장식",
+   "level": 160,
+   "set": "앱솔랩스 세트(해적)",
+   "base": {
+    "armor": 100,
+    "attack_power": 10,
+    "dex": 14,
+    "int": 14,
+    "luk": 14,
+    "magic_power": 10,
+    "str": 14
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "앱솔랩스 파이렛슈즈": {
+   "part": "신발",
+   "level": 160,
+   "set": "앱솔랩스 세트(해적)",
+   "base": {
+    "armor": 150,
+    "attack_power": 5,
+    "dex": 20,
+    "jump": 7,
+    "speed": 10,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 69,
+     "dex": 15,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 74,
+     "dex": 74,
+     "all_stat": 6
+    }
+   ]
+  },
+  "앱솔랩스 파이렛케이프": {
+   "part": "망토",
+   "level": 160,
+   "set": "앱솔랩스 세트(해적)",
+   "base": {
+    "armor": 250,
+    "attack_power": 2,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 2,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 84,
+     "dex": 30,
+     "jump": 3,
+     "all_stat": 5
+    },
+    {
+     "str": 84,
+     "dex": 30,
+     "attack_power": 4,
+     "all_stat": 7
+    }
+   ]
+  },
+  "어드벤처 딥다크 크리티컬 링": {
+   "part": "반지",
+   "level": 130,
+   "set": null,
+   "base": {
+    "attack_power": 20,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 20,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "어비스 헌터스 링": {
+   "part": "반지",
+   "level": 130,
+   "set": null,
+   "base": {
+    "attack_power": 20,
+    "dex": 20,
+    "int": 20,
+    "luk": 20,
+    "magic_power": 20,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "어센던트 펄스 링": {
+   "part": "반지",
+   "level": 130,
+   "set": null,
+   "base": {
+    "armor": 150,
+    "attack_power": 1,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 1,
+    "max_hp": 200,
+    "max_mp": 200,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "해적"
+   ],
+   "wearers": 7,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "어웨이크 링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 26,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "에레브의 광휘": {
+   "part": "보석",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 3,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "에스텔라 이어링": {
+   "part": "귀고리",
+   "level": 160,
+   "set": "여명의 보스 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 2,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 2,
+    "max_hp": 300,
+    "max_mp": 300,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 7,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 16,
+   "flames": [
+    {
+     "int": 30,
+     "luk": 75,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 66,
+     "dex": 20,
+     "int": 50,
+     "all_stat": 6
+    },
+    {
+     "int": 35,
+     "luk": 35,
+     "armor": 54,
+     "speed": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "int": 84,
+     "magic_power": 5,
+     "all_stat": 4
+    },
+    {
+     "str": 20,
+     "dex": 20,
+     "int": 103,
+     "all_stat": 5
+    },
+    {
+     "str": 20,
+     "dex": 30,
+     "int": 104,
+     "all_stat": 6
+    },
+    {
+     "dex": 55,
+     "int": 79,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 60,
+     "luk": 30,
+     "max_mp": 2400,
+     "all_stat": 7
+    },
+    {
+     "int": 30,
+     "luk": 66,
+     "max_hp": 2880,
+     "all_stat": 5
+    },
+    {
+     "str": 79,
+     "dex": 25,
+     "max_mp": 1920,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 61,
+     "int": 25,
+     "luk": 25,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 75,
+     "luk": 45,
+     "all_stat": 6
+    },
+    {
+     "int": 35,
+     "luk": 35,
+     "armor": 54,
+     "speed": 6,
+     "all_stat": 5
+    },
+    {
+     "int": 35,
+     "luk": 35,
+     "armor": 54,
+     "speed": 6,
+     "all_stat": 5
+    },
+    {
+     "int": 35,
+     "luk": 35,
+     "armor": 54,
+     "speed": 6,
+     "all_stat": 5
+    },
+    {
+     "int": 35,
+     "luk": 35,
+     "armor": 54,
+     "speed": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 나이트글러브": {
+   "part": "장갑",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 142,
+     "dex": 42,
+     "luk": 28,
+     "all_stat": 6
+    },
+    {
+     "str": 149,
+     "dex": 42,
+     "int": 35,
+     "all_stat": 4
+    },
+    {
+     "str": 137,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 149,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 137,
+     "dex": 35,
+     "luk": 42,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 나이트숄더": {
+   "part": "어깨장식",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 450,
+    "attack_power": 28,
+    "dex": 51,
+    "int": 51,
+    "luk": 51,
+    "magic_power": 28,
+    "str": 51
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "에테르넬 나이트슈즈": {
+   "part": "신발",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "jump": 7,
+    "speed": 10,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 135,
+     "dex": 28,
+     "int": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 165,
+     "dex": 42,
+     "int": 28,
+     "luk": 35
+    },
+    {
+     "str": 137,
+     "dex": 42,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 156,
+     "dex": 49,
+     "luk": 35,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 나이트아머": {
+   "part": "상의",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 130,
+     "dex": 42,
+     "int": 28,
+     "all_stat": 6
+    },
+    {
+     "max_hp": 4900,
+     "max_mp": 3500,
+     "attack_power": 5,
+     "jump": 5
+    },
+    {
+     "str": 114,
+     "luk": 42,
+     "speed": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 135,
+     "dex": 28,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 142,
+     "dex": 35,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 100,
+     "dex": 28,
+     "int": 35,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 149,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 4
+    }
+   ]
+  },
+  "에테르넬 나이트케이프": {
+   "part": "망토",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 600,
+    "attack_power": 9,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 9,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 107,
+     "int": 35,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 107,
+     "int": 35,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 151,
+     "dex": 42,
+     "luk": 49,
+     "all_stat": 5
+    },
+    {
+     "str": 156,
+     "dex": 42,
+     "luk": 42,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 나이트팬츠": {
+   "part": "하의",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 132,
+     "dex": 42,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "luk": 35,
+     "max_hp": 4900,
+     "attack_power": 6,
+     "armor": 60
+    },
+    {
+     "str": 98,
+     "dex": 28,
+     "int": 35,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 125,
+     "dex": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 156,
+     "dex": 49,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 102,
+     "int": 42,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 102,
+     "dex": 42,
+     "attack_power": 6,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 나이트헬름": {
+   "part": "모자",
+   "level": 250,
+   "set": "에테르넬 세트(전사)",
+   "base": {
+    "armor": 750,
+    "attack_power": 10,
+    "dex": 80,
+    "ignore_monster_armor": 15,
+    "str": 80
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 142,
+     "dex": 35,
+     "int": 35,
+     "all_stat": 5
+    },
+    {
+     "luk": 60,
+     "max_hp": 4900,
+     "attack_power": 6,
+     "all_stat": 4
+    },
+    {
+     "str": 114,
+     "dex": 42,
+     "jump": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 149,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 144,
+     "dex": 42,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 102,
+     "dex": 35,
+     "luk": 77,
+     "all_stat": 6
+    },
+    {
+     "str": 107,
+     "luk": 35,
+     "jump": 5,
+     "all_stat": 7
+    }
+   ]
+  },
+  "에테르넬 메이지글러브": {
+   "part": "장갑",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 325,
+    "int": 55,
+    "luk": 55,
+    "magic_power": 12
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 8,
+   "flames": [
+    {
+     "str": 28,
+     "int": 123,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "int": 107,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "int": 107,
+     "luk": 83,
+     "all_stat": 6
+    },
+    {
+     "dex": 35,
+     "int": 142,
+     "luk": 35,
+     "all_stat": 4
+    },
+    {
+     "int": 107,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "int": 107,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "int": 107,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "int": 107,
+     "luk": 35,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 메이지로브": {
+   "part": "상의",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 325,
+    "ignore_monster_armor": 5,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 6
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 35,
+     "int": 149,
+     "all_stat": 4
+    },
+    {
+     "dex": 42,
+     "int": 130,
+     "luk": 28,
+     "all_stat": 4
+    },
+    {
+     "str": 42,
+     "int": 114,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 49,
+     "int": 191,
+     "luk": 28
+    },
+    {
+     "str": 42,
+     "dex": 35,
+     "int": 149,
+     "all_stat": 5
+    },
+    {
+     "str": 48,
+     "int": 107,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "dex": 42,
+     "int": 114,
+     "speed": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 메이지숄더": {
+   "part": "어깨장식",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 450,
+    "attack_power": 28,
+    "dex": 51,
+    "int": 51,
+    "luk": 51,
+    "magic_power": 28,
+    "str": 51
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "에테르넬 메이지슈즈": {
+   "part": "신발",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 325,
+    "int": 55,
+    "jump": 7,
+    "luk": 55,
+    "magic_power": 12,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 35,
+     "int": 184,
+     "luk": 35
+    }
+   ]
+  },
+  "에테르넬 메이지케이프": {
+   "part": "망토",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 600,
+    "attack_power": 9,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 9,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 35,
+     "int": 137,
+     "luk": 42,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 메이지팬츠": {
+   "part": "하의",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 325,
+    "ignore_monster_armor": 5,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 6
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "dex": 42,
+     "int": 132,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 90,
+     "int": 114,
+     "all_stat": 6
+    },
+    {
+     "dex": 42,
+     "int": 114,
+     "armor": 60,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "int": 114,
+     "luk": 60,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "int": 114,
+     "luk": 72,
+     "all_stat": 6
+    },
+    {
+     "dex": 35,
+     "int": 125,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "int": 118,
+     "luk": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 메이지햇": {
+   "part": "모자",
+   "level": 250,
+   "set": "에테르넬 세트(마법사)",
+   "base": {
+    "armor": 750,
+    "ignore_monster_armor": 15,
+    "int": 80,
+    "luk": 80,
+    "magic_power": 10
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX",
+    "STR"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 35,
+     "int": 125,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 35,
+     "int": 149,
+     "all_stat": 4
+    },
+    {
+     "int": 114,
+     "luk": 42,
+     "max_mp": 3500,
+     "all_stat": 6
+    },
+    {
+     "dex": 42,
+     "int": 137,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "dex": 35,
+     "int": 118,
+     "all_stat": 6
+    },
+    {
+     "dex": 28,
+     "int": 130,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "dex": 42,
+     "int": 156,
+     "luk": 42,
+     "all_stat": 4
+    }
+   ]
+  },
+  "에테르넬 시프글러브": {
+   "part": "장갑",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "luk": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 35,
+     "luk": 137,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "int": 35,
+     "luk": 142,
+     "all_stat": 6
+    },
+    {
+     "str": 28,
+     "dex": 42,
+     "luk": 142,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 시프반다나": {
+   "part": "모자",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 750,
+    "attack_power": 10,
+    "dex": 80,
+    "ignore_monster_armor": 15,
+    "luk": 80
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 42,
+     "int": 42,
+     "luk": 156,
+     "all_stat": 6
+    },
+    {
+     "dex": 35,
+     "int": 49,
+     "luk": 156,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 42,
+     "luk": 149,
+     "all_stat": 5
+    },
+    {
+     "str": 42,
+     "dex": 28,
+     "luk": 142,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 시프셔츠": {
+   "part": "상의",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "luk": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 35,
+     "dex": 42,
+     "luk": 137,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 42,
+     "int": 35,
+     "luk": 191
+    },
+    {
+     "str": 42,
+     "dex": 42,
+     "luk": 156,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "dex": 35,
+     "luk": 142,
+     "all_stat": 5
+    },
+    {
+     "str": 42,
+     "int": 35,
+     "luk": 137,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 시프숄더": {
+   "part": "어깨장식",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 450,
+    "attack_power": 28,
+    "dex": 51,
+    "int": 51,
+    "luk": 51,
+    "magic_power": 28,
+    "str": 51
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "에테르넬 시프슈즈": {
+   "part": "신발",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "jump": 7,
+    "luk": 55,
+    "speed": 10
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 42,
+     "luk": 156,
+     "all_stat": 5
+    },
+    {
+     "str": 28,
+     "dex": 28,
+     "int": 49,
+     "luk": 121,
+     "all_stat": 7
+    },
+    {
+     "str": 42,
+     "dex": 35,
+     "luk": 137,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "int": 28,
+     "luk": 130,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 시프케이프": {
+   "part": "망토",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 600,
+    "attack_power": 9,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 9,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 28,
+     "dex": 42,
+     "luk": 130,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "int": 42,
+     "luk": 149,
+     "all_stat": 6
+    },
+    {
+     "int": 42,
+     "luk": 114,
+     "attack_power": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 시프팬츠": {
+   "part": "하의",
+   "level": 250,
+   "set": "에테르넬 세트(도적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "luk": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "STR"
+   ],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "int": 35,
+     "luk": 107,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 35,
+     "luk": 142,
+     "all_stat": 6
+    },
+    {
+     "str": 28,
+     "int": 42,
+     "luk": 142,
+     "all_stat": 7
+    },
+    {
+     "dex": 90,
+     "luk": 126,
+     "all_stat": 5
+    },
+    {
+     "dex": 28,
+     "int": 28,
+     "luk": 128,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 아처글러브": {
+   "part": "장갑",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 28,
+     "dex": 135,
+     "int": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 137,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 28,
+     "dex": 135,
+     "int": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 아처숄더": {
+   "part": "어깨장식",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 450,
+    "attack_power": 28,
+    "dex": 51,
+    "int": 51,
+    "luk": 51,
+    "magic_power": 28,
+    "str": 51
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "에테르넬 아처슈즈": {
+   "part": "신발",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "jump": 7,
+    "speed": 10,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "dex": 125,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 114,
+     "max_hp": 2800,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 142,
+     "luk": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 아처케이프": {
+   "part": "망토",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 600,
+    "attack_power": 9,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 9,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "dex": 137,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "dex": 100,
+     "int": 28,
+     "luk": 72,
+     "all_stat": 7
+    },
+    {
+     "dex": 137,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 아처팬츠": {
+   "part": "하의",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 35,
+     "dex": 130,
+     "int": 35,
+     "all_stat": 5
+    },
+    {
+     "dex": 119,
+     "int": 35,
+     "max_hp": 3500,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 135,
+     "luk": 28,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 142,
+     "luk": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 아처햇": {
+   "part": "모자",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 750,
+    "attack_power": 10,
+    "dex": 80,
+    "ignore_monster_armor": 15,
+    "str": 80
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 28,
+     "dex": 128,
+     "luk": 28,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 142,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "dex": 149,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 149,
+     "luk": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 아처후드": {
+   "part": "상의",
+   "level": 250,
+   "set": "에테르넬 세트(궁수)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 35,
+     "dex": 130,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "dex": 137,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "dex": 149,
+     "int": 42,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 35,
+     "dex": 142,
+     "luk": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 파이렛글러브": {
+   "part": "장갑",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 107,
+     "dex": 107,
+     "all_stat": 6
+    },
+    {
+     "str": 149,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 161,
+     "dex": 35,
+     "int": 42,
+     "all_stat": 6
+    },
+    {
+     "dex": 123,
+     "int": 28,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 88,
+     "luk": 28,
+     "speed": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 파이렛숄더": {
+   "part": "어깨장식",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 450,
+    "attack_power": 28,
+    "dex": 51,
+    "int": 51,
+    "luk": 51,
+    "magic_power": 28,
+    "str": 51
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "에테르넬 파이렛슈즈": {
+   "part": "신발",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 12,
+    "dex": 55,
+    "jump": 7,
+    "speed": 10,
+    "str": 55
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "str": 49,
+     "dex": 151,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 144,
+     "int": 42,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 130,
+     "dex": 42,
+     "luk": 28,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 130,
+     "int": 28,
+     "all_stat": 6
+    }
+   ]
+  },
+  "에테르넬 파이렛케이프": {
+   "part": "망토",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 600,
+    "attack_power": 9,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 9,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 4,
+   "flames": [
+    {
+     "dex": 135,
+     "int": 35,
+     "luk": 28,
+     "all_stat": 5
+    },
+    {
+     "str": 149,
+     "dex": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 149,
+     "dex": 42,
+     "int": 35,
+     "all_stat": 6
+    },
+    {
+     "dex": 137,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 파이렛코트": {
+   "part": "상의",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 6,
+   "flames": [
+    {
+     "str": 35,
+     "dex": 112,
+     "int": 42,
+     "luk": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 149,
+     "dex": 42,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 156,
+     "int": 42,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "dex": 149,
+     "int": 35,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 126,
+     "int": 60,
+     "luk": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 107,
+     "dex": 70,
+     "luk": 35,
+     "all_stat": 5
+    }
+   ]
+  },
+  "에테르넬 파이렛팬츠": {
+   "part": "하의",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 325,
+    "attack_power": 6,
+    "dex": 50,
+    "ignore_monster_armor": 5,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 6,
+   "flames": [
+    {
+     "dex": 119,
+     "int": 83,
+     "all_stat": 5
+    },
+    {
+     "str": 142,
+     "dex": 35,
+     "int": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 163,
+     "dex": 49,
+     "int": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 28,
+     "dex": 142,
+     "int": 42,
+     "all_stat": 5
+    },
+    {
+     "str": 135,
+     "dex": 35,
+     "int": 28,
+     "all_stat": 5
+    },
+    {
+     "str": 100,
+     "int": 28,
+     "attack_power": 5,
+     "all_stat": 4
+    }
+   ]
+  },
+  "에테르넬 파이렛햇": {
+   "part": "모자",
+   "level": 250,
+   "set": "에테르넬 세트(해적)",
+   "base": {
+    "armor": 750,
+    "attack_power": 10,
+    "dex": 80,
+    "ignore_monster_armor": 15,
+    "str": 80
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT",
+    "LUK"
+   ],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 6,
+   "flames": [
+    {
+     "dex": 156,
+     "int": 42,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 154,
+     "dex": 35,
+     "int": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 156,
+     "int": 42,
+     "luk": 42,
+     "all_stat": 6
+    },
+    {
+     "str": 42,
+     "dex": 149,
+     "luk": 35,
+     "all_stat": 4
+    },
+    {
+     "str": 137,
+     "dex": 42,
+     "luk": 35,
+     "all_stat": 6
+    },
+    {
+     "str": 142,
+     "dex": 35,
+     "int": 35,
+     "all_stat": 6
+    }
+   ]
+  },
+  "여명의 가디언 엔젤 링": {
+   "part": "반지",
+   "level": 160,
+   "set": "여명의 보스 세트",
+   "base": {
+    "attack_power": 2,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 2,
+    "max_hp": 200,
+    "max_mp": 200,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 46,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "여신 미네르바의 신발": {
+   "part": "신발",
+   "level": 75,
+   "set": null,
+   "base": {
+    "armor": 45,
+    "dex": 3,
+    "int": 3,
+    "jump": 5,
+    "luk": 3,
+    "speed": 5,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "int": 4,
+     "luk": 20,
+     "max_mp": 630
+    }
+   ]
+  },
+  "여신 미네르바의 팔찌": {
+   "part": "장갑",
+   "level": 75,
+   "set": null,
+   "base": {
+    "armor": 35,
+    "attack_power": 1,
+    "magic_power": 1
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 26,
+     "int": 6,
+     "jump": 4
+    }
+   ]
+  },
+  "여행자의 윙글래스": {
+   "part": "눈장식",
+   "level": 40,
+   "set": "모라스 세트",
+   "base": {
+    "armor": 20,
+    "dex": 2,
+    "int": 2,
+    "jump": 5,
+    "luk": 2,
+    "str": 2
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "오션 글로우 이어링": {
+   "part": "귀고리",
+   "level": 150,
+   "set": null,
+   "base": {
+    "armor": 75,
+    "attack_power": 5,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 5,
+    "max_hp": 750,
+    "max_mp": 750,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 40,
+     "luk": 20,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "dex": 48,
+     "int": 48,
+     "luk": 16,
+     "all_stat": 5
+    }
+   ]
+  },
+  "와일드 팡": {
+   "part": "화살촉",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "웨폰퍼프 - L링": {
+   "part": "반지",
+   "level": 110,
+   "set": null,
+   "base": {
+    "attack_power": 4,
+    "dex": 4,
+    "int": 4,
+    "luk": 4,
+    "magic_power": 4,
+    "str": 4
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "응축된 힘의 결정석": {
+   "part": "얼굴장식",
+   "level": 110,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 5,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 5,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 30,
+     "int": 15,
+     "luk": 15,
+     "attack_power": 5,
+     "all_stat": 7
+    }
+   ]
+  },
+  "이글아이 던위치로브": {
+   "part": "상의",
+   "level": 150,
+   "set": "루타비스 세트(마법사)",
+   "base": {
+    "armor": 120,
+    "ignore_monster_armor": 5,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 2
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 24,
+     "int": 64,
+     "jump": 5,
+     "all_stat": 4
+    },
+    {
+     "dex": 40,
+     "int": 64,
+     "luk": 24,
+     "all_stat": 5
+    }
+   ]
+  },
+  "이글아이 레인져후드": {
+   "part": "상의",
+   "level": 150,
+   "set": "루타비스 세트(궁수)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "LUK"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 40,
+     "max_hp": 2250,
+     "magic_power": 5
+    },
+    {
+     "str": 16,
+     "dex": 76,
+     "luk": 20,
+     "all_stat": 5
+    },
+    {
+     "dex": 68,
+     "luk": 20,
+     "jump": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "이글아이 어새신셔츠": {
+   "part": "상의",
+   "level": 150,
+   "set": "루타비스 세트(도적)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "luk": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "dex": 20,
+     "luk": 68,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 68,
+     "dex": 48,
+     "luk": 20,
+     "all_stat": 7
+    },
+    {
+     "str": 16,
+     "dex": 20,
+     "luk": 84,
+     "all_stat": 5
+    }
+   ]
+  },
+  "이글아이 워리어아머": {
+   "part": "상의",
+   "level": 150,
+   "set": "루타비스 세트(전사)",
+   "base": {
+    "armor": 210,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 72,
+     "int": 12,
+     "luk": 28,
+     "all_stat": 6
+    },
+    {
+     "str": 72,
+     "dex": 44,
+     "int": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 80,
+     "dex": 24,
+     "int": 16,
+     "all_stat": 6
+    }
+   ]
+  },
+  "이글아이 원더러코트": {
+   "part": "상의",
+   "level": 150,
+   "set": "루타비스 세트(해적)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 88,
+     "dex": 24,
+     "int": 16,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "dex": 52,
+     "luk": 20,
+     "all_stat": 5
+    }
+   ]
+  },
+  "이터널 플레임 링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 25,
+    "dex": 40,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 25,
+    "max_hp": 4000,
+    "max_mp": 4000,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사"
+   ],
+   "wearers": 6,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "저주받은 녹의 마도서": {
+   "part": "포켓 아이템",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "dex": 20,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 100,
+    "max_mp": 100,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "해적"
+   ],
+   "wearers": 9,
+   "flames": [
+    {
+     "dex": 100,
+     "int": 25,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 104,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 86,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 99,
+     "int": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 96,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 100,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 35,
+     "dex": 84,
+     "luk": 65,
+     "all_stat": 6
+    },
+    {
+     "str": 25,
+     "dex": 109,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 60,
+     "luk": 84,
+     "all_stat": 6
+    }
+   ]
+  },
+  "저주받은 적의 마도서": {
+   "part": "포켓 아이템",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 100,
+    "max_mp": 100,
+    "str": 20
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "전사",
+    "해적"
+   ],
+   "wearers": 14,
+   "flames": [
+    {
+     "str": 100,
+     "dex": 30,
+     "luk": 25,
+     "all_stat": 4
+    },
+    {
+     "str": 54,
+     "max_hp": 3360,
+     "attack_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 74,
+     "luk": 20,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 79,
+     "int": 25,
+     "max_hp": 2400,
+     "all_stat": 7
+    },
+    {
+     "str": 99,
+     "int": 20,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 109,
+     "dex": 25,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 109,
+     "dex": 25,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "dex": 79,
+     "int": 25,
+     "attack_power": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 95,
+     "int": 30,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "str": 100,
+     "int": 25,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 104,
+     "dex": 25,
+     "int": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 96,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 100,
+     "dex": 30,
+     "int": 25,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 108,
+     "luk": 25,
+     "all_stat": 7
+    }
+   ]
+  },
+  "저주받은 청의 마도서": {
+   "part": "포켓 아이템",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "dex": 10,
+    "int": 20,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 100,
+    "max_mp": 100,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 13,
+   "flames": [
+    {
+     "str": 119,
+     "dex": 35,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 30,
+     "int": 75,
+     "all_stat": 7
+    },
+    {
+     "str": 25,
+     "int": 86,
+     "luk": 25,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "int": 79,
+     "magic_power": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 25,
+     "int": 79,
+     "magic_power": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 104,
+     "dex": 20,
+     "int": 30,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 74,
+     "luk": 50,
+     "all_stat": 7
+    },
+    {
+     "str": 30,
+     "int": 96,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 56,
+     "int": 65,
+     "all_stat": 7
+    },
+    {
+     "str": 25,
+     "int": 70,
+     "luk": 45,
+     "all_stat": 6
+    },
+    {
+     "dex": 55,
+     "int": 79,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "dex": 30,
+     "int": 75,
+     "magic_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "int": 105,
+     "luk": 30,
+     "all_stat": 4
+    }
+   ]
+  },
+  "저주받은 황의 마도서": {
+   "part": "포켓 아이템",
+   "level": 160,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 20,
+    "magic_power": 10,
+    "max_hp": 100,
+    "max_mp": 100,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 6,
+   "flames": [
+    {
+     "str": 20,
+     "int": 25,
+     "luk": 108,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 30,
+     "luk": 109,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "dex": 25,
+     "luk": 109,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 25,
+     "luk": 99,
+     "all_stat": 5
+    },
+    {
+     "str": 25,
+     "dex": 25,
+     "luk": 95,
+     "all_stat": 7
+    },
+    {
+     "dex": 20,
+     "int": 30,
+     "luk": 104,
+     "all_stat": 6
+    }
+   ]
+  },
+  "정령의 펜던트": {
+   "part": "펜던트",
+   "level": 0,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사"
+   ],
+   "wearers": 7,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "제네시스 ESP리미터": {
+   "part": "ESP 리미터",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 237,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 150,
+    "luk": 150,
+    "magic_power": 400
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "magic_power": 192,
+     "boss_damage": 12,
+     "damage": 6,
+     "all_stat": 5
+    }
+   ]
+  },
+  "제네시스 가즈": {
+   "part": "아대",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 172,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "luk": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 55,
+     "int": 36,
+     "luk": 36,
+     "attack_power": 106,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "제네시스 대거": {
+   "part": "단검",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 318,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "luk": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 36,
+     "int": 36,
+     "max_mp": 3600,
+     "attack_power": 196,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "제네시스 매직 건틀렛": {
+   "part": "매직 건틀렛",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 237,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 150,
+    "luk": 150,
+    "magic_power": 400
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 68,
+     "int": 55,
+     "luk": 24,
+     "magic_power": 246
+    }
+   ]
+  },
+  "제네시스 보우": {
+   "part": "활",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 318,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 66,
+     "dex": 30,
+     "luk": 36,
+     "attack_power": 196,
+     "damage": 4
+    }
+   ]
+  },
+  "제네시스 샤이닝로드": {
+   "part": "샤이닝 로드",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 237,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 150,
+    "luk": 150,
+    "magic_power": 400
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 24,
+     "luk": 24,
+     "magic_power": 246,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "제네시스 스태프": {
+   "part": "스태프",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 251,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 150,
+    "luk": 150,
+    "magic_power": 406
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "dex": 30,
+     "luk": 30,
+     "magic_power": 195,
+     "boss_damage": 10,
+     "damage": 6
+    },
+    {
+     "str": 66,
+     "int": 44,
+     "magic_power": 250,
+     "boss_damage": 12
+    },
+    {
+     "int": 55,
+     "magic_power": 250,
+     "boss_damage": 8,
+     "damage": 4
+    }
+   ]
+  },
+  "제네시스 스피어": {
+   "part": "창",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 340,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 60,
+     "dex": 36,
+     "int": 24,
+     "attack_power": 210,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "제네시스 창세검": {
+   "part": "장검",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 340,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 36,
+     "int": 36,
+     "attack_power": 163,
+     "boss_damage": 12,
+     "damage": 5
+    }
+   ]
+  },
+  "제네시스 창세선": {
+   "part": "부채",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 318,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "luk": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 30,
+     "int": 55,
+     "luk": 30,
+     "attack_power": 196,
+     "boss_damage": 10
+    }
+   ]
+  },
+  "제네시스 카르타": {
+   "part": "카르타",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 237,
+    "boss_damage": 30,
+    "ignore_monster_armor": 20,
+    "int": 150,
+    "luk": 150,
+    "magic_power": 400
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "str": 24,
+     "dex": 36,
+     "int": 60,
+     "magic_power": 246,
+     "all_stat": 4
+    },
+    {
+     "str": 24,
+     "dex": 36,
+     "int": 60,
+     "magic_power": 246,
+     "all_stat": 4
+    },
+    {
+     "str": 24,
+     "dex": 36,
+     "int": 60,
+     "magic_power": 246,
+     "all_stat": 4
+    },
+    {
+     "str": 24,
+     "dex": 36,
+     "int": 60,
+     "magic_power": 246,
+     "all_stat": 4
+    },
+    {
+     "str": 24,
+     "dex": 36,
+     "int": 60,
+     "magic_power": 246,
+     "all_stat": 4
+    }
+   ]
+  },
+  "제네시스 크로스보우": {
+   "part": "석궁",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 326,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "speed": 19,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 66,
+     "attack_power": 201,
+     "boss_damage": 8,
+     "damage": 5
+    },
+    {
+     "str": 30,
+     "int": 60,
+     "luk": 30,
+     "attack_power": 201,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "제네시스 클로": {
+   "part": "너클",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 255,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 24,
+     "dex": 24,
+     "int": 36,
+     "luk": 36,
+     "attack_power": 157,
+     "boss_damage": 12
+    },
+    {
+     "str": 55,
+     "attack_power": 157,
+     "boss_damage": 12,
+     "all_stat": 5
+    }
+   ]
+  },
+  "제네시스 튜너": {
+   "part": "튜너",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 340,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 30,
+     "luk": 30,
+     "attack_power": 210,
+     "boss_damage": 10,
+     "damage": 4
+    }
+   ]
+  },
+  "제네시스 피스톨": {
+   "part": "건",
+   "level": 200,
+   "set": null,
+   "base": {
+    "attack_power": 249,
+    "boss_damage": 30,
+    "dex": 150,
+    "ignore_monster_armor": 20,
+    "str": 150
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 36,
+     "dex": 36,
+     "max_hp": 3000,
+     "attack_power": 120,
+     "boss_damage": 12
+    }
+   ]
+  },
+  "죽음의 맹세": {
+   "part": "펜던트",
+   "level": 250,
+   "set": "광휘의 보스 세트",
+   "base": {
+    "armor": 300,
+    "attack_power": 5,
+    "dex": 15,
+    "int": 15,
+    "luk": 15,
+    "magic_power": 5,
+    "max_hp_rate": 5,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 7,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 42,
+     "dex": 137,
+     "luk": 35,
+     "all_stat": 5
+    }
+   ]
+  },
+  "창세의 뱃지": {
+   "part": "뱃지",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 10,
+    "dex": 15,
+    "int": 15,
+    "jump": 10,
+    "luk": 15,
+    "magic_power": 10,
+    "speed": 10,
+    "str": 15
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 29,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "체스피스 디 퀸": {
+   "part": "체스피스",
+   "level": 100,
+   "set": "모라스 세트",
+   "base": {
+    "int": 10,
+    "luk": 10,
+    "magic_power": 3
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "칠요의 몬스터파커": {
+   "part": "훈장",
+   "level": 100,
+   "set": "칠요 세트",
+   "base": {
+    "attack_power": 7,
+    "dex": 7,
+    "ignore_monster_armor": 10,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 7,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 19,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "칠요의 뱃지": {
+   "part": "뱃지",
+   "level": 100,
+   "set": "칠요 세트",
+   "base": {
+    "attack_power": 7,
+    "dex": 7,
+    "ignore_monster_armor": 10,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 7,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 9,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "카오스 링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 20,
+    "dex": 30,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 20,
+    "max_hp": 3000,
+    "max_mp": 3000,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 11,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "카오스 벨룸 킬러": {
+   "part": "훈장",
+   "level": 0,
+   "set": null,
+   "base": {
+    "boss_damage": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 10,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "카오스 핑크빈 마크": {
+   "part": "눈장식",
+   "level": 135,
+   "set": null,
+   "base": {
+    "armor": 120,
+    "attack_power": 1,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 1,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "전사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {
+     "dex": 16,
+     "luk": 51,
+     "armor": 35,
+     "all_stat": 5
+    },
+    {
+     "str": 16,
+     "dex": 36,
+     "luk": 20,
+     "jump": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 20,
+     "luk": 28,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 48,
+     "int": 20,
+     "luk": 40,
+     "all_stat": 6
+    },
+    {
+     "dex": 12,
+     "int": 36,
+     "luk": 59,
+     "all_stat": 5
+    }
+   ]
+  },
+  "카오스 혼테일의 목걸이": {
+   "part": "펜던트",
+   "level": 120,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 140,
+    "attack_power": 2,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 2,
+    "max_hp_rate": 10,
+    "max_mp_rate": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "all_stat": 4
+    },
+    {
+     "max_hp": 1440,
+     "attack_power": 3
+    }
+   ]
+  },
+  "커맨더 포스 이어링": {
+   "part": "귀고리",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 5,
+    "dex": 7,
+    "int": 7,
+    "luk": 7,
+    "magic_power": 5,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 7
+   },
+   "variants": 1,
+   "slots": 7,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 31,
+   "flames": [
+    {
+     "str": 42,
+     "luk": 119,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 109,
+     "dex": 24,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 110,
+     "dex": 30,
+     "int": 36,
+     "all_stat": 5
+    },
+    {
+     "max_hp": 4200,
+     "max_mp": 3000,
+     "attack_power": 6,
+     "armor": 55
+    },
+    {
+     "str": 36,
+     "dex": 30,
+     "luk": 132,
+     "all_stat": 5
+    },
+    {
+     "dex": 30,
+     "int": 115,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 30,
+     "int": 96,
+     "luk": 55,
+     "all_stat": 6
+    },
+    {
+     "str": 36,
+     "dex": 113,
+     "speed": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 96,
+     "luk": 55,
+     "all_stat": 6
+    },
+    {
+     "int": 90,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "dex": 96,
+     "int": 30,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 36,
+     "int": 30,
+     "luk": 110,
+     "all_stat": 6
+    },
+    {
+     "str": 126,
+     "int": 30,
+     "luk": 30,
+     "all_stat": 5
+    },
+    {
+     "str": 119,
+     "int": 42,
+     "max_hp": 3600,
+     "all_stat": 7
+    },
+    {
+     "str": 97,
+     "luk": 42,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 127,
+     "dex": 36,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 138,
+     "int": 36,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "dex": 30,
+     "int": 96,
+     "max_mp": 3000,
+     "all_stat": 6
+    },
+    {
+     "dex": 24,
+     "int": 126,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "dex": 132,
+     "int": 36,
+     "luk": 30,
+     "all_stat": 6
+    },
+    {
+     "str": 107,
+     "dex": 30,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "str": 102,
+     "luk": 102,
+     "all_stat": 7
+    },
+    {
+     "str": 91,
+     "luk": 36,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 36,
+     "luk": 132,
+     "all_stat": 6
+    },
+    {
+     "str": 96,
+     "int": 30,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "dex": 102,
+     "luk": 36,
+     "magic_power": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 30,
+     "dex": 30,
+     "int": 30,
+     "luk": 96,
+     "all_stat": 6
+    },
+    {
+     "str": 103,
+     "dex": 24,
+     "int": 24,
+     "all_stat": 7
+    },
+    {
+     "dex": 132,
+     "int": 30,
+     "luk": 36,
+     "all_stat": 5
+    },
+    {
+     "str": 24,
+     "int": 36,
+     "luk": 126,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "int": 90,
+     "magic_power": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "컨티뉴어스 링": {
+   "part": "반지",
+   "level": 110,
+   "set": null,
+   "base": {
+    "attack_power": 4,
+    "dex": 4,
+    "int": 4,
+    "luk": 4,
+    "magic_power": 4,
+    "str": 4
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 12,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "컴플리트 언더컨트롤": {
+   "part": "기계 심장",
+   "level": 200,
+   "set": "칠흑의 보스 세트",
+   "base": {
+    "attack_power": 15,
+    "dex": 25,
+    "ignore_monster_armor": 30,
+    "int": 25,
+    "luk": 25,
+    "magic_power": 15,
+    "max_hp": 1250,
+    "str": 25
+   },
+   "variants": 1,
+   "slots": 10,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 27,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "코스모스 링": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 20,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "크리스탈 웬투스 뱃지": {
+   "part": "뱃지",
+   "level": 130,
+   "set": "보스 장신구 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 10,
+    "int": 10,
+    "jump": 10,
+    "luk": 10,
+    "magic_power": 5,
+    "speed": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 13,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "타일런트 리카온 벨트": {
+   "part": "벨트",
+   "level": 150,
+   "set": null,
+   "base": {
+    "armor": 105,
+    "attack_power": 25,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 25,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 16,
+     "dex": 24,
+     "luk": 80,
+     "all_stat": 5
+    }
+   ]
+  },
+  "타일런트 알테어 벨트": {
+   "part": "벨트",
+   "level": 150,
+   "set": null,
+   "base": {
+    "armor": 105,
+    "attack_power": 25,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 25,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 80,
+     "dex": 16,
+     "int": 24,
+     "all_stat": 6
+    },
+    {
+     "dex": 48,
+     "int": 24,
+     "luk": 40,
+     "all_stat": 5
+    }
+   ]
+  },
+  "타일런트 헤르메스 벨트": {
+   "part": "벨트",
+   "level": 150,
+   "set": null,
+   "base": {
+    "armor": 105,
+    "attack_power": 25,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 25,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 20,
+     "int": 40,
+     "luk": 20,
+     "speed": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "타일런트 히아데스 벨트": {
+   "part": "벨트",
+   "level": 150,
+   "set": "종달새 우편배달부 세트",
+   "base": {
+    "armor": 105,
+    "attack_power": 25,
+    "dex": 50,
+    "int": 50,
+    "luk": 50,
+    "magic_power": 25,
+    "str": 50
+   },
+   "variants": 1,
+   "slots": 2,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "str": 72,
+     "dex": 24,
+     "attack_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "테네브리스 원정대 반지": {
+   "part": "반지",
+   "level": 120,
+   "set": null,
+   "base": {
+    "attack_power": 10,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 10,
+    "max_hp": 1000,
+    "max_mp": 1000,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 3,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 31,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "트릭스터 던위치팬츠": {
+   "part": "하의",
+   "level": 150,
+   "set": "루타비스 세트(마법사)",
+   "base": {
+    "armor": 120,
+    "ignore_monster_armor": 5,
+    "int": 30,
+    "luk": 30,
+    "magic_power": 2
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 16,
+     "int": 80,
+     "luk": 24,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 60,
+     "luk": 40,
+     "all_stat": 7
+    }
+   ]
+  },
+  "트릭스터 레인져팬츠": {
+   "part": "하의",
+   "level": 150,
+   "set": "루타비스 세트(궁수)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 16,
+     "dex": 24,
+     "luk": 40,
+     "magic_power": 5,
+     "armor": 24
+    },
+    {
+     "str": 20,
+     "dex": 68,
+     "jump": 5,
+     "all_stat": 7
+    },
+    {
+     "str": 28,
+     "dex": 76,
+     "jump": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "트릭스터 어새신팬츠": {
+   "part": "하의",
+   "level": 150,
+   "set": "루타비스 세트(도적)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "luk": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 20,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "str": 24,
+     "dex": 48,
+     "luk": 72,
+     "all_stat": 7
+    },
+    {
+     "dex": 20,
+     "luk": 52,
+     "attack_power": 5,
+     "all_stat": 6
+    }
+   ]
+  },
+  "트릭스터 워리어팬츠": {
+   "part": "하의",
+   "level": 150,
+   "set": "루타비스 세트(전사)",
+   "base": {
+    "armor": 210,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 60,
+     "luk": 20,
+     "jump": 5,
+     "all_stat": 7
+    },
+    {
+     "str": 68,
+     "dex": 20,
+     "int": 24,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "str": 76,
+     "dex": 24,
+     "int": 20,
+     "all_stat": 7
+    }
+   ]
+  },
+  "트릭스터 원더러팬츠": {
+   "part": "하의",
+   "level": 150,
+   "set": "루타비스 세트(해적)",
+   "base": {
+    "armor": 135,
+    "attack_power": 2,
+    "dex": 30,
+    "ignore_monster_armor": 5,
+    "str": 30
+   },
+   "variants": 1,
+   "slots": 8,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 80,
+     "int": 20,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "dex": 80,
+     "int": 20,
+     "luk": 20,
+     "all_stat": 4
+    }
+   ]
+  },
+  "트와일라이트 마크": {
+   "part": "얼굴장식",
+   "level": 140,
+   "set": "여명의 보스 세트",
+   "base": {
+    "armor": 100,
+    "attack_power": 5,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 5,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 20,
+   "flames": [
+    {
+     "str": 40,
+     "dex": 40,
+     "luk": 40,
+     "all_stat": 6
+    },
+    {
+     "dex": 68,
+     "int": 20,
+     "max_hp": 2520,
+     "attack_power": 5
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "armor": 40,
+     "all_stat": 6
+    },
+    {
+     "str": 40,
+     "int": 20,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "dex": 40,
+     "int": 48,
+     "jump": 4,
+     "all_stat": 6
+    },
+    {
+     "str": 32,
+     "int": 20,
+     "luk": 20,
+     "attack_power": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 40,
+     "attack_power": 5,
+     "jump": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 52,
+     "int": 20,
+     "jump": 4,
+     "all_stat": 5
+    },
+    {
+     "int": 60,
+     "luk": 20,
+     "attack_power": 4,
+     "all_stat": 5
+    },
+    {
+     "str": 20,
+     "int": 32,
+     "luk": 52,
+     "all_stat": 6
+    },
+    {
+     "str": 64,
+     "luk": 16,
+     "jump": 3,
+     "all_stat": 5
+    },
+    {
+     "str": 24,
+     "int": 20,
+     "luk": 76,
+     "all_stat": 5
+    },
+    {
+     "str": 72,
+     "dex": 64,
+     "all_stat": 5
+    },
+    {
+     "dex": 52,
+     "int": 12,
+     "attack_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 68,
+     "int": 60,
+     "all_stat": 5
+    },
+    {
+     "int": 20,
+     "luk": 60,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "armor": 40,
+     "all_stat": 6
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "armor": 40,
+     "all_stat": 6
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "armor": 40,
+     "all_stat": 6
+    },
+    {
+     "dex": 32,
+     "int": 40,
+     "armor": 40,
+     "all_stat": 6
+    }
+   ]
+  },
+  "튼튼한 기계 장갑": {
+   "part": "장갑",
+   "level": 90,
+   "set": null,
+   "base": {
+    "armor": 30
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "티타늄 하트": {
+   "part": "기계 심장",
+   "level": 100,
+   "set": null,
+   "base": {
+    "dex": 3,
+    "int": 3,
+    "luk": 3,
+    "max_hp": 50,
+    "str": 3
+   },
+   "variants": 1,
+   "slots": 10,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "해적"
+   ],
+   "wearers": 3,
+   "flames": [
+    {},
+    {},
+    {}
+   ]
+  },
+  "파사부": {
+   "part": "부적",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "luk": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "파풀라투스 마크": {
+   "part": "눈장식",
+   "level": 145,
+   "set": "보스 장신구 세트",
+   "base": {
+    "armor": 150,
+    "attack_power": 1,
+    "dex": 8,
+    "int": 8,
+    "luk": 8,
+    "magic_power": 1,
+    "str": 8
+   },
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 20,
+   "flames": [
+    {
+     "str": 20,
+     "dex": 24,
+     "int": 24,
+     "luk": 68,
+     "all_stat": 6
+    },
+    {
+     "dex": 20,
+     "int": 40,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 60,
+     "int": 44,
+     "all_stat": 5
+    },
+    {
+     "str": 40,
+     "attack_power": 4,
+     "jump": 5,
+     "all_stat": 6
+    },
+    {
+     "str": 16,
+     "dex": 40,
+     "luk": 16,
+     "magic_power": 6,
+     "all_stat": 5
+    },
+    {
+     "dex": 40,
+     "int": 64,
+     "luk": 24,
+     "all_stat": 6
+    },
+    {
+     "str": 20,
+     "dex": 20,
+     "int": 64,
+     "luk": 16,
+     "all_stat": 6
+    },
+    {
+     "dex": 20,
+     "luk": 60,
+     "jump": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 60,
+     "dex": 20,
+     "luk": 32,
+     "all_stat": 5
+    },
+    {
+     "dex": 48,
+     "speed": 6,
+     "jump": 4,
+     "all_stat": 6
+    },
+    {
+     "dex": 16,
+     "int": 16,
+     "luk": 48,
+     "max_mp": 1260,
+     "all_stat": 6
+    },
+    {
+     "str": 60,
+     "int": 20,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "str": 44,
+     "dex": 44,
+     "int": 20,
+     "luk": 20,
+     "all_stat": 6
+    },
+    {
+     "dex": 40,
+     "attack_power": 5,
+     "jump": 6,
+     "all_stat": 6
+    },
+    {
+     "int": 48,
+     "magic_power": 5,
+     "armor": 32,
+     "all_stat": 6
+    },
+    {
+     "str": 16,
+     "int": 16,
+     "luk": 48,
+     "attack_power": 7,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 40,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 40,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 40,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    },
+    {
+     "dex": 20,
+     "int": 40,
+     "luk": 20,
+     "magic_power": 5,
+     "all_stat": 5
+    }
+   ]
+  },
+  "팔콘아이": {
+   "part": "조준기",
+   "level": 100,
+   "set": null,
+   "base": {
+    "attack_power": 3,
+    "dex": 10,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {}
+   ]
+  },
+  "페어리 하트": {
+   "part": "기계 심장",
+   "level": 100,
+   "set": null,
+   "base": {
+    "max_hp": 100
+   },
+   "variants": 1,
+   "slots": 10,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 5,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "플라즈마 하트": {
+   "part": "기계 심장",
+   "level": 130,
+   "set": null,
+   "base": {
+    "attack_power": 5,
+    "dex": 10,
+    "ignore_monster_armor": 15,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 5,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 10,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 15,
+   "flames": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ]
+  },
+  "피콕스 퍼플 펜던트": {
+   "part": "펜던트",
+   "level": 130,
+   "set": "에스페라 세트",
+   "base": {
+    "armor": 185,
+    "luk": 16,
+    "max_hp": 180,
+    "max_mp": 180
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 1,
+   "flames": [
+    {
+     "dex": 16,
+     "int": 16,
+     "all_stat": 4
+    }
+   ]
+  },
+  "피콕스 핑크 펜던트": {
+   "part": "펜던트",
+   "level": 120,
+   "set": null,
+   "base": {
+    "armor": 145,
+    "luk": 12,
+    "max_hp": 135,
+    "max_mp": 135
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "마법사",
+    "전사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "attack_power": 4,
+     "armor": 28
+    },
+    {
+     "dex": 21,
+     "armor": 14
+    }
+   ]
+  },
+  "핑크빛 성배": {
+   "part": "포켓 아이템",
+   "level": 140,
+   "set": "보스 장신구 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 5,
+    "int": 5,
+    "luk": 5,
+    "magic_power": 5,
+    "max_hp": 50,
+    "max_mp": 50,
+    "str": 5
+   },
+   "variants": 1,
+   "slots": 0,
+   "sf_stats": [],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사"
+   ],
+   "wearers": 8,
+   "flames": [
+    {
+     "int": 68,
+     "luk": 12,
+     "jump": 3,
+     "all_stat": 6
+    },
+    {
+     "str": 40,
+     "int": 16,
+     "luk": 16,
+     "armor": 48,
+     "all_stat": 6
+    },
+    {
+     "dex": 12,
+     "int": 12,
+     "luk": 48,
+     "armor": 40,
+     "all_stat": 5
+    },
+    {
+     "str": 60,
+     "dex": 20,
+     "all_stat": 6
+    },
+    {
+     "int": 68,
+     "luk": 12,
+     "jump": 3,
+     "all_stat": 6
+    },
+    {
+     "int": 68,
+     "luk": 12,
+     "jump": 3,
+     "all_stat": 6
+    },
+    {
+     "int": 68,
+     "luk": 12,
+     "jump": 3,
+     "all_stat": 6
+    },
+    {
+     "int": 68,
+     "luk": 12,
+     "jump": 3,
+     "all_stat": 6
+    }
+   ]
+  },
+  "하이네스 던위치햇": {
+   "part": "모자",
+   "level": 150,
+   "set": "루타비스 세트(마법사)",
+   "base": {
+    "armor": 180,
+    "ignore_monster_armor": 10,
+    "int": 40,
+    "luk": 40,
+    "magic_power": 2,
+    "max_hp": 360,
+    "max_mp": 360
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "INT",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "DEX"
+   ],
+   "branches": [
+    "마법사"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 24,
+     "int": 72,
+     "speed": 4,
+     "all_stat": 6
+    },
+    {
+     "dex": 24,
+     "int": 84,
+     "luk": 20,
+     "all_stat": 5
+    }
+   ]
+  },
+  "하이네스 레인져베레": {
+   "part": "모자",
+   "level": 150,
+   "set": "루타비스 세트(궁수)",
+   "base": {
+    "armor": 300,
+    "attack_power": 2,
+    "dex": 40,
+    "ignore_monster_armor": 10,
+    "max_hp": 360,
+    "max_mp": 360,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "INT"
+   ],
+   "branches": [
+    "궁수"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 24,
+     "dex": 80,
+     "int": 16,
+     "all_stat": 5
+    },
+    {
+     "str": 20,
+     "dex": 84,
+     "luk": 24,
+     "all_stat": 6
+    }
+   ]
+  },
+  "하이네스 어새신보닛": {
+   "part": "모자",
+   "level": 150,
+   "set": "루타비스 세트(도적)",
+   "base": {
+    "armor": 300,
+    "attack_power": 2,
+    "dex": 40,
+    "ignore_monster_armor": 10,
+    "luk": 40,
+    "max_hp": 360,
+    "max_mp": 360
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "LUK"
+   ],
+   "sf_stats_16": [
+    "STR"
+   ],
+   "branches": [
+    "도적",
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "dex": 20,
+     "luk": 68,
+     "attack_power": 6,
+     "all_stat": 5
+    },
+    {
+     "str": 68,
+     "dex": 28,
+     "luk": 48,
+     "all_stat": 7
+    }
+   ]
+  },
+  "하이네스 워리어헬름": {
+   "part": "모자",
+   "level": 150,
+   "set": "루타비스 세트(전사)",
+   "base": {
+    "armor": 390,
+    "attack_power": 2,
+    "dex": 40,
+    "ignore_monster_armor": 10,
+    "max_hp": 360,
+    "max_mp": 360,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [
+    "LUK"
+   ],
+   "branches": [
+    "전사"
+   ],
+   "wearers": 3,
+   "flames": [
+    {
+     "str": 84,
+     "dex": 16,
+     "luk": 20,
+     "all_stat": 5
+    },
+    {
+     "str": 76,
+     "dex": 20,
+     "int": 24,
+     "all_stat": 6
+    },
+    {
+     "str": 92,
+     "dex": 24,
+     "luk": 20,
+     "all_stat": 4
+    }
+   ]
+  },
+  "하이네스 원더러햇": {
+   "part": "모자",
+   "level": 150,
+   "set": "루타비스 세트(해적)",
+   "base": {
+    "armor": 300,
+    "attack_power": 2,
+    "dex": 40,
+    "ignore_monster_armor": 10,
+    "max_hp": 360,
+    "max_mp": 360,
+    "str": 40
+   },
+   "variants": 1,
+   "slots": 12,
+   "sf_stats": [
+    "DEX",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {
+     "str": 60,
+     "int": 20,
+     "max_hp": 2250,
+     "all_stat": 5
+    },
+    {
+     "str": 16,
+     "dex": 64,
+     "luk": 16,
+     "all_stat": 7
+    }
+   ]
+  },
+  "하프 이어링": {
+   "part": "귀고리",
+   "level": 75,
+   "set": null,
+   "base": {},
+   "variants": 1,
+   "slots": 6,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "도적",
+    "마법사",
+    "전사",
+    "해적"
+   ],
+   "wearers": 13,
+   "flames": [
+    {
+     "str": 6,
+     "int": 6,
+     "luk": 8
+    },
+    {
+     "int": 8,
+     "max_hp": 210
+    },
+    {
+     "speed": 2
+    },
+    {
+     "dex": 16,
+     "luk": 4
+    },
+    {
+     "max_mp": 420
+    },
+    {
+     "int": 12,
+     "luk": 12,
+     "jump": 2
+    },
+    {
+     "str": 2,
+     "dex": 2,
+     "int": 8
+    },
+    {
+     "max_mp": 420,
+     "magic_power": 3
+    },
+    {
+     "dex": 2,
+     "int": 2
+    },
+    {
+     "str": 6,
+     "dex": 6,
+     "jump": 2
+    },
+    {
+     "speed": 2
+    },
+    {
+     "dex": 8,
+     "int": 8,
+     "luk": 12,
+     "magic_power": 4
+    },
+    {
+     "int": 4,
+     "luk": 4
+    }
+   ]
+  },
+  "황홀한 악몽": {
+   "part": "반지",
+   "level": 250,
+   "set": "광휘의 보스 세트",
+   "base": {
+    "attack_power": 5,
+    "dex": 10,
+    "int": 10,
+    "luk": 10,
+    "magic_power": 5,
+    "max_hp": 500,
+    "max_mp": 500,
+    "str": 10
+   },
+   "variants": 1,
+   "slots": 4,
+   "sf_stats": [
+    "DEX",
+    "INT",
+    "LUK",
+    "STR"
+   ],
+   "sf_stats_16": [],
+   "branches": [
+    "궁수",
+    "해적"
+   ],
+   "wearers": 2,
+   "flames": [
+    {},
+    {}
+   ]
+  }
+ }
+}

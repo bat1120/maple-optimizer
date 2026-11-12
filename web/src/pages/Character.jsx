@@ -12,6 +12,7 @@ import StatSummary from "../character/StatSummary.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
 import PathsPanel from "../PathsPanel.jsx";
+import SwapsPanel from "../SwapsPanel.jsx";
 import TargetRoadmapPanel from "../TargetRoadmapPanel.jsx";
 import RecommendPanel from "../RecommendPanel.jsx";
 import CalcPanels, { CALC_STEPS } from "../calc/CalcPanels.jsx";
@@ -237,6 +238,7 @@ export default function Character({ route }) {
               <h3 className="section-label">다른 기준으로 보기</h3>
               <Fold title="실딜만 보고 고르기 — 가격은 안 봐요"><RecommendPanel name={name} defense={calcDefense} autoLoad /></Fold>
               <Fold title="방법별 비교 — 구매·직작·큐브·강화"><PathsPanel name={name} defense={calcDefense} autoLoad showRefresh={false} /></Fold>
+              <Fold title="다른 템으로 갈아타기 — 세트 효과까지"><SwapsPanel name={name} defense={calcDefense} autoLoad /></Fold>
               <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={calcDefense} /></Fold>
               <h3 className="section-label">고급 도구</h3>
               <div className="pc-only">
