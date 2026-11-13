@@ -103,3 +103,12 @@ def test_name_correction_does_not_add_misfixes_when_a_real_item_is_missing():
     one_letter = {n for n in names if any(_distance(n, k) <= 1 for k in names - {n})}
     assert {n: c for n, c in misfix.items() if n not in one_letter} == {"아케인셰이드 초선": "아케인셰이드 체인"}
     assert "아케인셰이드 초선" in names
+
+
+def test_counts_second_star_row_on_real_auction_frame():
+    """2026-11-14 실사용(1368×800 화면 공유 프레임): 18성 커맨더 포스 이어링을 15성으로 셈 — 둘째 별 줄(16~18성)이
+    별 띠(상자 위 48px) 바로 아래에 걸쳐 잘렸다. 프레임 71장 실측: 56px 이상이면 모두 18."""
+    import pathlib
+    from server.tooltip import stars_near
+    img = Image.open(pathlib.Path(__file__).parent / "fixtures" / "tooltip_stars" / "two_rows_18.png").convert("RGB")
+    assert stars_near(img, (4, 42, 351, 150)) == 18  # 실제 프레임의 툴팁 상자(507,192,854,…)를 잘라 옮긴 좌표

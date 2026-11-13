@@ -348,22 +348,18 @@ class FrameCache:
                 return v
         return None
 
-    def claim(self, key: tuple, wait: float = 90.0):
-        """(이전 판독, None) 또는 (None, 내가 읽을 표시). 같은 툴팁을 다른 요청이 읽는 중이면 끝날 때까지 기다린다."""
+    def claim(self, key: tuple):
+        """(이전 판독, None) · (None, 내가 읽을 표시) · (None, None) = 같은 툴팁을 다른 요청이 읽는 중."""
         import threading
-        while True:
-            with self.lock:
-                hit = self.find(key)
-                if hit is not None:
-                    return hit, None
-                ev = next((e for k, e in self.pending
-                           if len(k) == len(key) and all(map(self.tip_close, k, key))), None)
-                if ev is None:
-                    mine = (key, threading.Event())
-                    self.pending.append(mine)
-                    return None, mine
-            if not ev.wait(wait):
-                return None, None  # 너무 오래 걸리면 기다리지 않고 직접 읽는다
+        with self.lock:
+            hit = self.find(key)
+            if hit is not None:
+                return hit, None
+            if any(len(k) == len(key) and all(map(self.tip_close, k, key)) for k, _ in self.pending):
+                return None, None
+            mine = (key, threading.Event())
+            self.pending.append(mine)
+            return None, mine
 
     def release(self, mine, data):
         with self.lock:
@@ -415,9 +411,10 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         img = img.convert("RGB")
         boxes = find_tooltips(img)
         stars = [stars_near(img, b) for b in boxes]
-        if any(s is None for s in stars) and _auction_list_visible(img):
+        if any(s is None for s in stars) and (any(s is not None for s in stars) or _auction_list_visible(img)):
             # 경매장 다크모드(2026-11-13): 필터 칸·목록 칸도 어두운 상자로 잡힌다. 실제 캡처 3장의 가짜 상자 9개는 별 줄이 0개,
-            # 진짜 툴팁 2개는 18성 — 목록의 동전 줄이 보이면 별 줄 없는 상자는 툴팁으로 보지 않는다
+            # 진짜 툴팁 2개는 18성 — 목록의 동전 줄이 보이면 별 줄 없는 상자는 툴팁으로 보지 않는다.
+            # 별 줄 있는 툴팁이 함께 있어도 뺀다(2026-11-14: 필터 칸 높이가 752·760·768로 흔들려 같은 툴팁을 AI로 또 읽음)
             boxes, stars = [b for b, s in zip(boxes, stars) if s is not None], [s for s in stars if s is not None]
         tips = [crop(img, b) for b in boxes]
     except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
@@ -433,6 +430,11 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     if cache is not None and img is not None:
         if tips:
             hit, mine = cache.claim(tuple(cache.textprint(t, b) for t, b in zip(tips, boxes)))  # 왼쪽부터 순서대로
+            if hit is None and mine is None:
+                # 같은 툴팁을 다른 요청이 읽는 중 — 기다리지 않고 돌려준다(결과는 먼저 온 요청이 돌려준다).
+                # 기다리면 브라우저 동시 전송 칸을 다 차지해 다음 매물을 10~20초 못 보냈다(2026-11-14)
+                return {"tooltip_visible": True, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
+                        "tooltips_found": len(tips), "skipped": "판독 중", **extra}
             if hit is not None:
                 out = {**copy.deepcopy(hit), "cached": True}
                 for x in out["listings"] + out.get("equipped_items", []):

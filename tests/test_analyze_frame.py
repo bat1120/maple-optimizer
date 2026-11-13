@@ -153,7 +153,9 @@ def test_frame_without_tooltip_is_skipped_without_ai_when_tooltips_only():
 
 
 def test_same_tooltip_arriving_concurrently_calls_ai_once():
-    """화면이 동시에 3장까지 보내면(2026-10-06) 같은 툴팁이 읽는 중에 또 올 수 있다 — 먼저 온 판독을 기다렸다가 재사용한다."""
+    """화면이 동시에 여러 장 보내면 같은 툴팁이 읽는 중에 또 온다 — AI는 한 번만 부르고, 뒤에 온 요청은 기다리지 않고
+    '판독 중'으로 바로 돌려준다(2026-11-14 실사용: 기다리는 요청이 브라우저 동시 전송 6칸을 다 차지해 다음 매물을 10~20초 못 보냄).
+    판독 결과는 먼저 온 요청이 돌려준다."""
     import threading
     import time
     from server.vision import FrameCache
@@ -170,8 +172,8 @@ def test_same_tooltip_arriving_concurrently_calls_ai_once():
     for t in ts:
         t.join()
     assert len(fake.calls) == 1
-    assert sum(bool(o.get("cached")) for o in out) == 2
-    assert all(o["listings"][0]["name"] == "에테르넬 나이트글러브" for o in out)
+    assert sum(o.get("skipped") == "판독 중" and o["listings"] == [] for o in out) == 2
+    assert [o["listings"][0]["name"] for o in out if o["listings"]] == ["에테르넬 나이트글러브"]
 
 
 def _tip_with(lines, lit=18, seed=1):
@@ -293,3 +295,17 @@ def test_tooltip_with_power_number_is_reused_when_hovered_again_later():
     now[0] += 61.0
     analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1310390"))])), cache=cache)
     assert len(fake.calls) == 2
+
+
+def test_starless_dark_panel_is_dropped_when_a_starred_tooltip_is_there():
+    """2026-11-14 실사용(경매장 다크모드): 왼쪽 필터 칸도 상자로 잡히고 높이가 752·760·768로 흔들려, 같은 매물 툴팁이
+    지문이 달라져 AI를 또 불렀다(193만 매물 4번). 별 줄 있는 툴팁이 있으면 별 줄 없는 상자는 빼고 보낸다."""
+    from PIL import Image
+    from server.tooltip import find_tooltips, stars_near
+    panel = Image.new("RGB", (300, 470), (34, 40, 52))
+    fr = _frame([((40, 200), panel), ((520, 120), _tooltip(lit=18))])
+    boxes = find_tooltips(fr)
+    assert sorted(stars_near(fr, b) is None for b in boxes) == [False, True]  # 가짜 상자가 실제로 잡히는 화면
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    data = analyze_frame(fake, _url(fr), tooltips_only=True)
+    assert data["tooltips_found"] == 1 and len(_images(fake.calls[0])) == 2
