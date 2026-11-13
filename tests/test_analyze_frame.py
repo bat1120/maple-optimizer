@@ -255,3 +255,25 @@ def test_tooltip_over_dark_mode_list_is_sent_alone():
     data = analyze_frame(fake, _url(_auction_list_frame([((40, 60), _tooltip())])), tooltips_only=True)
     assert len(fake.calls) == 1 and data["tooltips_found"] == 1
     assert len(_images(fake.calls[0])) == 2  # 화면 전체 + 툴팁 조각 하나(목록 판넬 조각 없이)
+
+
+def _tip_power(text):
+    """경매장 툴팁: 오른쪽 위 큰 분홍 '전투력 증가량' 숫자만 다르고 나머지는 같다."""
+    from PIL import ImageDraw, ImageFont
+    t = _tip_with(["INT +9%", "INT +9%", "ALL +6%"])
+    ImageDraw.Draw(t).text((150, 70), text, fill=(235, 45, 120), font=ImageFont.load_default(size=30))
+    return t
+
+
+def test_same_spot_different_power_number_is_read_again():
+    """2026-11-14 실사용: 경매장 툴팁은 어느 줄에 대든 같은 자리에 뜬다 — 18성 커포링(-177만 4480) 판독을
+    바로 다음에 댄 -9만 8551 매물에 재사용했다(글자 지문 거리 0.0117 < 0.02, 위치 차 3px).
+    큰 색 글자(전투력 증가량)가 다르면 다시 읽는다 — 실측 불일치: 다른 매물 0.75~0.81, 같은 툴팁 재압축 0.20~0.24."""
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1774480"))])), cache=cache)
+    other = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-98551"))])), cache=cache)
+    assert len(fake.calls) == 2 and other.get("cached") is not True
+    same = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-98551"))])), cache=cache)
+    assert len(fake.calls) == 2 and same["cached"] is True

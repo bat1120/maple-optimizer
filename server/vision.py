@@ -285,8 +285,13 @@ class FrameCache:
         from PIL import Image as _I
         a = np.asarray(tip.convert("L"), dtype=np.uint8)[48:]
         m = _I.fromarray(((a > 170) * 255).astype(np.uint8)).resize((24, 40), _I.BOX)
+        c = np.asarray(tip.convert("RGB"), dtype=np.int16)[48:176]
+        c = c[:, c.shape[1] * 2 // 5:]
+        hi, lo = c.max(axis=2), c.min(axis=2)
+        color = (hi > 150) & (hi - lo > 90)  # 큰 색 글자(경매장 '전투력 증가량' 숫자) — 툴팁 오른쪽 위
         return (box[0], box[1], tip.width, tip.height,
-                tuple((np.asarray(m, dtype=np.float32) / 255).round(3).flatten().tolist()))
+                tuple((np.asarray(m, dtype=np.float32) / 255).round(3).flatten().tolist()),
+                (color.shape, np.packbits(color).tobytes()))
 
     @staticmethod
     def tip_close(a: tuple, b: tuple) -> bool:
@@ -295,7 +300,31 @@ class FrameCache:
         그래서 위치(마우스를 옮기면 툴팁이 따라 움직인다)와 시간(HOLD_S)으로 '같은 hover'일 때만 재사용한다."""
         if any(abs(x - y) > 4 for x, y in zip(a[:4], b[:4])):
             return False
-        return sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) < 0.02
+        if sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) >= 0.02:
+            return False
+        return FrameCache._color_close(a[5], b[5])
+
+    COLOR_MIN = 200    # 색 글자 칸이 이만큼 있어야 비교한다('현재 장착 중인 장비' 툴팁은 20~30칸)
+    COLOR_DIFF = 0.5   # 2026-11-14 실측 불일치: 다른 매물 0.75~0.81, 같은 툴팁 재압축 0.20~0.24
+
+    @staticmethod
+    def _color_close(a, b) -> bool:
+        """경매장 툴팁은 어느 줄에 대든 같은 자리에 떠서, 위치·글자 지문만으로는 -177만 4480과 -9만 8551 매물을 못 갈랐다(2026-11-14).
+        큰 색 글자(전투력 증가량)를 원래 크기로 맞대 본다 — 오른쪽 끝 정렬, ±1px 흔들림 허용."""
+        import numpy as np
+        (sa, pa), (sb, pb) = a, b
+        x = np.unpackbits(np.frombuffer(pa, np.uint8), count=sa[0] * sa[1]).reshape(sa).astype(bool)
+        y = np.unpackbits(np.frombuffer(pb, np.uint8), count=sb[0] * sb[1]).reshape(sb).astype(bool)
+        if x.sum() < FrameCache.COLOR_MIN or y.sum() < FrameCache.COLOR_MIN:
+            return True  # 비교할 큰 숫자가 없다 — 글자 지문 판정을 따른다
+        h, w = min(x.shape[0], y.shape[0]), min(x.shape[1], y.shape[1])
+        x, y = x[:h, -w:], y[:h, -w:]
+        best = 1.0
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                z = np.roll(np.roll(y, dy, 0), dx, 1)
+                best = min(best, float((x ^ z).sum() / max(1, (x | z).sum())))
+        return best < FrameCache.COLOR_DIFF
 
     def find(self, key: tuple):
         now = self.clock()
