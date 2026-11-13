@@ -227,3 +227,31 @@ def test_same_position_after_a_while_is_read_again():
     now[0] += 4.0
     assert analyze_frame(fake, frame, cache=cache).get("cached") is not True
     assert len(fake.calls) == 2
+
+
+def _auction_list_frame(tips=()):
+    """다크모드 경매장 목록(실제 캡처의 목록 부분, tests/fixtures/auction_list/p1.png)을 게임 화면에 붙인 프레임."""
+    import pathlib
+    from PIL import Image
+    fr = _frame(list(tips))
+    fr.paste(Image.open(pathlib.Path(__file__).parent / "fixtures" / "auction_list" / "p1.png").convert("RGB"), (470, 240))
+    for (x, y), tip in tips:  # 툴팁은 목록 위에 뜬다
+        fr.paste(tip, (x, y))
+    return fr
+
+
+def test_dark_mode_auction_list_alone_is_not_sent_to_ai():
+    """2026-11-13 실사용(경매장 다크모드): 목록만 보이는 화면을 '툴팁 3개'로 보고 AI를 불렀다(판독 한도·토큰 낭비).
+    실제 캡처 3장 모두 가짜 상자 3개, 진짜 툴팁 2개는 별 줄(18성)이 있고 가짜는 0개 —
+    목록의 동전 줄이 보이는 화면에서는 별 줄 없는 상자를 툴팁으로 보지 않는다."""
+    fake = FakeClient([])
+    data = analyze_frame(fake, _url(_auction_list_frame()), tooltips_only=True)
+    assert len(fake.calls) == 0 and data["skipped"] == "툴팁 없음"
+    assert len(data["list_rows"]) >= 6
+
+
+def test_tooltip_over_dark_mode_list_is_sent_alone():
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    data = analyze_frame(fake, _url(_auction_list_frame([((40, 60), _tooltip())])), tooltips_only=True)
+    assert len(fake.calls) == 1 and data["tooltips_found"] == 1
+    assert len(_images(fake.calls[0])) == 2  # 화면 전체 + 툴팁 조각 하나(목록 판넬 조각 없이)

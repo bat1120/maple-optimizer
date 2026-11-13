@@ -373,8 +373,12 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             raise ImageTooLarge()
         img = img.convert("RGB")
         boxes = find_tooltips(img)
-        tips = [crop(img, b) for b in boxes]
         stars = [stars_near(img, b) for b in boxes]
+        if any(s is None for s in stars) and _auction_list_visible(img):
+            # 경매장 다크모드(2026-11-13): 필터 칸·목록 칸도 어두운 상자로 잡힌다. 실제 캡처 3장의 가짜 상자 9개는 별 줄이 0개,
+            # 진짜 툴팁 2개는 18성 — 목록의 동전 줄이 보이면 별 줄 없는 상자는 툴팁으로 보지 않는다
+            boxes, stars = [b for b, s in zip(boxes, stars) if s is not None], [s for s in stars if s is not None]
+        tips = [crop(img, b) for b in boxes]
     except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         img, boxes, tips, stars = None, [], [], []
     rows = _list_rows(img)  # 목록 줄 가격·전투력(AI 없이) — 툴팁이 가격 칸을 가리기 전에 읽어 둔다(2026-11-13)
@@ -410,6 +414,16 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     if cache is not None and img is not None and not tips:
         cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
     return {**data, **extra}
+
+
+def _auction_list_visible(img) -> bool:
+    """경매장 목록의 동전 줄(가격 칸 왼쪽 동전이 한 열에 둘 이상)이 보이는 화면."""
+    import numpy as np
+    from server.listprice import find_coins
+    try:
+        return bool(find_coins(np.asarray(img, dtype=int)))
+    except Exception:
+        return False
 
 
 def _list_rows(img) -> list[dict]:
