@@ -324,6 +324,13 @@ describe("screen watch corrected name", () => {
     expect(screen.getByText(/'캐먼더 포스 이어링'로 읽어 '커맨더 포스 이어링'로 맞췄어요/)).toBeInTheDocument();
   });
 
+  it("툴팁이 가린 가격을 목록에서 읽어 붙였으면 알려 준다 — 2026-11-13", () => {
+    const row = { signature: "p", evaluated: true, slot: "귀고리", delta_pct: 0.02, per_100m: 0.0002, main_stat_gain: 5, excluded: [],
+                  read: { name: "커맨더 포스 이어링", total: { INT: 92 }, potentials: [], price: 8079999999, price_source: "목록" } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} />);
+    expect(screen.getByText(/가격은 경매장 목록 줄에서 읽었어요/)).toBeInTheDocument();
+  });
+
   it("읽은 이름 그대로면(서버가 name_read를 늘 채운다) 안내하지 않는다", () => {
     const row = { signature: "m", evaluated: true, slot: "귀고리", delta_pct: 0.1, per_100m: null, main_stat_gain: 5, excluded: [],
                   read: { name: "커맨더 포스 이어링", name_read: "커맨더 포스 이어링", total: { INT: 3 }, potentials: [], price: 5e9 } };

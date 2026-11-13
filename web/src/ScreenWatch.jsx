@@ -162,6 +162,10 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
           {item.excluded?.length ? <span>{item.main_stat_gain != null ? " · " : ""}계산 제외: {item.excluded.join(", ")}</span> : null}
         </p>
       ) : null}
+      {r.price && r.price_source === "목록" ? (
+        // 툴팁이 가격 칸을 가린다 — 툴팁 전 목록 화면에서 같은 전투력 증가량 줄의 가격을 읽어 붙였다(2026-11-13)
+        <p className="muted small watch-note">가격은 경매장 목록 줄에서 읽었어요(전투력 증가량이 같은 줄) — 다르면 알려 주세요</p>
+      ) : null}
       {r.name_read && r.name_read !== r.name ? (
         // 서버가 잘못 읽은 이름을 아는 템 이름으로 맞췄다(2026-11-13 '캐먼더 포스 이어링') — 툴팁과 다르면 알 수 있게
         <p className="muted small watch-note">이름을 '{r.name_read}'로 읽어 '{r.name}'로 맞췄어요 — 툴팁과 다르면 알려 주세요</p>

@@ -83,6 +83,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     # AI를 실제로 부른 판독만 IP당 하루 vision_public_daily회로 센다. 횟수는 관측 DB에 둔다(재시작해도 이어서) —
     # IP 대신 날짜별 HMAC 해시만 저장한다(2026-10-11 사용자). 비밀값은 session_secret, 없으면 프로세스마다 새로
     vision_limiter = SlidingWindow(vision_frames_per_min, 60.0, clock)
+    from server.listprice import ListMemory
+    list_memory = ListMemory()
     import secrets as _secrets
     quota_secret = (session_secret or _secrets.token_hex(32)).encode()
 
@@ -500,7 +502,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap, vb = pick(load(body.name, None) if body.name else None, body.boss_defense, body.boss)
         setting = Setting(**body.setting) if body.setting else None
-        from server.vision import normalize_fee
+        from server.vision import normalize_fee, power_of
+        # 툴팁이 목록의 가격 칸을 가린다(2026-11-13) — 툴팁이 뜨기 전 목록 화면에서 읽어 둔 줄 중
+        # 전투력 증가량이 같은 줄의 가격을 붙인다(목록 읽기는 AI 없이, server/listprice.py)
+        list_memory.remember(who, data.get("list_rows") or [], clock())
+        for x in data["listings"]:
+            if not x.get("price") and (price := list_memory.lookup(who, power_of(x), clock())):
+                x["price"], x["price_source"] = price, "목록"
         for x in data["listings"]:
             # 공개 사용자 판독은 공용 시세(추천에 쓰임)에 넣지 않는다 — 조작한 툴팁으로 모두의 추천을 오염시키지 않게(2026-10-17).
             # 지우지 않는 관측 기록에는 출처를 '공개화면'으로 따로 남기고, 지금 시세(rows)는 이 출처를 읽지 않는다

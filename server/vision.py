@@ -194,7 +194,7 @@ def normalize_listing(item: dict) -> dict:
     if meso:
         item["price"] = meso
     # 2026-11-13 실사용: 가격 칸이 툴팁에 가려 안 보이자 툴팁의 '전투력 증가량 -193만 1721'을 가격으로 읽음 → 같은 숫자면 버린다
-    power = parse_meso(str(item.get("power_delta_text") or "").replace("-", "").replace("+", ""))
+    power = power_of(item)
     if power and item.get("price") == power:
         item["price"] = item["price_text"] = None
     return item
@@ -370,10 +370,11 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         stars = [stars_near(img, b) for b in boxes]
     except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         img, boxes, tips, stars = None, [], [], []
+    rows = _list_rows(img)  # 목록 줄 가격·전투력(AI 없이) — 툴팁이 가격 칸을 가리기 전에 읽어 둔다(2026-11-13)
     if tooltips_only and img is not None and not tips:
         # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)
         return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
-                "tooltips_found": 0, "skipped": "툴팁 없음"}
+                "tooltips_found": 0, "skipped": "툴팁 없음", "list_rows": rows}
     import copy
     mine = None
     if cache is not None and img is not None:
@@ -385,11 +386,11 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                     i = x.get("tooltip")
                     if x.get("starforce_source") == "별 세기" and isinstance(i, int) and 0 <= i < len(stars)                             and stars[i] is not None:
                         x["starforce"] = stars[i]  # 별은 지문에 없다 — 지금 화면에서 센 값
-                return out
+                return {**out, "list_rows": rows}
         else:
             fp = cache.fingerprint(img, 32)
             if cache.plain and cache.close(cache.plain[0], fp):
-                return {**copy.deepcopy(cache.plain[1]), "cached": True}
+                return {**copy.deepcopy(cache.plain[1]), "cached": True, "list_rows": rows}
     data = None
     try:
         if allow_ai is not None and not allow_ai():
@@ -400,7 +401,23 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             cache.release(mine, copy.deepcopy(data) if data is not None else None)
     if cache is not None and img is not None and not tips:
         cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
-    return data
+    return {**data, "list_rows": rows}
+
+
+def _list_rows(img) -> list[dict]:
+    """화면의 경매장 목록 줄 중 전투력 증가량·가격을 둘 다 읽은 줄. 목록이 없거나 못 읽으면 빈 목록(평가는 계속)."""
+    if img is None:
+        return []
+    from server.listprice import read_rows
+    try:
+        return [{"power": r["power"], "price": r["price"]} for r in read_rows(img) if r["power"] and r["price"]]
+    except Exception:  # 목록 읽기 실패가 화면 평가를 막으면 안 된다
+        return []
+
+
+def power_of(item: dict) -> int | None:
+    """툴팁의 전투력 증가량 글자(AI 판독) → 크기. '-193만 1721' → 1931721."""
+    return parse_meso(str(item.get("power_delta_text") or "").replace("-", "").replace("+", ""))
 
 
 def _read_frame(client, image_data_url, model, on_usage, tips, stars) -> dict:
