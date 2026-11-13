@@ -204,7 +204,14 @@ def price_log(listings: list[dict]) -> str:
     """매물마다 화면 가격 글자 → 환산값(서버 로그용, 2026-11-13 가격 오독 진단). 툴팁 매물은 [툴팁], 가격도 툴팁도 없는 목록 행은 뺀다."""
     return ", ".join(f"{x.get('name')}{' [툴팁]' if x.get('tooltip') is not None else ''} "
                      f"{repr(x.get('price_text')) if x.get('price_text') else None}→{x.get('price')}"
+                     f"{' 전투력 ' + repr(x['power_delta_text']) if x.get('tooltip') is not None and x.get('power_delta_text') else ''}"
                      for x in listings if x.get("tooltip") is not None or x.get("price") or x.get("price_text"))
+
+
+def list_log(size, rows: list[dict]) -> str:
+    """프레임 크기와 AI 없이 읽은 목록 줄(서버 로그용, 2026-11-13 목록 가격이 툴팁 매물에 안 붙은 원인 진단)."""
+    head = f"{size[0]}×{size[1]} · 목록 줄 {len(rows)}개" if size else f"이미지 없음 · 목록 줄 {len(rows)}개"
+    return head + (" · 전투력 " + ", ".join(f"{r['power']}→{r['price']}" for r in rows) if rows else "")
 
 
 _MESO_UNITS = (("억", 100_000_000), ("만", 10_000))
@@ -371,10 +378,11 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         img, boxes, tips, stars = None, [], [], []
     rows = _list_rows(img)  # 목록 줄 가격·전투력(AI 없이) — 툴팁이 가격 칸을 가리기 전에 읽어 둔다(2026-11-13)
+    extra = {"list_rows": rows, "frame_size": img.size if img is not None else None}
     if tooltips_only and img is not None and not tips:
         # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)
         return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
-                "tooltips_found": 0, "skipped": "툴팁 없음", "list_rows": rows}
+                "tooltips_found": 0, "skipped": "툴팁 없음", **extra}
     import copy
     mine = None
     if cache is not None and img is not None:
@@ -386,11 +394,11 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                     i = x.get("tooltip")
                     if x.get("starforce_source") == "별 세기" and isinstance(i, int) and 0 <= i < len(stars)                             and stars[i] is not None:
                         x["starforce"] = stars[i]  # 별은 지문에 없다 — 지금 화면에서 센 값
-                return {**out, "list_rows": rows}
+                return {**out, **extra}
         else:
             fp = cache.fingerprint(img, 32)
             if cache.plain and cache.close(cache.plain[0], fp):
-                return {**copy.deepcopy(cache.plain[1]), "cached": True, "list_rows": rows}
+                return {**copy.deepcopy(cache.plain[1]), "cached": True, **extra}
     data = None
     try:
         if allow_ai is not None and not allow_ai():
@@ -401,7 +409,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             cache.release(mine, copy.deepcopy(data) if data is not None else None)
     if cache is not None and img is not None and not tips:
         cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
-    return {**data, "list_rows": rows}
+    return {**data, **extra}
 
 
 def _list_rows(img) -> list[dict]:

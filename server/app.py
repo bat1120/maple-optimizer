@@ -521,7 +521,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]
         kind = "건너뜀(툴팁 없음)" if data.get("skipped") else "재사용" if data.get("cached") else "판독"
         _log.info("화면 %s · 툴팁 %s개 · %s", kind, data.get("tooltips_found", 0), ", ".join(n or "?" for n in names) or "-")
-        from server.vision import price_log
+        from server.vision import list_log, price_log
+        _log.info("목록 판독 · %s", list_log(data.get("frame_size"), data.get("list_rows") or []))
         if kind == "판독" and (prices_read := price_log(data["listings"])):
             _log.info("가격 판독 · %s", prices_read)  # 2026-11-13: 80억 7999만 9999를 1,931,721로 읽음 — 화면 글자를 남겨 원인을 본다
         dataset_on = dataset if is_admin else None  # 일반 유저 화면은 저장하지 않는다

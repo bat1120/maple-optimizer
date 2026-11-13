@@ -7,6 +7,17 @@ import { createWatcher, tipHash, tipSame } from "./watch.js";
 // 공유한 게임 창(또는 웹 경매장 탭)을 1.5초마다 작게 캡처해 변화를 보고, 화면이 바뀌어 안정되면 서버(GPT 비전)로 보내 평가한다.
 // 넥슨 서버에는 아무 요청도 하지 않는다 — 사용자 화면에 보이는 픽셀만 읽는다.
 
+// 공유 화면을 줄이지 않는 최대 가로. 줄이면 툴팁 숫자를 잘못 읽고(2026-10-04 측정: 255→2550),
+// 2560×1080 화면을 1920으로(0.75배) 줄이면 경매장 목록 가격·전투력 줄을 하나도 못 읽는다(2026-11-13 실측) — 2560까지는 원본 그대로.
+const MAX_FRAME_WIDTH = 2560;
+
+export function frameSize(w, h) {
+  const width = w || 1920;
+  const height = h || 900;
+  const scale = Math.min(1, MAX_FRAME_WIDTH / width);
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
+
 export const browserCapture =
   typeof navigator !== "undefined" && navigator.mediaDevices?.getDisplayMedia
     ? {
@@ -27,10 +38,9 @@ export const browserCapture =
               return tipHash(c.getImageData(0, 0, 256, 144)); // 남회색(툴팁) 칸만 비교 — 소환수·이펙트 움직임은 무시
             },
             image() {
-              // 1920(FHD)까지는 줄이지 않는다 — 줄이면 툴팁 숫자를 잘못 읽는다(2026-10-04 측정: 255→2550)
-              const scale = Math.min(1, 1920 / (video.videoWidth || 1920));
-              big.width = Math.round((video.videoWidth || 1920) * scale);
-              big.height = Math.round((video.videoHeight || 900) * scale);
+              const size = frameSize(video.videoWidth, video.videoHeight);
+              big.width = size.width;
+              big.height = size.height;
               big.getContext("2d").drawImage(video, 0, 0, big.width, big.height);
               return big.toDataURL("image/jpeg", 0.85);
             },

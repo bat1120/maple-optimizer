@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import ScreenWatch from "./ScreenWatch.jsx";
+import ScreenWatch, { frameSize } from "./ScreenWatch.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
@@ -441,5 +441,14 @@ describe("screen watch cards order", () => {
                         initialItems={[mk("a", "느린 모자", 0.01), mk("c", "못 본 모자", null, false), mk("b", "빠른 모자", 0.05)]} />);
     const names = [...screen.getByRole("list", { name: "읽은 매물(억당 순)" }).children].map((li) => li.querySelector("strong").textContent);
     expect(names).toEqual(["빠른 모자", "느린 모자", "못 본 모자"]);
+  });
+});
+
+describe("frameSize", () => {
+  it("2560(울트라와이드·QHD)까지는 줄이지 않는다 — 0.75배로 줄이면 경매장 목록 숫자를 못 읽는다(2026-11-13 실측)", () => {
+    expect(frameSize(2560, 1080)).toEqual({ width: 2560, height: 1080 });
+    expect(frameSize(1920, 1080)).toEqual({ width: 1920, height: 1080 });
+    expect(frameSize(3840, 2160)).toEqual({ width: 2560, height: 1440 });
+    expect(frameSize(0, 0)).toEqual({ width: 1920, height: 900 });
   });
 });

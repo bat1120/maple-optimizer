@@ -45,11 +45,12 @@ def test_schema_asks_for_verbatim_price_text():
 def test_price_log_shows_what_was_read_for_tooltip_items():
     """2026-11-13: 80억 7999만 9999 매물을 1,931,721로 읽음 — 서버 로그에 툴팁 매물의 화면 가격 글자와 환산값을 남긴다."""
     from server.vision import price_log
-    rows = [{"name": "커맨더 포스 이어링", "tooltip": 0, "price_text": "80억 7999만 9999", "price": 8_079_999_999},
+    rows = [{"name": "커맨더 포스 이어링", "tooltip": 0, "price_text": "80억 7999만 9999", "price": 8_079_999_999,
+             "power_delta_text": "-193만 1721"},
             {"name": "목록 행", "tooltip": None, "price_text": "1억", "price": 100_000_000},
             {"name": "가격 없음", "tooltip": 1, "price_text": None, "price": None}]
     rows.append({"name": "빈 목록 행", "tooltip": None, "price_text": None, "price": None})
-    assert price_log(rows) == ("커맨더 포스 이어링 [툴팁] '80억 7999만 9999'→8079999999, 목록 행 '1억'→100000000, "
+    assert price_log(rows) == ("커맨더 포스 이어링 [툴팁] '80억 7999만 9999'→8079999999 전투력 '-193만 1721', 목록 행 '1억'→100000000, "
                                "가격 없음 [툴팁] None→None")
     assert price_log([]) == ""
 
@@ -72,3 +73,11 @@ def test_prompt_separates_combat_power_from_price():
     props = _SCHEMA["properties"]["listings"]["items"]
     assert "power_delta_text" in props["required"] and "power_delta_text" in props["properties"]
     assert "전투력 증가량" in _PROMPT and "가려" in _PROMPT
+
+
+def test_list_rows_log_shows_frame_size_and_rows_read():
+    """2026-11-13 실사용: 툴팁 매물 가격이 목록에서 안 붙음 — 프레임 크기와 목록 줄을 몇 개 읽었는지 로그에 남긴다."""
+    from server.vision import list_log
+    rows = [{"power": 1_931_721, "price": 8_079_999_999}, {"power": 98_551, "price": 100_000_000}]
+    assert list_log((2560, 1080), rows) == "2560×1080 · 목록 줄 2개 · 전투력 1931721→8079999999, 98551→100000000"
+    assert list_log((1920, 810), []) == "1920×810 · 목록 줄 0개"
