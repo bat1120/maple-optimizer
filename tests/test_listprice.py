@@ -123,3 +123,18 @@ def test_tooltip_item_gets_the_price_read_from_the_list_frame(tmp_path):
     read = r.json()["items"][0]["read"]
     assert (read["price"], read["price_source"]) == (8_079_999_999, "목록")
     assert r.json()["items"][0]["per_100m"] is not None
+
+
+LIVE = pathlib.Path(__file__).parent / "fixtures" / "auction_live"
+LIVE_LABELS = json.loads((LIVE / "labels.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("page", [k for k in LIVE_LABELS if not k.startswith("_")])
+def test_reads_the_real_browser_frame_including_plus_and_short_minus(page):
+    """2026-11-13 실사용: 브라우저 프레임에서 '-'가 3픽셀로 짧게 찍혀 못 읽고, '+'(착용보다 좋은 매물)는 숫자와 붙어 4로 읽음
+    → 8줄 중 전투력 1줄만 읽혀 툴팁 매물에 목록 가격이 안 붙었다. 부호는 모양(가로 한 줄 / 십자)으로 본다."""
+    rows = lp.read_rows(Image.open(LIVE / page))
+    want = LIVE_LABELS[page]
+    assert [r["price"] for r in rows] == [lp._price_value(p) for p in want["prices"]]
+    assert [r["power"] for r in rows] == [lp._power_value(p) for p in want["powers"]]
+    assert lp._power_value("+372만 9056") == 3_729_056

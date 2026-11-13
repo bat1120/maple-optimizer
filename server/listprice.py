@@ -21,7 +21,7 @@ TH = 140                   # 글자 밝기 문턱(가격 흰 글자·전투력 �
 SPACE = 5                  # 이만큼 비면 띄어쓰기
 TABLE = pathlib.Path(__file__).resolve().parents[1] / "engine" / "data" / "list_glyphs.json"
 PRICE_RE = re.compile(r"(?:(\d+)억)?(?:(\d{1,4})만)?(\d{1,4})?")
-POWER_RE = re.compile(r"-(?:(\d+)만)?(\d{1,4})")
+POWER_RE = re.compile(r"[-+](?:(\d+)만)?(\d{1,4})")
 
 
 def _components(m: np.ndarray) -> list[tuple[int, int, int, int, int]]:
@@ -102,6 +102,26 @@ def _is_minus(crop: np.ndarray, a: int, b: int) -> bool:
     return len(rows) > 0 and rows[-1] - rows[0] <= 2 and 3 <= b - a <= 6
 
 
+def _plus_width(crop: np.ndarray, a: int, b: int) -> int | None:
+    """덩어리 왼쪽이 '+'(왼쪽 끝에서 시작하는 가로 줄 + 그 가운데를 지나는 세로 줄뿐)면 그 폭.
+    실제 프레임에서 '+'는 뒤 숫자와 붙어 찍힌다(2026-11-13)."""
+    m = crop[:, a:min(b, a + 10)] > TH
+    if not m.any():
+        return None
+    r = int(np.argmax(m.sum(axis=1)))
+    k = int(np.argmin(m[r])) if not m[r].all() else m.shape[1]  # 가로 줄 길이(왼쪽 끝부터 이어진 칸)
+    if k < 5 or k > 9:
+        return None
+    p = m[:, :k]
+    col = p.sum(axis=0)
+    c = int(np.argmax(col))
+    ys = np.nonzero(p[:, c])[0]
+    if (abs(c - (k - 1) / 2) <= 1 and col[c] >= 5 and r - ys[0] >= 2 and ys[-1] - r >= 2
+            and p.sum() <= col[c] + k):  # 십자 말고 다른 칸이 거의 없다
+        return k
+    return None
+
+
 def make_table(glyphs, max_dist: float) -> dict:
     return {"chars": [c for c, _ in glyphs], "vecs": np.asarray([v for _, v in glyphs], dtype=float), "max_dist": max_dist}
 
@@ -139,19 +159,32 @@ def _split(crop: np.ndarray, a: int, b: int, table: dict) -> list[str] | None:
     return best[b][1] if b in best and best[b][1] else None
 
 
+def _glyphs(crop: np.ndarray, a: int, b: int, table: dict) -> str:
+    f = _feature(crop, a, b)
+    ch, d = _nearest(f, table) if f is not None else ("?", 1e9)
+    if d > table["max_dist"]:
+        parts = _split(crop, a, b, table)
+        ch = "".join(parts) if parts else "?"
+    return ch
+
+
 def _decode(crop: np.ndarray, table: dict) -> str | None:
     """글자 덩어리마다 표에서 가장 가까운 글자. 한 글자로 안 맞으면 나눠 본다. 못 읽은 글자는 '?'."""
     text, prev = [], None
     for a, b in _runs(crop):
         if prev is not None and a - prev >= SPACE:
             text.append(" ")
-        f = _feature(crop, a, b)
-        ch, d = _nearest(f, table) if f is not None else ("?", 1e9)
-        if d > table["max_dist"]:
-            parts = _split(crop, a, b, table)
-            ch = "".join(parts) if parts else "?"
-        text.append(ch)
         prev = b
+        if _is_minus(crop, a, b):  # 부호는 모양으로 본다 — 프레임에서 '-'가 3픽셀로 짧게 찍히면 견본과 안 맞는다(2026-11-13)
+            text.append("-")
+            continue
+        if (k := _plus_width(crop, a, b)) is not None:
+            text.append("+")
+            rest = np.nonzero((crop[:, a + k:b] > TH).any(axis=0))[0]
+            if not len(rest):
+                continue
+            a += k + int(rest[0])
+        text.append(_glyphs(crop, a, b, table))
     return "".join(text).strip() or None
 
 
@@ -168,10 +201,10 @@ def _price_value(s: str | None) -> int | None:
 
 
 def _power_value(s: str | None) -> int | None:
-    """'-193만 1721' → 1931721(크기). 앞의 '전투력 증가량' 글자는 마지막 '-'부터 잘라 버린다."""
-    if not s or "-" not in s:
+    """'-193만 1721' → 1931721, '+372만 9056' → 3729056(크기). 앞의 '전투력 증가량' 글자는 마지막 부호부터 잘라 버린다."""
+    if not s or ("-" not in s and "+" not in s):
         return None
-    s = s[s.rfind("-"):].replace(" ", "")
+    s = s[max(s.rfind("-"), s.rfind("+")):].replace(" ", "")
     if "?" in s:
         return None
     m = POWER_RE.fullmatch(s)
