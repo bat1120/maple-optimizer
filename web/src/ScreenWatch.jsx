@@ -202,12 +202,13 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
 
 // admin=false: 일반 유저 화면(2026-10-07) — 채점·학습 데이터·목록 읽기 같은 관리자 기능을 숨기고 오늘 남은 분석 횟수를 보여준다
 // target: 업그레이드 순위 카드에서 넘어온 찾는 조건(부위·등급·줄) — 게임에서 이대로 찾으라고 위에 보여 준다
-export default function ScreenWatch({ name, job, level, defense, capture, intervalMs = 250, initialItems = [], onItems, onFeeRate, admin = true, target = null }) {
+export default function ScreenWatch({ name, job, level, defense, capture, intervalMs = 250, refreshMs = 1500, initialItems = [], onItems, onFeeRate, admin = true, target = null }) {
   const cap = capture === undefined ? browserCapture : capture;
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
   useEffect(() => { onItems?.(items); }, [items, onItems]);
   const [count, setCount] = useState(0);
+  const [lastRead, setLastRead] = useState(null); // 방금 툴팁에서 읽은 매물(스캔 중 바로 보여 준다, 2026-11-14 요청)
   const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
   const refreshStats = () => (admin ? getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {}) : null);
   const [remaining, setRemaining] = useState(null); // 일반 유저: 오늘 남은 AI 분석 횟수(서버가 센다)
@@ -237,7 +238,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
   // 2026-10-06 2차: 이펙트가 움직이면 화면 전체 비교로는 툴팁을 띄워도 안 멈춘 것으로 봐서 거의 안 보냈다 → 툴팁 칸만 비교
   // 2026-10-06 3차: 별 반짝이 때문에 툴팁이 '멈춘' 적이 없어 별 있는 템을 거의 안 보냈다(25개 대고 5개 인식).
   // 멈춤을 기다리지 않고 바뀌면 0.5초마다 보낸다 — 툴팁 찾기·같은 툴팁 재사용·툴팁 없는 화면 건너뛰기는 서버가 AI 없이 한다.
-  const watcher = useRef(createWatcher({ stableFrames: 1, cooldownMs: 500, same: tipSame }));
+  const watcher = useRef(createWatcher({ stableFrames: 1, cooldownMs: 500, same: tipSame, refreshMs }));
   const queue = useRef([]); // 읽는 중에 바뀐 화면은 버리지 않고 줄 세운다(최대 120장). 같은 툴팁·툴팁 없는 화면은 서버가 AI 없이 거른다
   // 기본은 툴팁이 뜬 화면만 AI에 보낸다(실측: 툴팁 없는 화면 67%, 판독 0). 가격만 보이는 목록 화면도 읽으려면 켠다
   const [readLists, setReadLists] = useState(false);
@@ -274,6 +275,10 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           const r = await postVision({ image, name: name || null, ...bossBody(defense), seen: [...seen.current],
                                        tooltips_only: !readLists });
           setCount((c) => c + 1);
+          const named = r.items.filter((it) => it.read?.name && (Object.keys(it.read.total || {}).length || (it.read.potentials || []).length));
+          if (named.length) {
+            setLastRead(named.map((it) => `${it.read.name}${it.read.starforce != null ? ` ${it.read.starforce}성` : ""}`).join(", "));
+          }
           if (r.frame_id) refreshStats();
           if (r.ai_remaining != null) setRemaining(r.ai_remaining);
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
@@ -365,7 +370,11 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
         </p>
       </details>
       {session ? (
-        <p>연결됨 · 분석 {count}회 <button type="button" onClick={disconnect}>연결 끊기</button></p>
+        <p role="status" aria-live="polite">
+          연결됨 · 화면 {count}장 확인 · 인식한 매물 {detailed.length}개{listOnly.length ? ` (목록 줄만 ${listOnly.length}개)` : ""}
+          {lastRead ? ` · 방금 읽음: ${lastRead}` : ""}{" "}
+          <button type="button" onClick={disconnect}>연결 끊기</button>
+        </p>
       ) : (
         <button type="button" onClick={connect}>경매장 화면 연결</button>
       )}

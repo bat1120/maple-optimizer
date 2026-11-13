@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import ScreenWatch, { frameSize } from "./ScreenWatch.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
@@ -29,18 +29,19 @@ describe("screen watch panel", () => {
     const f = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [item] }))
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [{ ...item, evaluated: false }] }));
-    render(<ScreenWatch name="내신부레테" defense={300} capture={capture} intervalMs={1500} />);
+    render(<ScreenWatch name="내신부레테" defense={300} capture={capture} refreshMs={null} intervalMs={1500} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(1500); });
     expect(f).toHaveBeenCalledTimes(2);
     expect(JSON.parse(f.mock.calls[0][1].body)).toMatchObject({ name: "내신부레테", boss_defense: 300, seen: [] });
     expect(JSON.parse(f.mock.calls[1][1].body).seen).toEqual(["sig1"]);
-    expect(screen.getByText(/센 반지/)).toBeInTheDocument();
+    const cards = () => within(screen.getByRole("list", { name: "읽은 매물(억당 순)" }));
+    expect(cards().getByText(/센 반지/)).toBeInTheDocument();
     // 카드: 이름 아래 '반지4 자리', 오른쪽 위 '지금 템 대비' 실딜(2026-10-17 순위 카드 문법)
     const card = screen.getByRole("list", { name: "읽은 매물(억당 순)" }).firstElementChild;
     expect(card).toHaveTextContent("반지4 자리");
     expect(card).toHaveTextContent("지금 템 대비+1.234%");
-    expect(screen.getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
+    expect(cards().getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
   });
 });
 
@@ -174,7 +175,7 @@ describe("screen watch queue", () => {
     }) };
     const waiting = [];
     const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
-    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
+    render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} intervalMs={500} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     for (let i = 0; i < 18; i++) await act(async () => { vi.advanceTimersByTime(500); });
     expect(f).toHaveBeenCalledTimes(6);                       // 여섯은 동시에, 나머지 둘은 줄에서 대기
@@ -197,7 +198,7 @@ describe("screen watch queue", () => {
     }) };
     const waiting = [];
     const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
-    render(<ScreenWatch name="x" defense={300} capture={capture} intervalMs={500} />);
+    render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} intervalMs={500} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     for (let i = 0; i < 22; i++) await act(async () => { vi.advanceTimersByTime(500); });
     for (let round = 0; round < 6; round++) {
@@ -277,7 +278,7 @@ describe("screen watch equipped reads", () => {
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [], equipped_items: [ring] }))
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [], equipped_items: [pendant, ring] }))
       .mockResolvedValueOnce(ok({ matched: 2, unmatched: [], fields_ok: 10, fields: 10, accuracy: 1, items: [], note: "" }));
-    render(<ScreenWatch name="내신부레테" defense={300} capture={capture} intervalMs={500} />);
+    render(<ScreenWatch name="내신부레테" defense={300} capture={capture} refreshMs={null} intervalMs={500} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(500); });
     expect(screen.getByText(/착용 템 2개: 여명의 가디언 엔젤 링, 데이브레이크 펜던트/)).toBeInTheDocument();
@@ -450,5 +451,28 @@ describe("frameSize", () => {
     expect(frameSize(1920, 1080)).toEqual({ width: 1920, height: 1080 });
     expect(frameSize(3840, 2160)).toEqual({ width: 2560, height: 1440 });
     expect(frameSize(0, 0)).toEqual({ width: 1920, height: 900 });
+  });
+});
+
+describe("screen watch live count", () => {
+  it("스캔하는 동안 확인한 화면 수·인식한 매물 수·방금 읽은 매물을 바로 보여 준다(2026-11-14 요청)", async () => {
+    vi.useFakeTimers();
+    let k = 0;
+    const seq = [10, 10, 60, 60];
+    const capture = { start: async () => ({ hash: () => tipFrame(seq[Math.min(k++, 3)]),
+                                            image: () => `data:image/jpeg;base64,${k}`, stop: vi.fn() }) };
+    const item = { signature: "s1", evaluated: true, delta_pct: 0.1, per_100m: 0.01, price: 8_079_999_999,
+                   read: { name: "커맨더 포스 이어링", starforce: 18, total: { INT: 92 }, potentials: ["INT +9%"],
+                           price: 8_079_999_999, price_source: "목록" } };
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(ok({ tooltip_visible: false, items: [] }))
+      .mockResolvedValue(ok({ tooltip_visible: true, items: [item] }));
+    render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(250); });
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("화면 2장 확인");
+    expect(status).toHaveTextContent("인식한 매물 1개");
+    expect(status).toHaveTextContent("방금 읽음: 커맨더 포스 이어링 18성");
   });
 });

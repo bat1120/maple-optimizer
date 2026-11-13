@@ -66,14 +66,17 @@ export function tipSame(a, b, { cell = 0.6, flip = 0.06, big = 0.05, lumCell = 1
   return flips / a.dark.length < flip && (both ? moved / both : 0) < big;
 }
 
-export function createWatcher({ threshold = 8, stableFrames = 2, cooldownMs = 3000, minChanged = null, same: sameFn = null } = {}) {
+// refreshMs: 화면이 그대로여도 이만큼 지나면 다시 보낸다. 경매장 툴팁은 어느 줄에 대든 같은 자리에 떠서, 숫자만 다른
+// 다른 매물 툴팁을 256×144 비교로는 못 가른다(2026-11-14 실사용: 4개 대고 1개만 전송). 같은 툴팁이면 서버가 AI 없이 재사용한다.
+export function createWatcher({ threshold = 8, stableFrames = 2, cooldownMs = 3000, minChanged = null, same: sameFn = null,
+                                refreshMs = null } = {}) {
   let last = null, stable = 0, sent = null, sentAt = -Infinity;
   return {
     step(hash, now) {
       const same = sameFn || ((x, y) => frameDiff(x, y) < threshold && (minChanged == null || changedFraction(x, y) < minChanged));
       stable = last && same(hash, last) ? stable + 1 : 1;
       last = hash;
-      const changed = !sent || !same(hash, sent);
+      const changed = !sent || !same(hash, sent) || (refreshMs != null && now - sentAt >= refreshMs);
       if (changed && stable >= stableFrames && now - sentAt >= cooldownMs) {
         sent = hash;
         sentAt = now;

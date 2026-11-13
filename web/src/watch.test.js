@@ -96,3 +96,15 @@ describe("tooltip-aware watch (2026-10-06: 소환수·이펙트가 움직이면 
   });
 });
 
+
+describe("createWatcher refreshMs", () => {
+  it("화면이 그대로여도 refreshMs마다 다시 보낸다 — 같은 자리에 뜬 다른 매물 툴팁은 256×144로는 못 가른다(2026-11-14)", () => {
+    const w = createWatcher({ stableFrames: 1, cooldownMs: 500, refreshMs: 1500 });
+    const sent = [0, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 3250].filter((t) => w.step(frame(100), t));
+    expect(sent).toEqual([0, 1500, 3000]);
+  });
+  it("refreshMs가 없으면 그대로인 화면은 다시 보내지 않는다", () => {
+    const w = createWatcher({ stableFrames: 1, cooldownMs: 500 });
+    expect([0, 1500, 3000].filter((t) => w.step(frame(100), t))).toEqual([0]);
+  });
+});
