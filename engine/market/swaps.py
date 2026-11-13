@@ -182,14 +182,18 @@ def swap_candidates(snap: CharacterSnapshot, setting: Setting, boss: BossProfile
             b = BASES[name]
             # 추옵 표본이 전부 비었으면(반지처럼 추옵이 안 붙는 템) 분포가 아니다 — 없다고 표시
             has_flame = any(b["flames"])
-            flames = [sw.delta(slot, f)[0] for f in (sw.like_current(slot, name, add=a) for a in b["flames"])
-                      if f is not None] if has_flame else []
+            pairs = sorted(((sw.delta(slot, f)[0], i) for i, f in
+                            ((i, sw.like_current(slot, name, add=a)) for i, a in enumerate(b["flames"])) if f is not None),
+                           key=lambda t: t[0]) if has_flame else []
+            flames = [d for d, _ in pairs]
             rows.append({"slot": slot, "name": name, "set": set_name(b["set"]), "level": b["level"], "starforce": sw.star_for(cur, name),
                          "wearers": b["wearers"],
                          "current": {"name": cur.name, "set": set_name((BASES.get(cur.name) or {}).get("set")), "level": cur.level,
                                      "starforce": cur.starforce, "potentials": list(cur.potentials),
                                      "additional": list(cur.additional)},
                          "set_change": change, "same": d_same, "_item": same,
+                         # 보통 추옵 = 착용자 실측 표본을 실딜 순으로 놓은 가운데(짝수면 아래쪽) 표본 하나 — 평균 같은 추정값이 아니다
+                         "_mid_flame": b["flames"][pairs[(len(pairs) - 1) // 2][1]] if pairs else {},
                          "flame": {"samples": len(flames), "min": min(flames), "median": statistics.median(flames),
                                    "max": max(flames), "better_share": sum(d > 0 for d in flames) / len(flames)}
                          if flames else {"samples": 0, "none": not has_flame}})
@@ -205,6 +209,13 @@ def swap_candidates(snap: CharacterSnapshot, setting: Setting, boss: BossProfile
             r["potential"] = {"none": sw.delta(slot, bare)[0] if bare else None,  # 잠재를 비워도(나머지는 same과 같게)
                               "break_even": next((t for t in tiers if t["delta_pct"] > 0), None), "tiers": tiers,
                               "ladder_skips": skipped}
+            # 보통 매물 기준(2026-11-13 실사용: 추옵이 STR·LUK 쪽이고 에디 없는 18성 레전드리 커포링이 +0.08%뿐):
+            # 지금 템 추옵·에디를 옮길 수는 없다 — 착용자 가운데 추옵 + 에디 없음으로 다시 손익분기를 잰다
+            mid = r.pop("_mid_flame")
+            plain = sw.build(slot, r["name"], r["starforce"], mid, sw._etc_for(cur, r["name"]), [], [])
+            m_tiers = sw.potential_tiers(slot, plain) if plain else []
+            r["market"] = {"flame": mid, "additional": [], "none": sw.delta(slot, plain)[0] if plain else None,
+                           "break_even": next((t for t in m_tiers if t["delta_pct"] > 0), None), "tiers": m_tiers}
             out.append(r)
     return sorted(out, key=lambda r: r["flame"].get("median", r["same"]), reverse=True)
 

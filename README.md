@@ -11,7 +11,7 @@
 | 캐릭터 요약 | `GET /api/character/{닉네임}` | 엔진 스탯공격력이 API 값과 맞는지 함께 표시. 전투력은 참고값(계산하지 않음) |
 | 보스 세팅 순위 | `GET /api/character/{닉네임}/settings?boss_defense=300` | 장비·하이퍼·어빌리티 프리셋 조합(최대 27개)을 보스 실딜 지수로 정렬 |
 | 매물 억당 효율 | `POST /api/character/{닉네임}/listings` | 경매장 툴팁의 총 옵션 + 잠재 문자열 입력 |
-| 다른 템으로 갈아타기 | `GET /api/character/{닉네임}/swaps` | 부위마다 다른 템(세트)을 끼면 세트 효과 변화까지 넣은 실딜, 착용자 실측 추옵 분포, 잠재 손익분기. 템 수치는 픽스처 실측표(`engine/data/item_bases.json`, `tools/derive_item_bases.py`) |
+| 다른 템으로 갈아타기 | `GET /api/character/{닉네임}/swaps` | 부위마다 다른 템(세트)을 끼면 세트 효과 변화까지 넣은 실딜, 착용자 실측 추옵 분포, 잠재 손익분기(지금 추옵·에디 그대로 / 보통 매물 = 착용자 가운데 추옵·에디 없음). 템 수치는 픽스처 실측표(`engine/data/item_bases.json`, `tools/derive_item_bases.py`) |
 | 스타포스 비용 | `POST /api/enhance/starforce` | 정확 기대값 + 분포(중앙값·p75·p90) |
 | 큐브 목표 확률 | `POST /api/enhance/cube` | 공식 확률표(레전드리·무기·200) 정확 열거 |
 | 직작 vs 매물 | `POST /api/craft/compare` | 직작 비용 분포에서 매물 가격의 위치(추옵 미포함) |

@@ -16,6 +16,16 @@ export function potentialText(r) {
   return "어떤 잠재로도 손해";
 }
 
+// 보통 매물 기준(2026-11-13 실사용: 에디 없는 18성 레전드리 INT 3줄 커포링이 +0.08%뿐): 지금 템 추옵·에디는 옮길 수 없다 —
+// 착용자 가운데 추옵 + 에디 없음일 때 잠재가 이 단계 이상이어야 이득
+export function marketText(r) {
+  const m = r.market;
+  if (!m) return "—";
+  if (m.none != null && m.none > 0) return "잠재 없어도 이득";
+  if (m.break_even) return `${m.break_even.grade} ${m.break_even.target.join(" / ")} 이상`;
+  return "어떤 잠재로도 손해";
+}
+
 function flameText(f) {
   if (!f || f.none) return "추옵 없음(안 붙는 템)";
   if (!f.samples) return "표본 없음";
@@ -57,7 +67,8 @@ export default function SwapsPanel({ name, defense, autoLoad = false }) {
       <HowTo steps={[
         <><strong>그대로 옮기면</strong> = 성·잠재·에디·추옵·주문서를 지금 템과 같게 두고 템만 바꿨을 때의 실딜이에요. 세트 효과 변화가 들어가 있어요.</>,
         <><strong>추옵</strong> = 그 템을 실제로 낀 캐릭터들의 추옵으로 바꿔 본 분포예요. '%가 이득'은 그중 지금보다 나아지는 비율이에요.</>,
-        <><strong>잠재</strong> = 그 템에 이 단계 이상을 띄우면 지금보다 나아져요(나머지는 지금 템과 같게).</>,
+        <><strong>잠재</strong> = 그 템에 이 단계 이상을 띄우면 지금보다 나아져요(추옵·에디는 지금 템과 같게).</>,
+        <><strong>보통 매물이면</strong> = 추옵은 착용자들 가운데 수준, 에디는 없는 매물일 때 잠재가 이 단계 이상이어야 이득이에요. 경매장에서 고를 때는 이 기준을 보세요.</>,
         <>템 수치는 넥슨 API 실측이고, 레벨이 높은 템은 잠재·추옵이 더 높게 나올 수 있어 보수적인 값이에요. 익셉셔널은 옮기지 않아요.</>,
       ]} />
       {busy && !data && <RowsSkeleton rows={4} />}
@@ -70,7 +81,7 @@ export default function SwapsPanel({ name, defense, autoLoad = false }) {
       {rows.length > 0 && (
         <table aria-label="다른 템으로 갈아타기" className="paths-table">
             <thead>
-              <tr><th>부위</th><th>지금 → 바꿀 템</th><th>세트 변화</th><th className="num">그대로 옮기면</th><th>추옵</th><th>잠재</th></tr>
+              <tr><th>부위</th><th>지금 → 바꿀 템</th><th>세트 변화</th><th className="num">그대로 옮기면</th><th>추옵</th><th>잠재(추옵·에디 그대로)</th><th>보통 매물이면</th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -81,6 +92,7 @@ export default function SwapsPanel({ name, defense, autoLoad = false }) {
                   <td className={`num ${r.same > 0 ? "pos" : "neg"}`}>{formatPct(r.same)}</td>
                   <td className="small">{flameText(r.flame)}</td>
                   <td className="small">{potentialText(r)}</td>
+                  <td className="small">{marketText(r)}</td>
                 </tr>
               ))}
             </tbody>

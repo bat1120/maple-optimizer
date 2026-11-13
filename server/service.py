@@ -503,6 +503,7 @@ def swaps(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | No
                      "same = 성·잠재·에디·추옵 수치·주문서(칸 수 비율)를 지금 템 그대로 옮겼을 때. "
                      "flame = 추옵만 그 템 착용자들의 실제 추옵으로 바꿔 본 분포(better_share = 지금보다 나은 비율). "
                      "potential.break_even = 그 템에 그 잠재 단계(이상)를 띄우면 처음으로 지금보다 나아지는 단계. "
+                     "market = 보통 매물 기준: 추옵은 착용자 실측 표본 중 실딜이 가운데인 표본, 에디는 없음 — 그때의 잠재 손익분기(market.break_even). "
                      "레벨이 높은 템은 잠재·추옵 줄 수치가 더 높게 나올 수 있어 same은 보수적이에요. 익셉셔널은 옮기지 않아요. "
                      "경매장에서 살 수 있는지는 확인된 구매 불가 템만 뺐어요.")}
 

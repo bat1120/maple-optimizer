@@ -3,7 +3,6 @@
 2026-10-04 측정(로컬 골든셋): 화면 전체를 줄여 보내면 AI가 숫자를 잘못 읽고(255→2550), 스타포스를 자주 틀린다(18→25).
 툴팁만 원래 크기로 잘라 함께 보내고, 별은 코드가 센다. AI 판독값을 그대로 믿지 않는다(실측값 원칙).
 """
-import difflib
 
 import numpy as np
 from PIL import Image
@@ -279,11 +278,41 @@ def _distance(a: str, b: str) -> int:
     return prev[-1]
 
 
+def _parts(ch: str) -> tuple:
+    """한글 음절 → (초성, 중성, 종성). 한글이 아니면 그 글자 하나."""
+    c = ord(ch) - 0xAC00
+    return (c // 588, c % 588 // 28, c % 28) if 0 <= c < 11172 else (ch,)
+
+
+def _look_alike(a: str, b: str) -> bool:
+    """판독이 헷갈릴 만한 글자: 초성이 같거나 받침이 같다(캐↔커 ㅋ, 런↔맨 받침 ㄴ, 던↔더 ㄷ).
+    모음만 같거나 하나도 안 겹치면(대↔해, 나↔메) 다른 글자다 — 실제 다른 템(대거↔해머, 나이트↔메이지)을 고치지 않는 근거."""
+    pa, pb = _parts(a), _parts(b)
+    if not len(pa) == len(pb) == 3:
+        return False
+    return pa[0] == pb[0] or bool(pa[2] and pa[2] == pb[2])  # 초성이나 받침(둘 다 있을 때)만 — 모음만 같으면 다른 글자(대거↔해머, 보우↔폴암)
+
+
+def _misread_of(name: str, known: str) -> int | None:
+    """name이 known을 잘못 읽은 것으로 볼 수 있으면 다른 글자 수, 아니면 None.
+    한 글자 차이(빠짐·더함 포함)는 그대로 인정(2026-10-05 '에테르널'→'에테르넬'). 그보다 많으면 글자 수가 같고
+    다른 글자마다 헷갈릴 만한 글자이며, 다른 글자가 공백 뺀 길이의 절반 이하일 때만(2026-11-13 '캐런던/캐먼더 포스 이어링')."""
+    if _distance(name, known) <= 1:
+        return _distance(name, known)
+    if len(name) != len(known):
+        return None
+    diff = [(a, b) for a, b in zip(name, known) if a != b]
+    if len(diff) * 2 > len(name.replace(" ", "")) or not all(_look_alike(a, b) for a, b in diff):
+        return None
+    return len(diff)
+
+
 def correct_name(name: str | None, names) -> tuple[str | None, bool]:
-    """한 글자 틀린 이름만 알려진 이름으로 바로잡는다("에테르널"→"에테르넬"). 그 밖에는 그대로."""
+    """잘못 읽은 이름을 알려진 이름으로 바로잡는다. 후보가 하나뿐이거나 그다음 후보보다 확실히(2글자 이상) 가까울 때만 —
+    애매하면 그대로 둔다(목록에 없는 진짜 이름을 다른 템으로 바꾸지 않는다)."""
     if not name or name in names:
         return name, False
-    m = difflib.get_close_matches(name, list(names), n=1, cutoff=0.8)
-    if m and _distance(name, m[0]) <= 1:  # 두 글자 차이는 다른 템일 수 있다(나이트↔메이지, 2026-10-05 실측)
-        return m[0], True
+    scored = sorted((d, k) for k in names if (d := _misread_of(name, k)) is not None)
+    if scored and (len(scored) == 1 or scored[1][0] - scored[0][0] >= 2):
+        return scored[0][1], True
     return name, False

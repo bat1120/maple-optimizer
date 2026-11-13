@@ -162,6 +162,10 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
           {item.excluded?.length ? <span>{item.main_stat_gain != null ? " · " : ""}계산 제외: {item.excluded.join(", ")}</span> : null}
         </p>
       ) : null}
+      {r.name_read && r.name_read !== r.name ? (
+        // 서버가 잘못 읽은 이름을 아는 템 이름으로 맞췄다(2026-11-13 '캐먼더 포스 이어링') — 툴팁과 다르면 알 수 있게
+        <p className="muted small watch-note">이름을 '{r.name_read}'로 읽어 '{r.name}'로 맞췄어요 — 툴팁과 다르면 알려 주세요</p>
+      ) : null}
       {item.special_ring_note ? <p className="error small watch-note">{item.special_ring_note}</p> : null}
       {item.secondary_note ? <p className="error small watch-note">{item.secondary_note}</p> : null}
       <div className="rank-foot">

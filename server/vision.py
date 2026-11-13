@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 
 _TOTAL_KEYS = ("STR", "DEX", "INT", "LUK", "HP", "ATK", "MATK", "ALL%", "BOSS", "IED", "DMG")
 CATEGORIES = ("무기", "보조무기", "엠블렘", "모자", "상의", "하의", "신발", "장갑", "망토", "어깨장식", "벨트",
@@ -28,7 +29,7 @@ _SCHEMA = {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
-                             "total", "breakdown", "potentials", "additional", "price", "equipped", "tooltip",
+                             "total", "breakdown", "potentials", "additional", "price", "price_text", "equipped", "tooltip",
                              "special_ring_level", "equip_type", "job_groups"],
                 "properties": {
                     "name": {"type": "string"},
@@ -59,6 +60,8 @@ _SCHEMA = {
                     "additional": {"type": "array", "items": {"type": "string"},
                                    "description": "에디셔널 잠재능력 줄 원문 그대로 (예: '마력 +10')"},
                     "price": {"type": ["integer", "null"], "description": "판매 가격(메소). 보이지 않으면 null"},
+                    "price_text": {"type": ["string", "null"],
+                                   "description": "판매 가격 글자를 화면 그대로(예: '1,774,480,000', '17억 7,448만'). 단위를 바꾸지 않는다. 안 보이면 null"},
                     "equip_type": {"type": ["string", "null"],
                                    "description": "툴팁의 '장비분류' 값 그대로(예: 마법깃펜, 포스실드, 방패, 화살깃, 한손검). 안 보이면 null"},
                     "job_groups": {"type": ["array", "null"], "items": {"type": "string", "enum": ["전사", "마법사", "궁수", "도적", "해적"]},
@@ -90,7 +93,8 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
   "STR +253 (55 +91 +107)" → total.STR=253, breakdown.STR=[55, 91, 107] / "올스탯 +5% (0% +5%)" → total["ALL%"]=5, breakdown["ALL%"]=[0, 5]
   "잠재능력 : 레전드리" 아래 "크리티컬 데미지 +8%" → potential_grade="레전드리", potentials에 "크리티컬 데미지 +8%" 그대로
   "스타포스, 주문서, 추가옵션 강화 불가" → starforce=0 / 별이 잘려 안 보이면 starforce=null
-- 읽을 수 없는 값은 추측하지 말고 null. 숫자 단위(억·만)는 메소 정수로 바꾼다."""
+- 가격 글자는 price_text에 화면 그대로(쉼표·억·만 포함) 옮긴다. 단위를 바꾸거나 자릿수를 고치지 않는다.
+- 읽을 수 없는 값은 추측하지 말고 null."""
 
 
 class VisionError(ValueError):
@@ -182,7 +186,29 @@ def normalize_listing(item: dict) -> dict:
         item["potential_lines"] = list(item.get("potentials") or [])
         item["additional"] = list(item.get("additional") or [])
         item["potentials"] = item["potential_lines"] + item["additional"]
+    meso = parse_meso(item.get("price_text"))
+    if meso:
+        item["price"] = meso
     return item
+
+
+_MESO_UNITS = (("억", 100_000_000), ("만", 10_000))
+
+
+def parse_meso(text) -> int | None:
+    """화면 가격 글자 → 메소. '1,774,480,000' · '17억 7,448만' · '883만 9385'. 숫자가 없으면 None."""
+    if not isinstance(text, str):
+        return None
+    s = text.replace(",", "").replace(" ", "").replace("메소", "")
+    if not re.fullmatch(r"(\d+억)?(\d+만)?\d*", s) or not re.search(r"\d", s):
+        return None
+    total = 0
+    for unit, mult in _MESO_UNITS:
+        m = re.match(rf"(\d+){unit}", s)
+        if m:
+            total += int(m.group(1)) * mult
+            s = s[m.end():]
+    return total + (int(s) if s else 0)
 
 
 def signature(item: dict) -> str:
@@ -205,8 +231,10 @@ def _data_url(img) -> str:
 
 @functools.lru_cache(maxsize=1)
 def _item_names() -> tuple[str, ...]:
+    """이름 보정에 쓰는 아는 템: 세트 템 + 실측 템 표(세트가 없는 템 포함, engine/data/item_bases.json)."""
+    from engine.market.swaps import BASES
     from engine.stats.sets import SetCatalog
-    return tuple(SetCatalog.load().items)
+    return tuple(dict.fromkeys([*SetCatalog.load().items, *BASES]))
 
 
 class FrameCache:

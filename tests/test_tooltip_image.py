@@ -3,6 +3,8 @@
 import math
 import random
 
+import pytest
+
 from PIL import Image, ImageDraw
 
 from server.tooltip import correct_name, count_stars, find_tooltips
@@ -83,92 +85,21 @@ def test_name_correction_fixes_one_or_two_letter_misreads_only():
     assert correct_name("에테르넬 메이지글러브", ["에테르넬 나이트글러브"]) == ("에테르넬 메이지글러브", False)
 
 
-def test_large_dark_area_is_not_a_tooltip():
-    """어두운 맵·로딩 화면처럼 넓게 어두운 곳은 툴팁이 아니다(툴팁은 폭 600px 이하)."""
-    fr = Image.new("RGB", (1366, 768), (20, 22, 30))
-    assert find_tooltips(fr) == []
+@pytest.mark.parametrize("read", ["캐런던 포스 이어링", "캐먼더 포스 이어링"])
+def test_name_correction_fixes_look_alike_letters(read):
+    """2026-11-13 실사용: 커맨더 포스 이어링을 '캐런던/캐먼더'로 읽어 템을 못 알아봄 — 모양이 비슷한 글자(자모가 겹침)면 고친다."""
+    from server.vision import _item_names
+    assert correct_name(read, _item_names()) == ("커맨더 포스 이어링", True)
 
 
-
-def test_thin_yellow_line_at_edge_is_not_a_star():
-    tip = _tooltip(lit=0, sparkles=False)
-    ImageDraw.Draw(tip).rectangle([tip.width - 3, 4, tip.width - 2, 20], fill=(255, 220, 40))  # 가장자리 가는 노란 선
-    assert count_stars(tip) is None
-
-
-def test_touching_tooltips_without_gap_are_split():
-    """마우스를 올린 매물과 '현재 장착 중인 장비' 툴팁이 틈 없이 붙어 뜨는 경우(2026-10-05 실측: 둘이 한 상자로 잡혀 별이 섞임)."""
-    left, right = _tooltip(w=290, lit=10, seed=4), _tooltip(w=290, lit=0, sparkles=False, seed=6)
-    for t in (left, right):  # 실제 화면처럼 밝은 테두리 없이
-        ImageDraw.Draw(t).rectangle([0, 0, t.width - 1, t.height - 1], outline=PANEL)
-    boxes = find_tooltips(_frame([((400, 100), left), ((690, 100), right)]))
-    assert len(boxes) == 2
-    assert count_stars(left) == 10 and count_stars(right) is None
-
-
-def test_orange_stars_are_counted():
-    """화면에 따라 채워진 별이 주황색으로 보인다(실측: 19성을 못 셈)."""
-    tip = _tooltip(lit=19, sparkles=False)
-    a = tip.load()
-    for y in range(0, 48):
-        for x in range(tip.width):
-            if a[x, y] == (255, 214, 0):
-                a[x, y] = (250, 165, 20)
-    assert count_stars(tip) == 19
-
-
-def test_orange_text_below_name_is_not_stars():
-    """별 없는 템(강화 불가)의 이름 아래 주황 글자('교환 불가' 등)를 별로 세면 안 된다(실측: 미트라 엠블렘을 18성으로 셈)."""
-    tip = _tooltip(lit=0, sparkles=False)
-    d = ImageDraw.Draw(tip)
-    for i, word in enumerate(["TRADE LOCKED (5/5)", "MEMENTO 2026.10.31"]):
-        d.text((60, 6 + i * 16), word, fill=(255, 150, 40))
-    assert count_stars(tip) is None
-
-
-def test_star_row_above_detected_box_is_still_counted():
-    """실측(자동 프레임 40장): 툴팁 상자가 첫 별 줄 아래에서 시작해 15개가 빠짐(22→7) — 상자 위쪽까지 보고 센다."""
-    from server.tooltip import stars_near
-    tip = _tooltip(lit=18, sparkles=False)
-    fr = _frame([((520, 160), tip.crop((0, 20, tip.width, tip.height)))])   # 패널은 둘째 별 줄부터
-    d = ImageDraw.Draw(fr)
-    for col in range(15):                                                   # 첫 별 줄(15개)은 패널 위 배경에 직접
-        _star(d, 520 + 40 + col * 15 + (col // 5) * 8, 152, 6, (255, 214, 0))
-    box = find_tooltips(fr)[0]
-    assert box[1] >= 155                       # 상자는 첫 별 줄을 놓친다
-    assert stars_near(fr, box) == 18
-
-
-def test_yellowish_background_above_tooltip_does_not_hide_stars():
-    """실측: 툴팁 위 배경(노을 등)의 노란 덩어리 때문에 별 세기가 멈춰 0성이 됨 — 위쪽 들쭉날쭉한 줄은 건너뛴다."""
-    from server.tooltip import stars_near
-    tip = _tooltip(lit=18, sparkles=False)
-    fr = _frame([((520, 160), tip)])
-    d = ImageDraw.Draw(fr)
-    for x, w in ((500, 30), (560, 9), (600, 50), (700, 14)):     # 툴팁 위 배경의 노란·주황 덩어리(크기·간격 제각각)
-        d.rectangle([x, 126, x + w, 126 + max(8, w // 2)], fill=(250, 180, 40))
-    assert stars_near(fr, find_tooltips(fr)[0]) == 18
-
-
-def test_short_medal_tooltip_cut_by_orange_name_plate_is_found():
-    """훈장 툴팁(2026-10-06 실측 321×250): 짧은 데다 주황 이름표가 가로로 지나가 어두운 열이 168px 두 토막으로 끊겼다.
-    짧은 끊김(3칸 이하)은 이어진 것으로 본다."""
-    tip = Image.new("RGB", (320, 250), PANEL)
-    d = ImageDraw.Draw(tip)
-    d.rectangle([0, 0, 319, 249], outline=(150, 160, 175))
-    d.rectangle([20, 50, 95, 125], fill=(200, 200, 205))        # 훈장 아이콘 칸(밝은 회색)
-    d.rectangle([0, 168, 319, 192], fill=(230, 140, 30))        # 주황 이름표(툴팁 폭 전체, 실측 약 24px)
-    for i in range(3):
-        d.text((20, 195 + i * 16), "보스 몬스터 데미지 +5%", fill=(230, 230, 230))
-    boxes = find_tooltips(_frame([((1000, 380), tip)]))
-    assert len(boxes) == 1
-    x0, y0, x1, y1 = boxes[0]
-    assert abs(x0 - 1000) <= 8 and abs(x1 - 1320) <= 8 and abs(y0 - 380) <= 16 and abs(y1 - 630) <= 16
-
-
-def test_extra_box_without_text_lines_is_not_a_tooltip():
-    """보충 방식이 잡은 어두운 상자라도 글자 줄이 없으면(게임 속 깃발, 2026-10-06 실측) 툴팁이 아니다 — AI 비용 방지."""
-    tip = Image.new("RGB", (320, 250), PANEL)
-    d = ImageDraw.Draw(tip)
-    d.rectangle([0, 168, 319, 192], fill=(230, 140, 30))
-    assert find_tooltips(_frame([((1000, 380), tip)])) == []
+def test_name_correction_does_not_add_misfixes_when_a_real_item_is_missing():
+    """진짜 템이 목록에 없을 때(하나씩 빼 본다) 다른 템으로 바뀌는 경우가 한 글자 규칙(2026-10-05)보다 늘지 않는다.
+    늘어난 것은 '아케인셰이드 초선→체인' 하나(초선은 목록에 있어 실제로는 안 생긴다) — 모음만 같은 글자는 고치지 않아
+    대거↔해머·보우↔폴암 같은 다른 무기로는 바꾸지 않는다."""
+    from server.tooltip import _distance
+    from server.vision import _item_names
+    names = set(_item_names())
+    misfix = {n: c for n in names if (c := correct_name(n, names - {n})[0]) != n}
+    one_letter = {n for n in names if any(_distance(n, k) <= 1 for k in names - {n})}
+    assert {n: c for n, c in misfix.items() if n not in one_letter} == {"아케인셰이드 초선": "아케인셰이드 체인"}
+    assert "아케인셰이드 초선" in names

@@ -316,6 +316,22 @@ describe("screen watch special ring", () => {
   });
 });
 
+describe("screen watch corrected name", () => {
+  it("이름을 아는 템 이름으로 맞췄으면 읽은 글자와 함께 알려 준다 — 2026-11-13 '캐먼더 포스 이어링'", () => {
+    const row = { signature: "n", evaluated: true, slot: "귀고리", delta_pct: 0.1, per_100m: null, main_stat_gain: 5, excluded: [],
+                  read: { name: "커맨더 포스 이어링", name_read: "캐먼더 포스 이어링", total: { INT: 3 }, potentials: [], price: 5e9 } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} />);
+    expect(screen.getByText(/'캐먼더 포스 이어링'로 읽어 '커맨더 포스 이어링'로 맞췄어요/)).toBeInTheDocument();
+  });
+
+  it("읽은 이름 그대로면(서버가 name_read를 늘 채운다) 안내하지 않는다", () => {
+    const row = { signature: "m", evaluated: true, slot: "귀고리", delta_pct: 0.1, per_100m: null, main_stat_gain: 5, excluded: [],
+                  read: { name: "커맨더 포스 이어링", name_read: "커맨더 포스 이어링", total: { INT: 3 }, potentials: [], price: 5e9 } };
+    render(<ScreenWatch name="x" defense={300} capture={null} initialItems={[row]} />);
+    expect(screen.queryByText(/로 맞췄어요/)).not.toBeInTheDocument();
+  });
+});
+
 describe("screen watch twinkling tooltip", () => {
   it("별 반짝이 때문에 툴팁이 한 번도 '멈춘' 적이 없어도 0.5초마다 보낸다 — 2026-10-06: 마우스를 다 댔는데 5개만 인식", async () => {
     vi.useFakeTimers();

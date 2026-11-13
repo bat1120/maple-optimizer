@@ -141,3 +141,30 @@ def test_potential_none_and_ladder_skips(lete):
         p = c["potential"]
         assert p["none"] is not None and p["none"] <= c["same"] + 1e-9
         assert set(p["ladder_skips"]) <= set(c["current"]["potentials"])
+
+
+def test_market_break_even_assumes_a_typical_listing(lete):
+    """보통 매물 기준(2026-11-13 실사용: 18성 레전드리 INT 3줄 커맨더 포스 이어링이 추옵이 STR·LUK 쪽이고 에디가 없어
+    +0.08%뿐 — 지금 추옵·에디를 옮긴다는 가정의 손익분기 '에픽 2줄'과 크게 달랐다):
+    추옵은 착용자 실측 표본 중 실딜이 가운데인 표본 하나(추정값 아님), 에디는 없음. 그 상태의 잠재 손익분기를 따로 준다."""
+    _, _, out = lete
+    for c in out:
+        m = c["market"]
+        assert m["additional"] == []
+        flames = BASES[c["name"]]["flames"]
+        assert m["flame"] in flames if any(flames) else m["flame"] == {}
+        be, tiers = m["break_even"], m["tiers"]
+        first = next((t for t in tiers if t["delta_pct"] > 0), None)
+        assert be == first
+        assert m["none"] is not None
+
+
+def test_market_flame_is_the_middle_sample(lete):
+    """보통 추옵 = 착용자 추옵을 실딜 순으로 놓았을 때 가운데(짝수면 아래쪽) 표본."""
+    from engine.market.swaps import _Swapper
+    snap, setting, out = lete
+    sw = _Swapper(snap, setting, BOSS, CAT)
+    c = next(c for c in out if c["name"] == "커맨더 포스 이어링")
+    ds = sorted((sw.delta(c["slot"], sw.like_current(c["slot"], c["name"], add=a))[0], i)
+                for i, a in enumerate(BASES[c["name"]]["flames"]))
+    assert c["market"]["flame"] == BASES[c["name"]]["flames"][ds[(len(ds) - 1) // 2][1]]

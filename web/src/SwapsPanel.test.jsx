@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import SwapsPanel, { potentialText } from "./SwapsPanel.jsx";
+import SwapsPanel, { marketText, potentialText } from "./SwapsPanel.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -12,6 +12,8 @@ const row = (over) => ({
   same: 1.0, flame: { samples: 31, min: -0.16, median: 0.67, max: 1.71, better_share: 0.97 },
   potential: { none: -0.5, break_even: { grade: "에픽", lines_good: 2, target: ["INT +6%", "INT +3%"], delta_pct: 0.48 },
                tiers: [], ladder_skips: [] },
+  market: { flame: { int: 30 }, additional: [], none: -1.2,
+            break_even: { grade: "레전드리", lines_good: 3, target: ["INT +12%", "INT +9%", "INT +9%"], delta_pct: 0.3 }, tiers: [] },
   ...over,
 });
 const DATA = {
@@ -37,6 +39,7 @@ describe("swaps panel", () => {
     expect(rows[1]).toHaveTextContent("칠흑의 보스 세트 1→2");
     expect(rows[1]).toHaveTextContent("97%");
     expect(rows[1]).toHaveTextContent("에픽 INT +6% / INT +3% 이상");
+    expect(rows[1]).toHaveTextContent("레전드리 INT +12% / INT +9% / INT +9% 이상");
     expect(rows[2]).toHaveTextContent("추옵 없음");
     expect(rows[2]).toHaveTextContent("잠재 없어도 이득");
     fireEvent.click(screen.getByRole("button", { name: "손해인 후보도 보기 (1)" }));
@@ -48,5 +51,12 @@ describe("swaps panel", () => {
     expect(potentialText(row({ same: 1.7, potential: { none: -3, break_even: null, ladder_skips: ["크리티컬 확률 +6%"] } })))
       .toBe("지금 잠재를 그대로 옮겨야 이득 (크리티컬 확률 +6% 줄 유지)");
     expect(potentialText(row({ same: -2, potential: { none: -3, break_even: null, ladder_skips: [] } }))).toBe("어떤 잠재로도 손해");
+  });
+
+  it("보통 매물(추옵 중간·에디 없음) 손익분기 문구 — 2026-11-13 에디 없는 레전드리 커포링이 본전", () => {
+    expect(marketText(row({ market: { none: 0.2, break_even: null } }))).toBe("잠재 없어도 이득");
+    expect(marketText(row())).toBe("레전드리 INT +12% / INT +9% / INT +9% 이상");
+    expect(marketText(row({ market: { none: -2, break_even: null } }))).toBe("어떤 잠재로도 손해");
+    expect(marketText(row({ market: undefined }))).toBe("—");
   });
 });
