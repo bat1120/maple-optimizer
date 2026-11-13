@@ -239,6 +239,9 @@ def signature(item: dict) -> str:
     parts = [item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])]
     if item.get("special_ring_level"):  # 이름이 같은 특수 반지도 레벨이 다르면 다른 매물
         parts.append(item["special_ring_level"])
+    if (power := power_of(item)) is not None:
+        # 2026-11-14: 잠재가 똑같은 18성 커포링 8개가 3장으로 합쳐짐 — 전투력 증가량은 매물마다 다르다
+        parts.append(power)
     key = json.dumps(parts, ensure_ascii=False)
     return hashlib.sha1(key.encode()).hexdigest()[:16]
 
@@ -265,6 +268,8 @@ class FrameCache:
     - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
 
     HOLD_S = 3.0  # 재사용은 '방금 대고 있던 툴팁'만 — 마지막으로 쓴 지 3초 안
+    # 전투력 숫자(큰 색 글자)까지 맞대 본 툴팁은 다른 매물일 수 없다 — 다시 대도 60초 안이면 재사용(2026-11-14: 같은 매물 3번 판독)
+    NUMBER_HOLD_S = 60.0
 
     def __init__(self, size: int = 300, clock=None):
         import threading
@@ -326,10 +331,17 @@ class FrameCache:
                 best = min(best, float((x ^ z).sum() / max(1, (x | z).sum())))
         return best < FrameCache.COLOR_DIFF
 
+    @staticmethod
+    def _has_number(key: tuple) -> bool:
+        """툴팁 중 하나라도 큰 색 글자(전투력 증가량)가 있다."""
+        import numpy as np
+        return any(len(t) > 5 and int(np.unpackbits(np.frombuffer(t[5][1], np.uint8)).sum()) >= FrameCache.COLOR_MIN
+                   for t in key)
+
     def find(self, key: tuple):
         now = self.clock()
         for k, (v, at) in list(self.tips.items()):
-            if now - at > self.HOLD_S:
+            if now - at > (self.NUMBER_HOLD_S if self._has_number(k) else self.HOLD_S):
                 del self.tips[k]
             elif len(k) == len(key) and all(map(self.tip_close, k, key)):
                 self.tips[k] = (v, now)  # 대고 있는 동안은 계속 연장

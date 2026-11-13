@@ -277,3 +277,19 @@ def test_same_spot_different_power_number_is_read_again():
     assert len(fake.calls) == 2 and other.get("cached") is not True
     same = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-98551"))])), cache=cache)
     assert len(fake.calls) == 2 and same["cached"] is True
+
+
+def test_tooltip_with_power_number_is_reused_when_hovered_again_later():
+    """2026-11-14 실사용: 같은 매물에 다시 대면 3초가 지나 AI를 또 불렀다(131만 매물 3번) — 느리고 한도를 쓴다.
+    전투력 숫자까지 같으면 다른 매물일 수 없으니 60초 안에는 재사용한다. 숫자가 없는 툴팁은 3초 그대로."""
+    from server.vision import FrameCache
+    now = [100.0]
+    cache = FrameCache(clock=lambda: now[0])
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1310390"))])), cache=cache)
+    now[0] += 20.0
+    again = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1310390"))])), cache=cache)
+    assert len(fake.calls) == 1 and again["cached"] is True
+    now[0] += 61.0
+    analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1310390"))])), cache=cache)
+    assert len(fake.calls) == 2

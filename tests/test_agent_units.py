@@ -115,3 +115,13 @@ def test_lookup_character_reports_boss_setting_as_evaluation_basis():
     assert r["active_setting"]["equipment"] == 1                     # 지금은 사냥 세팅
     assert r["evaluation_setting"] == {"equipment": 2, "hyper": 3, "ability": 2, "union": 3, "link": 2}
     assert "보스" in r["evaluation_note"]
+
+
+def test_vision_signature_tells_listings_apart_by_combat_power_delta():
+    """2026-11-14 실사용: INT 27% 필터로 검색하면 18성 커포링 잠재가 똑같은 매물이 많다 — 이름·별·잠재만으로는 8개가 3장으로 합쳐졌다.
+    툴팁의 전투력 증가량(매물마다 다름)을 지문에 넣는다. AI가 띄어쓰기를 다르게 읽어도 같은 숫자면 같은 매물."""
+    from server.vision import signature
+    a = {"name": "커맨더 포스 이어링", "starforce": 18, "potentials": ["INT +12%", "INT +9%", "올스탯 +6%"],
+         "power_delta_text": "-131만 390"}
+    assert signature(a) != signature({**a, "power_delta_text": "-102만 8548"})
+    assert signature(a) == signature({**a, "power_delta_text": "- 131만 390"})
