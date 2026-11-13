@@ -29,7 +29,7 @@ _SCHEMA = {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["name", "category", "part", "starforce", "level", "potential_grade", "additional_grade",
-                             "total", "breakdown", "potentials", "additional", "price", "price_text", "equipped", "tooltip",
+                             "total", "breakdown", "potentials", "additional", "price", "price_text", "power_delta_text", "equipped", "tooltip",
                              "special_ring_level", "equip_type", "job_groups"],
                 "properties": {
                     "name": {"type": "string"},
@@ -62,6 +62,8 @@ _SCHEMA = {
                     "price": {"type": ["integer", "null"], "description": "판매 가격(메소). 보이지 않으면 null"},
                     "price_text": {"type": ["string", "null"],
                                    "description": "판매 가격 글자를 화면 그대로(예: '1,774,480,000', '17억 7,448만'). 단위를 바꾸지 않는다. 안 보이면 null"},
+                    "power_delta_text": {"type": ["string", "null"],
+                                         "description": "툴팁의 '전투력 증가량' 글자 그대로(예: '-193만 1721'). 가격이 아니다. 안 보이면 null"},
                     "equip_type": {"type": ["string", "null"],
                                    "description": "툴팁의 '장비분류' 값 그대로(예: 마법깃펜, 포스실드, 방패, 화살깃, 한손검). 안 보이면 null"},
                     "job_groups": {"type": ["array", "null"], "items": {"type": "string", "enum": ["전사", "마법사", "궁수", "도적", "해적"]},
@@ -94,6 +96,8 @@ _PROMPT = """메이플스토리 경매장 화면 캡처다. 보이는 매물을 
   "잠재능력 : 레전드리" 아래 "크리티컬 데미지 +8%" → potential_grade="레전드리", potentials에 "크리티컬 데미지 +8%" 그대로
   "스타포스, 주문서, 추가옵션 강화 불가" → starforce=0 / 별이 잘려 안 보이면 starforce=null
 - 가격 글자는 price_text에 화면 그대로(쉼표·억·만 포함) 옮긴다. 단위를 바꾸거나 자릿수를 고치지 않는다.
+- 툴팁의 '전투력 증가량'(예: -193만 1721)은 가격이 아니다 — power_delta_text에만 옮긴다.
+  목록 행의 가격 칸이 툴팁에 가려 안 보이면 그 매물의 price·price_text는 null(다른 숫자로 채우지 않는다).
 - 읽을 수 없는 값은 추측하지 말고 null."""
 
 
@@ -189,7 +193,18 @@ def normalize_listing(item: dict) -> dict:
     meso = parse_meso(item.get("price_text"))
     if meso:
         item["price"] = meso
+    # 2026-11-13 실사용: 가격 칸이 툴팁에 가려 안 보이자 툴팁의 '전투력 증가량 -193만 1721'을 가격으로 읽음 → 같은 숫자면 버린다
+    power = parse_meso(str(item.get("power_delta_text") or "").replace("-", "").replace("+", ""))
+    if power and item.get("price") == power:
+        item["price"] = item["price_text"] = None
     return item
+
+
+def price_log(listings: list[dict]) -> str:
+    """매물마다 화면 가격 글자 → 환산값(서버 로그용, 2026-11-13 가격 오독 진단). 툴팁 매물은 [툴팁], 가격도 툴팁도 없는 목록 행은 뺀다."""
+    return ", ".join(f"{x.get('name')}{' [툴팁]' if x.get('tooltip') is not None else ''} "
+                     f"{repr(x.get('price_text')) if x.get('price_text') else None}→{x.get('price')}"
+                     for x in listings if x.get("tooltip") is not None or x.get("price") or x.get("price_text"))
 
 
 _MESO_UNITS = (("억", 100_000_000), ("만", 10_000))
