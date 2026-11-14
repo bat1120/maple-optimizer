@@ -125,3 +125,13 @@ def test_vision_signature_tells_listings_apart_by_combat_power_delta():
          "power_delta_text": "-131만 390"}
     assert signature(a) != signature({**a, "power_delta_text": "-102만 8548"})
     assert signature(a) == signature({**a, "power_delta_text": "- 131만 390"})
+
+
+def test_vision_signature_with_power_delta_ignores_misread_name():
+    """2026-11-14 실사용: 같은 매물(-193만 1721)을 두 번 읽다가 이름을 '카엔디 코스 어이링'(반지 자리)으로 잘못 읽어 카드가 둘이 됐다.
+    전투력 증가량은 매물마다 다르므로, 그 숫자가 있으면 이름·별·잠재 오독은 지문에서 뺀다."""
+    from server.vision import signature
+    a = {"name": "커맨더 포스 이어링", "starforce": 18, "potentials": ["올스탯 +9%", "INT +9%", "INT +9%"],
+         "power_delta_text": "-193만 1721"}
+    assert signature(a) == signature({**a, "name": "카엔디 코스 어이링", "starforce": 15,
+                                      "potentials": ["올스탯 +9%", "INT +9%", "INT +6%"]})

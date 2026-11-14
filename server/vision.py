@@ -237,12 +237,14 @@ def parse_meso(text) -> int | None:
 def signature(item: dict) -> str:
     """같은 매물을 두 번 평가하지 않도록 쓰는 지문."""
     # 가격·총 옵션은 화면을 읽을 때마다 숫자가 조금씩 흔들려 같은 매물이 둘로 갈린다(2026-10-04 실사용) → 뺀다
-    parts = [item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])]
-    if item.get("special_ring_level"):  # 이름이 같은 특수 반지도 레벨이 다르면 다른 매물
-        parts.append(item["special_ring_level"])
     if (power := power_of(item)) is not None:
-        # 2026-11-14: 잠재가 똑같은 18성 커포링 8개가 3장으로 합쳐짐 — 전투력 증가량은 매물마다 다르다
-        parts.append(power)
+        # 2026-11-14: 잠재가 똑같은 18성 커포링 8개가 3장으로 합쳐짐 — 전투력 증가량은 매물마다 다르다.
+        # 같은 매물을 다시 읽다 이름을 '카엔디 코스 어이링'으로 잘못 읽어 카드가 둘이 됨 → 그 숫자만으로 가린다
+        parts = ["전투력", power]
+    else:
+        parts = [item.get("name"), item.get("starforce"), sorted(item.get("potentials") or [])]
+        if item.get("special_ring_level"):  # 이름이 같은 특수 반지도 레벨이 다르면 다른 매물
+            parts.append(item["special_ring_level"])
     key = json.dumps(parts, ensure_ascii=False)
     return hashlib.sha1(key.encode()).hexdigest()[:16]
 
