@@ -85,6 +85,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     vision_limiter = SlidingWindow(vision_frames_per_min, 60.0, clock)
     from server.listprice import ListMemory
     list_memory = ListMemory()
+    from server.vision import ScanRegistry
+    scans = ScanRegistry()  # 스캔마다 인식한 툴팁·분석 중 수(AI와 상관없이, 2026-11-14)
     import secrets as _secrets
     quota_secret = (session_secret or _secrets.token_hex(32)).encode()
 
@@ -374,6 +376,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         setting: dict | None = None
         seen: list[str] = []
         tooltips_only: bool = True  # 툴팁 없는 화면은 AI에 보내지 않는다(목록 화면도 읽으려면 false)
+        scan_id: str | None = Field(None, max_length=64)  # 화면 연결마다 새로(인식 개수를 연결 단위로 센다)
 
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
@@ -491,9 +494,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         ip = request.client.host if request.client else "unknown"
         who = _quota_who(ip)
         allow_ai = None if is_admin else (lambda: _quota_take(who) <= vision_public_daily)  # AI 부르기 직전에 차감
+        scan = f"{who}:{body.scan_id}" if body.scan_id else None  # 다른 사용자의 스캔과 섞이지 않게 IP 해시를 붙인다
+        on_tip = (lambda key, done: scans.mark(scan, key, done, clock())) if scan else None
         try:
             data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
-                                 tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai)
+                                 tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai, on_tip=on_tip)
         except ImageTooLarge:
             raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(4K 해상도 이하로 공유해 주세요).") from None
         except VisionQuota:
@@ -539,7 +544,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return {"tooltip_visible": data["tooltip_visible"], "fee_rate": normalize_fee(data.get("fee_rate")),
                 "frame_id": frame_id, "items": items,
                 "equipped_items": data.get("equipped_items", []),  # 착용 템 판독(장비창 채점용, 매물 아님)
-                "ai_remaining": None if is_admin else max(0, vision_public_daily - _quota_used(who))}
+                "ai_remaining": None if is_admin else max(0, vision_public_daily - _quota_used(who)),
+                **dict(zip(("recognized", "analyzing"), scans.counts(scan, clock()) if scan else (None, None)))}
 
     class VisionCorrectIn(BaseModel):
         frame_id: str

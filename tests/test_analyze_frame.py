@@ -336,3 +336,46 @@ def test_tooltips_without_power_number_are_sent_as_before():
     analyze_frame(fake2, _url(_frame([((380, 120), _tip_power("-1931721")), ((700, 120), _tip_with(["INT +9%"]))])),
                   tooltips_only=False)
     assert len(_images(fake2.calls[0])) == 3
+
+
+def test_scan_registry_counts_distinct_tooltips_and_pending_reads():
+    """2026-11-14 요청: 몇 개를 인식했는지는 AI와 상관없이 바로 — 같은 툴팁(위치·글자·전투력 숫자)은 하나로 센다."""
+    from server.vision import FrameCache, ScanRegistry
+    a = tuple(FrameCache.textprint(_tip_power("-1931721"), (520, 120)) for _ in range(1))
+    b = tuple(FrameCache.textprint(_tip_power("-98551"), (520, 120)) for _ in range(1))
+    reg = ScanRegistry()
+    reg.mark("s", a, False, now=0)
+    assert reg.counts("s", now=1) == (1, 1)
+    reg.mark("s", a, False, now=2)                  # 같은 툴팁 다시 — 하나로 센다
+    reg.mark("s", b, False, now=3)
+    assert reg.counts("s", now=4) == (2, 2)
+    reg.mark("s", a, True, now=5)
+    reg.mark("s", a, False, now=6)                  # 끝난 뒤 다시 온 같은 툴팁은 '분석 중'으로 되돌리지 않는다
+    assert reg.counts("s", now=7) == (2, 1)
+    assert reg.counts("other", now=7) == (0, 0)     # 다른 스캔(사용자·연결)과 섞지 않는다
+    assert reg.counts("s", now=7 + 1801) == (0, 0)  # 30분 지나면 버린다
+
+
+def test_analyze_frame_reports_tooltips_before_and_after_ai():
+    from server.vision import FrameCache
+    seen = []
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1931721"))])), cache=FrameCache(),
+                  tooltips_only=True, on_tip=lambda key, done: seen.append((len(fake.calls), done)))
+    assert seen == [(0, False), (1, True)]          # AI 부르기 전에 '인식', 끝나면 '완료'
+
+
+def test_api_returns_recognized_and_analyzing_counts_per_scan(tmp_path):
+    from fastapi.testclient import TestClient
+    from helpers import bundle
+    from server.app import create_app
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3"), agent_client=fake))
+    post = lambda tip, scan: c.post("/api/vision/listings", json={"image": _url(_frame([((520, 120), tip)])),
+                                                                 "scan_id": scan}).json()
+    r1 = post(_tip_power("-1931721"), "scan-a")
+    assert (r1["recognized"], r1["analyzing"]) == (1, 0)
+    r2 = post(_tip_power("-98551"), "scan-a")
+    assert (r2["recognized"], r2["analyzing"]) == (2, 0)
+    r3 = post(_tip_power("-1931721"), "scan-b")              # 새로 연결하면 0부터
+    assert (r3["recognized"], r3["analyzing"]) == (1, 0)

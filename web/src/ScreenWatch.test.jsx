@@ -454,8 +454,8 @@ describe("frameSize", () => {
   });
 });
 
-describe("screen watch live count", () => {
-  it("스캔하는 동안 확인한 화면 수·인식한 매물 수·방금 읽은 매물을 바로 보여 준다(2026-11-14 요청)", async () => {
+describe("screen watch recognized count", () => {
+  it("인식 개수는 AI와 상관없이 서버가 센 값을 바로 보여 주고, 분석이 다 끝나면 카드를 한 번에 띄운다(2026-11-14 요청)", async () => {
     vi.useFakeTimers();
     let k = 0;
     const seq = [10, 10, 60, 60];
@@ -464,33 +464,26 @@ describe("screen watch live count", () => {
     const item = { signature: "s1", evaluated: true, delta_pct: 0.1, per_100m: 0.01, price: 8_079_999_999,
                    read: { name: "커맨더 포스 이어링", starforce: 18, total: { INT: 92 }, potentials: ["INT +9%"],
                            price: 8_079_999_999, price_source: "목록" } };
-    vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(ok({ tooltip_visible: false, items: [] }))
-      .mockResolvedValue(ok({ tooltip_visible: true, items: [item] }));
-    render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} />);
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
-    for (let i = 0; i < 6; i++) await act(async () => { vi.advanceTimersByTime(250); });
-    const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("화면 2장 확인");
-    expect(status).toHaveTextContent("인식한 매물 1개");
-    expect(status).toHaveTextContent("방금 읽음: 커맨더 포스 이어링 18성");
-  });
-});
-
-describe("screen watch reading count", () => {
-  it("AI가 읽는 중인 화면 수를 바로 보여 주고, 끝나면 지운다(2026-11-14: 판독 7~12초 동안 멈춘 것처럼 보임)", async () => {
-    vi.useFakeTimers();
-    let k = 0;
-    const seq = [10, 10, 60, 60];
-    const capture = { start: async () => ({ hash: () => tipFrame(seq[Math.min(k++, 3)]),
-                                            image: () => `data:image/jpeg;base64,${k}`, stop: vi.fn() }) };
-    const waiting = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
+    const f = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [], recognized: 1, analyzing: 1 }))
+      .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [item], recognized: 2, analyzing: 1 }))
+      .mockResolvedValue(ok({ tooltip_visible: true, items: [], recognized: 2, analyzing: 0 }));
     render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     await act(async () => { vi.advanceTimersByTime(250); });
-    expect(screen.getByRole("status")).toHaveTextContent("판독 중 1장");
-    await act(async () => { waiting.splice(0).forEach((r) => r(ok({ tooltip_visible: true, items: [] }))); });
-    expect(screen.getByRole("status")).not.toHaveTextContent("판독 중");
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("인식한 매물 1개");
+    expect(status).toHaveTextContent("분석 중 1개");
+    const scanId = JSON.parse(f.mock.calls[0][1].body).scan_id;
+    expect(scanId).toBeTruthy();
+    await act(async () => { vi.advanceTimersByTime(500); });
+    expect(screen.getByRole("status")).toHaveTextContent("인식한 매물 2개");
+    expect(screen.queryByText(/커맨더 포스 이어링/)).toBeNull();          // 하나 끝났어도 분석 중이 남으면 카드는 아직
+    expect(screen.getByText(/분석이 끝나면 한 번에 보여 드려요/)).toBeInTheDocument();
+    k = 0;
+    for (let i = 0; i < 3; i++) await act(async () => { vi.advanceTimersByTime(250); });
+    expect(screen.getByRole("status")).not.toHaveTextContent("분석 중");
+    expect(screen.getByText(/커맨더 포스 이어링/)).toBeInTheDocument(); // 다 끝나면 한 번에
+    expect(f.mock.calls.every((c) => JSON.parse(c[1].body).scan_id === scanId)).toBe(true);
   });
 });

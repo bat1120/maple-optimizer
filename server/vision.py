@@ -400,8 +400,48 @@ class VisionQuota(Exception):
     """AI 판독이 필요한데 한도가 끝났다(일반 유저 하루 상한). 건너뛰기·재사용은 한도와 무관하게 된다."""
 
 
+class ScanRegistry:
+    """스캔(사용자·연결)마다 본 툴팁과 분석 상태 — '인식 N개 · 분석 중 M개'를 AI와 상관없이 바로 보여 준다(2026-11-14 요청).
+    같은 툴팁 판정은 FrameCache.tip_close(위치·글자 지문·전투력 숫자)."""
+
+    def __init__(self, ttl: float = 1800, max_scans: int = 2000, max_tips: int = 300):
+        import threading
+        self.ttl, self.max_scans, self.max_tips = ttl, max_scans, max_tips
+        self.scans: dict = {}  # scan → (마지막 시각, [[키, 끝남]])
+        self.lock = threading.Lock()
+
+    def _live(self, scan, now):
+        got = self.scans.get(scan)
+        if got and now - got[0] > self.ttl:
+            del self.scans[scan]
+            return None
+        return got
+
+    def mark(self, scan, key: tuple, done: bool, now: float) -> None:
+        with self.lock:
+            got = self._live(scan, now)
+            tips = got[1] if got else []
+            for e in tips:
+                if len(e[0]) == len(key) and all(map(FrameCache.tip_close, e[0], key)):
+                    e[1] = e[1] or done
+                    break
+            else:
+                if len(tips) < self.max_tips:
+                    tips.append([key, done])
+            self.scans[scan] = (now, tips)
+            while len(self.scans) > self.max_scans:
+                self.scans.pop(next(iter(self.scans)))
+
+    def counts(self, scan, now: float) -> tuple[int, int]:
+        """(인식한 툴팁 수, 분석 중인 수)."""
+        with self.lock:
+            got = self._live(scan, now)
+            tips = got[1] if got else []
+            return len(tips), sum(not d for _, d in tips)
+
+
 def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None,
-                  cache: FrameCache | None = None, tooltips_only: bool = False, allow_ai=None) -> dict:
+                  cache: FrameCache | None = None, tooltips_only: bool = False, allow_ai=None, on_tip=None) -> dict:
     """화면 공유 프레임 분석: 툴팁을 찾아 원래 크기로 잘라 함께 보내고, AI 판독값 중 코드로 확인할 수 있는 것은 바꾼다.
     - 스타포스: 툴팁 별을 코드로 센 값(로컬 실측 15/15, AI 판독 1/9 — 2026-10-04)
     - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)"""
@@ -444,7 +484,10 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     mine = None
     if cache is not None and img is not None:
         if tips:
-            hit, mine = cache.claim(tuple(cache.textprint(t, b) for t, b in zip(tips, boxes)))  # 왼쪽부터 순서대로
+            key = tuple(cache.textprint(t, b) for t, b in zip(tips, boxes))  # 왼쪽부터 순서대로
+            hit, mine = cache.claim(key)
+            if on_tip is not None:
+                on_tip(key, hit is not None)  # 인식(AI와 상관없이) — 이전 판독을 쓰면 바로 '완료'
             if hit is None and mine is None:
                 # 같은 툴팁을 다른 요청이 읽는 중 — 기다리지 않고 돌려준다(결과는 먼저 온 요청이 돌려준다).
                 # 기다리면 브라우저 동시 전송 칸을 다 차지해 다음 매물을 10~20초 못 보냈다(2026-11-14)
@@ -469,6 +512,8 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     finally:
         if mine is not None:
             cache.release(mine, copy.deepcopy(data) if data is not None else None)
+            if on_tip is not None:
+                on_tip(mine[0], True)  # 판독이 끝났다(실패해도 '분석 중'에 남기지 않는다)
     if cache is not None and img is not None and not tips:
         cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
     return {**data, **extra}

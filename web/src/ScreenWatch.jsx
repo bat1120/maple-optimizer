@@ -207,9 +207,9 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
   const [session, setSession] = useState(null);
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
   useEffect(() => { onItems?.(items); }, [items, onItems]);
-  const [count, setCount] = useState(0);
-  const [reading, setReading] = useState(0); // 서버가 읽는 중인 화면 수(AI 판독 7~12초 — 멈춘 게 아님을 보여 준다)
-  const [lastRead, setLastRead] = useState(null); // 방금 툴팁에서 읽은 매물(스캔 중 바로 보여 준다, 2026-11-14 요청)
+  // 인식한 매물·분석 중 수(서버가 화면에서 툴팁을 찾는 즉시 센다 — AI와 상관없이). 카드는 분석이 다 끝나면 한 번에(2026-11-14 요청)
+  const [scan, setScan] = useState({ recognized: 0, analyzing: 0 });
+  const scanId = useRef(null);
   const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
   const refreshStats = () => (admin ? getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {}) : null);
   const [remaining, setRemaining] = useState(null); // 일반 유저: 오늘 남은 AI 분석 횟수(서버가 센다)
@@ -271,16 +271,11 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
     }, intervalMs);
     const send = (image) => {
       inflight.current += 1;
-      setReading(inflight.current);
       (async () => {
         try {
           const r = await postVision({ image, name: name || null, ...bossBody(defense), seen: [...seen.current],
-                                       tooltips_only: !readLists });
-          setCount((c) => c + 1);
-          const named = r.items.filter((it) => it.read?.name && (Object.keys(it.read.total || {}).length || (it.read.potentials || []).length));
-          if (named.length) {
-            setLastRead(named.map((it) => `${it.read.name}${it.read.starforce != null ? ` ${it.read.starforce}성` : ""}`).join(", "));
-          }
+                                       tooltips_only: !readLists, scan_id: scanId.current });
+          if (r.recognized != null) setScan({ recognized: r.recognized, analyzing: r.analyzing || 0 });
           if (r.frame_id) refreshStats();
           if (r.ai_remaining != null) setRemaining(r.ai_remaining);
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료
@@ -305,7 +300,6 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           setError(e);
         } finally {
           inflight.current -= 1;
-          setReading(inflight.current);
         }
       })();
     };
@@ -316,6 +310,8 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
     setError(null);
     if (!cap) return setError({ message: "이 브라우저는 화면 공유를 지원하지 않아요. PC 크롬·엣지에서 열어 주세요." });
     try {
+      scanId.current = Math.random().toString(36).slice(2, 12); // 연결마다 새로 센다
+      setScan({ recognized: 0, analyzing: 0 });
       setSession(await cap.start());
     } catch (e) {
       setError({ message: `화면 공유를 시작하지 못했어요: ${e.message || e}` });
@@ -374,9 +370,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       </details>
       {session ? (
         <p role="status" aria-live="polite">
-          연결됨 · 화면 {count}장 확인 · 인식한 매물 {detailed.length}개{listOnly.length ? ` (목록 줄만 ${listOnly.length}개)` : ""}
-          {reading ? ` · 판독 중 ${reading}장` : ""}
-          {lastRead ? ` · 방금 읽음: ${lastRead}` : ""}{" "}
+          연결됨 · 인식한 매물 {scan.recognized}개{scan.analyzing ? ` · 분석 중 ${scan.analyzing}개` : ""}{" "}
           <button type="button" onClick={disconnect}>연결 끊기</button>
         </p>
       ) : (
@@ -417,7 +411,10 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           <p className="muted">{listOnly.map((it) => `${it.read?.name}${it.read?.price ? ` ${formatMeso(it.read.price)}` : ""}`).join(" · ")}</p>
         </details>
       )}
-      {detailed.length > 0 && (
+      {session && scan.analyzing > 0 && (
+        <p className="muted">분석이 끝나면 한 번에 보여 드려요 ({scan.recognized - scan.analyzing}/{scan.recognized} 완료)</p>
+      )}
+      {detailed.length > 0 && !(session && scan.analyzing > 0) && (
         <ol className="rank-cards watch-cards" aria-label="읽은 매물(억당 순)">
           {detailed.map((it) => (
             <Row key={it.signature} item={it} name={name} defense={defense}
