@@ -263,7 +263,7 @@ def _tip_power(text):
     """경매장 툴팁: 오른쪽 위 큰 분홍 '전투력 증가량' 숫자만 다르고 나머지는 같다."""
     from PIL import ImageDraw, ImageFont
     t = _tip_with(["INT +9%", "INT +9%", "ALL +6%"])
-    ImageDraw.Draw(t).text((150, 70), text, fill=(235, 45, 120), font=ImageFont.load_default(size=30))
+    ImageDraw.Draw(t).text((120, 66), text, fill=(235, 45, 120), font=ImageFont.load_default(size=44))  # 실제 툴팁의 굵고 큰 숫자
     return t
 
 
@@ -309,3 +309,30 @@ def test_starless_dark_panel_is_dropped_when_a_starred_tooltip_is_there():
     fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
     data = analyze_frame(fake, _url(fr), tooltips_only=True)
     assert data["tooltips_found"] == 1 and len(_images(fake.calls[0])) == 2
+
+
+def test_auction_sends_only_the_listing_tooltip_without_full_frame():
+    """2026-11-14 실측(gpt-6-luna, 실제 툴팁): 화면 전체+툴팁 2개 11.8~12.3초 → 매물 툴팁 1개만 6.8~7.8초(대부분), 판독값 같음.
+    착용 장비 툴팁('현재 장착 중인 장비', 전투력 숫자 없음)은 넥슨 API로 이미 알고, 목록 가격은 AI 없이 읽는다 —
+    경매장 툴팁 모드에서는 전투력 숫자(큰 색 글자)가 있는 툴팁만 보내고 화면 전체는 보내지 않는다."""
+    from PIL import ImageDraw, ImageFont
+    worn = _tip_with(["INT +9%"])  # 착용 장비 툴팁도 주황 글자('교환 불가 (가위 사용 잔여 횟수 : 10/10)')가 있다 — 실측 241칸 vs 매물 1317칸
+    ImageDraw.Draw(worn).text((130, 75), "10/10 (10/10) 10/10", fill=(255, 150, 30), font=ImageFont.load_default(size=20))
+    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    fr = _frame([((380, 120), _tip_power("-1931721")), ((700, 120), worn)])
+    data = analyze_frame(fake, _url(fr), tooltips_only=True)
+    imgs = _images(fake.calls[0])
+    assert len(imgs) == 1 and imgs[0]["image_url"].startswith("data:image/png")  # 툴팁 조각 하나(화면 전체 JPEG 없음)
+    assert data["tooltips_found"] == 1 and data["listings"][0]["starforce"] == 18
+
+
+def test_tooltips_without_power_number_are_sent_as_before():
+    """장비창처럼 전투력 숫자가 없는 화면, 관리자 전체 판독은 지금처럼 화면 전체 + 툴팁 전부."""
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    analyze_frame(fake, _url(_frame([((380, 120), _tip_with(["INT +12%"])), ((700, 120), _tip_with(["INT +9%"]))])),
+                  tooltips_only=True)
+    assert len(_images(fake.calls[0])) == 3
+    fake2 = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
+    analyze_frame(fake2, _url(_frame([((380, 120), _tip_power("-1931721")), ((700, 120), _tip_with(["INT +9%"]))])),
+                  tooltips_only=False)
+    assert len(_images(fake2.calls[0])) == 3

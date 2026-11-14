@@ -107,8 +107,9 @@ class VisionError(ValueError):
 
 def extract_listings(client, image_data_url: str, model: str | None = None,
                      on_usage=None, crops: list[str] | None = None) -> dict:
-    content = [{"type": "input_text", "text": _PROMPT},
-               {"type": "input_image", "image_url": image_data_url, "detail": "high"}]
+    content = [{"type": "input_text", "text": _PROMPT}]
+    if image_data_url:  # 경매장 매물 툴팁만 읽을 때는 화면 전체를 보내지 않는다
+        content.append({"type": "input_image", "image_url": image_data_url, "detail": "high"})
     for i, c in enumerate(crops or []):
         content += [{"type": "input_text", "text": f"툴팁 {i}"}, {"type": "input_image", "image_url": c, "detail": "high"}]
     resp = client.responses.create(
@@ -262,6 +263,15 @@ def _item_names() -> tuple[str, ...]:
     return tuple(dict.fromkeys([*SetCatalog.load().items, *BASES]))
 
 
+def _power_mask(tip):
+    """큰 색 글자(경매장 '전투력 증가량' 숫자) 칸 — 툴팁 오른쪽 위. 착용 장비 툴팁('현재 장착 중인 장비')은 20~30칸뿐."""
+    import numpy as np
+    c = np.asarray(tip.convert("RGB"), dtype=np.int16)[48:176]
+    c = c[:, c.shape[1] * 2 // 5:max(c.shape[1] * 2 // 5 + 1, c.shape[1] - 4)]  # 오른쪽 테두리 4px 제외(뒤 배경색이 JPEG로 번진다)
+    hi, lo = c.max(axis=2), c.min(axis=2)
+    return (hi > 150) & (hi - lo > 90)
+
+
 class FrameCache:
     """같은 툴팁·같은 화면을 다시 AI에 보내지 않는다(2026-10-05 실측: 화면 46장 중 쓸모 있는 판독 15개, 하루 토큰 한도 소진).
     - 툴팁이 있으면: 잘라낸 툴팁들의 축소 회색조 지문이 같으면 이전 판독을 그대로 쓴다.
@@ -290,10 +300,7 @@ class FrameCache:
         from PIL import Image as _I
         a = np.asarray(tip.convert("L"), dtype=np.uint8)[48:]
         m = _I.fromarray(((a > 170) * 255).astype(np.uint8)).resize((24, 40), _I.BOX)
-        c = np.asarray(tip.convert("RGB"), dtype=np.int16)[48:176]
-        c = c[:, c.shape[1] * 2 // 5:]
-        hi, lo = c.max(axis=2), c.min(axis=2)
-        color = (hi > 150) & (hi - lo > 90)  # 큰 색 글자(경매장 '전투력 증가량' 숫자) — 툴팁 오른쪽 위
+        color = _power_mask(tip)
         return (box[0], box[1], tip.width, tip.height,
                 tuple((np.asarray(m, dtype=np.float32) / 255).round(3).flatten().tolist()),
                 (color.shape, np.packbits(color).tobytes()))
@@ -404,6 +411,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     from PIL import Image
 
     from server.tooltip import correct_name, crop, find_tooltips, stars_near
+    listing_only = False  # 매물 툴팁만 보낸다(화면 전체 없이)
     try:
         img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1])))
         if img.size[0] * img.size[1] > MAX_PIXELS:  # 헤더만 읽은 상태 — 아직 풀지 않았다
@@ -417,6 +425,13 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             # 별 줄 있는 툴팁이 함께 있어도 뺀다(2026-11-14: 필터 칸 높이가 752·760·768로 흔들려 같은 툴팁을 AI로 또 읽음)
             boxes, stars = [b for b, s in zip(boxes, stars) if s is not None], [s for s in stars if s is not None]
         tips = [crop(img, b) for b in boxes]
+        color = [int(_power_mask(t).sum()) for t in tips]
+        if tooltips_only and color and max(color) >= FrameCache.COLOR_MIN:
+            # 경매장: 전투력 숫자가 있는 매물 툴팁만 보낸다 — 착용 장비 툴팁은 넥슨 API로 안다(2026-11-14 실측 12초 → 7~8초).
+            # 착용 툴팁도 주황 '교환 불가' 줄이 있어 241칸까지 나온다(매물 1317칸) — 가장 많은 툴팁의 절반 이상만 남긴다
+            keep = [i for i, n in enumerate(color) if n >= max(FrameCache.COLOR_MIN, max(color) / 2)]
+            boxes, stars, tips = [boxes[i] for i in keep], [stars[i] for i in keep], [tips[i] for i in keep]
+            listing_only = True
     except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
         img, boxes, tips, stars = None, [], [], []
     rows = _list_rows(img)  # 목록 줄 가격·전투력(AI 없이) — 툴팁이 가격 칸을 가리기 전에 읽어 둔다(2026-11-13)
@@ -450,7 +465,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     try:
         if allow_ai is not None and not allow_ai():
             raise VisionQuota()
-        data = _read_frame(client, image_data_url, model, on_usage, tips, stars)
+        data = _read_frame(client, None if listing_only else image_data_url, model, on_usage, tips, stars)
     finally:
         if mine is not None:
             cache.release(mine, copy.deepcopy(data) if data is not None else None)

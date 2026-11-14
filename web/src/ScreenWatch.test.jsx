@@ -476,3 +476,21 @@ describe("screen watch live count", () => {
     expect(status).toHaveTextContent("방금 읽음: 커맨더 포스 이어링 18성");
   });
 });
+
+describe("screen watch reading count", () => {
+  it("AI가 읽는 중인 화면 수를 바로 보여 주고, 끝나면 지운다(2026-11-14: 판독 7~12초 동안 멈춘 것처럼 보임)", async () => {
+    vi.useFakeTimers();
+    let k = 0;
+    const seq = [10, 10, 60, 60];
+    const capture = { start: async () => ({ hash: () => tipFrame(seq[Math.min(k++, 3)]),
+                                            image: () => `data:image/jpeg;base64,${k}`, stop: vi.fn() }) };
+    const waiting = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((r) => waiting.push(r)));
+    render(<ScreenWatch name="x" defense={300} capture={capture} refreshMs={null} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    await act(async () => { vi.advanceTimersByTime(250); });
+    expect(screen.getByRole("status")).toHaveTextContent("판독 중 1장");
+    await act(async () => { waiting.splice(0).forEach((r) => r(ok({ tooltip_visible: true, items: [] }))); });
+    expect(screen.getByRole("status")).not.toHaveTextContent("판독 중");
+  });
+});

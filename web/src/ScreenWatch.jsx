@@ -208,6 +208,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
   const [items, setItems] = useState(initialItems); // signature 기준 중복 없는 목록
   useEffect(() => { onItems?.(items); }, [items, onItems]);
   const [count, setCount] = useState(0);
+  const [reading, setReading] = useState(0); // 서버가 읽는 중인 화면 수(AI 판독 7~12초 — 멈춘 게 아님을 보여 준다)
   const [lastRead, setLastRead] = useState(null); // 방금 툴팁에서 읽은 매물(스캔 중 바로 보여 준다, 2026-11-14 요청)
   const [stats, setStats] = useState(null); // 내 PC 학습 데이터(켜졌을 때만)
   const refreshStats = () => (admin ? getVisionDataset().then((s) => s.enabled && setStats(s)).catch(() => {}) : null);
@@ -270,6 +271,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
     }, intervalMs);
     const send = (image) => {
       inflight.current += 1;
+      setReading(inflight.current);
       (async () => {
         try {
           const r = await postVision({ image, name: name || null, ...bossBody(defense), seen: [...seen.current],
@@ -303,6 +305,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           setError(e);
         } finally {
           inflight.current -= 1;
+          setReading(inflight.current);
         }
       })();
     };
@@ -372,6 +375,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       {session ? (
         <p role="status" aria-live="polite">
           연결됨 · 화면 {count}장 확인 · 인식한 매물 {detailed.length}개{listOnly.length ? ` (목록 줄만 ${listOnly.length}개)` : ""}
+          {reading ? ` · 판독 중 ${reading}장` : ""}
           {lastRead ? ` · 방금 읽음: ${lastRead}` : ""}{" "}
           <button type="button" onClick={disconnect}>연결 끊기</button>
         </p>
