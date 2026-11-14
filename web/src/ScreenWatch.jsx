@@ -312,6 +312,8 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
     try {
       scanId.current = Math.random().toString(36).slice(2, 12); // 연결마다 새로 센다
       setScan({ recognized: 0, analyzing: 0 });
+      setItems([]); // 이전 스캔 카드도 지운다 — 인식 개수(연결마다 0부터)와 카드 수를 맞춘다(2026-11-14)
+      seen.current = new Set();
       setSession(await cap.start());
     } catch (e) {
       setError({ message: `화면 공유를 시작하지 못했어요: ${e.message || e}` });

@@ -542,7 +542,10 @@ def _list_rows(img) -> list[dict]:
 
 def power_of(item: dict) -> int | None:
     """툴팁의 전투력 증가량 글자(AI 판독) → 크기. '-193만 1721' → 1931721."""
-    return parse_meso(str(item.get("power_delta_text") or "").replace("-", "").replace("+", ""))
+    text = str(item.get("power_delta_text") or "")
+    for sign in "-+＋－−":  # AI가 부호를 전각 '＋'·'－'로 옮기기도 한다(2026-11-14 실사용)
+        text = text.replace(sign, "")
+    return parse_meso(text)
 
 
 def _read_frame(client, image_data_url, model, on_usage, tips, stars) -> dict:

@@ -487,3 +487,16 @@ describe("screen watch recognized count", () => {
     expect(f.mock.calls.every((c) => JSON.parse(c[1].body).scan_id === scanId)).toBe(true);
   });
 });
+
+describe("screen watch new scan", () => {
+  it("다시 연결하면 이전 스캔 카드를 지운다 — 인식 개수(연결마다 0부터)와 카드 수가 어긋났다(2026-11-14: 4개 인식에 카드 7~8장)", async () => {
+    const old = { signature: "old", evaluated: true, delta_pct: 0.1, per_100m: 0.01, price: 1e9,
+                  read: { name: "센 반지", starforce: 0, total: { INT: 5 }, potentials: ["INT +12%"], price: 1e9 } };
+    const capture = { start: async () => ({ hash: () => tipFrame(10), image: () => "data:image/jpeg;base64,1", stop: vi.fn() }) };
+    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));
+    render(<ScreenWatch name="x" defense={300} capture={capture} initialItems={[old]} refreshMs={null} />);
+    expect(screen.getByText(/센 반지/)).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
+    expect(screen.queryByText(/센 반지/)).toBeNull();
+  });
+});

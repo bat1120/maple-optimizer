@@ -81,3 +81,11 @@ def test_list_rows_log_shows_frame_size_and_rows_read():
     rows = [{"power": 1_931_721, "price": 8_079_999_999}, {"power": 98_551, "price": 100_000_000}]
     assert list_log((2560, 1080), rows) == "2560×1080 · 목록 줄 2개 · 전투력 1931721→8079999999, 98551→100000000"
     assert list_log((1920, 810), []) == "1920×810 · 목록 줄 0개"
+
+
+def test_power_delta_with_fullwidth_plus_is_read():
+    """2026-11-14 실사용: AI가 '+ 768만 4120'의 부호를 전각 '＋'로 옮겨 숫자를 못 읽고 목록 가격도 못 붙였다."""
+    from server.vision import power_of
+    assert power_of({"power_delta_text": "＋ 768만 4120"}) == 7_684_120
+    assert power_of({"power_delta_text": "－193만 1721"}) == 1_931_721
+    assert power_of({"power_delta_text": "+780만 3371"}) == 7_803_371
