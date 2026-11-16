@@ -96,6 +96,23 @@ def summary(snap: CharacterSnapshot) -> dict:
     }
 
 
+FREE_AXES = ("equipment", "hyper", "ability", "union", "link")
+
+
+def free_breakdown(snap: CharacterSnapshot, top: Setting, b: BossProfile) -> list[dict]:
+    """'먼저 무료로' 상승폭을 축별로: top이 지금 착용과 다른 축마다 그 축만 바꿨을 때의 실딜(큰 순).
+    2026-11-16 사용자: +84.7%를 보고 장비가 빠져서인 줄 알았다 — 실제론 장비 +2.7%, 하이퍼·유니온이 +35%씩."""
+    from dataclasses import replace
+    active = snap.active_setting
+    base = evaluate_setting(snap, active, b, CATALOG)
+    if base <= 0:
+        return []
+    rows = [{"axis": ax, "from": getattr(active, ax), "to": getattr(top, ax),
+             "relative_to_active": evaluate_setting(snap, replace(active, **{ax: getattr(top, ax)}), b, CATALOG) / base}
+            for ax in FREE_AXES if getattr(top, ax) is not None and getattr(top, ax) != getattr(active, ax)]
+    return sorted(rows, key=lambda x: x["relative_to_active"], reverse=True)
+
+
 def settings(snap: CharacterSnapshot, defense: float) -> dict:
     from engine.stats.evaluate import predict_setting
     from engine.stats.residual import preset_items
@@ -113,6 +130,7 @@ def settings(snap: CharacterSnapshot, defense: float) -> dict:
             "final": {"stats": pred.stats, "atk": pred.atk, "matk": pred.matk, "dmg": pred.dmg, "boss": pred.boss,
                       "fd": pred.fd, "cd": pred.cd, "ied": pred.ied}}
     return {"boss": asdict(b), "force": force_of(snap, ranked[0][0], b), "best": best,
+            "free_breakdown": free_breakdown(snap, top, b),
             "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None,
                          "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None}
                         for s, v in ranked]}

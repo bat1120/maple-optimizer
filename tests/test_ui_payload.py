@@ -53,3 +53,28 @@ def test_settings_carry_boss_setting_stats():
     # 보정(calibrate) 기준: 지금 착용 조합을 예측하면 넥슨 최종 스탯과 같다 → 보스 세팅 숫자도 같은 잣대
     p = predict_setting(snap, snap.active_setting, CATALOG)
     assert abs(p.boss - snap.final.boss) < 0.5 and abs(p.dmg - snap.final.dmg) < 0.5
+
+
+def test_settings_break_down_free_switch_gain_by_axis():
+    """2026-11-16 사용자: 행복누림공익이 프리셋만 바꾸면 +84.7%라 장비가 빠져서인 줄 알았다 — 실제로는 장비 +2.7%,
+    하이퍼 +35%, 유니온 +35%였다. 1위 조합이 지금 착용과 다른 축마다 '그 축만 바꿨을 때' 실딜을 준다(큰 순)."""
+    from dataclasses import replace
+    from engine.stats.evaluate import evaluate_setting
+    from engine.stats.snapshot import Setting
+    from server.service import CATALOG, boss, free_breakdown, settings
+    snap = snapshot(bundle("레테"))
+    active = snap.active_setting
+    top = Setting(*(3 if v == 1 else 1 for v in (active.equipment, active.hyper, active.ability)),
+                  active.union, active.link)
+    rows = free_breakdown(snap, top, boss(300))
+    base = evaluate_setting(snap, active, boss(300), CATALOG)
+    want = {ax: evaluate_setting(snap, replace(active, **{ax: getattr(top, ax)}), boss(300), CATALOG) / base
+            for ax in ("equipment", "hyper", "ability")}
+    assert {x["axis"] for x in rows} == set(want)
+    for x in rows:
+        assert abs(x["relative_to_active"] - want[x["axis"]]) < 1e-9
+        assert x["from"] == getattr(active, x["axis"]) and x["to"] == getattr(top, x["axis"])
+    assert [x["relative_to_active"] for x in rows] == sorted((x["relative_to_active"] for x in rows), reverse=True)
+    # 화면 응답은 1위 조합 기준
+    r = settings(snap, 300)
+    assert r["free_breakdown"] == free_breakdown(snap, Setting(**r["ranking"][0]["setting"]), boss(300))

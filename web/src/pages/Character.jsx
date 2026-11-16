@@ -197,7 +197,7 @@ export default function Character({ route }) {
           {/* 추천 상자 하나에 두 줄(2026-10-11 심사 5회차: 띠 두 개가 모양이 달라 별개 부품처럼 보였다) */}
           {tab === "summary" && (
             <div className="picks">
-              <FreeSwitch ranking={settings?.ranking} />
+              <FreeSwitch ranking={settings?.ranking} breakdown={settings?.free_breakdown} />
               <TopPick name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
             </div>
           )}

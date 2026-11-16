@@ -499,6 +499,10 @@ td.eff .bar, .eff .bar { display: block; height: 6px; border-radius: 999px; back
 .free-switch-body { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); }
 .free-switch-body strong { color: var(--text); }
 .free-switch-gain { margin-left: var(--sp-2); font-size: var(--fs-md); font-weight: 800; color: var(--up); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 축별 상승폭: 띠 아래 줄 전체, 칩처럼 줄바꿈 */
+.free-switch-breakdown { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); color: var(--text-2); }
+.free-switch-breakdown ul { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
+.free-switch-breakdown li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* 추천 상자: '① 먼저 무료로' + '② 다음으로 메소를 쓴다면'을 한 테두리 안 두 줄로 */
 .picks { margin: var(--sp-3) 0 0; border: 2px solid var(--accent-fill); border-radius: var(--radius-lg); background: var(--rank-bg); overflow: hidden; }
 .picks:empty { display: none; }
