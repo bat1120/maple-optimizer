@@ -207,6 +207,16 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             return JSONResponse({"detail": f"스타포스는 {', '.join(map(str, SWAP_STARS))}성 중에서 골라 주세요"}, status_code=422)
         return service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)), starforce)
 
+    @app.get("/api/character/{name}/armor-sets")
+    def armor_sets(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
+                   boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None,
+                   starforce: int = 18):
+        """방어구 세트 조합: 카루타·앱솔·아케인·에테르넬을 칸마다 맞췄을 때 실딜(3카5앱 같은 조합)."""
+        if starforce not in SWAP_STARS:
+            return JSONResponse({"detail": f"스타포스는 {', '.join(map(str, SWAP_STARS))}성 중에서 골라 주세요"}, status_code=422)
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.armor_sets(snap, b, cooldown_main_pct, starforce)
+
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):
         snap, b = pick(load(name, date), body.boss_defense, body.boss, body.arcane_force, body.authentic_force)

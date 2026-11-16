@@ -529,6 +529,23 @@ def swaps(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | No
 
 
 @with_basis
+def armor_sets(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, starforce: int = 18,
+               top: int = 30) -> dict:
+    """방어구 세트 조합(2026-11-16 사용자: 카루타·앱솔·아케인·에테르넬을 어떤 조합으로 맞출지 — 3카5앱처럼)."""
+    from engine.market.armor_sets import armor_combos, classic_rows
+    b = boss(defense)
+    chosen = rank_settings(snap, b, CATALOG)[0][0]
+    rows = armor_combos(snap, chosen, b, CATALOG, starforce=starforce, cooldown_main_pct=cooldown_main_pct)
+    now = next((r for r in rows if all(p["kept"] for p in r["pieces"].values())), None)
+    return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "starforce": starforce, "total": len(rows),
+            "current": now, "combos": rows[:top], "classics": classic_rows(rows),
+            "note": ("방어구 7칸(모자·상의·하의·신발·장갑·망토·어깨)을 지금 템 또는 카루타·앱솔랩스·아케인셰이드·에테르넬 템으로 맞췄을 때의 "
+                     "보스 실딜(지금 = 0%). 세트 효과는 무기(제네시스 무기의 행운 효과 포함)까지 넣어 세요. 바꾼 칸은 고른 스타포스(그 템 최대 성 이하), "
+                     "잠재·에디·추옵·주문서는 지금 그 칸 템 것을 옮긴다고 가정해요. 템 기본 옵션은 넥슨 API 실측. "
+                     "세트 구성(세트별 개수)이 같은 조합끼리는 템 자체 스탯이 가장 좋은 배치 하나만 보여 줘요. 한벌옷(앱솔·아케인 상의)은 아직 없어요.")}
+
+
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

@@ -146,6 +146,11 @@ export const postVisionScoreReset = () => post("/api/vision/score/reset", {});
 
 // 목표 보스 배율 로드맵: { current, target, fragmentMan }
 // 다른 템으로 갈아타기(2026-11-13): 부위마다 다른 템(세트)을 끼면 실딜과 손익분기
+// 방어구 세트 조합(2026-11-16): 카루타·앱솔·아케인·에테르넬을 칸마다 맞췄을 때 실딜(3카5앱 같은 조합)
+export function getArmorSets(name, bossDefense = 300, starforce = 18) {
+  return request(`${base(name)}/armor-sets?${bq(bossDefense)}&starforce=${starforce}`);
+}
+
 export function getSwaps(name, bossDefense = 300, starforce = 18) {
   return request(`${base(name)}/swaps?${bq(bossDefense)}&starforce=${starforce}`);
 }

@@ -738,3 +738,5 @@ fieldset.events .chip .muted { display: inline; }
 .panel-actions:has(.swap-star) > button { white-space: nowrap; }
 .swap-star { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; color: var(--text-2); }
 .swap-star select { width: auto; min-height: 36px; }
+/* 방어구 세트 조합: 지금 세팅 줄 */
+.paths-table tr.is-now td { background: var(--surface-2); }
