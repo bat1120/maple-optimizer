@@ -28,6 +28,7 @@ from server import admin
 from server.schemas import CraftIn, CubeIn, ListingsIn, OptimizeIn, StarforceIn
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+SWAP_STARS = (17, 18, 21, 22)  # 갈아타기 후보에 가정할 수 있는 스타포스
 
 
 class ApiError(Exception):
@@ -198,10 +199,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.get("/api/character/{name}/swaps")
     def swaps(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
-              boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None, per_slot: int = 3):
+              boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None, per_slot: int = 3,
+              starforce: int = 18):
         """다른 템으로 갈아타기: 부위마다 다른 템(세트)을 끼면 실딜이 어떻게 되는지와 손익분기(잠재·추옵)."""
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)))
+        if starforce not in SWAP_STARS:  # 고를 수 있는 성(2026-11-16 사용자: 17 18 21 22가 대표적)
+            return JSONResponse({"detail": f"스타포스는 {', '.join(map(str, SWAP_STARS))}성 중에서 골라 주세요"}, status_code=422)
+        return service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)), starforce)
 
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):

@@ -146,8 +146,8 @@ export const postVisionScoreReset = () => post("/api/vision/score/reset", {});
 
 // 목표 보스 배율 로드맵: { current, target, fragmentMan }
 // 다른 템으로 갈아타기(2026-11-13): 부위마다 다른 템(세트)을 끼면 실딜과 손익분기
-export function getSwaps(name, bossDefense = 300) {
-  return request(`${base(name)}/swaps?${bq(bossDefense)}`);
+export function getSwaps(name, bossDefense = 300, starforce = 18) {
+  return request(`${base(name)}/swaps?${bq(bossDefense)}&starforce=${starforce}`);
 }
 
 export function getTargetRoadmap(name, bossDefense = 300, { current, target, fragmentMan } = {}) {

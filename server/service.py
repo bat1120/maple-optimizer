@@ -509,16 +509,18 @@ def paths(snap: CharacterSnapshot, defense: float, observed: list[dict] | None =
 
 
 @with_basis
-def swaps(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, per_slot: int = 3) -> dict:
+def swaps(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, per_slot: int = 3,
+          starforce: int | None = 18) -> dict:
     """다른 템으로 갈아타기(2026-11-13): 부위마다 다른 템(다른 세트)을 끼면 실딜이 어떻게 되는지와 손익분기."""
     from engine.market.swaps import swap_candidates
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
-    rows = swap_candidates(snap, chosen, b, CATALOG, cooldown_main_pct, per_slot=per_slot)
+    rows = swap_candidates(snap, chosen, b, CATALOG, cooldown_main_pct, per_slot=per_slot, starforce=starforce)
     return {"evaluation_setting": asdict(chosen), "boss": asdict(b), "force": force_of(snap, chosen, b), "swaps": rows,
+            "starforce": starforce,
             "note": ("다른 템으로 갈아탔을 때의 보스 실딜(지금 = 0%). 세트 개수를 템 이름으로 다시 세서 세트 효과 변화가 들어가요(set_change). "
                      "그 템의 기본 옵션·주문서 칸 수·추옵은 넥슨 API 실측(그 템을 낀 캐릭터들의 장비)이고, 스타포스는 성별 표예요. "
-                     "same = 성·잠재·에디·추옵 수치·주문서(칸 수 비율)를 지금 템 그대로 옮겼을 때. "
+                     "same = 바꿀 템은 고른 스타포스(그 템 최대 성 이하), 잠재·에디·추옵 수치·주문서(칸 수 비율)는 지금 템 그대로 옮겼을 때. "
                      "flame = 추옵만 그 템 착용자들의 실제 추옵으로 바꿔 본 분포(better_share = 지금보다 나은 비율). "
                      "potential.break_even = 그 템에 그 잠재 단계(이상)를 띄우면 처음으로 지금보다 나아지는 단계. "
                      "market = 보통 매물 기준: 추옵은 착용자 실측 표본 중 실딜이 가운데인 표본, 에디는 없음 — 그때의 잠재 손익분기(market.break_even). "

@@ -733,3 +733,8 @@ fieldset.events .chip { flex-direction: row; text-align: left; }
 fieldset.events input[type="checkbox"] { flex: none; }
 fieldset.events .chip .muted { display: inline; }
 .force-short { color: var(--error); font-weight: 600; margin: 0; }
+/* 갈아타기: 바꿀 템 스타포스 고르기 */
+.panel-actions:has(.swap-star) { display: flex; align-items: center; gap: var(--sp-2); flex: none; }
+.panel-actions:has(.swap-star) > button { white-space: nowrap; }
+.swap-star { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; color: var(--text-2); }
+.swap-star select { width: auto; min-height: 36px; }

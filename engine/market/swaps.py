@@ -111,8 +111,9 @@ def _parts_of(it: Item, part: str) -> dict:
 
 class _Swapper:
     def __init__(self, snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-                 cooldown_main_pct: float | None = None):
+                 cooldown_main_pct: float | None = None, starforce: int | None = None):
         self.snap = snap
+        self.starforce = starforce  # 바꿀 템에 가정할 성(None = 지금 템과 같게)
         self.pl = _Planner(snap, setting, boss, catalog, cooldown_main_pct)
         self.px = _Paths(self.pl, catalog)
         self.job = job_profile(snap.character_class)
@@ -137,7 +138,9 @@ class _Swapper:
         return {k: round(v * theirs / mine) for k, v in etc.items()}
 
     def star_for(self, cur: Item, name: str) -> int:
-        return min(cur.starforce, max_star(BASES[name]["level"]))
+        # 2026-11-16 사용자: 후보를 전부 지금 템처럼 22성으로 가정하면 안 된다 — 고른 성(17·18·21·22)으로, 그 템 최대 성 이하
+        star = cur.starforce if self.starforce is None else self.starforce
+        return min(star, max_star(BASES[name]["level"]))
 
     def like_current(self, slot: str, name: str, add: dict | None = None) -> Item | None:
         """지금 템과 같은 성·잠재·에디·추옵·주문서로 name 템을 낀다고 가정(익셉셔널은 같은 템일 때만)."""
@@ -165,8 +168,9 @@ class _Swapper:
 
 
 def swap_candidates(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-                    cooldown_main_pct: float | None = None, per_slot: int = 3) -> list[dict]:
-    sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct)
+                    cooldown_main_pct: float | None = None, per_slot: int = 3,
+                    starforce: int | None = None) -> list[dict]:
+    sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct, starforce)
     branch = sw.job.branches[0] if len(sw.job.branches) == 1 else "/".join(sw.job.branches)
     set_name = lambda n: n.replace("{branch}", branch) if n else n  # noqa: E731 — 도전자의 장비 세트({branch}) → (마법사)
     out = []

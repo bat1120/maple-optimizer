@@ -32,7 +32,7 @@ describe("swaps panel", () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
     render(<SwapsPanel name="내신부레테" defense={300} autoLoad />);
     await act(async () => {});
-    expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/swaps?boss_defense=300`);
+    expect(f.mock.calls[0][0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/swaps?boss_defense=300&starforce=18`);
     const rows = within(screen.getByRole("table", { name: "다른 템으로 갈아타기" })).getAllByRole("row");
     expect(rows).toHaveLength(3); // 머리 + 이득 2줄(손해인 도전자의 모자는 숨김)
     expect(rows[1]).toHaveTextContent("에스텔라 이어링 → 커맨더 포스 이어링");
@@ -44,6 +44,18 @@ describe("swaps panel", () => {
     expect(rows[2]).toHaveTextContent("잠재 없어도 이득");
     fireEvent.click(screen.getByRole("button", { name: "손해인 후보도 보기 (1)" }));
     expect(within(screen.getByRole("table", { name: "다른 템으로 갈아타기" })).getAllByRole("row")).toHaveLength(4);
+  });
+
+  it("바꿀 템 스타포스를 17·18·21·22 중 고르면 그 성으로 다시 계산한다(기본 18)", async () => {
+    // 2026-11-16 사용자: 후보를 전부 22성으로 가정하면 안 된다 — 17 18 21 22가 대표적
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
+    render(<SwapsPanel name="내신부레테" defense={300} autoLoad />);
+    await act(async () => {});
+    const pick = screen.getByRole("combobox", { name: "바꿀 템 스타포스" });
+    expect(pick).toHaveValue("18");
+    expect([...pick.options].map((o) => o.value)).toEqual(["17", "18", "21", "22"]);
+    await act(async () => { fireEvent.change(pick, { target: { value: "22" } }); });
+    expect(f.mock.calls.at(-1)[0]).toBe(`/api/character/${encodeURIComponent("내신부레테")}/swaps?boss_defense=300&starforce=22`);
   });
 
   it("잠재 손익분기 문구", () => {

@@ -6,6 +6,9 @@ import { EmptyState, ErrorState, HowTo, PanelHead, RowsSkeleton } from "./ui/Gui
 // 다른 템으로 갈아타기(2026-11-13): 부위마다 다른 템(다른 세트)을 끼면 실딜이 어떻게 되는지와 손익분기(추옵·잠재).
 // 가정한 템 수치는 넥슨 API 실측(그 템을 낀 캐릭터들의 장비) — 서버 engine/market/swaps.py
 
+// 바꿀 템에 가정할 스타포스(2026-11-16 사용자: 후보를 전부 22성으로 두면 안 된다 — 17 18 21 22가 대표적, 기본 18)
+const STARS = [17, 18, 21, 22];
+
 const best = (r) => (r.flame?.median ?? r.same);
 
 export function potentialText(r) {
@@ -37,12 +40,13 @@ export default function SwapsPanel({ name, defense, autoLoad = false }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showLoss, setShowLoss] = useState(false);
+  const [star, setStar] = useState(18);
 
-  const load = async () => {
+  const load = async (s = star) => {
     setBusy(true);
     setError(null);
     try {
-      setData(await getSwaps(name, defense));
+      setData(await getSwaps(name, defense, s));
     } catch (e) {
       setError(e);
     } finally {
@@ -60,19 +64,26 @@ export default function SwapsPanel({ name, defense, autoLoad = false }) {
     <section className="panel">
       <PanelHead title="다른 템으로 갈아타기" icon="layers"
                  subtitle="지금 템 대신 다른 템(다른 세트)을 끼면 세트 효과까지 바뀌어 실딜이 어떻게 되는지, 어느 수준 이상이어야 이득인지 알려 드려요.">
-        <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
+        <label className="swap-star small">
+          바꿀 템
+          <select aria-label="바꿀 템 스타포스" value={star} disabled={busy}
+                  onChange={(e) => { const s = Number(e.target.value); setStar(s); if (data || autoLoad) load(s); }}>
+            {STARS.map((s) => <option key={s} value={s}>{s}성</option>)}
+          </select>
+        </label>
+        <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={() => load()} disabled={!name || busy}>
           {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "갈아타기 계산"}
         </button>
       </PanelHead>
       <HowTo steps={[
-        <><strong>그대로 옮기면</strong> = 성·잠재·에디·추옵·주문서를 지금 템과 같게 두고 템만 바꿨을 때의 실딜이에요. 세트 효과 변화가 들어가 있어요.</>,
+        <><strong>그대로 옮기면</strong> = 바꿀 템은 고른 스타포스로(그 템 최대 성까지), 잠재·에디·추옵·주문서는 지금 템과 같게 두고 템만 바꿨을 때의 실딜이에요. 세트 효과 변화가 들어가 있어요.</>,
         <><strong>추옵</strong> = 그 템을 실제로 낀 캐릭터들의 추옵으로 바꿔 본 분포예요. '%가 이득'은 그중 지금보다 나아지는 비율이에요.</>,
         <><strong>잠재</strong> = 그 템에 이 단계 이상을 띄우면 지금보다 나아져요(추옵·에디는 지금 템과 같게).</>,
         <><strong>보통 매물이면</strong> = 추옵은 착용자들 가운데 수준, 에디는 없는 매물일 때 잠재가 이 단계 이상이어야 이득이에요. 경매장에서 고를 때는 이 기준을 보세요.</>,
         <>템 수치는 넥슨 API 실측이고, 레벨이 높은 템은 잠재·추옵이 더 높게 나올 수 있어 보수적인 값이에요. 익셉셔널은 옮기지 않아요.</>,
       ]} />
       {busy && !data && <RowsSkeleton rows={4} />}
-      {error && <ErrorState message={error.message} onRetry={load} />}
+      {error && <ErrorState message={error.message} onRetry={() => load()} />}
       {data && !gain.length && !showLoss && (
         <EmptyState title="지금 장비보다 나은 갈아타기 후보가 없어요">
           {loss ? "세트 효과를 잃는 손해가 더 커요." : "비교할 수 있는 템이 없어요."}

@@ -168,3 +168,30 @@ def test_market_flame_is_the_middle_sample(lete):
     ds = sorted((sw.delta(c["slot"], sw.like_current(c["slot"], c["name"], add=a))[0], i)
                 for i, a in enumerate(BASES[c["name"]]["flames"]))
     assert c["market"]["flame"] == BASES[c["name"]]["flames"][ds[(len(ds) - 1) // 2][1]]
+
+
+def test_candidates_assume_chosen_starforce():
+    """2026-11-16 사용자: 바꿀 템을 전부 22성(지금 템과 같게)으로 가정하면 안 된다 — 17·18·21·22 중 고르게.
+    고른 성으로 가정하되 그 템 레벨의 최대 성을 넘지 않는다. 지금 템 성은 그대로."""
+    from engine.enhance.starforce import max_star
+    snap = snapshot(bundle("레테"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    for star in (17, 22):
+        out = swap_candidates(snap, setting, BOSS, CAT, per_slot=50, starforce=star)
+        assert out and all(c["starforce"] == min(star, max_star(c["level"])) for c in out)
+    s17 = {(c["slot"], c["name"]): c["same"] for c in swap_candidates(snap, setting, BOSS, CAT, per_slot=50, starforce=17)}
+    s22 = {(c["slot"], c["name"]): c["same"] for c in swap_candidates(snap, setting, BOSS, CAT, per_slot=50, starforce=22)}
+    common = [k for k in s17 if k in s22 and max_star(BASES[k[1]]["level"]) >= 22]
+    assert common and all(s22[k] > s17[k] for k in common)
+
+
+def test_swaps_route_defaults_to_18_stars_and_takes_choice(tmp_path):
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
+    from engine.enhance.starforce import max_star
+    r = c.get("/api/character/x/swaps").json()
+    assert r["starforce"] == 18 and all(x["starforce"] == min(18, max_star(x["level"])) for x in r["swaps"])
+    r = c.get("/api/character/x/swaps?starforce=21").json()
+    assert r["starforce"] == 21 and all(x["starforce"] == min(21, max_star(x["level"])) for x in r["swaps"])
+    assert c.get("/api/character/x/swaps?starforce=19").status_code == 422
