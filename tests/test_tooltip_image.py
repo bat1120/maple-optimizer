@@ -112,3 +112,34 @@ def test_counts_second_star_row_on_real_auction_frame():
     from server.tooltip import stars_near
     img = Image.open(pathlib.Path(__file__).parent / "fixtures" / "tooltip_stars" / "two_rows_18.png").convert("RGB")
     assert stars_near(img, (4, 42, 351, 150)) == 18  # 실제 프레임의 툴팁 상자(507,192,854,…)를 잘라 옮긴 좌표
+
+
+DARK_BG, TIP_BODY, TIP_EDGE, TIP_GAP, SEAM = (52, 58, 64), (46, 53, 59), (71, 80, 85), (36, 45, 50), (52, 62, 66)
+
+
+def _dark_auction_frame(x, seed=0):
+    """경매장 다크모드: 어두운 창 위에 매물 툴팁(x~x+320)과 '현재 장착 중인 장비' 툴팁이 3px 틈으로 붙어 뜬다.
+    테두리 밝기는 2026-11-13 실제 캡처에서 잰 값(테두리 78 · 바로 바깥 43 · 틈 가운데 60 · 바탕 52)."""
+    rnd = random.Random(seed)
+    fr = Image.new("RGB", (1368, 800), (120, 170, 210))
+    d = ImageDraw.Draw(fr)
+    d.rectangle([x - 16, 190, 1200, 799], fill=DARK_BG)
+    for left in (x, x + 324):
+        d.rectangle([left - 1, 210, left + 320, 789], fill=TIP_GAP)        # 테두리 바로 바깥 어두운 선
+        d.rectangle([left, 210, left + 319, 789], fill=TIP_BODY, outline=TIP_EDGE)
+        for k in range(18):
+            _star(d, left + 60 + (k % 15) * 14, 222 + (k // 15) * 14, 5, (255, 214, 0))
+        for i in range(22):  # 글자 줄 — 왼쪽 끝에서 15px부터(오른쪽 툴팁의 글자 열이 '어두운 비율 최저'가 된다)
+            d.text((left + 15, 300 + i * 20), "STR +122 (7 +85 +30) " + str(rnd.randrange(10, 99)), fill=(235, 235, 235))
+    d.line([x + 321, 210, x + 321, 789], fill=SEAM)                      # 두 툴팁 사이 틈 가운데
+    return fr
+
+
+@pytest.mark.parametrize("x", [517, 518, 519, 526])
+def test_dark_auction_split_lands_on_the_seam_between_tooltips(x):
+    """2026-11-13 실측: 경계가 오른쪽 툴팁 글자 열(859~872px)에 잡혀 프레임마다 흔들렸고, 같은 매물을 AI로 또 읽었다."""
+    for seed in (0, 1):  # 오른쪽 툴팁 글자가 달라도 경계는 그대로
+        boxes = [b for b in find_tooltips(_dark_auction_frame(x, seed)) if b[1] < 260]
+        assert len(boxes) == 2
+        assert abs(boxes[0][0] - x) <= 2 and abs(boxes[0][2] - (x + 320)) <= 2
+        assert abs(boxes[1][0] - (x + 324)) <= 2

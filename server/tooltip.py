@@ -88,12 +88,40 @@ def _split_columns(a: np.ndarray, box: tuple[int, int, int, int]) -> list[tuple[
         c = x0 + cuts[len(cuts) // 2]
         return [(x0, y0, c, y1), (c + 1, y0, x1, y1)]
     if x1 - x0 > SINGLE_MAX_W:
+        seam = _outline_seam(a, box)
+        if seam:
+            return seam
         # 테두리 없이 딱 붙은 두 툴팁: 가운데쯤에서 '어두운 바탕' 비율이 가장 낮은 열(두 툴팁의 경계)에서 나눈다
         dark = _dark_mask(a[y0:y1, x0:x1]).mean(axis=0)
         lo, hi = int((x1 - x0) * 0.3), int((x1 - x0) * 0.7)
         c = x0 + lo + int(np.argmin(dark[lo:hi]))
         return [(x0, y0, c, y1), (c + 1, y0, x1, y1)]
     return [box]
+
+
+EDGE_LUMA = (66, 100)  # 다크모드 툴팁 테두리 열의 밝기 중앙값(2026-11-13 실제 캡처 16장: 76~84)
+EDGE_OUTSIDE = 50      # 테두리 바로 바깥 열(실측 40~45) — 툴팁 바탕(51~53)·경매장 창(57~59)보다 어둡다
+EDGE_SEARCH = 24       # 격자(8px) 상자 왼쪽 끝에서 진짜 왼쪽 테두리까지 찾는 폭(실측 최대 6px)
+
+
+def _outline_seam(a: np.ndarray, box: tuple[int, int, int, int]) -> list[tuple[int, int, int, int]] | None:
+    """경매장 다크모드에서 붙어 뜬 두 툴팁을 테두리에서 나눈다: [왼쪽 테두리 | 어두운 선 | 틈 | 어두운 선 | 오른쪽 테두리].
+    창도 툴팁도 어두워서 '어두운 비율 최저 열'은 오른쪽 툴팁의 글자 열에 잡혀 프레임마다 흔들렸다
+    (2026-11-13 실측: 진짜 경계 837~841px, 잡힌 경계 859·861·863px → 같은 매물을 AI로 또 읽음)."""
+    x0, y0, x1, y1 = box
+    left = max(0, x0 - 8)
+    sub = a[y0:y1, left:x1]
+    med = np.median(0.299 * sub[..., 0] + 0.587 * sub[..., 1] + 0.114 * sub[..., 2], axis=0)
+    edge = (med >= EDGE_LUMA[0]) & (med <= EDGE_LUMA[1])
+    lo, hi = (x0 - left) + int((x1 - x0) * 0.3), (x0 - left) + int((x1 - x0) * 0.7)
+    mid = (lo + hi) / 2
+    seams = [(i, j) for i in range(lo, hi) if edge[i] for j in range(i + 2, min(i + 9, len(med))) if edge[j]
+             and med[i + 1] < EDGE_OUTSIDE and med[j - 1] < EDGE_OUTSIDE]
+    if not seams:
+        return None
+    i, j = min(seams, key=lambda s: abs((s[0] + s[1]) / 2 - mid))
+    start = next((k for k in range(1, min(x0 - left + EDGE_SEARCH, i)) if edge[k] and med[k - 1] < EDGE_OUTSIDE), x0 - left)
+    return [(left + start, y0, left + i + 1, y1), (left + j, y0, x1, y1)]
 
 
 def _column_runs(grid: np.ndarray, max_gap: int = 0) -> list[tuple[int, int, int]]:
