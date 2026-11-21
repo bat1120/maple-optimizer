@@ -35,7 +35,8 @@
 - 다른 저장소 수정
 
 ## 알아 둘 것
-- 화면 분석: `server/tooltip.py`(툴팁 찾기·별 세기), `server/vision.py`(AI 판독·검산·FrameCache), `web/src/watch.js`(브라우저 쪽 변화 감지).
+- 화면 분석: `server/tooltip.py`(툴팁 찾기·별 세기), `server/ocr.py`(경매장 매물 툴팁 로컬 OCR — 코드로 확인되면 AI를 안 부른다,
+  `VISION_OCR=0`이면 끔), `server/vision.py`(AI 판독·검산·FrameCache), `web/src/watch.js`(브라우저 쪽 변화 감지).
   툴팁 찾기·건너뛰기는 AI 비용이 0이고, 같은 툴팁 재사용은 '같은 자리·글자·3초 안'일 때만(숫자 하나 다른 매물은 그림으로 못 가른다).
 - 계산 엔진: `engine/` — 실딜은 언제나 보스 세팅 기준. 큐브 확률표는 `engine/data/`(공식표).
 - 배포: `main` 푸시 → `.github/workflows/deploy.yml`(테스트 → ghcr 이미지 → `DEPLOY_ENABLED`일 때 VM). Dockerfile은 서버가 import하는 패키지를 전부 COPY해야 한다(`tests/test_dockerfile.py`).

@@ -126,6 +126,11 @@ def extract_listings(client, image_data_url: str, model: str | None = None,
         raise VisionError(f"화면을 매물 정보로 읽지 못했어요: {e}") from None
     if not isinstance(data, dict) or not isinstance(data.get("listings"), list):
         raise VisionError("화면 분석 결과 형식이 올바르지 않아요.")
+    return _finish(data)
+
+
+def _finish(data: dict) -> dict:
+    """판독(AI·OCR) 결과를 매물과 비교 툴팁(끼고 있는 템)으로 가르고 보정한다."""
     equipped = [x for x in data["listings"] if x.get("equipped")]
     data["equipped"] = [x.get("name") for x in equipped]  # 비교 툴팁(끼고 있는 템)은 매물이 아니다
     data["equipped_items"] = equipped                      # 판독은 따로 남긴다(학습 데이터용)
@@ -443,10 +448,13 @@ class ScanRegistry:
 
 
 def analyze_frame(client, image_data_url: str, model: str | None = None, on_usage=None,
-                  cache: FrameCache | None = None, tooltips_only: bool = False, allow_ai=None, on_tip=None) -> dict:
+                  cache: FrameCache | None = None, tooltips_only: bool = False, allow_ai=None, on_tip=None,
+                  ocr=None) -> dict:
     """화면 공유 프레임 분석: 툴팁을 찾아 원래 크기로 잘라 함께 보내고, AI 판독값 중 코드로 확인할 수 있는 것은 바꾼다.
     - 스타포스: 툴팁 별을 코드로 센 값(로컬 실측 15/15, AI 판독 1/9 — 2026-10-04)
-    - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)"""
+    - 이름: 세트 장비 이름 목록과 한두 글자만 다르면 바로잡는다(에테르널 → 에테르넬)
+    - ocr(툴팁 이미지 → 글자 상자, server/ocr.reader)가 있으면 경매장 매물 툴팁은 로컬 OCR로 먼저 읽고,
+      코드로 확인된 판독이면 AI를 부르지 않는다(2026-11-21 실측: 툴팁당 1.7~2.5초, AI 7~8초)"""
     import base64
     import io
 
@@ -508,9 +516,12 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                 return {**copy.deepcopy(cache.plain[1]), "cached": True, **extra}
     data = None
     try:
-        if allow_ai is not None and not allow_ai():
-            raise VisionQuota()
-        data = _read_frame(client, None if listing_only else image_data_url, model, on_usage, tips, stars)
+        if ocr is not None and listing_only:
+            data = _ocr_frame(ocr, tips, stars)
+        if data is None:
+            if allow_ai is not None and not allow_ai():
+                raise VisionQuota()
+            data = _read_frame(client, None if listing_only else image_data_url, model, on_usage, tips, stars)
     finally:
         if mine is not None:
             cache.release(mine, copy.deepcopy(data) if data is not None else None)
@@ -550,10 +561,28 @@ def power_of(item: dict) -> int | None:
     return parse_meso(text)
 
 
-def _read_frame(client, image_data_url, model, on_usage, tips, stars) -> dict:
+def _ocr_frame(ocr, tips, stars) -> dict | None:
+    """툴팁을 전부 로컬 OCR로 읽는다. 하나라도 확인되지 않으면(별을 못 셈·모르는 이름·괄호 합 불일치 등) None — AI가 읽는다."""
+    from server.ocr import parse_tooltip
+    items = []
+    for i, tip in enumerate(tips):
+        if stars[i] is None:
+            return None
+        try:
+            item = parse_tooltip(ocr(tip))
+        except Exception:  # OCR 오류가 화면 평가를 막으면 안 된다
+            return None
+        if item is None:
+            return None
+        items.append({**item, "tooltip": i})
+    data = _read_frame(None, None, None, None, tips, stars, data={"tooltip_visible": True, "fee_rate": None, "listings": items})
+    return {**data, "ocr": True}
+
+
+def _read_frame(client, image_data_url, model, on_usage, tips, stars, data=None) -> dict:
     from server.tooltip import correct_name
-    crop_urls = [_data_url(t) for t in tips]
-    data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls)
+    crop_urls = [_data_url(t) for t in tips] if data is None else []
+    data = extract_listings(client, image_data_url, model, on_usage, crops=crop_urls) if data is None else _finish(data)
     data["tooltips_found"] = len(tips)
     for x in data["listings"] + data.get("equipped_items", []):
         i = x.get("tooltip")

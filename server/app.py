@@ -59,7 +59,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
                vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5, agent_public_request_tokens: int = 60000, agent_tracer=None,
-               vision_frames_per_min: int = 240) -> FastAPI:
+               vision_frames_per_min: int = 240, ocr=None) -> FastAPI:
     app = FastAPI(title="maple-optimizer", docs_url=None, redoc_url=None, openapi_url=None)  # 운영에 API 목록 노출 안 함
     usage = admin.UsageStore(db_path, clock)
     if agent_tracer is None:  # AI 상담 추적(Langfuse) — 키가 없으면 아무것도 안 한다(agent/tracing.py)
@@ -512,7 +512,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         on_tip = (lambda key, done: scans.mark(scan, key, done, clock())) if scan else None
         try:
             data = analyze_frame(agent_client, body.image, on_usage=usage.add, cache=frame_cache,
-                                 tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai, on_tip=on_tip)
+                                 tooltips_only=body.tooltips_only or not is_admin, allow_ai=allow_ai, on_tip=on_tip,
+                                 ocr=ocr)
         except ImageTooLarge:
             raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(4K 해상도 이하로 공유해 주세요).") from None
         except VisionQuota:
@@ -538,11 +539,11 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         if is_admin and not data.get("cached"):
             session_reads.extend(data["listings"] + data.get("equipped_items", []))
         names = [x.get("name") for x in data["listings"] + data.get("equipped_items", [])]
-        kind = f"건너뜀({data['skipped']})" if data.get("skipped") else "재사용" if data.get("cached") else "판독"
+        kind = f"건너뜀({data['skipped']})" if data.get("skipped") else "재사용" if data.get("cached") else "OCR 판독" if data.get("ocr") else "판독"
         _log.info("화면 %s · 툴팁 %s개 · %s", kind, data.get("tooltips_found", 0), ", ".join(n or "?" for n in names) or "-")
         from server.vision import list_log, price_log
         _log.info("목록 판독 · %s", list_log(data.get("frame_size"), data.get("list_rows") or []))
-        if kind == "판독" and (prices_read := price_log(data["listings"])):
+        if kind.endswith("판독") and (prices_read := price_log(data["listings"])):
             _log.info("가격 판독 · %s", prices_read)  # 2026-11-13: 80억 7999만 9999를 1,931,721로 읽음 — 화면 글자를 남겨 원인을 본다
         dataset_on = dataset if is_admin else None  # 일반 유저 화면은 저장하지 않는다
         if dataset_on:
@@ -640,6 +641,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 def default_app() -> FastAPI:
     """실서버용: .env의 넥슨 키, 저장소의 .cache/ SQLite."""
     from nexon.client import NexonClient, load_api_key
+    from server import ocr as _ocr
     client = NexonClient(load_api_key(ROOT))
     admin_hash, secret = _env("ADMIN_PASSWORD_HASH"), _env("SESSION_SECRET")
     agent_client = None
@@ -655,7 +657,8 @@ def default_app() -> FastAPI:
                       vision_dataset_dir=_env("VISION_DATASET_DIR"),
                       vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
                       agent_public_daily=int(_env("AGENT_PUBLIC_DAILY") or 5),
-                      vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240))
+                      vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240),
+                      ocr=_ocr.lazy_reader())
 
 
 def _env(key: str) -> str | None:

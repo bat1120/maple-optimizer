@@ -379,3 +379,24 @@ def test_api_returns_recognized_and_analyzing_counts_per_scan(tmp_path):
     assert (r2["recognized"], r2["analyzing"]) == (2, 0)
     r3 = post(_tip_power("-1931721"), "scan-b")              # 새로 연결하면 0부터
     assert (r3["recognized"], r3["analyzing"]) == (1, 0)
+
+
+def test_listing_tooltip_verified_by_ocr_is_not_sent_to_ai():
+    """2026-11-21: 경매장 매물 툴팁은 로컬 OCR로 읽고, 코드로 확인되면 AI를 부르지 않는다(한도도 쓰지 않는다)."""
+    from test_ocr_parse import LISTING
+    fake, asked = FakeClient([]), []
+    data = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1162430"))])), tooltips_only=True,
+                         allow_ai=lambda: asked.append(1) or False, ocr=lambda tip: LISTING)
+    assert fake.calls == [] and asked == [] and data["ocr"] is True and data["tooltips_found"] == 1
+    x, = data["listings"]
+    assert x["name"] == "커맨더 포스 이어링" and x["tooltip"] == 0 and x["power_delta_text"] == "116만 2430"
+    assert x["starforce"] == 18 and x["starforce_source"] == "별 세기"   # 별은 코드가 센 값
+    assert x["potential_lines"] == ["INT +12%", "올스탯 +6%", "INT +9%"] and x["potentials"] == x["potential_lines"]
+
+
+def test_tooltip_ocr_cannot_verify_is_read_by_ai():
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
+    for ocr in (lambda tip: [(10, 10, "읽을 수 없는 글자")], lambda tip: 1 / 0):   # 확인 실패 · OCR 오류
+        data = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1162430"))])), tooltips_only=True, ocr=ocr)
+        assert data["listings"][0]["name"] == "에테르넬 나이트글러브" and not data.get("ocr")
+    assert len(fake.calls) == 2

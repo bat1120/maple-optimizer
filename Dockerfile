@@ -21,6 +21,9 @@ COPY agent/ agent/
 RUN uv sync --frozen --no-dev
 # 관측 기록 Postgres(Neon) 드라이버는 uv.lock에 있다 — 이미지에 들어갔는지 빌드 중에 확인
 RUN /app/.venv/bin/python -c "import psycopg"
+# 툴팁 OCR 모델(PP-OCRv5 한국어, 약 13MB)은 처음 쓸 때 받는다 — 서버는 root가 아니라 못 받으므로 빌드 중에 받아 둔다.
+# 받지 못해도 빌드는 계속한다(서버는 OCR 없이 AI 판독만 쓴다)
+RUN /app/.venv/bin/python -c "from server.ocr import reader; print('OCR', 'on' if reader() else 'off')" || true
 COPY --from=web /web/dist web/dist
 # NEXON_API_KEY는 실행 시 환경변수(.env → docker compose env_file)로 넣는다. 이미지에 넣지 않는다.
 # 서버는 root가 아닌 app 사용자로 돈다(2026-10-17). 예전 캐시 볼륨은 root 소유라 시작할 때 app에게 넘긴 뒤

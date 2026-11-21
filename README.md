@@ -48,6 +48,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `DEPLOY_DOMAIN` | GitHub Actions Variables | 서버 주소(예: `52-79-34-11.sslip.io`). Caddy 자동 HTTPS·배포 뒤 확인·바깥 감시(uptime)에 쓴다 |
 | `DATABASE_URL` | 서버 `.env` | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite. 서버 cron이 매일 백업(`deploy/backup.sh`) |
 | `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | `.env` | 일반 사용자 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
+| `VISION_OCR` | `.env` | 경매장 매물 툴팁을 로컬 OCR로 먼저 읽는다(기본 켬, `0`이면 AI 판독만). OCR로 읽은 툴팁은 AI 한도를 쓰지 않는다 |
 | `AGENT_PUBLIC_DAILY` | `.env` | 일반 사용자 AI 상담 IP당 하루 질문 수(기본 5) |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` | `.env` | AI 상담 추적(Langfuse). 비우면 추적 안 함. 기본 지역 EU |
 | `CLAUDE_CODE_OAUTH_TOKEN` | GitHub Actions Secrets | 클라우드 Claude 작업용(`claude setup-token` 결과). 함께 https://github.com/apps/claude 설치 |
