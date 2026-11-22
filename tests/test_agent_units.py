@@ -64,7 +64,8 @@ def test_bad_tool_arguments_are_returned_to_model_as_error():
 
 
 def test_setup_secrets_update_env_keeps_other_lines():
-    import importlib.util, pathlib
+    import importlib.util
+    import pathlib
     spec = importlib.util.spec_from_file_location("setup_secrets", pathlib.Path(__file__).parents[1] / "tools" / "setup_secrets.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)

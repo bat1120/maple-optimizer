@@ -8,6 +8,7 @@
 import json
 import logging
 import os
+import re
 from collections.abc import Callable, Iterator
 
 from agent.numbers import unverified_numbers
@@ -37,14 +38,13 @@ SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사
 도구 사용:
 - 캐릭터 관련 질문은 닉네임이 필요하다. 없으면 먼저 물어본다.
 - 매물은 사용자가 붙여넣은 툴팁을 total(총 옵션)과 potentials(잠재·에디 줄)로 나눠 넣고, 어떻게 해석했는지 먼저 짧게 보여 준다.
-- 가격은 메소 정수로 넣는다(45억 3000만 → 4530000000).
 - "전체 부위 어떻게 바꿔야 해" 같은 질문에는 upgrade_roadmap을 쓰고, 부위마다 next 단계와 그다음 단계를 표로 정리한다. route가 '큐브'인 부위(제네시스 무기 등)는 경매장 구매가 아니라 큐브 재설정으로 안내한다.
 - "가격 대비", "가성비" 질문에는 upgrade_roadmap의 value_ranking(억당 실딜 순)을 쓰고 비용은 cube_cost_text를 그대로 인용한다. 이 비용은 메소 재설정 평균이며, 경매장에서 그 단계 템이 더 싸면 경매장이 낫다고 덧붙인다(화면 매물 evaluate_listings로 비교).
 - 단계에 market(관측 시세)이 있으면 큐브 평균 비용과 시세를 나란히 비교해 더 싼 경로를 권한다. 시세 건수(count)가 적으면 참고용이라고 밝힌다. market이 없으면 시세를 지어내지 말고, 그 조건으로 경매장을 검색해 화면을 연결해 달라고 한다.
 - 무엇을 할지(구매·직작·큐브) 추천할 때는 upgrade_paths를 먼저 쓴다. 전투력(실딜) 상승만 보지 말고 억당(per_100m)과 비용(cost_text), 세트 효과 변화(set_change: 세트가 깨지거나 맞춰짐)를 함께 설명한다. 같은 부위에서 구매·직작·큐브 중 억당이 높은 쪽을 권하고, sold=false(호가)와 sold=true(체결 시세)를 구분해 말한다.
-- upgrade_paths에 구매·직작 경로가 없거나 관측 시세가 오래됐으면 refresh_market으로 한 번 갱신한 뒤 다시 본다. 같은 대화에서 refresh_market을 두 번 넘게 부르지 않는다(일일 검색 한도).
+- upgrade_paths에 구매·직작 경로가 없거나 관측 시세가 오래됐으면 refresh_market으로 한 번 갱신한 뒤 다시 본다.
 - 스펙업은 단계적으로 권한다. recommend_searches의 각 카드는 그 부위의 '다음 한 단계'다. 고점 잠재(레전 3줄 이탈 등)로 한 번에 바꾸라고 권하지 않는다. 예산이 있으면 싼 단계부터 여러 부위를 올리는 순서를 제안하고, 실제 가격은 화면 매물로 확인한다.
-- 쿨감(스킬 재사용 대기시간) 줄은 실딜 계산에 들어가지 않는다(도구 결과 cooldown_s_not_valued, kept). 쿨감 템을 쿨감 없는 템으로 바꾸라고 권하지 말고, 사용자가 '쿨감 1초 = 주스탯 N%'를 정하면 cooldown_main_pct로 다시 계산한다. N을 대신 정하지 않는다.
+- 쿨감(스킬 재사용 대기시간) 줄은 실딜 계산에 들어가지 않는다(도구 결과 cooldown_s_not_valued, kept). 쿨감 템을 쿨감 없는 템으로 바꾸라고 권하지 말고, 사용자가 '쿨감 1초 = 주스탯 N%'를 정하면 cooldown_main_pct로 다시 계산한다.
 - "뭘 사야 해", "경매장에서 뭘 검색해" 같은 질문에는 recommend_searches를 쓰고, 각 카드의 search 문자열을 게임 경매장 검색 조건으로 그대로 안내한다(부위·잠재·에디·최소 스타포스를 한 번에). 사용자가 그 조건으로 검색한 화면을 연결하면 화면 매물을 평가한다.
 - 질문에 "[조회한 캐릭터: 이름]"이 붙어 있으면 그 이름으로 도구를 부른다. 닉네임을 다시 묻지 않는다.
 - 추천은 먼저 한다: 캐릭터 질문이면 lookup_character·upgrade_paths·recommend_searches로 지금 템 상태를 읽고 질문에 맞게 바로 추천한다.
@@ -54,7 +54,7 @@ SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사
 - 경매장 판매 수수료(기본 5%, MVP 실버 이상·PC방 3%)는 사는 가격엔 붙지 않고 지금 템 판매 대금에서 빠진다. 도구가 net_resale·net_cost로 반영한다. 사용자가 MVP 실버 이상·PC방이라고 하면 fee_rate 0.03을 넣는다.
 - special_ring_note가 붙은 매물(특수 반지)은 스킬 효과가 실딜 계산에 없다. 실딜 수치로 사라/말라 하지 말고, 반지 레벨(special_ring_level)과 가격으로 지금 낀 반지와 비교해 말한다.
 - 매물 결과에 resale_note가 있으면(지금 낀 템이 PC방 템이라 팔 수 없음) 판매 대금 0으로 계산됐다고 그대로 전한다.
-- 가격은 도구 결과의 price_text를 글자 그대로 옮긴다. 메소 숫자를 직접 억·만으로 바꾸지 않는다(자릿수 실수 방지).
+- 가격·비용은 도구 결과의 *_text(price_text·cost_text·cube_cost_text·exact_mean_text 등)를 글자 그대로 옮긴다. 메소 숫자를 직접 억·만으로 바꾸지 않는다(자릿수 실수 방지).
 - 도구가 held로 돌려준 매물은 평가 숫자를 만들지 말고 reason을 그대로 전한다.
 - 질문에 "[경매장 화면에서 읽은 매물]" JSON이 붙어 있으면 그 매물을 evaluate_listings로 평가한 뒤, 억당 효율이 높은 순으로 살지 말지 판단한다. price가 null인 매물은 가격을 물어본다.
 - 매물 평가·예산 최적화는 setting을 넣지 않는다(생략하면 보스 실딜 최적 세팅 기준). 사용자가 특정 세팅을 요청할 때만 넣는다.
@@ -62,6 +62,21 @@ SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사
 
 답변은 한국어로, 결론을 먼저, 근거 수치는 짧게.
 - 수치 표기: 실딜 상승률은 소수 둘째 자리 %(예: +1.70%), 억당 효율은 "억당 +0.04%"처럼 셋째 자리, 메소는 "45억 3000만"처럼, 환산 주스탯은 정수. 도구 결과를 그대로 길게 붙이지 않는다."""
+
+
+CHARS_PER_TOKEN = 2  # 도구 결과(한글 섞인 JSON)의 다음 턴 입력 토큰 어림 — 마무리 턴을 정하는 데만 쓴다
+USER_ONLY_ARGS = ("cooldown_main_pct",)  # 사용자가 정하는 값 — 모델이 대신 정해 넣지 못하게 코드로 막는다
+
+
+def invented_argument(args: dict, user_texts: list[str]) -> dict | None:
+    """사용자만 정할 수 있는 인자에 사용자가 말한 적 없는 숫자가 들어 있으면 도구를 돌리지 않고 오류를 돌려준다."""
+    said = {float(n) for text in user_texts for n in re.findall(r"\d+(?:\.\d+)?", text)}
+    for key in USER_ONLY_ARGS:
+        value = args.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value) not in said:
+            return {"error": f"{key}={value}는 사용자가 말한 값이 아니다. 이 값은 사용자가 정한다 — 이 인자를 빼고 다시 부르고, "
+                             "필요하면 사용자에게 값을 물어본다."}
+    return None
 
 
 def _refusal(output) -> str | None:
@@ -110,13 +125,18 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
     items: list = [{"role": m["role"], "content": m["content"]} for m in messages]
     # 출처: 도구 입력·결과 + 사용자가 쓴 글(예산 "200억", 첨부 매물의 잠재 수치를 되풀이하는 건 지어낸 숫자가 아니다)
     seen: list = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
+    user_texts = list(seen)
     spent = 0
+    # 요청당 한도가 한 턴 분량밖에 안 남으면 도구를 더 부르지 못하게 하고 지금까지의 결과로 답하게 한다.
+    # 2026-11-22 평가: 도구를 5개 부른 질문이 한도를 넘어, 6만 토큰을 쓰고도 답 없이 오류만 나갔다
+    wrap_up = False
     try:
         for _ in range(max_turns):
-            with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:
+            with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:  # noqa: B023
                 resp = client.responses.create(
                     model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
                     reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
+                    **({"tool_choice": "none"} if wrap_up else {}),
                 )
                 usage = getattr(resp, "usage", None)
                 gen.update(output=getattr(resp, "output_text", "") or [getattr(it, "name", None) for it in resp.output
@@ -126,7 +146,9 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
                 on_usage(int(resp.usage.input_tokens) + int(resp.usage.output_tokens))
             if getattr(resp, "usage", None):
                 spent += int(resp.usage.input_tokens) + int(resp.usage.output_tokens)
-            if max_tokens and spent > max_tokens:  # 질문 한 번이 하루 한도를 다 쓰지 못하게(공개 사용자, 2026-10-17)
+            text = getattr(resp, "output_text", "") or ""
+            # 질문 한 번이 하루 한도를 다 쓰지 못하게(공개 사용자, 2026-10-17). 마무리 턴에서 나온 답은 조금 넘어도 보여 준다
+            if max_tokens and spent > max_tokens and not (wrap_up and text):
                 yield {"type": "error", "message": "질문 한 번에 쓸 수 있는 AI 양을 넘었어요. 질문을 더 짧게 나눠 물어봐 주세요."}
                 break
             refusal = _refusal(resp.output)
@@ -136,14 +158,14 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
             if getattr(resp, "status", "completed") == "incomplete":
                 yield {"type": "error", "message": "응답이 길이 한도에 걸려 중간에 잘렸어요."}
                 break
-            text = getattr(resp, "output_text", "") or ""
             if text:
                 yield {"type": "text", "text": text}
             calls = [it for it in resp.output if getattr(it, "type", None) == "function_call"]
-            if not calls:
+            if not calls or (wrap_up and text):
                 yield {"type": "done", "unverified_numbers": unverified_numbers(text, seen)}
                 return
             items += resp.output
+            added = 0
             for call in calls:
                 try:
                     args = json.loads(call.arguments or "{}")
@@ -152,14 +174,18 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
                     args = {}
                 else:
                     yield {"type": "tool_call", "name": call.name, "input": args}
-                    with safe(lambda: tracer.observe(call.name, as_type="tool", input=args)) as t:
-                        out = toolbox.run(call.name, args)
+                    with safe(lambda: tracer.observe(call.name, as_type="tool", input=args)) as t:  # noqa: B023
+                        out = invented_argument(args, user_texts) or toolbox.run(call.name, args)
                         failed = isinstance(out, dict) and "error" in out
                         t.update(output=out, **({"level": "ERROR", "status_message": str(out["error"])} if failed else {}))
                 seen += [args, out]
                 yield {"type": "tool_result", "name": call.name, "result": out}
-                items.append({"type": "function_call_output", "call_id": call.call_id,
-                              "output": json.dumps(out, ensure_ascii=False, default=str)})
+                payload = json.dumps(out, ensure_ascii=False, default=str)
+                added += len(payload) // CHARS_PER_TOKEN
+                items.append({"type": "function_call_output", "call_id": call.call_id, "output": payload})
+            if max_tokens and getattr(resp, "usage", None):
+                next_turn = int(resp.usage.input_tokens) + int(resp.usage.output_tokens) + added
+                wrap_up = spent + 2 * next_turn > max_tokens  # 두 턴은 못 돈다 → 다음 턴이 마지막
         else:
             yield {"type": "error", "message": f"도구 호출이 {max_turns}번을 넘어 멈췄어요."}
     except Exception as e:  # noqa: BLE001 — 어떤 실패든 사용자에게 보인다

@@ -7,8 +7,10 @@
 """
 import re
 
-_EOK = re.compile(r"(\d+(?:\.\d+)?)\s*억(?:\s*(\d+)\s*만)?")
-_MAN = re.compile(r"(?<![\d.])(\d+(?:\.\d+)?)\s*만(?![의이을를으에은는도과와만])")  # "프리셋 2만의" = 오직
+# 만 단위에는 쉼표가 올 수 있다("87억 5,915만", "5,915만") — 2026-11-22 평가에서 맞는 금액을 못 읽어 '출처 없음'으로 잡았다
+_EOK = re.compile(r"(\d+(?:\.\d+)?)\s*억(?:\s*(\d,\d{3}|\d+)\s*만)?")
+_MAN = re.compile(r"(?<![\d.,])(\d,\d{3}|\d+(?:\.\d+)?)\s*만(?P<particle>[의이을를으에은는도과와만])?")
+_ONLY_MAX = 30  # "프리셋 2만의"처럼 작은 정수 + 만 + 조사는 '오직'이다. "4395만으로"는 금액이다(2026-11-22 평가에서 오탐)
 _NUM = re.compile(r"(?<![\d.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(%|배)?")
 
 
@@ -20,7 +22,7 @@ def extract(text: str) -> list[tuple[str, float, float]]:
     """(원문, 값, 표시 단위) 목록. 표시 단위는 반올림 허용 폭 계산에 쓴다."""
     out, used = [], []
     for m in _EOK.finditer(text):
-        eok, man = m[1], m[2]
+        eok, man = m[1], (m[2] or "").replace(",", "")
         value = float(eok) * 1e8 + (float(man) * 1e4 if man else 0)
         unit = 1e4 if man else 1e8 * 10 ** -_decimals(eok)
         out.append((m[0], value, unit))
@@ -28,7 +30,10 @@ def extract(text: str) -> list[tuple[str, float, float]]:
     for m in _MAN.finditer(text):
         if any(a <= m.start() < b for a, b in used):
             continue
-        out.append((m[0], float(m[1]) * 1e4, 1e4 * 10 ** -_decimals(m[1])))
+        man = m[1].replace(",", "")
+        if m["particle"] and "." not in man and float(man) <= _ONLY_MAX:
+            continue
+        out.append((m[0][:-1] if m["particle"] else m[0], float(man) * 1e4, 1e4 * 10 ** -_decimals(man)))
         used.append(m.span())
     for m in _NUM.finditer(text):
         if any(a <= m.start() < b for a, b in used):
@@ -49,7 +54,9 @@ def _numbers(obj, acc):
     elif isinstance(obj, str):  # 잠재 문자열 "INT +12%", 아이템 설명 속 숫자도 출처다
         acc.extend(v for _, v, _ in extract(obj))
     elif isinstance(obj, dict):
-        for v in obj.values():
+        for k, v in obj.items():
+            if isinstance(k, str):  # 결과 이름 속 숫자도 출처다: "p90" → "90% 지점", "discount30" → "30% 할인"(2026-11-22 평가에서 오탐)
+                acc.extend(float(n) for n in re.findall(r"\d+(?:\.\d+)?", k))
             _numbers(v, acc)
     elif isinstance(obj, (list, tuple)):
         for v in obj:
@@ -63,7 +70,7 @@ def unverified_numbers(text: str, sources: list) -> list[str]:
     candidates = values + [v * 100 for v in values if -1 <= v <= 1] + [(v - 1) * 100 for v in values if 0 < v < 10]
     bad = []
     for raw, n, unit in extract(text):
-        tol = lambda v: max(0.5 * unit, 0.001 * abs(v))  # noqa: E731
+        tol = lambda v: max(0.5 * unit, 0.001 * abs(v))  # noqa: E731, B023
         if not any(abs(n - v) <= tol(v) for v in candidates):
             bad.append(raw.strip())
     return bad

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { adminLogin, getAgentQuota, streamAgent } from "./api.js";
 import ScreenWatch from "./ScreenWatch.jsx";
+import Markdown from "./ui/Markdown.jsx";
 
 // AI 상담 채팅(2026-10-17부터 모두에게, 일반 사용자는 하루 횟수 제한). 숫자는 서버가 도구 결과와 대조하고, 대조되지 않은 숫자는 경고로 보여준다.
 // 화면 분석에서 읽은 매물을 질문에 붙인다. 엔진 평가 숫자는 붙이지 않는다 — 에이전트가 도구로 다시 계산해야
@@ -132,7 +133,7 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
       <div className="chat">
         {log.map((ev, i) => {
           if (ev.type === "user") return <p key={i} className="me">🙋 {ev.text}</p>;
-          if (ev.type === "text") return <p key={i}>{ev.text}</p>;
+          if (ev.type === "text") return <Markdown key={i} text={ev.text} />;
           if (ev.type === "tool_call" && ev.name === "request_auction_screen")
             return <ScreenRequest key={i} search={ev.input || {}} note={ev.input?.note} name={name} watchProps={watchProps} busy={busy}
                                   onSend={(items) => ask("검색한 경매장 매물이에요. 내 캐릭터 기준으로 평가하고 추천해 줘.", items)} />;

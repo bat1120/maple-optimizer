@@ -14,7 +14,7 @@ _LISTING = {
         "name": {"type": "string"},
         "total": {"type": "object", "additionalProperties": {"type": "number"}},
         "potentials": {"type": "array", "items": {"type": "string"}},
-        "price": {"type": "integer", "description": "메소"},
+        "price": {"type": "integer", "description": "메소 정수(45억 3000만 → 4530000000)"},
         "resale": {"type": "integer", "description": "지금 그 부위 템 판매 예상가(메소), 없으면 0"},
     },
     "required": ["slot", "part", "name", "price"],
@@ -34,7 +34,7 @@ _CONDITIONS = {
 _FEE = {"type": "number", "description": "경매장 판매 수수료(판매 대금에서 빠짐). 기본 0.05, MVP 실버 이상·PC방이면 0.03"}
 
 TOOL_DEFS = [
-    {"name": "lookup_character", "description": "닉네임으로 캐릭터 요약(직업·레벨·적용 세팅·스탯공격력·장비 프리셋)을 조회한다.",
+    {"name": "lookup_character", "description": "닉네임으로 캐릭터 요약(직업·레벨·적용 세팅·스탯공격력)과 보스 세팅 장비(equipment: 부위·이름·스타포스·잠재·에디)를 조회한다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
@@ -44,7 +44,7 @@ TOOL_DEFS = [
                                                          "top": {"type": "integer"},
                                                          "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
                       "required": ["name"]}},
-    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). next는 실딜이 처음 0.1% 이상 오르는 단계, route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m). 단계의 market은 화면에서 읽어 쌓인 관측 시세(count·median·min·per_100m).",
+    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). 부위의 잠재·에디 목록에는 next 단계(실딜이 처음 0.1% 이상 오르는 단계, 목록의 첫 항목)와 그다음 단계만 있다(next가 null이면 올릴 단계 없음). route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위 상위 15개(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m). 단계의 market은 화면에서 읽어 쌓인 관측 시세(count·median·min·per_100m).",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
                                                          "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
     {"name": "upgrade_paths", "description": "업그레이드 경로 비교(추천의 기본 근거): 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스(from_star→to_star, 파괴 시 스페어 비용 제외, expected_destroys=평균 파괴 횟수)를 억당 실딜(per_100m)로 정렬한다. 세트 효과 변화(set_change)가 실딜에 들어가 있다. best_by_slot은 부위별 최선 경로. cost_text를 그대로 인용.",
@@ -55,7 +55,7 @@ TOOL_DEFS = [
                                                        "target_ratio": {"type": "number"},
                                                        "fragment_price": {"type": "number", "description": "솔 에르다 조각 1개 메소(넣으면 HEXA 포함)"}},
                       "required": ["name", "current_ratio", "target_ratio"]}},
-    {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10). 갱신 뒤 upgrade_paths를 다시 부른다.",
+    {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10), 질문 하나에 두 번까지. 갱신 뒤 upgrade_paths를 다시 부른다.",
      "input_schema": {"type": "object", "properties": {"name": {"type": "string"},
                                                          "slots": {"type": "array", "items": {"type": "string"}},
                                                          "max_searches": {"type": "integer"}}, "required": ["name"]}},
@@ -64,16 +64,16 @@ TOOL_DEFS = [
                                                          "setting": _SETTING, "listings": {"type": "array", "items": _LISTING},
                                                          "fee_rate": _FEE},
                       "required": ["name", "listings"]}},
-    {"name": "starforce_cost", "description": "스타포스 강화 비용: 정확한 기대값(exact_mean, 메소)과 분포(중앙값·p75·p90). destroy_cost는 파괴 시 비용(스페어+복구).",
+    {"name": "starforce_cost", "description": "스타포스 강화 비용: 정확한 기대값(exact_mean, 메소)과 분포(중앙값·p75·p90). destroy_cost는 파괴 시 비용(스페어+복구). 금액은 exact_mean_text·distribution_text를 그대로 인용.",
      "input_schema": {"type": "object", "properties": {"level": {"type": "integer"}, "start": {"type": "integer"},
                                                          "target": {"type": "integer"}, "destroy_cost": {"type": "number"},
                                                          "conditions": _CONDITIONS},
                       "required": ["level", "start", "target", "destroy_cost"]}},
-    {"name": "cube_probability", "description": "레전드리·무기·200제 잠재 재설정에서 목표 옵션이 뜰 1회 확률(probability, 0~1)과 필요 횟수·메소 분포. kind=lines면 그 옵션 줄 수 이상, kind=sum이면 % 합 이상.",
+    {"name": "cube_probability", "description": "레전드리·무기·200제 잠재 재설정에서 목표 옵션이 뜰 1회 확률(probability, 0~1)과 필요 횟수·메소 분포(금액은 meso_text를 그대로 인용). kind=lines면 그 옵션 줄 수 이상, kind=sum이면 % 합 이상.",
      "input_schema": {"type": "object", "properties": {"option": {"type": "string", "enum": ["BOSS", "IED", "MATK", "ATK", "INT", "STR", "DEX", "LUK", "DMG", "CR"]},
                                                          "kind": {"type": "string", "enum": ["lines", "sum"]}, "value": {"type": "number"}},
                       "required": ["option", "kind", "value"]}},
-    {"name": "craft_compare", "description": "매물 가격을 직작 비용 분포(베이스 템+스타포스+잠재 재설정, 추옵 미포함)와 비교한다.",
+    {"name": "craft_compare", "description": "매물 가격을 직작 비용 분포(베이스 템+스타포스+잠재 재설정, 추옵 미포함)와 비교한다. 금액은 craft_mean_text·distribution_text를 그대로 인용.",
      "input_schema": {"type": "object", "properties": {"price": {"type": "number"}, "base_price": {"type": "number"}, "level": {"type": "integer"},
                                                          "start_star": {"type": "integer"}, "target_star": {"type": "integer"},
                                                          "destroy_cost": {"type": "number"}, "cube_p": {"type": "number"}, "cube_cost": {"type": "number"}},
@@ -105,21 +105,57 @@ def openai_tools(exclude: tuple = ()) -> list[dict]:
              "parameters": {**t["input_schema"], "additionalProperties": False}, "strict": False} for t in TOOL_DEFS if t["name"] not in exclude]
 
 
+MAX_REFRESH_PER_QUESTION = 2
+VALUE_RANKING_TOP = 15  # 가격 대비 순위는 위에서 이만큼만 모델에게 준다(전체는 화면의 로드맵 탭에 있다)
+MIN_LISTING_PRICE = 10_000  # 이보다 작은 가격은 '45억'을 45로 넣은 단위 실수다
+FEE_RATES = (0.03, 0.05)
+_EQUIPMENT_FIELDS = ("slot", "name", "starforce", "potential_grade", "additional_grade", "potentials", "additional")
+
+
+def compact(value):
+    """모델에 보내는 도구 결과의 숫자를 줄인다: 1000 이상(메소)은 정수로, 그 밖의 소수는 유효숫자 6자리로.
+    0.007026608358000001 같은 긴 소수가 결과 글자 수의 큰 몫이었다(답변 숫자 검사의 허용 오차 0.1%보다 훨씬 작게 줄인다)."""
+    if isinstance(value, float) and value == value and abs(value) != float("inf"):
+        return round(value) if abs(value) >= 1000 else float(f"{value:.6g}")
+    if isinstance(value, dict):
+        return {k: compact(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [compact(v) for v in value]
+    return value
+
+
+def _meso_texts(amounts: dict) -> dict:
+    return {k: service.meso_text(v) for k, v in amounts.items()}
+
+
 class ToolBox:
+    """질문 하나에 하나씩 만든다 — refresh_market 횟수 같은 질문 단위 한도를 여기서 센다."""
+
     def __init__(self, load: Callable[..., CharacterSnapshot], market: Callable[[], list[dict]] | None = None,
                  refresh: Callable[..., dict] | None = None):
         self._load = load
         self._refresh = refresh  # 웹 경매장 검색(maple-auction-mcp)으로 관측 시세 갱신 — 일일 검색 한도 소진
         self._market = market  # 관측 시세(화면 분석으로 쌓인 매물 가격)
+        self._refreshes = 0
 
     def run(self, name: str, args: dict) -> dict:
         """도구 실행. 실패는 예외 대신 {"error": 한국어 메시지}로 돌려 Claude가 보고 고칠 수 있게 한다."""
         try:
-            return getattr(self, f"_{name}")(**args)
+            return compact(getattr(self, f"_{name}")(**args))
         except AttributeError:
             return {"error": f"알 수 없는 도구: {name}"}
         except Exception as e:  # noqa: BLE001 — 도구 오류는 모델에게 그대로 보여 준다
             return {"error": f"{type(e).__name__}: {e}"}
+
+    @staticmethod
+    def _check_listings(listings, fee_rate):
+        """프롬프트로 부탁하던 입력 규칙을 여기서 막는다 — 어기면 고칠 방법이 적힌 오류가 모델에게 간다."""
+        if fee_rate not in FEE_RATES:
+            raise ValueError(f"fee_rate는 0.05(기본) 또는 0.03(사용자가 MVP 실버 이상·PC방이라고 한 경우)만 넣는다: {fee_rate}")
+        for x in listings:
+            price = x.get("price")
+            if isinstance(price, (int, float)) and 0 < price < MIN_LISTING_PRICE:
+                raise ValueError(f"price는 메소 정수다(45억 3000만 → 4530000000). {price}는 억·만 단위로 넣은 것 같다 — 메소로 다시 넣는다")
 
     @staticmethod
     def _request_auction_screen(category, potentials=None, additional=None, min_starforce=0, note=None):
@@ -137,6 +173,13 @@ class ToolBox:
         snap = self._load(name)
         r = service.summary(snap)
         best = service.settings(snap, 300.0)["ranking"][0]["setting"]
+        # 화면용 요약은 프리셋 3개 × 부위별 스탯 내역이라 5만 자가 넘는다(2026-11-22 평가: 질문 하나가 토큰 한도를 넘어 답이 없었다).
+        # 모델에게는 평가 기준인 보스 세팅 장비의 이름·스타포스·잠재·에디만 준다. 수치 계산은 다른 도구가 한다
+        presets = r.pop("equipment_presets")
+        worn = presets.get(str(best["equipment"])) or presets.get(best["equipment"]) or []
+        r["equipment"] = [{k: it[k] for k in _EQUIPMENT_FIELDS if it.get(k) not in (None, [], "")}
+                          | ({"special_ring_level": it["special_ring_level"]} if it.get("special_ring_level") else {})
+                          for it in worn]
         r["evaluation_setting"] = best
         r["evaluation_note"] = ("평가는 보스 실딜 최적 세팅(evaluation_setting) 기준이다. active_setting이 사냥 세팅인 것은 "
                                 "사냥 중이라서 정상이다 — 프리셋 전환을 권하지 않는다.")
@@ -151,8 +194,18 @@ class ToolBox:
         return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
 
     def _upgrade_roadmap(self, name, boss_defense=300.0, cooldown_main_pct=None):
-        return service.roadmap(self._load(name), boss_defense, cooldown_main_pct,
-                               self._market() if self._market else None)
+        r = service.roadmap(self._load(name), boss_defense, cooldown_main_pct,
+                            self._market() if self._market else None)
+        # 화면용은 부위마다 모든 단계(종류당 6개)를 싣는다 — 모델에게는 답에 쓰는 'next 단계와 그다음 단계'만 준다(7만 자 → 2만 자대)
+        for row in r["slots"]:
+            for kind in ("잠재", "에디"):
+                first = row["next"].get(kind)
+                row[kind] = [] if first is None else [
+                    stage | ({"cube_cost_text": service.meso_text(stage["cube_cost"])} if stage.get("cube_cost") else {})
+                    for stage in row[kind][first:first + 2]]
+                row["next"][kind] = None if first is None else 0
+        r["value_ranking"] = r["value_ranking"][:VALUE_RANKING_TOP]
+        return r
 
     def _upgrade_paths(self, name, boss_defense=300.0, cooldown_main_pct=None):
         return service.paths(self._load(name), boss_defense, self._market() if self._market else None,
@@ -168,15 +221,21 @@ class ToolBox:
     def _refresh_market(self, name, slots=None, max_searches=10):
         if not self._refresh:
             return {"error": "경매장 검색 연결이 없어요(AUCTION_MCP_CMD 미설정)."}
+        if self._refreshes >= MAX_REFRESH_PER_QUESTION:
+            return {"error": f"이 질문에서 시세 갱신을 이미 {MAX_REFRESH_PER_QUESTION}번 했어요(일일 검색 한도). 지금 있는 관측 시세로 답한다."}
+        self._refreshes += 1
         return self._refresh(name, slots, max_searches)
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
+        self._check_listings(listings, fee_rate)
         return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],
                                 fee_rate)
 
     def _starforce_cost(self, level, start, target, destroy_cost, conditions=None):
-        return service.starforce(StarforceIn(level=level, start=start, target=target, destroy_cost=destroy_cost,
-                                             conditions=conditions or {}, trials=20000))
+        r = service.starforce(StarforceIn(level=level, start=start, target=target, destroy_cost=destroy_cost,
+                                          conditions=conditions or {}, trials=20000))
+        # 2026-11-22 평가: 모델이 87억 5915만을 '8억 7591만'으로 옮겼다 — 억·만 변환을 모델에게 맡기지 않는다
+        return r | {"exact_mean_text": service.meso_text(r["exact_mean"]), "distribution_text": _meso_texts(r["distribution"])}
 
     def _cube_probability(self, option, kind, value):
         body = {"table": "레전드리/무기/200", "level": 200, "grade": "레전드리"}
@@ -184,11 +243,14 @@ class ToolBox:
             body["lines_at_least"] = {option: int(value)}
         else:
             body["sum_at_least"] = [{"key": option, "percent": True, "value": value}]
-        return service.cube(CubeIn(**body))
+        r = service.cube(CubeIn(**body))
+        return r | {"meso_text": _meso_texts(r["meso"])} if isinstance(r.get("meso"), dict) else r
 
     def _craft_compare(self, **kw):
-        return service.craft_compare(CraftIn(**kw))
+        r = service.craft_compare(CraftIn(**kw))
+        return r | {"craft_mean_text": service.meso_text(r["craft_mean"]), "distribution_text": _meso_texts(r["distribution"])}
 
     def _optimize_budget(self, name, budget, candidates, boss_defense=300.0, setting=None, fee_rate=0.05):
+        self._check_listings(candidates, fee_rate)
         return service.optimize(self._load(name), self._setting(setting), boss_defense, budget,
                                 [ListingIn(**x) for x in candidates], fee_rate)

@@ -218,6 +218,11 @@ ul.bullets { margin: 0; padding-left: 18px; line-height: 1.7; }
 .inline input { width: 110px; }
 .chat p { margin: 4px 0; white-space: pre-wrap; }
 .chat .me { font-weight: 600; }
+/* AI 답변(마크다운을 요소로 바꾼 것 — ui/Markdown.jsx) */
+.chat .answer p { white-space: normal; }
+.chat .answer ul, .chat .answer ol { margin: 4px 0; padding-left: 22px; }
+.chat .answer-heading { margin-top: var(--sp-2); }
+.chat .answer-table { overflow-x: auto; }
 
 /* 빈·오류·로딩 */
 .empty-state { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-4); margin: var(--sp-3) 0;

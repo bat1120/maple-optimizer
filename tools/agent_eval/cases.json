@@ -1,0 +1,105 @@
+{
+  "_about": "AI 상담 평가 세트: 프롬프트(agent/loop.py SYSTEM)나 도구를 고친 뒤 실제 모델로 돌려, 규칙을 지키는지 본다. 실행: uv run python tools/agent_eval/run.py (이 PC 전용 — .env의 OPENAI_API_KEY를 쓰고 비용이 든다).",
+  "_fields": "question: 사용자 질문 · why: 이 경우가 지키는 규칙 · must_call: 불러야 하는 도구(목록 안 목록은 '이 중 하나') · must_not_call: 부르면 안 되는 도구 · args: 도구 인자 검사(equals=그 값, absent=그 인자를 넣지 않음) · answer_matches / answer_not_matches: 답변 정규식 · 모든 경우에 공통: 오류 없이 끝나고, 답변 숫자가 전부 도구 결과·질문에 있어야 한다(allow_unverified로 끌 수 있다)",
+  "character": "레테",
+  "cases": [
+    {
+      "id": "what-first",
+      "question": "[조회한 캐릭터: {character}] 지금 뭐부터 올리면 돼?",
+      "why": "추천은 먼저 한다 — 닉네임을 다시 묻지 않고 경로 비교로 바로 답한다",
+      "must_call": [["upgrade_paths", "recommend_searches", "upgrade_roadmap"]],
+      "answer_not_matches": ["닉네임(을|이)? ?(알려|말씀|입력)"]
+    },
+    {
+      "id": "no-name-asks",
+      "question": "지금 뭐부터 올리면 돼?",
+      "why": "닉네임이 없으면 먼저 물어본다 — 캐릭터 도구를 지어낸 이름으로 부르지 않는다",
+      "must_not_call": ["lookup_character", "upgrade_paths", "recommend_searches", "upgrade_roadmap", "rank_settings"],
+      "answer_matches": ["닉네임"]
+    },
+    {
+      "id": "search-conditions",
+      "question": "[조회한 캐릭터: {character}] 경매장에서 뭘 검색해야 해?",
+      "why": "검색 조건은 recommend_searches 카드에서 가져온다",
+      "must_call": ["recommend_searches"]
+    },
+    {
+      "id": "all-slots-roadmap",
+      "question": "[조회한 캐릭터: {character}] 전체 부위 어떻게 바꿔야 해? 단계별로 알려줘",
+      "why": "전체 부위 질문에는 upgrade_roadmap을 쓴다",
+      "must_call": ["upgrade_roadmap"]
+    },
+    {
+      "id": "starforce-cost",
+      "question": "200제 장비 17성에서 22성까지 스타포스 비용이 평균 얼마야? 파괴 비용은 0으로 계산해줘.",
+      "why": "비용은 직접 계산하지 않고 starforce_cost 결과만 인용한다",
+      "must_call": ["starforce_cost"],
+      "args": [
+        { "tool": "starforce_cost", "path": "level", "equals": 200 },
+        { "tool": "starforce_cost", "path": "start", "equals": 17 },
+        { "tool": "starforce_cost", "path": "target", "equals": 22 }
+      ]
+    },
+    {
+      "id": "cube-probability",
+      "question": "레전드리 200제 무기에 큐브 돌려서 보공 3줄 뜰 확률이 얼마야?",
+      "why": "확률은 cube_probability 결과만 인용한다",
+      "must_call": ["cube_probability"],
+      "args": [
+        { "tool": "cube_probability", "path": "option", "equals": "BOSS" },
+        { "tool": "cube_probability", "path": "kind", "equals": "lines" },
+        { "tool": "cube_probability", "path": "value", "equals": 3 }
+      ]
+    },
+    {
+      "id": "listing-price-in-meso",
+      "question": "[조회한 캐릭터: {character}] 이 반지 살까? 반지4 자리에 낄 거야. 어센던트 펄스 링, 총 옵션 INT +59 LUK +59 마력 +16, 잠재 INT +12% / LUK +9% / INT +9%, 가격 45억 3000만.",
+      "why": "가격은 메소 정수로 넣고, 세팅은 사용자가 요청하지 않았으니 넣지 않는다",
+      "must_call": ["evaluate_listings"],
+      "args": [
+        { "tool": "evaluate_listings", "path": "listings.0.price", "equals": 4530000000 },
+        { "tool": "evaluate_listings", "path": "setting", "absent": true },
+        { "tool": "evaluate_listings", "path": "fee_rate", "absent_or_equals": 0.05 }
+      ]
+    },
+    {
+      "id": "fee-for-mvp",
+      "question": "[조회한 캐릭터: {character}] 나 MVP 골드야. 반지4 자리에 어센던트 펄스 링 살까? 총 옵션 INT +59 LUK +59 마력 +16, 잠재 INT +12% / LUK +9% / INT +9%, 가격 45억 3000만.",
+      "why": "MVP 실버 이상이라고 하면 수수료 0.03을 넣는다",
+      "must_call": ["evaluate_listings"],
+      "args": [
+        { "tool": "evaluate_listings", "path": "fee_rate", "equals": 0.03 }
+      ]
+    },
+    {
+      "id": "cooldown-not-invented",
+      "question": "[조회한 캐릭터: {character}] 쿨감 모자를 쓰고 있는데, 쿨감 가치까지 넣어서 뭐부터 올릴지 추천해줘.",
+      "why": "쿨감 1초 = 주스탯 N%의 N은 사용자가 정한다 — 대신 정해서 넣지 않는다",
+      "args": [
+        { "tool": "recommend_searches", "path": "cooldown_main_pct", "absent": true },
+        { "tool": "upgrade_roadmap", "path": "cooldown_main_pct", "absent": true },
+        { "tool": "upgrade_paths", "path": "cooldown_main_pct", "absent": true }
+      ]
+    },
+    {
+      "id": "no-market-no-price",
+      "question": "[조회한 캐릭터: {character}] 요즘 레전드리 3줄 반지 시세가 대충 얼마쯤 해?",
+      "why": "관측 시세가 없으면 지어내지 않는다 — 측정값 없음을 알리고 화면 연결을 안내한다",
+      "answer_matches": ["측정값 없음|화면|연결|관측"],
+      "answer_not_matches": ["보통 ?\\d|대략 ?\\d|약 ?\\d+ ?억"]
+    },
+    {
+      "id": "find-on-auction",
+      "question": "[조회한 캐릭터: {character}] 경매장에서 보조무기 매물 찾아줘.",
+      "why": "실제 매물 확인이 필요하면 request_auction_screen으로 화면 연결을 요청한다",
+      "must_call": ["request_auction_screen"]
+    },
+    {
+      "id": "no-preset-advice",
+      "question": "[조회한 캐릭터: {character}] 지금 사냥 중인데 장비 뭐부터 바꿀까?",
+      "why": "사냥 세팅인 것은 정상 — 프리셋을 바꾸라는 조언을 하지 않는다",
+      "must_call": [["upgrade_paths", "recommend_searches", "upgrade_roadmap"]],
+      "answer_not_matches": ["프리셋(을|으로)? ?(바꾸|변경|전환)(세요|하세요|해 ?주세요|하시)"]
+    }
+  ]
+}
