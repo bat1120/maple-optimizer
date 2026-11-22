@@ -2,16 +2,17 @@
 // 추가 설치 없음(Node 22+ 내장 WebSocket). 결과: tools/design_review/out/<커밋>-<시각>/ (git 제외)
 //   node tools/design_review/capture.mjs [--base http://127.0.0.1:5180] [--name 내신부레테] [--only home,summary]
 // 우리 앱(로컬 개발 서버)만 찍는다 — 다른 사이트를 자동으로 열지 않는다(환산주스탯 약관 제15조).
-import { spawn, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+
+import { findChrome, launchChrome, sleep } from "../cdp.mjs";
 
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const BASE = arg("base", "http://localhost:5180");
 const NAME = arg("name", "내신부레테");
 const ONLY = arg("only", "");
-const CHROME = arg("chrome", "C:/Program Files/Google/Chrome/Application/chrome.exe");
+const CHROME = arg("chrome", "") || findChrome();
 const PORT = 9333;
 const PACE = Number(arg("pace", "3000")); // 촬영 사이 간격(ms) — 우리 서버 IP당 요청 제한(429)에 걸리지 않게
 const MAX_H = 3200; // 전체 페이지 캡처 높이 상한(판사가 읽기 좋은 크기)
@@ -72,28 +73,12 @@ const CHECKS = `(() => {
   return out;
 })()`;
 
-// ── 아주 작은 CDP 클라이언트 ──
-class CDP {
-  constructor(url) { this.ws = new WebSocket(url); this.id = 0; this.wait = new Map(); this.events = [];
-    this.ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && this.wait.has(d.id)) { const { ok, ko } = this.wait.get(d.id); this.wait.delete(d.id); d.error ? ko(new Error(d.error.message)) : ok(d.result); } else this.events.push(d); };
-    this.open = new Promise((r, j) => { this.ws.onopen = r; this.ws.onerror = j; }); }
-  send(method, params = {}, sessionId) { const id = ++this.id; this.ws.send(JSON.stringify({ id, method, params, sessionId }));
-    return new Promise((ok, ko) => this.wait.set(id, { ok, ko })); }
-}
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
 async function main() {
   const commit = execSync("git rev-parse --short HEAD").toString().trim() + (execSync("git status --porcelain web").toString().trim() ? "-dirty" : "");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const dir = path.join("tools", "design_review", "out", `${commit}-${stamp}`);
   fs.mkdirSync(dir, { recursive: true });
-  const prof = fs.mkdtempSync(path.join(os.tmpdir(), "dr-chrome-"));
-  const chrome = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, `--user-data-dir=${prof}`, "--no-first-run",
-    "--hide-scrollbars", "--force-device-scale-factor=1", "about:blank"], { stdio: "ignore" });
-  let ver;
-  for (let i = 0; i < 50 && !ver; i++) { await sleep(200); try { ver = await (await fetch(`http://127.0.0.1:${PORT}/json/version`)).json(); } catch { /* 아직 */ } }
-  if (!ver) throw new Error("크롬 디버그 포트에 연결하지 못했어요");
-  const cdp = new CDP(ver.webSocketDebuggerUrl); await cdp.open;
+  const { cdp, close } = await launchChrome({ chromePath: CHROME, port: PORT });
   const manifest = { commit, base: BASE, name: NAME, time: new Date().toISOString(), shots: [] };
   const screens = SCREENS.filter((s) => !ONLY || ONLY.split(",").includes(s.id));
   for (const dev of DEVICES) for (const theme of THEMES) for (const sc of screens) {
@@ -124,7 +109,7 @@ async function main() {
   // 컨택트 시트(사람용): 화면 × (기기·테마) 격자
   const cells = manifest.shots.map((s) => `<figure><img src="${s.file}" loading="lazy"><figcaption>${s.screen} · ${s.device} · ${s.theme}${s.ready ? "" : " · 준비 안 됨"}</figcaption></figure>`).join("");
   fs.writeFileSync(path.join(dir, "contact.html"), `<!doctype html><meta charset="utf-8"><title>디자인 심사 ${commit}</title><style>body{font:13px sans-serif;margin:16px;background:#eee}main{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}figure{margin:0;background:#fff;padding:6px}img{width:100%;height:260px;object-fit:cover;object-position:top}</style><h1>${commit} · ${manifest.time}</h1><main>${cells}</main>`);
-  cdp.ws.close(); chrome.kill();
+  close();
   console.log(`완료: ${dir}`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

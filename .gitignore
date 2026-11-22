@@ -33,3 +33,12 @@ design.md
 
 # 디자인 심사 캡처 결과(2026-10-11)
 tools/design_review/out/
+
+# 속성 기반 테스트(hypothesis) 캐시
+.hypothesis/
+
+# 화면 검증 증거(스크린샷·결과 페이지)
+tools/verify_ui/out/
+
+# AI 상담 평가 결과(답변·토큰 기록)
+tools/agent_eval/out/

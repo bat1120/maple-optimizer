@@ -1,0 +1,198 @@
+{
+  "_about": "기능 지도: 사용자가 보는 기능을 한 줄씩. 화면 검증(tools/verify_ui/run.mjs)이 이 목록대로 실제 앱을 열어 확인하고 찍는다. 기능을 더하거나 화면 이름을 바꾸면 여기도 고친다.",
+  "_fields": "url: 여는 주소 · ready: 다 그려졌다고 볼 조건(JS) · steps: 사용자가 하는 동작(type=글자 입력, press=키, js=클릭 등, 그 뒤 wait 조건) · expect: 찍기 전에 참이어야 하는 것(JS) · allow_status: 이 화면에서 정상인 API 오류 코드 · requires: \"ai\"면 --with-ai일 때만 돈다(실제 모델, 비용) · devices: 찍을 기기(생략하면 pc·mobile 둘 다) · steps[].timeout: 기다릴 초(기본 18)",
+  "character": "레테",
+  "features": [
+    {
+      "id": "home",
+      "title": "홈 — 닉네임 검색창",
+      "url": "/#/",
+      "ready": "!!document.querySelector('.hero-search')",
+      "expect": [
+        {
+          "what": "검색창이 있다",
+          "js": "!!document.querySelector('.hero-search input[type=search]')"
+        },
+        {
+          "what": "계산기로 가는 바로가기가 있다",
+          "js": "!!document.querySelector('a.index-row[href=\"#/calc\"]')"
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "title": "홈에서 닉네임을 검색하면 캐릭터 화면으로 간다",
+      "url": "/#/",
+      "ready": "!!document.querySelector('.hero-search')",
+      "steps": [
+        {
+          "js": "document.querySelector('.hero-search input[type=search]').focus()"
+        },
+        {
+          "type": "{character}"
+        },
+        {
+          "press": "Enter",
+          "wait": "location.hash.startsWith('#/c/') && document.querySelectorAll('.equip-grid button.slot').length > 5"
+        }
+      ],
+      "expect": [
+        {
+          "what": "주소가 그 캐릭터 화면이다",
+          "js": "decodeURIComponent(location.hash).startsWith('#/c/{character}')"
+        },
+        {
+          "what": "장비 칸이 그려졌다",
+          "js": "document.querySelectorAll('.equip-grid button.slot').length > 5"
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "캐릭터 요약 — 장비창·스탯·1순위 추천",
+      "url": "/#/c/{character}?tab=summary",
+      "ready": "document.querySelectorAll('.equip-grid button.slot').length > 5 && !document.querySelector('.top-pick[aria-busy=true]')",
+      "expect": [
+        {
+          "what": "직업 이름이 보인다",
+          "js": "document.body.innerText.includes('{character}')"
+        },
+        {
+          "what": "레벨 287이 보인다(픽스처 값)",
+          "js": "document.body.innerText.includes('287')"
+        },
+        {
+          "what": "탭이 3개다",
+          "js": "document.querySelectorAll('nav.tabs [role=tab]').length === 3"
+        }
+      ]
+    },
+    {
+      "id": "summary-tooltip",
+      "title": "장비 칸을 누르면 툴팁이 뜬다",
+      "url": "/#/c/{character}?tab=summary",
+      "ready": "document.querySelectorAll('.equip-grid button.slot').length > 5 && !document.querySelector('.top-pick[aria-busy=true]')",
+      "steps": [
+        {
+          "js": "document.querySelector('.equip-grid button.slot').click()",
+          "wait": "!!document.querySelector('.tooltip')"
+        }
+      ],
+      "expect": [
+        {
+          "what": "툴팁에 글자가 있다",
+          "js": "document.querySelector('.tooltip').innerText.trim().length > 10"
+        }
+      ]
+    },
+    {
+      "id": "upgrade",
+      "title": "업그레이드 — 무엇부터 바꿀지 순위",
+      "url": "/#/c/{character}?tab=upgrade",
+      "ready": "document.querySelectorAll('.rank-card').length > 0",
+      "settle": 3000,
+      "expect": [
+        {
+          "what": "순위 카드가 1개 이상이다",
+          "js": "document.querySelectorAll('.rank-card').length > 0"
+        },
+        {
+          "what": "불러오는 중 표시가 남아 있지 않다",
+          "js": "!document.querySelector('[data-testid=skeleton]')"
+        }
+      ]
+    },
+    {
+      "id": "calc-tab",
+      "title": "캐릭터 계산 탭",
+      "url": "/#/c/{character}?tab=calc",
+      "ready": "document.querySelector('nav.tabs [role=tab][aria-selected=true]')?.getAttribute('href')?.includes('tab=calc')",
+      "settle": 1500,
+      "expect": [
+        {
+          "what": "계산 탭이 선택돼 있다",
+          "js": "document.querySelector('nav.tabs [role=tab][aria-selected=true]').getAttribute('href').includes('tab=calc')"
+        }
+      ]
+    },
+    {
+      "id": "calc",
+      "title": "캐릭터 없이 쓰는 계산기(스타포스·큐브)",
+      "url": "/#/calc",
+      "ready": "!!document.querySelector('.calc-grid')",
+      "expect": [
+        {
+          "what": "계산기 판이 있다",
+          "js": "!!document.querySelector('.calc-grid')"
+        }
+      ]
+    },
+    {
+      "id": "not-found",
+      "title": "없는 닉네임 — 안내와 다시 검색",
+      "url": "/#/c/없는캐릭터zq9?tab=summary",
+      "ready": "!!document.querySelector('[role=alert]')",
+      "allow_status": [
+        404
+      ],
+      "expect": [
+        {
+          "what": "찾지 못했다는 안내가 보인다",
+          "js": "document.querySelector('[role=alert]').innerText.includes('찾지 못했어요')"
+        },
+        {
+          "what": "다시 검색할 수 있다",
+          "js": "!!document.querySelector('.retry-search input')"
+        }
+      ]
+    },
+    {
+      "id": "ai-chat",
+      "title": "AI 상담 — 바로 물어보기를 누르면 도구를 부르고 답이 온다(실제 모델)",
+      "requires": "ai",
+      "devices": [
+        "pc",
+        "mobile"
+      ],
+      "url": "/#/c/{character}?tab=summary",
+      "ready": "!!document.querySelector('[aria-label=\"바로 물어보기\"] button')",
+      "steps": [
+        {
+          "js": "document.querySelector('[aria-label=\"바로 물어보기\"] button').click()",
+          "wait": "!!document.querySelector('.chat .answer') && !document.querySelector('form.search button[type=submit]').disabled",
+          "timeout": 150
+        }
+      ],
+      "expect": [
+        {
+          "what": "질문이 대화에 보인다",
+          "js": "!!document.querySelector('.chat p.me')"
+        },
+        {
+          "what": "도구를 불렀다",
+          "js": "document.querySelectorAll('.chat p.muted').length > 0"
+        },
+        {
+          "what": "답변이 50자 이상이다",
+          "js": "[...document.querySelectorAll('.chat .answer')].map(e => e.innerText).join('').length >= 50"
+        },
+        {
+          "what": "답변에 마크다운 기호(**, 표의 |, #)가 그대로 보이지 않는다",
+          "js": "![...document.querySelectorAll('.chat .answer')].some(e => /\\*\\*|^\\s*\\|.*\\|\\s*$|^\\s*#{1,6}\\s/m.test(e.innerText))"
+        },
+        {
+          "what": "답변이 화면 너비를 넘지 않는다(표는 안에서 스크롤)",
+          "js": "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
+        },
+        {
+          "what": "검증되지 않은 숫자 경고가 없다",
+          "js": "!document.querySelector('.chat p.error')"
+        },
+        {
+          "what": "오류 안내가 없다",
+          "js": "![...document.querySelectorAll('[role=alert]')].some(e => e.innerText.trim())"
+        }
+      ]
+    }
+  ]
+}
