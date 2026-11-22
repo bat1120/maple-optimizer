@@ -14,13 +14,20 @@ _LISTING = {
         "name": {"type": "string"},
         "total": {"type": "object", "additionalProperties": {"type": "number"}},
         "potentials": {"type": "array", "items": {"type": "string"}},
-        "price": {"type": "integer", "description": "메소 정수(45억 3000만 → 4530000000)"},
+        "price": {"type": ["integer", "null"], "description": "메소 정수(45억 3000만 → 4530000000). 화면 매물의 price가 null이면 null 그대로"},
+        "list_prices": {"type": "array", "items": {"type": "integer"},
+                        "description": "화면 매물에 있으면 그대로 넘긴다 — price가 null일 때 후보 가격마다 계산한다"},
+        "unverified_lines": {"type": "array", "items": {"type": "string"},
+                             "description": "화면 매물에 있으면 그대로 넘긴다 — 공식 옵션표에 없는 줄이라 평가를 보류한다"},
+        "special_ring_level": {"type": "integer", "description": "화면 매물에 있으면 그대로 넘긴다(특수 반지 레벨)"},
+        "special_ring_note": {"type": "string", "description": "화면 매물에 있으면 그대로 넘긴다"},
         "resale": {"type": "integer", "description": "지금 그 부위 템 판매 예상가(메소), 없으면 0"},
     },
-    "required": ["slot", "part", "name", "price"],
+    "required": ["slot", "part", "name"],
 }
 _SETTING = {
     "type": "object",
+    "description": "사용자가 특정 프리셋 조합을 요청했을 때만 넣는다. 생략하면 보스 실딜 최적 세팅으로 계산한다.",
     "properties": {k: {"type": "integer"} for k in ("equipment", "hyper", "ability", "union", "link")},
     "required": ["equipment", "hyper", "ability"],
 }
@@ -31,36 +38,38 @@ _CONDITIONS = {
                    "restore": {"type": "string", "enum": ["full", "basic"]}},
 }
 
-_FEE = {"type": "number", "description": "경매장 판매 수수료(판매 대금에서 빠짐). 기본 0.05, MVP 실버 이상·PC방이면 0.03"}
+_NAME = {"type": "string", "description": "캐릭터 닉네임 — 조회한 캐릭터, 또는 사용자가 말한 이름"}
+_COOLDOWN = {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 숫자를 정해 말했을 때만 넣는다(결과의 note가 지금 쿨감을 어떻게 반영했는지 알려 준다)"}
+_FEE = {"type": "number", "description": "경매장 판매 수수료(판매 대금에서 빠짐). 사용자가 MVP 실버 이상이나 PC방이라고 하면 0.03, 그 밖에는 생략(0.05)"}
 
 TOOL_DEFS = [
-    {"name": "lookup_character", "description": "닉네임으로 캐릭터 요약(직업·레벨·적용 세팅·스탯공격력)과 보스 세팅 장비(equipment: 부위·이름·스타포스·잠재·에디)를 조회한다.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
-    {"name": "rank_settings", "description": "장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"}},
+    {"name": "lookup_character", "description": "캐릭터가 지금 무엇을 끼고 있는지 물을 때. 닉네임으로 캐릭터 요약(직업·레벨·적용 세팅·스탯공격력)과 보스 세팅 장비(equipment: 부위·이름·스타포스·잠재·에디)를 조회한다.",
+     "input_schema": {"type": "object", "properties": {"name": _NAME}, "required": ["name"]}},
+    {"name": "rank_settings", "description": "세팅(프리셋 조합) 자체를 물을 때만. 장비·하이퍼·어빌·유니온·링크 프리셋 조합을 보스 실딜 지수로 정렬한다(상위 10개). relative_to_active는 현재 세팅 대비 배율.",
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "boss_defense": {"type": "number"}},
                       "required": ["name"]}},
-    {"name": "recommend_searches", "description": "게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 카드 하나 — 잠재·에디를 각각 지금보다 한 단계 위로 바꾼 조건을 한 번에 검색하도록 묶고(parts), 둘을 함께 바꾸면 보스 실딜이 몇 % 오르는지(delta_pct, 종류별은 parts[].delta_pct) 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드의 search가 검색 조건(부위·잠재·최소 스타포스)이다.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
+    {"name": "recommend_searches", "description": "'뭘 사야 해', '경매장에서 뭘 검색해' 질문에. 게임 경매장에서 무엇을 검색할지 추천한다: 부위마다 카드 하나 — 잠재·에디를 각각 지금보다 한 단계 위로 바꾼 조건을 한 번에 검색하도록 묶고(parts), 둘을 함께 바꾸면 보스 실딜이 몇 % 오르는지(delta_pct, 종류별은 parts[].delta_pct) 큰 순서로 돌려준다. 쿨감 줄은 유지(kept). 제네시스 무기처럼 경매장에서 못 사는 템은 빠진다. 각 카드는 그 부위의 다음 한 단계이고, search가 게임 경매장에 그대로 넣는 검색 조건(부위·잠재·에디·최소 스타포스)이다.",
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "boss_defense": {"type": "number"},
                                                          "top": {"type": "integer"},
-                                                         "cooldown_main_pct": {"type": "number", "description": "쿨감 1초 = 주스탯 몇 %로 볼지. 사용자가 정한 값만 넣는다"}},
+                                                         "cooldown_main_pct": _COOLDOWN},
                       "required": ["name"]}},
-    {"name": "upgrade_roadmap", "description": "전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). 부위의 잠재·에디 목록에는 next 단계(실딜이 처음 0.1% 이상 오르는 단계, 목록의 첫 항목)와 그다음 단계만 있다(next가 null이면 올릴 단계 없음). route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위 상위 15개(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m). 단계의 market은 화면에서 읽어 쌓인 관측 시세(count·median·min·per_100m).",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
-                                                         "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
-    {"name": "upgrade_paths", "description": "업그레이드 경로 비교(추천의 기본 근거): 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스(from_star→to_star, 파괴 시 스페어 비용 제외, expected_destroys=평균 파괴 횟수)를 억당 실딜(per_100m)로 정렬한다. 세트 효과 변화(set_change)가 실딜에 들어가 있다. best_by_slot은 부위별 최선 경로. cost_text를 그대로 인용.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
-                                                         "cooldown_main_pct": {"type": "number"}}, "required": ["name"]}},
+    {"name": "upgrade_roadmap", "description": "'전체 부위 어떻게 바꿔', '가성비'·'가격 대비' 질문에(가성비는 value_ranking). 전체 부위 로드맵: 부위마다 잠재·에디를 에픽→유니크→레전드리, 2줄→3줄 단계로 바꿨을 때 보스 실딜 상승(delta_pct)과 한 번에 나올 확률(probability). 부위의 잠재·에디 목록에는 next 단계(실딜이 처음 0.1% 이상 오르는 단계, 목록의 첫 항목)와 그다음 단계만 있다(next가 null이면 올릴 단계 없음). route '큐브'는 경매장에서 못 사는 템(제네시스 무기 등). value_ranking은 가격 대비 순위 상위 15개(메소 재설정 평균 비용 cube_cost·cube_cost_text, 억당 실딜 per_100m). 단계의 market은 화면에서 읽어 쌓인 관측 시세(count·median·min·per_100m).",
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "boss_defense": {"type": "number"},
+                                                         "cooldown_main_pct": _COOLDOWN}, "required": ["name"]}},
+    {"name": "upgrade_paths", "description": "'뭐부터 올려', 구매·직작·큐브·스타포스 중 무엇을 할지 추천할 때 먼저 쓴다. 업그레이드 경로 비교: 구매(관측 매물)·직작(매물+큐브)·지금 템 큐브·스타포스(from_star→to_star, 파괴 시 스페어 비용 제외, expected_destroys=평균 파괴 횟수)를 억당 실딜(per_100m)로 정렬한다. 세트 효과 변화(set_change)가 실딜에 들어가 있다. best_by_slot은 부위별 최선 경로. sold=true는 체결 시세, false는 호가. cost_text를 그대로 인용.",
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "boss_defense": {"type": "number"},
+                                                         "cooldown_main_pct": _COOLDOWN}, "required": ["name"]}},
     {"name": "target_roadmap", "description": "목표 보스 배율 로드맵: 지금 배율(current_ratio, 예: MapleScouter 효율·보스컷의 익스트림 스우 34.52)에서 목표(target_ratio, 예: 50)까지 억당 효율 순으로 쌓은 업그레이드 단계(스타포스는 한 성씩, 큐브·HEXA). 단계마다 ratio_after·total_cost_text. 배율은 실딜 비례 추정 — 숫자는 결과에서만 인용.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "current_ratio": {"type": "number"},
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "current_ratio": {"type": "number"},
                                                        "target_ratio": {"type": "number"},
                                                        "fragment_price": {"type": "number", "description": "솔 에르다 조각 1개 메소(넣으면 HEXA 포함)"}},
                       "required": ["name", "current_ratio", "target_ratio"]}},
     {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10), 질문 하나에 두 번까지. 갱신 뒤 upgrade_paths를 다시 부른다.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"},
+     "input_schema": {"type": "object", "properties": {"name": _NAME,
                                                          "slots": {"type": "array", "items": {"type": "string"}},
                                                          "max_searches": {"type": "integer"}}, "required": ["name"]}},
-    {"name": "evaluate_listings", "description": "매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. setting을 생략하면 최적 보스 세팅 기준.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "boss_defense": {"type": "number"},
+    {"name": "evaluate_listings", "description": "사용자가 붙여 넣은 매물이나 '[경매장 화면에서 읽은 매물]'을 살지 판단할 때. 툴팁은 total(총 옵션)과 potentials(잠재·에디 줄)로 나눠 넣는다. 매물들을 같은 부위 템과 교체했을 때 실딜 상승률(%)·억당 효율·환산 주스탯으로 평가해 효율순 정렬한다. held는 평가를 보류한 매물과 이유(reason)다.",
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "boss_defense": {"type": "number"},
                                                          "setting": _SETTING, "listings": {"type": "array", "items": _LISTING},
                                                          "fee_rate": _FEE},
                       "required": ["name", "listings"]}},
@@ -79,14 +88,14 @@ TOOL_DEFS = [
                                                          "destroy_cost": {"type": "number"}, "cube_p": {"type": "number"}, "cube_cost": {"type": "number"}},
                       "required": ["price", "base_price", "level"]}},
     {"name": "optimize_budget", "description": "예산 안에서 실딜을 가장 많이 올리는 후보 조합(부위당 1개)과 순서를 고른다.",
-     "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "budget": {"type": "number"},
+     "input_schema": {"type": "object", "properties": {"name": _NAME, "budget": {"type": "number"},
                                                          "boss_defense": {"type": "number"}, "setting": _SETTING,
                                                          "candidates": {"type": "array", "items": _LISTING}, "fee_rate": _FEE},
                       "required": ["name", "budget", "candidates"]}},
 ]
 TOOL_DEFS.append(
     {"name": "request_auction_screen",
-     "description": "사용자에게 게임 경매장 검색 화면을 채팅 안에서 공유해 달라고 요청한다(2026-10-12). 검색 조건(부위·잠재·에디·최소 스타포스)을 "
+     "description": "'경매장에서 ○○ 찾아줘/보여줘'처럼 실제 매물을 봐야 하거나, 관측 시세가 없어 가격을 말할 수 없을 때. 사용자에게 게임 경매장 검색 화면을 채팅 안에서 공유해 달라고 요청한다. 검색 조건(부위·잠재·에디·최소 스타포스)을 "
                     "넣으면 화면에 [화면 연결] 카드가 뜨고, 사용자가 매물을 읽어 보내면 '[경매장 화면에서 읽은 매물]'이 붙은 다음 질문으로 온다. "
                     "조건은 recommend_searches 카드나 사용자가 말한 조건을 글자 그대로 옮긴다.",
      "input_schema": {"type": "object", "properties": {
@@ -158,6 +167,43 @@ class ToolBox:
                 raise ValueError(f"price는 메소 정수다(45억 3000만 → 4530000000). {price}는 억·만 단위로 넣은 것 같다 — 메소로 다시 넣는다")
 
     @staticmethod
+    def _prepare(listings):
+        """평가할 매물·보류할 매물·안내를 나눈다. 프롬프트로 부탁하던 일이다:
+        공식 옵션표에 없는 줄이 있으면 보류, 가격을 못 읽었으면 목록 가격 후보마다 계산(후보도 없으면 보류), 특수 반지는 레벨로 비교."""
+        ready, held, rings, candidates = [], [], {}, []
+        for x in listings:
+            x = dict(x)
+            odd, prices = x.pop("unverified_lines", None), x.pop("list_prices", None)
+            level, note = x.pop("special_ring_level", None), x.pop("special_ring_note", None)
+            if odd:
+                held.append({"name": x.get("name"), "reason": "공식 옵션표에 없는 줄이 있어 평가를 보류했어요(" + ", ".join(odd)
+                                                             + ") — 화면에서 그 줄을 다시 확인해 달라고 한다"})
+                continue
+            if level or note:
+                rings[x.get("name")] = ((note or f"특수 반지 스킬 효과는 실딜 계산에 없어요 — 스탯만 계산했어요. 이 매물 {level}레벨")
+                                        + " 실딜 수치로 사라/말라 하지 않고, 반지 레벨과 가격으로 지금 낀 반지와 비교한다.")
+            if x.get("price") is None:
+                if not prices:
+                    held.append({"name": x.get("name"), "reason": "가격을 읽지 못했어요 — 사용자에게 가격을 물어본다"})
+                    continue
+                candidates.append(x.get("name"))
+                ready += [{**x, "price": price} for price in prices]
+            else:
+                ready.append(x)
+        return ready, held, rings, candidates
+
+    @staticmethod
+    def _annotate(result, held, rings, candidates):
+        result["held"] = list(result.get("held") or []) + held
+        for row in result.get("ranking") or []:
+            if row.get("name") in rings:
+                row["special_ring_note"] = rings[row["name"]]
+        if candidates:
+            result["price_candidates_note"] = ("가격을 못 읽은 매물(" + ", ".join(candidates) + ")은 같은 이름 목록 행의 가격 후보마다 "
+                                               "계산했어요 — 후보별 결과를 보여 주고 툴팁이 어느 행인지 확인을 부탁한다")
+        return result
+
+    @staticmethod
     def _request_auction_screen(category, potentials=None, additional=None, min_starforce=0, note=None):
         """화면이 이 결과(search)로 채팅 안 [화면 연결] 카드를 띄운다. 계산은 하지 않는다 — 매물은 다음 질문으로 온다."""
         return {"status": "requested", "note": note,
@@ -190,12 +236,22 @@ class ToolBox:
         r["ranking"] = r["ranking"][:10]
         return r
 
+    def _observed(self):
+        return self._market() if self._market else None
+
+    @staticmethod
+    def _market_status(result, observed):
+        if not observed:
+            result["market_status"] = ("관측 시세 측정값 없음 — 경매장 가격은 이 결과에 없다. 가격을 말하려면 request_auction_screen으로 "
+                                       "그 조건의 경매장 화면을 받아야 한다")
+        return result
+
     def _recommend_searches(self, name, boss_defense=300.0, top=5, cooldown_main_pct=None):
         return service.recommend(self._load(name), boss_defense, max(1, min(int(top), 20)), cooldown_main_pct)
 
     def _upgrade_roadmap(self, name, boss_defense=300.0, cooldown_main_pct=None):
-        r = service.roadmap(self._load(name), boss_defense, cooldown_main_pct,
-                            self._market() if self._market else None)
+        observed = self._observed()
+        r = service.roadmap(self._load(name), boss_defense, cooldown_main_pct, observed)
         # 화면용은 부위마다 모든 단계(종류당 6개)를 싣는다 — 모델에게는 답에 쓰는 'next 단계와 그다음 단계'만 준다(7만 자 → 2만 자대)
         for row in r["slots"]:
             for kind in ("잠재", "에디"):
@@ -205,11 +261,11 @@ class ToolBox:
                     for stage in row[kind][first:first + 2]]
                 row["next"][kind] = None if first is None else 0
         r["value_ranking"] = r["value_ranking"][:VALUE_RANKING_TOP]
-        return r
+        return self._market_status(r, observed)
 
     def _upgrade_paths(self, name, boss_defense=300.0, cooldown_main_pct=None):
-        return service.paths(self._load(name), boss_defense, self._market() if self._market else None,
-                             cooldown_main_pct)
+        observed = self._observed()
+        return self._market_status(service.paths(self._load(name), boss_defense, observed, cooldown_main_pct), observed)
 
     def _target_roadmap(self, name, current_ratio, target_ratio, fragment_price=None):
         from engine.market.events import Events
@@ -228,8 +284,9 @@ class ToolBox:
 
     def _evaluate_listings(self, name, listings, boss_defense=300.0, setting=None, fee_rate=0.05):
         self._check_listings(listings, fee_rate)
-        return service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in listings],
-                                fee_rate)
+        ready, held, rings, candidates = self._prepare(listings)
+        r = service.listings(self._load(name), self._setting(setting), boss_defense, [ListingIn(**x) for x in ready], fee_rate)
+        return self._annotate(r, held, rings, candidates)
 
     def _starforce_cost(self, level, start, target, destroy_cost, conditions=None):
         r = service.starforce(StarforceIn(level=level, start=start, target=target, destroy_cost=destroy_cost,
@@ -252,5 +309,7 @@ class ToolBox:
 
     def _optimize_budget(self, name, budget, candidates, boss_defense=300.0, setting=None, fee_rate=0.05):
         self._check_listings(candidates, fee_rate)
-        return service.optimize(self._load(name), self._setting(setting), boss_defense, budget,
-                                [ListingIn(**x) for x in candidates], fee_rate)
+        ready, held, rings, priced = self._prepare(candidates)
+        r = service.optimize(self._load(name), self._setting(setting), boss_defense, budget,
+                             [ListingIn(**x) for x in ready], fee_rate)
+        return self._annotate(r, held, rings, priced)

@@ -88,7 +88,7 @@ def test_cooldown_value_must_come_from_the_user():
     asked = ["[조회한 캐릭터: 레테] 쿨감 가치도 넣어서 추천해줘"]
     assert "cooldown_main_pct" in invented_argument({"name": "레테", "cooldown_main_pct": 5}, asked)["error"]
     assert invented_argument({"name": "레테"}, asked) is None
-    assert invented_argument({"name": "레테", "cooldown_main_pct": 5}, ["쿨감 1초를 주스탯 5%로 쳐줘"]) is None
+    assert invented_argument({"name": "레테", "cooldown_main_pct": 5}, [*asked, "쿨감 1초를 주스탯 5%로 쳐줘"]) is None
 
 
 def test_rules_moved_to_code_are_not_repeated_in_the_prompt():
@@ -219,3 +219,61 @@ def test_eval_case_needs_two_of_three_when_first_try_fails():
     assert flaky["failed_checks"] == ["확인"]
     broken = run.run_case(None, "m", {}, "레테", attempt=scripted([False, True, False]))
     assert (broken["ok"], broken["flaky"]) == (False, True)
+
+
+def test_prompt_stays_minimal_and_names_no_tools():
+    """프롬프트는 방향만 — 도구 이름·금지 목록을 다시 쌓지 않는다(2026-11-23 사용자 지시)."""
+    assert len(SYSTEM) < 700
+    for t in TOOL_DEFS:
+        assert t["name"] not in SYSTEM, t["name"]
+    for word in ("않는다", "금지", "말고"):
+        assert word not in SYSTEM, word
+
+
+def test_context_carries_the_looked_up_character():
+    from agent.loop import context
+    assert "레테" in context([{"role": "user", "content": "뭐부터?\n\n[조회한 캐릭터: 레테]"}])
+    assert "닉네임을 받는다" in context([{"role": "user", "content": "뭐부터?"}])
+    client = _Scripted([_answer_turn(100, "닉네임을 알려 주세요.")])
+    from agent.loop import run_agent
+    list(run_agent(client, _box(), [{"role": "user", "content": "뭐부터?"}]))
+    assert client.calls[0]["instructions"].startswith(SYSTEM) and "조회한 캐릭터: 없음" in client.calls[0]["instructions"]
+
+
+def test_character_name_must_come_from_the_user():
+    assert "닉네임" in invented_argument({"name": "아무개"}, ["지금 뭐부터 올리면 돼?"])["error"]
+    assert invented_argument({"name": "레테"}, ["[조회한 캐릭터: 레테] 뭐부터?"]) is None
+    assert invented_argument({"name": "내신부레테"}, ["내신부 레테 봐줘"]) is None
+    assert invented_argument({"option": "BOSS"}, ["확률?"]) is None
+
+
+def test_answer_with_unsourced_number_is_rewritten_before_it_is_shown():
+    from agent.loop import run_agent
+    client = _Scripted([_tool_turn(1000), _answer_turn(1000, "평균 123억 4567만이에요."), _answer_turn(1000, "측정값 없음이에요.")])
+    events = list(run_agent(client, _box(), [{"role": "user", "content": "얼마야?"}]))
+    assert [e["text"] for e in events if e["type"] == "text"] == ["측정값 없음이에요."]
+    assert client.calls[2]["tool_choice"] == "none"
+    assert "123억 4567만" in client.calls[2]["input"][-1]["content"]
+    assert events[-1] == {"type": "done", "unverified_numbers": []}
+
+
+def test_rewrite_happens_once_then_the_warning_is_shown():
+    from agent.loop import run_agent
+    client = _Scripted([_answer_turn(1000, "평균 123억 4567만이에요."), _answer_turn(1000, "그래도 123억 4567만이에요.")])
+    events = list(run_agent(client, _box(), [{"role": "user", "content": "얼마야?"}]))
+    assert len(client.calls) == 2
+    assert events[-1]["unverified_numbers"] == ["123억 4567만"]
+
+
+def test_listings_are_held_or_expanded_by_code():
+    base = {"slot": "반지4", "part": "반지", "name": "어센던트 펄스 링", "total": {"INT": 59, "LUK": 59, "MATK": 16},
+            "potentials": ["INT +12%", "LUK +9%", "INT +9%"]}
+    r = _box().run("evaluate_listings", {"name": "레테", "listings": [
+        {**base, "name": "A", "price": 4_530_000_000, "unverified_lines": ["INT +1즈%"]},
+        {**base, "name": "B", "price": None},
+        {**base, "name": "C", "price": None, "list_prices": [3_000_000_000, 4_000_000_000]}]})
+    assert "error" not in r
+    reasons = {h["name"]: h["reason"] for h in r["held"]}
+    assert "공식 옵션표" in reasons["A"] and "가격을 물어본다" in reasons["B"]
+    assert sorted(row["price"] for row in r["ranking"]) == [3_000_000_000, 4_000_000_000]
+    assert "C" in r["price_candidates_note"]

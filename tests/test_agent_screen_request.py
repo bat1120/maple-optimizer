@@ -24,8 +24,11 @@ def test_request_auction_screen_tool_is_defined_and_echoes_search():
     assert "error" not in out
 
 
-def test_system_prompt_tells_ai_to_request_screen_for_auction_questions():
-    assert "request_auction_screen" in SYSTEM
+def test_tool_description_tells_ai_when_to_request_screen():
+    """언제 부르는지는 프롬프트가 아니라 도구 설명이 말한다(2026-11-23)."""
+    description = next(t for t in TOOL_DEFS if t["name"] == "request_auction_screen")["description"]
+    assert "찾아줘" in description and "관측 시세가 없어" in description
+    assert "request_auction_screen" not in SYSTEM
 
 
 def test_admin_session_endpoint(tmp_path):

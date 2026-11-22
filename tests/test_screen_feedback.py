@@ -74,7 +74,7 @@ def test_numbers_the_user_wrote_are_not_flagged():
     from agent.loop import run_agent
     usage = NS(input_tokens=1, output_tokens=1)
     final = NS(output=[], output_text="200억 예산이면 보스 몬스터 데미지 +40% 매물부터 봐요. 77억은 모르는 숫자", status="completed", usage=usage)
-    seq = [final]
+    seq = [final, final]  # 출처 없는 숫자가 있으면 한 번 다시 쓰게 한다(2026-11-23) — 다시 써도 남으면 경고
     client = NS(responses=NS(create=lambda **kw: seq.pop(0)))
     msgs = [{"role": "user", "content": '200억으로 뭐부터?\n[{"potentials":["보스 몬스터 데미지 +40%"]}]'}]
     done = list(run_agent(client, _box(), msgs))[-1]

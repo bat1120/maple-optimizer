@@ -13,9 +13,19 @@ GLOVE = {"name": "에테르넬 나이트글러브", "category": "장갑", "part"
          "additional": ["STR +5%", "최대 HP +3%", "STR +3%"], "price": 10_000_000_000}
 
 
-def test_agent_prompt_requires_measured_values_only():
-    for phrase in ("실측값 원칙", "측정값 없음", "기억이나 일반 지식으로 채우지 않는다", "글자 그대로", "평균 기대값", "근사"):
+def test_measured_values_only_is_carried_by_prompt_direction_tool_results_and_code():
+    """2026-11-23 프롬프트를 방향만 남기고 다시 썼다 — 실측값 원칙은 세 곳이 나눠 진다."""
+    from agent.loop import rewrite_request
+    from agent.tools import ToolBox
+    # 방향: 근거는 도구, 없으면 측정값 없음
+    for phrase in ("근거는 도구", "그대로 옮긴다", "측정값 없음"):
         assert phrase in SYSTEM, phrase
+    # 결과: 계산값의 성격(평균·근사)과 시세 없음은 도구 결과가 말한다
+    r = ToolBox(lambda name, date=None: snapshot(bundle("레테")), market=lambda: []).run("upgrade_roadmap", {"name": "레테"})
+    assert "평균 비용" in r["value_note"] and "근사" in r["value_note"]
+    assert "측정값 없음" in r["market_status"] and "request_auction_screen" in r["market_status"]
+    # 코드: 출처 없는 숫자는 보여 주기 전에 다시 쓰게 한다
+    assert "12억" in rewrite_request(["12억"])
 
 
 def test_vision_prompt_forbids_rewriting_and_guessing():
@@ -49,6 +59,11 @@ def test_lines_irrelevant_to_damage_are_not_flagged():
     assert unverified_lines(["STR +1즈%"]) == ["STR +1즈%"]
 
 
-def test_system_prompt_says_special_ring_effect_is_not_in_damage():
-    from agent.loop import SYSTEM
-    assert "special_ring_note" in SYSTEM and "레벨" in SYSTEM
+def test_special_ring_listing_result_says_effect_is_not_in_damage():
+    """특수 반지 안내는 프롬프트가 아니라 평가 결과에 붙어 간다."""
+    from agent.tools import ToolBox
+    ring = {"slot": "반지4", "part": "반지", "name": "리스트레인트 링", "total": {"INT": 20, "MATK": 10}, "potentials": [],
+            "price": 5_000_000_000, "special_ring_level": 4}
+    r = ToolBox(lambda name, date=None: snapshot(bundle("레테"))).run("evaluate_listings", {"name": "레테", "listings": [ring]})
+    note = r["ranking"][0]["special_ring_note"]
+    assert "실딜 계산에 없어요" in note and "4레벨" in note and "레벨과 가격으로" in note

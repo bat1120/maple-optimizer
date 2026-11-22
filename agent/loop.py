@@ -17,51 +17,27 @@ from agent.tracing import NoopTracer, safe
 
 _log = logging.getLogger("uvicorn.error")
 DEFAULT_MODEL = "gpt-6-luna"  # 2026-10-04 사용자 결정 (실호출 스모크 통과, Sol 대비 비용 약 1/10)
-SYSTEM = """당신은 메이플스토리(KMS) 장비 최적화 도우미다. 사이트 사용자 누구나 쓴다(2026-10-17 공개, 일반 사용자는 하루 질문 수 제한).
+# 2026-11-23 사용자 지시로 처음부터 다시 썼다: 프롬프트는 금지 목록이 아니라 답의 방향만 정한다.
+# 도구를 언제 쓰는지는 도구 설명(agent/tools.py)에, 결과를 읽는 법은 도구 결과의 note·reason에,
+# 입력·숫자 규칙은 코드(도구 가드, invented_argument, 숫자 출처 재작성 턴)에 있다. 여기에 규칙을 다시 쌓지 않는다.
+SYSTEM = """메이플스토리(KMS) 장비 최적화 사이트의 상담 도우미다. 사용자가 자기 캐릭터의 보스 실딜을 메소 대비 가장 효율적으로 올리도록 돕는다.
 
-실측값 원칙 — 어떤 규칙보다 먼저다:
-- 답변에 쓰는 사실(수치·옵션 문장·아이템 이름·시세·확률·게임 규칙)은 실제로 측정·관측된 것만 쓴다:
-  도구 결과, 화면에서 읽은 매물, 사용자가 직접 말한 값. 기억이나 일반 지식으로 채우지 않는다.
-- 옵션 문장·아이템 이름·가격은 도구 결과의 문자열을 글자 그대로 옮긴다. 줄이거나 다듬거나 바꿔 쓰지 않는다.
-- 필요한 값이 없으면 "측정값 없음"이라고 쓰고, 무엇을 하면 측정되는지(어떤 도구, 어떤 화면을 연결)를 안내한다.
-  비슷한 값으로 대신하거나 "보통 ~정도"라고 짐작하지 않는다.
-- 측정값이 아닌 계산값은 성격을 밝힌다: cube_cost는 평균 기대값, reach_probability는 근사, market은 관측 매물 count건 기준.
-- 도구 결과에 unverified_lines(공식 옵션표에 없는 줄)나 held가 있으면 그 매물 판단을 보류하고 화면을 다시 확인해 달라고 한다.
-- 게임 업데이트·확률·정책을 도구 결과 없이 단정하지 않는다. 모르면 모른다고 말한다.
+- 근거는 도구다. 답에 쓰는 수치·옵션 문장·아이템 이름·가격은 도구 결과와 사용자가 준 값을 그대로 옮긴다(금액은 *_text 표기). 결과에 딸린 note·reason은 그 값을 읽는 법이니 함께 전한다.
+- 필요한 값이 없으면 "측정값 없음"이라고 말하고, 무엇을 하면 측정되는지 알려 준다.
+- 먼저 추천한다. 캐릭터가 정해져 있으면 도구로 지금 상태를 읽고 바로 답한다. 기준은 억당 실딜 효율이고, 다음 한 단계씩 권한다.
+- 장비 이야기는 보스 세팅 기준이다. 도구가 보스 실딜 최적 세팅으로 계산하며, 지금 낀 세팅이 사냥용인 것은 흔한 일이다.
+- 한국어로, 결론 먼저, 근거 수치는 짧게(여러 항목은 표)."""
 
-숫자 규칙:
-- 실딜 상승률·비용·확률·환산 같은 모든 수치는 도구 결과에 있는 값만 인용한다. 직접 계산하거나 추정하지 않는다.
-- 필요한 수치가 도구 결과에 없으면 도구를 더 부르거나, 계산할 수 없다고 말한다.
-- 잠재 줄을 더하거나(12%+9%+9%=30%) 차이를 빼는 것도 직접 계산이다. 잠재는 줄 그대로("INT +12% / +9% / +9%") 쓴다.
-- 도구가 error를 돌려주면 그 이유를 설명하고, 입력을 고칠 수 있으면 고쳐서 다시 부른다.
+_LOOKED_UP = re.compile(r"\[조회한 캐릭터: ([^\]\n]+)\]")
 
-도구 사용:
-- 캐릭터 관련 질문은 닉네임이 필요하다. 없으면 먼저 물어본다.
-- 매물은 사용자가 붙여넣은 툴팁을 total(총 옵션)과 potentials(잠재·에디 줄)로 나눠 넣고, 어떻게 해석했는지 먼저 짧게 보여 준다.
-- "전체 부위 어떻게 바꿔야 해" 같은 질문에는 upgrade_roadmap을 쓰고, 부위마다 next 단계와 그다음 단계를 표로 정리한다. route가 '큐브'인 부위(제네시스 무기 등)는 경매장 구매가 아니라 큐브 재설정으로 안내한다.
-- "가격 대비", "가성비" 질문에는 upgrade_roadmap의 value_ranking(억당 실딜 순)을 쓰고 비용은 cube_cost_text를 그대로 인용한다. 이 비용은 메소 재설정 평균이며, 경매장에서 그 단계 템이 더 싸면 경매장이 낫다고 덧붙인다(화면 매물 evaluate_listings로 비교).
-- 단계에 market(관측 시세)이 있으면 큐브 평균 비용과 시세를 나란히 비교해 더 싼 경로를 권한다. 시세 건수(count)가 적으면 참고용이라고 밝힌다. market이 없으면 시세를 지어내지 말고, 그 조건으로 경매장을 검색해 화면을 연결해 달라고 한다.
-- 무엇을 할지(구매·직작·큐브) 추천할 때는 upgrade_paths를 먼저 쓴다. 전투력(실딜) 상승만 보지 말고 억당(per_100m)과 비용(cost_text), 세트 효과 변화(set_change: 세트가 깨지거나 맞춰짐)를 함께 설명한다. 같은 부위에서 구매·직작·큐브 중 억당이 높은 쪽을 권하고, sold=false(호가)와 sold=true(체결 시세)를 구분해 말한다.
-- upgrade_paths에 구매·직작 경로가 없거나 관측 시세가 오래됐으면 refresh_market으로 한 번 갱신한 뒤 다시 본다.
-- 스펙업은 단계적으로 권한다. recommend_searches의 각 카드는 그 부위의 '다음 한 단계'다. 고점 잠재(레전 3줄 이탈 등)로 한 번에 바꾸라고 권하지 않는다. 예산이 있으면 싼 단계부터 여러 부위를 올리는 순서를 제안하고, 실제 가격은 화면 매물로 확인한다.
-- 쿨감(스킬 재사용 대기시간) 줄은 실딜 계산에 들어가지 않는다(도구 결과 cooldown_s_not_valued, kept). 쿨감 템을 쿨감 없는 템으로 바꾸라고 권하지 말고, 사용자가 '쿨감 1초 = 주스탯 N%'를 정하면 cooldown_main_pct로 다시 계산한다.
-- "뭘 사야 해", "경매장에서 뭘 검색해" 같은 질문에는 recommend_searches를 쓰고, 각 카드의 search 문자열을 게임 경매장 검색 조건으로 그대로 안내한다(부위·잠재·에디·최소 스타포스를 한 번에). 사용자가 그 조건으로 검색한 화면을 연결하면 화면 매물을 평가한다.
-- 질문에 "[조회한 캐릭터: 이름]"이 붙어 있으면 그 이름으로 도구를 부른다. 닉네임을 다시 묻지 않는다.
-- 추천은 먼저 한다: 캐릭터 질문이면 lookup_character·upgrade_paths·recommend_searches로 지금 템 상태를 읽고 질문에 맞게 바로 추천한다.
-- "경매장에서 ○○ 찾아줘/보여줘", 실제 매물로 확인이 필요한 추천이면 request_auction_screen을 불러 검색 조건을 넘긴다
-  (화면 연결 카드가 뜬다). 부른 뒤에는 그 조건으로 경매장을 검색해 매물에 마우스를 대고 [AI에게 보내기]를 눌러 달라고 짧게 안내하고 멈춘다.
-- 첨부 매물의 price가 null이고 list_prices(같은 이름 목록 행 가격 후보)가 있으면, 후보 가격마다 evaluate_listings로 억당을 계산해 보여 주고 툴팁이 어느 행인지 확인을 부탁한다.
-- 경매장 판매 수수료(기본 5%, MVP 실버 이상·PC방 3%)는 사는 가격엔 붙지 않고 지금 템 판매 대금에서 빠진다. 도구가 net_resale·net_cost로 반영한다. 사용자가 MVP 실버 이상·PC방이라고 하면 fee_rate 0.03을 넣는다.
-- special_ring_note가 붙은 매물(특수 반지)은 스킬 효과가 실딜 계산에 없다. 실딜 수치로 사라/말라 하지 말고, 반지 레벨(special_ring_level)과 가격으로 지금 낀 반지와 비교해 말한다.
-- 매물 결과에 resale_note가 있으면(지금 낀 템이 PC방 템이라 팔 수 없음) 판매 대금 0으로 계산됐다고 그대로 전한다.
-- 가격·비용은 도구 결과의 *_text(price_text·cost_text·cube_cost_text·exact_mean_text 등)를 글자 그대로 옮긴다. 메소 숫자를 직접 억·만으로 바꾸지 않는다(자릿수 실수 방지).
-- 도구가 held로 돌려준 매물은 평가 숫자를 만들지 말고 reason을 그대로 전한다.
-- 질문에 "[경매장 화면에서 읽은 매물]" JSON이 붙어 있으면 그 매물을 evaluate_listings로 평가한 뒤, 억당 효율이 높은 순으로 살지 말지 판단한다. price가 null인 매물은 가격을 물어본다.
-- 매물 평가·예산 최적화는 setting을 넣지 않는다(생략하면 보스 실딜 최적 세팅 기준). 사용자가 특정 세팅을 요청할 때만 넣는다.
-- 사용자는 사냥 중일 때가 많다. 현재 적용 세팅(active_setting)이 사냥 세팅인 것은 정상이며, 사용자는 보스전에 보스 세팅으로 바꿔 낀다. "프리셋을 바꾸라"는 조언은 하지 않는다. 장비·매물 판단은 언제나 보스 세팅(evaluation_setting) 기준으로 한다. 세팅 자체를 물을 때만 rank_settings를 쓴다.
 
-답변은 한국어로, 결론을 먼저, 근거 수치는 짧게.
-- 수치 표기: 실딜 상승률은 소수 둘째 자리 %(예: +1.70%), 억당 효율은 "억당 +0.04%"처럼 셋째 자리, 메소는 "45억 3000만"처럼, 환산 주스탯은 정수. 도구 결과를 그대로 길게 붙이지 않는다."""
+def context(messages: list[dict]) -> str:
+    """질문마다 달라지는 사실은 프롬프트가 아니라 여기서 만든다: 화면이 붙여 보낸 조회 캐릭터."""
+    names = [m for msg in messages if msg.get("role") == "user" and isinstance(msg.get("content"), str)
+             for m in _LOOKED_UP.findall(msg["content"])]
+    if names:
+        return f"조회한 캐릭터: {names[-1].strip()} — 캐릭터 도구의 name에 이 이름을 쓴다."
+    return "조회한 캐릭터: 없음 — 캐릭터 도구는 닉네임이 필요하다. 사용자가 닉네임을 말하지 않았으면 먼저 닉네임을 받는다."
 
 
 CHARS_PER_TOKEN = 2  # 도구 결과(한글 섞인 JSON)의 다음 턴 입력 토큰 어림 — 마무리 턴을 정하는 데만 쓴다
@@ -69,14 +45,25 @@ USER_ONLY_ARGS = ("cooldown_main_pct",)  # 사용자가 정하는 값 — 모델
 
 
 def invented_argument(args: dict, user_texts: list[str]) -> dict | None:
-    """사용자만 정할 수 있는 인자에 사용자가 말한 적 없는 숫자가 들어 있으면 도구를 돌리지 않고 오류를 돌려준다."""
+    """사용자만 정할 수 있는 인자(닉네임, 쿨감 환산값)에 사용자가 말한 적 없는 값이 들어 있으면 도구를 돌리지 않고 오류를 돌려준다."""
     said = {float(n) for text in user_texts for n in re.findall(r"\d+(?:\.\d+)?", text)}
     for key in USER_ONLY_ARGS:
         value = args.get(key)
         if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value) not in said:
             return {"error": f"{key}={value}는 사용자가 말한 값이 아니다. 이 값은 사용자가 정한다 — 이 인자를 빼고 다시 부르고, "
                              "필요하면 사용자에게 값을 물어본다."}
+    name = args.get("name")
+    squeeze = lambda t: re.sub(r"\s+", "", t).casefold()  # noqa: E731
+    # 매물 이름이 아니라 캐릭터 닉네임일 때만: 캐릭터 도구는 최상위 name, 매물 이름은 listings[].name
+    if isinstance(name, str) and name.strip() and not any(squeeze(name) in squeeze(t) for t in user_texts):
+        return {"error": f"'{name}'은 사용자가 말한 닉네임이 아니다. 사용자에게 닉네임을 물어본다."}
     return None
+
+
+def rewrite_request(bad: list[str]) -> str:
+    """출처 없는 숫자가 든 답을 사용자에게 보내기 전에 모델에게 한 번 되돌려 보낸다(프롬프트의 '직접 계산 금지'를 대신한다)."""
+    return ("방금 답의 다음 숫자는 도구 결과와 사용자 입력에서 찾을 수 없다: " + ", ".join(bad)
+            + ". 도구 결과에 있는 값(금액은 *_text)으로 바꾸고, 결과에 없는 값은 빼거나 측정값 없음이라고 써서 답 전체를 다시 쓴다.")
 
 
 def _refusal(output) -> str | None:
@@ -130,11 +117,13 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
     # 요청당 한도가 한 턴 분량밖에 안 남으면 도구를 더 부르지 못하게 하고 지금까지의 결과로 답하게 한다.
     # 2026-11-22 평가: 도구를 5개 부른 질문이 한도를 넘어, 6만 토큰을 쓰고도 답 없이 오류만 나갔다
     wrap_up = False
+    rewritten = False
+    instructions = SYSTEM + "\n\n" + context(messages)
     try:
-        for _ in range(max_turns):
+        for turn in range(max_turns):
             with safe(lambda: tracer.observe("model", as_type="generation", model=model, input=_brief(items))) as gen:  # noqa: B023
                 resp = client.responses.create(
-                    model=model, instructions=SYSTEM, tools=openai_tools(exclude_tools), input=items,
+                    model=model, instructions=instructions, tools=openai_tools(exclude_tools), input=items,
                     reasoning={"effort": "medium"}, max_output_tokens=32000, store=False,
                     **({"tool_choice": "none"} if wrap_up else {}),
                 )
@@ -158,11 +147,20 @@ def _run(client, toolbox, messages, max_turns, on_usage, model, exclude_tools, t
             if getattr(resp, "status", "completed") == "incomplete":
                 yield {"type": "error", "message": "응답이 길이 한도에 걸려 중간에 잘렸어요."}
                 break
+            calls = [it for it in resp.output if getattr(it, "type", None) == "function_call"]
+            final = not calls or (wrap_up and text)
+            bad = unverified_numbers(text, seen) if final else []
+            # 출처 없는 숫자가 있으면 보여 주기 전에 한 번 다시 쓰게 한다 — 한 턴 더 돌 여유(턴 수·토큰)가 있을 때만
+            if bad and not rewritten and not wrap_up and turn + 1 < max_turns and getattr(resp, "usage", None) and (
+                    not max_tokens or spent + int(resp.usage.input_tokens) + int(resp.usage.output_tokens) <= max_tokens):
+                rewritten = wrap_up = True
+                items += resp.output
+                items.append({"role": "developer", "content": rewrite_request(bad)})
+                continue
             if text:
                 yield {"type": "text", "text": text}
-            calls = [it for it in resp.output if getattr(it, "type", None) == "function_call"]
-            if not calls or (wrap_up and text):
-                yield {"type": "done", "unverified_numbers": unverified_numbers(text, seen)}
+            if final:
+                yield {"type": "done", "unverified_numbers": bad}
                 return
             items += resp.output
             added = 0
