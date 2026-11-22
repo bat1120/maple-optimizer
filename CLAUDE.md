@@ -11,15 +11,27 @@
 
 ## 명령 (리눅스·클라우드 세션 기준)
 - 설치: `uv sync` · `npm --prefix web ci`
+- 린트: `uv run ruff check .` (버그 규칙만 — 설정은 `pyproject.toml`. 일부러 어긴 곳은 `# noqa: <코드> — 이유`)
 - 테스트: `uv run pytest -q --ignore=tests/goals` · `npm --prefix web test`
 - 목표 판정: `uv run pytest tests/goals/test_<id>.py -q -rs` — skip은 통과가 아니다
+- 화면 검증: `node tools/verify_ui/run.mjs` — 픽스처 서버(키 없음, 닉네임 = 직업 이름 예: 레테)로 실제 앱을 띄워
+  기능 지도(`tools/verify_ui/features.json`)대로 확인하고 찍는다. 결과 `tools/verify_ui/out/<커밋>-<시각>/index.html`. 클라우드에서도 된다
+- AI 상담 평가(이 PC 전용, 실제 모델·비용 발생 — 한 번에 20만 토큰 안팎): `uv run python tools/agent_eval/run.py [--only <id>] [--label <이름>]`.
+  프롬프트(`agent/loop.py` SYSTEM)·도구 설명·도구 결과 모양을 바꾸면 앞뒤로 돌려 비교한다. 결과 `tools/agent_eval/out/…/report.html`
 - 웹 빌드: `npm --prefix web run build` (서버가 `web/dist`를 서빙)
 - 로컬 서버: `uv run uvicorn server.app:default_app --factory --port 8000` (`.env` 필요 — 클라우드에는 없다)
 - Windows 게이트(`scripts/validate.ps1`, `scripts/verify.ps1 -Goal <ID>`)는 `pwsh`가 있으면 그대로 써도 된다
 
 ## 작업 방식
 - 기능·버그 수정은 실패하는 테스트를 먼저 쓰고 실패를 확인한 뒤 구현한다.
-- 커밋 전에 위 두 테스트가 모두 통과해야 한다. 실패하면 커밋하지 않고 원인을 남긴다.
+- 커밋 전에 린트와 위 두 테스트가 모두 통과해야 한다. 실패하면 커밋하지 않고 원인을 남긴다.
+- 화면에 보이는 것을 바꿨으면 화면 검증을 돌려 통과시키고, 끝낼 때 결과 페이지 경로를 알린다(사람은 코드 대신 그 페이지를 본다).
+  기능을 더했으면 기능 지도에 한 줄을 더한다. 통과시키려고 기대값을 지우거나 낮추지 않는다.
+- AI 상담이 규칙을 어기면 프롬프트에 줄을 보태기 전에 순서대로 본다: ① 도구가 막을 수 있나(입력 검사 + 고칠 방법이 적힌 오류)
+  ② 도구 결과에 그대로 옮길 글자를 실을 수 있나(`*_text`) ③ 도구 결과가 너무 크지 않나 ④ 그래도 안 되면 프롬프트.
+  고친 뒤 평가 세트(`tools/agent_eval/cases.json`)에 그 경우를 더한다(`tests/test_agent_guards.py` 참고).
+- 같은 실수를 두 번 고쳤으면 이 파일에 한 줄을 보태기 전에 린트 규칙·테스트로 만들 수 있는지 먼저 본다
+  (예: 패키지 경계 `tests/test_import_boundaries.py`, 불변 조건 `tests/test_properties.py`, Dockerfile `tests/test_dockerfile.py`).
 - 목표(GOALS.md)는 7단계: LOAD → BASELINE → BUILD → VALIDATE(차단) → DEPLOY(없음) → VERIFY(차단) → RECORD.
   성공 기준은 숫자여야 하고, 진행 중에 낮추지 않는다. 같은 게이트 3번 연속 실패면 BLOCKED로 적고 이유를 goal-log.md에 남긴다.
 - 목표를 끝내면 GOALS.md 상태와 goal-log.md를 갱신한다. 판단이 필요한 결정은 `Ruling: 결정 — 이유 — 틀렸을 때 비용`으로 남긴다.
@@ -31,6 +43,10 @@
 - 넥슨·경매장 자동 수집, 내부 API 호출, 자동화 차단 우회 (2026-10-05: 경매장 API는 자동화 차단 신호로 막힘 → 화면 스캔만 쓴다)
 - 환산주스탯(MapleScouter) 자동 접근·계산 결과 사용·계산 로직 역추적 (약관 제15조·권리 조항, 2026-10-10 확인). 2026-10-13 운영자가 연동은 어렵다고 답함 → 북마크·확장 삭제, 사람이 손으로 비교하는 검증 기준으로만
 - 숫자 추정: 측정·관측값만 쓴다. 없으면 "측정값 없음". 가격은 `price_text`를 글자 그대로
+  - 확률·비용·스탯 표처럼 확인이 필요한 데이터는 에이전트 판단(패턴 추정·기억)으로 고치지 않는다. 웹 검색으로 공식 출처
+    (넥슨 공지·가이드·확률 공개 페이지)를 직접 열어 값을 확인한 뒤 고치고, 출처 주소·날짜를 데이터 파일(`_source`·`_verified`)과
+    검산 테스트에 남긴다. 출처를 못 찾으면 고치지 않고 무엇이 의심되는지만 보고한다(2026-11-22 사용자 지시).
+    공지 한두 쪽을 읽는 것은 되지만 주기·대량 수집 금지는 그대로다
 - 남의 이미지를 저장소나 학습에 올리기 (`.data/`는 git 제외, 로컬 평가용)
 - 다른 저장소 수정
 

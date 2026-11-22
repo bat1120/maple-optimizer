@@ -12,12 +12,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
+      - run: uv run ruff check .   # 버그 규칙만(pyproject.toml [tool.ruff.lint])
       - run: uv run pytest -q --ignore=tests/goals -n auto   # 병렬(pytest-xdist)
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm --prefix web ci
       - run: npm --prefix web test
+
+  evidence:
+    # 화면 검증 증거: 픽스처 서버로 실제 앱을 띄워 기능 지도대로 확인하고 찍는다(tools/verify_ui). 결과는 Artifacts의 ui-evidence.
+    # 아직 배포를 막지 않는다(continue-on-error) — 러너에서 안정적으로 도는 게 확인되면 image의 needs에 넣는다.
+    needs: test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm --prefix web ci
+      - run: node tools/verify_ui/run.mjs --out ui-evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-evidence
+          path: ui-evidence
 
   smoke:
     # 컨테이너가 실제로 뜨는지: 플랫폼이 주는 PORT(Render는 10000)로 /api/health 200 (2026-10-07)
