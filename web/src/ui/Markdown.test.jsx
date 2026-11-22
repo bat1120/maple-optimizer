@@ -41,6 +41,12 @@ describe("Markdown", () => {
     expect(container.textContent).toContain("가격 a|b 는 표가 아니다");
   });
 
+  it("백틱은 기호만 떼고 글자는 남긴다", () => {
+    const { container } = render(<Markdown text={"**`도미네이터 펜던트` 추옵부터** 추천해요. `마이스터링` 18→19성"} />);
+    expect(container.textContent).toBe("도미네이터 펜던트 추옵부터 추천해요. 마이스터링 18→19성");
+    expect(screen.getByText("도미네이터 펜던트 추옵부터").tagName).toBe("STRONG");
+  });
+
   it("빈 답변에도 깨지지 않는다", () => {
     const { container } = render(<Markdown text={undefined} />);
     expect(container.querySelector(".answer").children).toHaveLength(0);

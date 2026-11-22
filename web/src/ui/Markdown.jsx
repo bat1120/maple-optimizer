@@ -2,8 +2,10 @@
 // 2026-11-22 화면 검증에서 답변의 ** 와 | 가 기호 그대로 보였다. 라이브러리 없이 React 요소만 만든다(HTML을 문자열로 넣지 않는다).
 
 function inline(text) {
+  // 백틱(`아이템 이름`)은 기호만 떼고 글자는 그대로 둔다 — 2026-11-23 운영 화면에서 `도미네이터 펜던트`가 기호째 보였다
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? <strong key={i}>{part.slice(2, -2)}</strong> : part);
+    part.startsWith("**") && part.endsWith("**") && part.length > 4
+      ? <strong key={i}>{part.slice(2, -2).replace(/`([^`\n]+)`/g, "$1")}</strong> : part.replace(/`([^`\n]+)`/g, "$1"));
 }
 
 const cells = (line) => line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
