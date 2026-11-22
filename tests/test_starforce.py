@@ -50,3 +50,33 @@ def test_simulation_is_deterministic_with_seed():
     a = simulate(160, 10, 17, 10**9, BASE, trials=2000, seed=1)
     b = simulate(160, 10, 17, 10**9, BASE, trials=2000, seed=1)
     assert a == b and a.median <= a.p75 <= a.p90
+
+
+# 공식 기본 확률(%) — https://maplestory.nexon.com/News/Update/767 (2025-03-20) '강화 단계 | 성공 | 실패(유지) | 파괴' 표를
+# 2026-11-22에 직접 열어 옮겼다. 스타캐치 상시 적용(Update/799, 2026-03-19): 성공 ×1.05, 남은 확률을 유지:파괴 비율대로 나눈다.
+OFFICIAL_BASE_PERCENT = {
+    15: (30.00, 67.90, 2.10), 16: (30.00, 67.90, 2.10), 17: (15.00, 78.20, 6.80), 18: (15.00, 78.20, 6.80),
+    19: (15.00, 76.50, 8.50), 20: (30.00, 59.50, 10.50), 21: (15.00, 72.25, 12.75), 22: (15.00, 68.00, 17.00),
+    23: (10.00, 72.00, 18.00), 24: (10.00, 72.00, 18.00), 25: (10.00, 72.00, 18.00), 26: (7.00, 74.40, 18.60),
+    27: (5.00, 76.00, 19.00), 28: (3.00, 77.60, 19.40), 29: (1.00, 79.20, 19.80),
+}
+
+
+def test_probabilities_match_official_table_with_star_catch():
+    """2026-11-22: 26성 유지가 0.7416으로 적혀 합이 1.0004였다(22→29성 기대 비용 +21.7%, 22→30성은 음수) — 표 전체를 검산한다."""
+    for star, (success, keep, destroy) in OFFICIAL_BASE_PERCENT.items():
+        assert success + keep + destroy == pytest.approx(100), star
+        s = success / 100 * 1.05
+        expected = (s, (1 - s) * keep / (keep + destroy), (1 - s) * destroy / (keep + destroy))
+        assert transition(star, BASE) == pytest.approx(expected, abs=1e-9), star
+
+
+def test_every_probability_row_sums_to_one():
+    for star in range(30):
+        assert sum(transition(star, BASE)) == pytest.approx(1, abs=1e-12), star
+
+
+def test_expected_cost_to_30_stars_is_positive_and_increasing():
+    costs = [expected_cost(200, 22, target, 0, BASE) for target in range(23, 31)]
+    assert all(c > 0 for c in costs) and costs == sorted(costs)
+
