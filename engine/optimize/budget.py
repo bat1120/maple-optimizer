@@ -68,7 +68,7 @@ def _improve(ev: Evaluator, base: dict[str, Item], actions: list[Action], budget
     improved = True
     while improved:
         improved = False
-        for i, old in enumerate(chosen):
+        for i in range(len(chosen)):
             rest = chosen[:i] + chosen[i + 1:]
             used = {a.slot for a in rest}
             spent = sum(a.cost for a in rest)

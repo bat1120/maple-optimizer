@@ -5,7 +5,7 @@ import pytest
 from engine.market.cube_value import expected_cost
 from engine.market.listing import item_from_input
 from engine.market.paths import upgrade_paths
-from engine.market.recommend import MIN_GAIN, roadmap
+from engine.market.recommend import MIN_GAIN
 from engine.stats.evaluate import Evaluator, rank_settings
 from engine.stats.metrics import BossProfile
 from engine.stats.sets import SetCatalog

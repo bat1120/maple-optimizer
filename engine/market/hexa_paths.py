@@ -66,8 +66,8 @@ def hexa_stat_paths(pl, fragment_price: float, sunday: bool = False) -> list[dic
         main_name = next(n for n, _, m in core["lines"] if m)
 
         def gain(main_level, subs):
-            new = _block(_lines(core, main_level, subs), job)
-            return (pl.ev.index(pl.items, H.delta(new, cur)) / pl.base - 1) * 100
+            new = _block(_lines(core, main_level, subs), job)  # noqa: B023
+            return (pl.ev.index(pl.items, H.delta(new, cur)) / pl.base - 1) * 100  # noqa: B023
 
         label = f"코어 {'I' * core['core']} 메인 {main_name.replace(' 증가', '')}"
         if core["grade"] < H.MAX_G:  # 강화 계속: 최종 메인 레벨 분포의 평균 실딜

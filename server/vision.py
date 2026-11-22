@@ -460,7 +460,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
 
     from PIL import Image
 
-    from server.tooltip import correct_name, crop, find_tooltips, stars_near
+    from server.tooltip import crop, find_tooltips, stars_near
     listing_only = False  # 매물 툴팁만 보낸다(화면 전체 없이)
     try:
         img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1])))
@@ -538,7 +538,7 @@ def _auction_list_visible(img) -> bool:
     from server.listprice import find_coins
     try:
         return bool(find_coins(np.asarray(img, dtype=int)))
-    except Exception:
+    except Exception:  # noqa: BLE001 — 동전 찾기 실패가 화면 평가를 막으면 안 된다
         return False
 
 
@@ -549,7 +549,7 @@ def _list_rows(img) -> list[dict]:
     from server.listprice import read_rows
     try:
         return [{"power": r["power"], "price": r["price"]} for r in read_rows(img) if r["power"] and r["price"]]
-    except Exception:  # 목록 읽기 실패가 화면 평가를 막으면 안 된다
+    except Exception:  # noqa: BLE001 — 목록 읽기 실패가 화면 평가를 막으면 안 된다
         return []
 
 
@@ -570,7 +570,7 @@ def _ocr_frame(ocr, tips, stars) -> dict | None:
             return None
         try:
             item = parse_tooltip(ocr(tip))
-        except Exception:  # OCR 오류가 화면 평가를 막으면 안 된다
+        except Exception:  # noqa: BLE001 — OCR 오류가 화면 평가를 막으면 안 된다
             return None
         if item is None:
             return None

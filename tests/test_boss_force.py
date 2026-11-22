@@ -9,7 +9,6 @@ from engine.stats import force as F
 from engine.stats import symbols as S
 from engine.stats.evaluate import evaluate_setting, rank_settings
 from engine.stats.metrics import BossProfile
-from engine.stats.model import StatBlock
 from engine.stats.sets import SetCatalog
 from helpers import bundle, classes, load
 from nexon.convert import snapshot

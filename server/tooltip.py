@@ -270,7 +270,7 @@ def _count_star_rows(blobs) -> int | None:
             rows.append(cur)
             cur = [b]
     rows.append(cur)
-    total, step, started = 0, None, False
+    total, step, started, ref_size = 0, None, False, 0.0
     for row in rows:
         row = sorted(row, key=lambda b: b[1])
         sizes = [b[0] for b in row]

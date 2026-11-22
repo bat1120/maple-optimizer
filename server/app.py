@@ -50,7 +50,7 @@ def _err(e: ApiError) -> JSONResponse:
     return JSONResponse(status_code=e.status, content={"code": e.code, "message": e.message})
 
 
-import logging
+import logging  # noqa: E402
 _log = logging.getLogger("uvicorn.error")
 
 
@@ -99,14 +99,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         """공개 한도 차감(2026-10-17): DB가 안 되면 막는다(fail-closed) — 그동안 한도가 없어지는 걸 막는다."""
         try:
             return observations.quota_take(who)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _log.warning("한도 차감 실패: %s", type(e).__name__)
             raise ApiError(503, "QUOTA_UNAVAILABLE", "잠시 사용 횟수를 확인할 수 없어요. 조금 뒤 다시 시도해 주세요.") from None
 
     def _quota_used(who: str) -> int:
         try:
             return observations.quota_used(who)
-        except Exception as e:  # DB가 잠깐 안 되면 한도 없이 막지 않고 0으로(토큰 하루 한도가 따로 있다)
+        except Exception as e:  # noqa: BLE001 — DB가 잠깐 안 되면 한도 없이 막지 않고 0으로(토큰 하루 한도가 따로 있다)
             _log.warning("한도 조회 실패: %s", type(e).__name__)
             return 0
 
@@ -405,7 +405,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         try:
             events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday, spare_by_slot, flame_prices)
         except ValueError as e:
-            raise ApiError(400, "BAD_EVENTS", str(e))
+            raise ApiError(400, "BAD_EVENTS", str(e)) from None
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return service.paths(snap, b, prices.rows(), cooldown_main_pct, events=events)
 
@@ -421,7 +421,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         try:
             events = Events.parse(sf, miracle, spare_price, fragment_price, hexa_sunday, spare_by_slot)
         except ValueError as e:
-            raise ApiError(400, "BAD_EVENTS", str(e))
+            raise ApiError(400, "BAD_EVENTS", str(e)) from None
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return service.target_roadmap(snap, b, prices.rows(), current_ratio, target_ratio, events)
 
@@ -534,7 +534,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             # 지우지 않는 관측 기록에는 출처를 '공개화면'으로 따로 남기고, 지금 시세(rows)는 이 출처를 읽지 않는다
             try:
                 observations.record(x if is_admin else {**x, "source": PUBLIC_SOURCE})  # 영구 관측 기록(IP·이미지 없음)
-            except Exception as e:  # DB가 잠깐 안 돼도 평가는 계속한다
+            except Exception as e:  # noqa: BLE001 — DB가 잠깐 안 돼도 평가는 계속한다
                 _log.warning("관측 기록 실패: %s", type(e).__name__)
         if is_admin and not data.get("cached"):
             session_reads.extend(data["listings"] + data.get("equipped_items", []))

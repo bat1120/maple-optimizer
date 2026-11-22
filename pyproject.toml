@@ -17,9 +17,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.170.17",
     "pytest>=8",
     "pytest-xdist>=3.8.0",
     "pyyaml>=6.0.3",
+    "ruff>=0.17.6",
 ]
 analysis = ["scipy>=1.13", "numpy>=2"]
 
@@ -32,3 +34,16 @@ packages = ["engine", "nexon", "server", "agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = [".raw", ".raw-extra", ".cache", ".data"]
+
+[tool.ruff.lint]
+# 버그를 잡는 규칙만 켠다(모양·정렬 규칙은 켜지 않는다). 일부러 어긴 곳은 `# noqa: <코드> — 이유`로 남긴다.
+select = ["E4", "E7", "E9", "F", "B", "BLE", "RUF100"]
+ignore = [
+    "B905",  # zip(strict=): 길이가 다른 입력을 일부러 자르는 곳이 있다
+    "E702",  # 세미콜론으로 이은 짧은 문장
+    "E741",  # l 같은 짧은 변수 이름
+]

@@ -6,7 +6,7 @@ import copy
 from helpers import bundle
 from nexon.convert import snapshot
 from engine.stats.snapshot import Setting
-from server.service import CATALOG, scouter_delta
+from server.service import scouter_delta
 
 
 def _snap_and_glove():

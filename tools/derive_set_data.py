@@ -87,7 +87,7 @@ def solve(chars):
         rows.append(row), lb.append(t), ub.append(t)
     for it in wear:
         row = np.zeros(n_x + 2 * n_c)
-        for (i, st), k in idx.items():
+        for (i, _st), k in idx.items():
             if i == it:
                 row[k] = 1
         rows.append(row), lb.append(0), ub.append(1)

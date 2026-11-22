@@ -371,7 +371,7 @@ def test_api_returns_recognized_and_analyzing_counts_per_scan(tmp_path):
     from server.app import create_app
     fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)])
     c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3"), agent_client=fake))
-    post = lambda tip, scan: c.post("/api/vision/listings", json={"image": _url(_frame([((520, 120), tip)])),
+    post = lambda tip, scan: c.post("/api/vision/listings", json={"image": _url(_frame([((520, 120), tip)])),  # noqa: E731
                                                                  "scan_id": scan}).json()
     r1 = post(_tip_power("-1931721"), "scan-a")
     assert (r1["recognized"], r1["analyzing"]) == (1, 0)

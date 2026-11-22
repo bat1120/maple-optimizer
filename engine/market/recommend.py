@@ -19,7 +19,7 @@ import re
 import statistics
 from dataclasses import dataclass, field
 
-from engine.enhance.fixed import fixed_reason  # noqa: F401 — 재설정 불가 템(PC방 도미네이터 등)
+from engine.enhance.fixed import fixed_reason  # 재설정 불가 템(PC방 도미네이터 등)
 from engine.market.cube_value import expected_cost
 from engine.options import StatLine, parse_option
 from engine.stats.evaluate import Evaluator

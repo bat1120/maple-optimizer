@@ -27,7 +27,7 @@ def _replay(snap, setting, out):
                 stat[k] = stat.get(k, 0.0) + v
             for k, v in st["force_gain"].items():
                 force[k] = force.get(k, 0) + v
-    val = lambda its: {s: _valued(it, pl.mains, pl.per_sec) for s, it in its.items()}
+    val = lambda its: {s: _valued(it, pl.mains, pl.per_sec) for s, it in its.items()}  # noqa: E731
     return pl.ev.index(val(items), extra_of(stat, force)) / pl.ev.index(val(pl.raw), extra_of({}, {}))
 
 

@@ -175,7 +175,7 @@ def reader():
         engine = RapidOCR(params={"Rec.lang_type": LangRec.KOREAN, "Rec.ocr_version": OCRVersion.PPOCRV5,
                                   "Rec.model_type": ModelType.MOBILE, "Global.use_cls": False})
         engine(np.zeros((64, 160, 3), np.uint8))  # 글자 모델은 처음 읽을 때 받는다 — 여기서 미리 받아 둔다
-    except Exception as e:  # 패키지·모델이 없으면 OCR 없이 돈다
+    except Exception as e:  # noqa: BLE001 — 패키지·모델이 없으면 OCR 없이 돈다
         _log.warning("툴팁 OCR 꺼짐(AI만 사용): %s", type(e).__name__)
         return None
     _log.info("툴팁 OCR 켜짐(PP-OCRv5 한국어)")

@@ -347,7 +347,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
                 + (f" · 지금 낀 {ring.name} {ring.special_ring_level}레벨" if ring else ""))
         try:
             row["scouter"] = scouter_delta(snap, chosen, slot, item)  # 사람이 읽는 변화량(변화량 복사 버튼)
-        except Exception:  # 변화량을 못 구해도 평가는 보여 준다
+        except Exception:  # noqa: BLE001 — 변화량을 못 구해도 평가는 보여 준다
             row["scouter"] = None
         row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
                     "main_stat_gain": gain, "excluded": item.excluded,

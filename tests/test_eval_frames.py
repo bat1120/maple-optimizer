@@ -6,7 +6,7 @@ from PIL import Image
 from test_tooltip_image import _tooltip
 
 sys.path.insert(0, "tools")
-from eval_frames import compare, compose  # noqa: E402
+from eval_frames import compare, compose
 
 LABEL = {"name": "고통의 근원", "level": 160, "starforce": 18, "starforce_source": "별 세기",
          "total": {"STR": 89, "INT": 134}, "potential_grade": "레전드리", "potential_lines": ["INT +12%", "INT +9%", "INT +9%"],

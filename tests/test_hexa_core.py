@@ -58,9 +58,9 @@ def test_paths_api_includes_hexa_cores_with_fragment_price(tmp_path):
 
 
 # ── 2026-10-11: 3rd 스킬 코어·직업군 공용 코어 비용 열 구분, 강화 코어의 문장별 대상 스킬 ──
-from types import SimpleNamespace
+from types import SimpleNamespace  # noqa: E402
 
-from engine.market.hexa_core_paths import KIND, cost_column
+from engine.market.hexa_core_paths import KIND, cost_column  # noqa: E402
 
 
 def _lete():

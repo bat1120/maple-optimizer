@@ -77,7 +77,7 @@ class ObservationLog:
                 except self._no_retry:  # 연결 오류의 하위 종류라도 다시 연결해 또 기다리지 않는다(예: 잠금 대기 초과)
                     try:
                         self._conn.rollback()
-                    except Exception:
+                    except Exception:  # noqa: BLE001 — 롤백 실패는 원래 오류를 가리지 않게 넘긴다
                         pass
                     raise
                 except self._retry_on:
@@ -92,7 +92,7 @@ class ObservationLog:
                         continue
                     try:
                         self._conn.rollback()
-                    except Exception:
+                    except Exception:  # noqa: BLE001 — 롤백 실패는 원래 오류를 가리지 않게 넘긴다
                         pass
                     raise
 
@@ -264,7 +264,7 @@ def open_log(sqlite_path: str, clock: Callable[[], float]) -> ObservationLog:
     if url:
         try:
             return ObservationLog.postgres(url, clock)
-        except Exception as e:  # noqa: BLE001 — 관측 DB에 못 붙어도 사이트는 뜬다(2026-10-17 배포 장애: 시작하다 죽어 502)
+        except Exception as e:  # 관측 DB에 못 붙어도 사이트는 뜬다(2026-10-17 배포 장애: 시작하다 죽어 502)
             if type(e).__name__ == "LockNotAvailable":  # psycopg.errors — psycopg가 없는 환경에서도 import 없이 판별
                 # 붙기는 했는데 칸 더하기가 표 잠금에 막힘 — SQLite로 넘어가면 기록이 두 곳으로 갈라진다. 시작을 실패시켜
                 # 컨테이너 재시작(restart: unless-stopped)으로 잠금이 풀린 뒤 다시 붙는다

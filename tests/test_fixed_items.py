@@ -1,7 +1,6 @@
 """스타포스·잠재를 재설정할 수 없는 템(2026-10-17 사용자): 크리티컬 확률이 달린 도미네이터 펜던트는 PC방 도미네이터 —
 스타포스 강화·잠재(큐브) 재설정이 안 된다. 픽스처: 레테·렌·히어로 펜던트2(15성 고정, 유니크 주스탯 9/6% + 크확 6%, 에디 없음).
 다른 펜던트를 사서 바꾸는 경로(구매)와 검색 추천은 그대로."""
-import pytest
 
 from helpers import bundle
 from engine.enhance.starforce_stats import eligible

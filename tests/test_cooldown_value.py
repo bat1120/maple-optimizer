@@ -78,7 +78,6 @@ def test_xenon_all_stat_goes_to_all_three_mains():
     hat = type(hat)(**{**hat.__dict__, "potentials": ["스킬 재사용 대기시간 -2초"], "after": []})
     v, _ = cooldown_valuer("제논", None)
     out = _valued(hat, job_profile("제논").mains, v)
-    added = [l for l in out.stats.lines if l not in hat.stats.lines] if hasattr(out.stats, "lines") else None
     for m in ("STR", "DEX", "LUK"):
         assert out.stats.pct.get(m, 0) - hat.stats.pct.get(m, 0) == 20
 
