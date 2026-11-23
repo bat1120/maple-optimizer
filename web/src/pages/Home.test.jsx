@@ -31,7 +31,7 @@ describe("home page", () => {
   it("처음 오면 사용 안내(검색·탭 설명)가 보이고, 닫으면 다시 안 뜬다", () => {
     render(<Home />);
     const hint = screen.getByRole("region", { name: /처음이신가요/ });
-    for (const t of ["닉네임 검색", "요약 탭", "업그레이드 탭", "계산기 탭"]) expect(hint).toHaveTextContent(t);
+    for (const t of ["닉네임 검색", "추천 확인", "게임 경매장에서 검색", "검색 화면 공유"]) expect(hint).toHaveTextContent(t);
     fireEvent.click(screen.getByRole("button", { name: "안내 닫기" }));
     expect(screen.queryByRole("region", { name: /처음이신가요/ })).toBeNull();
     cleanup();

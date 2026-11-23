@@ -11,6 +11,7 @@ import FreeSwitch from "../character/FreeSwitch.jsx";
 import StatSummary from "../character/StatSummary.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
+import BudgetPanel from "../BudgetPanel.jsx";
 import PathsPanel from "../PathsPanel.jsx";
 import SwapsPanel from "../SwapsPanel.jsx";
 import ArmorSetsPanel from "../ArmorSetsPanel.jsx";
@@ -66,6 +67,24 @@ export function TabIntro({ tab, defense, onDefense }) {
   );
 }
 
+// 이 서비스의 흐름을 순서로 보여 준다(2026-11-23 심사 3명 공통: 추천 → 경매장 검색 → 화면 공유 → 딜 계산이 화면에 순서로 안 보였다)
+export const FLOW = [
+  { title: "추천 확인", text: "아래 순위에서 올릴 부위를 골라요" },
+  { title: "경매장에서 검색", text: "게임 경매장 상세 검색에 그 조건을 넣어요" },
+  { title: "검색 화면 공유", text: "결과 화면을 공유하면 매물을 읽어요 (PC)" },
+  { title: "실딜 확인", text: "끼웠을 때 오르는 딜과 1억당 효율을 봐요" },
+];
+
+export function FlowSteps() {
+  return (
+    <ol className="flow-steps" aria-label="이렇게 진행해요">
+      {FLOW.map((s, i) => (
+        <li key={s.title}><span className="flow-no">{i + 1}</span><span className="flow-text"><strong>{s.title}</strong><span className="muted">{s.text}</span></span></li>
+      ))}
+    </ol>
+  );
+}
+
 function Skeleton() {
   return (
     <div data-testid="skeleton" aria-busy="true" aria-label="불러오는 중" className="char-skel">
@@ -101,6 +120,8 @@ function Fold({ title, children, open, onToggle, foldRef }) {
     </details>
   );
 }
+
+export const WATCH_TITLE = "3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)";
 
 // 닉네임을 못 찾았을 때(404): 같은 이름 '다시 시도'는 막다른 길이라, 그 닉네임을 채운 검색창으로 고쳐 찾게 한다(2026-10-11 디자인 심사)
 function NotFound({ name }) {
@@ -192,9 +213,6 @@ export default function Character({ route }) {
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
-          {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다 */}
-          <AgentPanel key={name} name={name} initialAuthed title="AI 상담" showQuota
-                      watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
           {/* 추천 상자 하나에 두 줄(2026-10-11 심사 5회차: 띠 두 개가 모양이 달라 별개 부품처럼 보였다) */}
           {tab === "summary" && (
             <div className="picks">
@@ -202,6 +220,10 @@ export default function Character({ route }) {
               <TopPick name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
             </div>
           )}
+          {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다.
+              2026-11-23: 추천 결과 아래로 내리고 한 줄 입력으로 줄였다(결과가 질문 폼에 밀리지 않게) */}
+          <AgentPanel key={name} name={name} initialAuthed title="AI에게 물어보기" showQuota
+                      watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -232,8 +254,20 @@ export default function Character({ route }) {
           )}
           {tab === "upgrade" && (
             <div className="stack">
-              {/* 순서(2026-10-11 심사): 1순위 → 그 조건으로 경매장 검색 → 방법 비교 → 목표 배율 */}
+              {/* 순서(2026-11-23): 흐름 4단계 → 내 메소로 어디까지 → 순위(1·2단계) → 검색 화면 공유(3·4단계) → 다른 기준 */}
+              <FlowSteps />
+              <BudgetPanel name={name} defense={calcDefense} />
               <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} />
+              {/* 화면 공유는 이 서비스의 핵심 단계다 — '고급 도구' 아래 접어 두지 않고 순위 바로 아래에 둔다 */}
+              <div className="pc-only">
+                <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
+                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
+                </Fold>
+              </div>
+              <p className="card mobile-only muted note-box">
+                <Icon name="monitor" size={16} />
+                검색 화면을 읽어 매물을 평가하는 3·4단계는 PC에서 돼요. PC에서 이 주소를 열면 이어서 할 수 있어요.
+              </p>
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
@@ -242,16 +276,6 @@ export default function Character({ route }) {
               <Fold title="방어구 세트 조합 — 카루타·앱솔·아케인·에테르넬"><ArmorSetsPanel name={name} defense={calcDefense} autoLoad /></Fold>
               <Fold title="다른 템으로 갈아타기 — 세트 효과까지"><SwapsPanel name={name} defense={calcDefense} autoLoad /></Fold>
               <Fold title="목표 보스 배율까지의 순서"><TargetRoadmapPanel name={name} defense={calcDefense} /></Fold>
-              <h3 className="section-label">고급 도구</h3>
-              <div className="pc-only">
-                <Fold title="게임 경매장 화면을 읽어 매물 평가 (PC 전용)" open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
-                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
-                </Fold>
-              </div>
-              <p className="card mobile-only muted note-box">
-                <Icon name="monitor" size={16} />
-                게임 경매장 화면을 읽어 매물을 평가하는 기능은 PC에서만 돼요.
-              </p>
             </div>
           )}
           {tab === "calc" && <CalcPanels />}

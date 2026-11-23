@@ -153,3 +153,16 @@ def test_flames_join_only_when_asked_and_target_mode_is_unchanged():
     with_flames = target_roadmap(snap, setting, BOSS, CAT, Events(), [], 100.0, 1e9, budget=5_000_000_000, flames=True)
     flame_slots = [s["slot"] for s in with_flames["steps"] if s["path"] == "추옵"]
     assert flame_slots and len(flame_slots) == len(set(flame_slots))  # 부위마다 한 번
+
+
+def test_budget_roadmap_route_answers_how_far_the_budget_goes(tmp_path):
+    """화면의 '내 예산' 칸이 부르는 API(2026-11-23) — AI 도구와 같은 계산."""
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
+    r = c.get("/api/character/레테/budget-roadmap", params={"budget": 5_000_000_000})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["budget_text"] == "50억" and body["steps"] and body["gain_pct"] > 0
+    assert body["spent_text"] == body["steps"][-1]["total_cost_text"]
+    assert c.get("/api/character/레테/budget-roadmap", params={"budget": 50}).status_code == 400

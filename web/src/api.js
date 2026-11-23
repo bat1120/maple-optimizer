@@ -155,6 +155,12 @@ export function getSwaps(name, bossDefense = 300, starforce = 18) {
   return request(`${base(name)}/swaps?${bq(bossDefense)}&starforce=${starforce}`);
 }
 
+// 내 메소로 어디까지(2026-11-23): budget은 메소 정수
+export function getBudgetRoadmap(name, bossDefense = 300, budget) {
+  const q = new URLSearchParams({ ...bossQuery(bossDefense), budget: String(Math.round(budget)) });
+  return request(`${base(name)}/budget-roadmap?${q}`);
+}
+
 export function getTargetRoadmap(name, bossDefense = 300, { current, target, fragmentMan } = {}) {
   const q = new URLSearchParams({ ...bossQuery(bossDefense), current_ratio: String(current), target_ratio: String(target) });
   const frag = Number(fragmentMan);

@@ -425,6 +425,15 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return service.target_roadmap(snap, b, prices.rows(), current_ratio, target_ratio, events)
 
+    @app.get("/api/character/{name}/budget-roadmap")
+    def budget_roadmap(name: str, budget: float, boss_defense: float = 300.0, date: str | None = None, boss: str | None = None,
+                       arcane_force: int | None = None, authentic_force: int | None = None):
+        """가진 메소(budget)로 어디까지 올릴 수 있나 — 억당 효율 순으로 예산을 채운 단계와 누적 실딜."""
+        if not service.MIN_BUDGET <= budget <= 1e13:
+            raise ApiError(400, "BAD_BUDGET", "예산은 메소로 넣어 주세요(50억 → 5000000000).")
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return service.budget_roadmap(snap, b, prices.rows(), budget)
+
     class MarketRefreshIn(BaseModel):
         name: str
         slots: list[str] | None = None

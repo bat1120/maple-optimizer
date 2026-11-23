@@ -745,3 +745,94 @@ fieldset.events .chip .muted { display: inline; }
 .swap-star select { width: auto; min-height: 36px; }
 /* 방어구 세트 조합: 지금 세팅 줄 */
 .paths-table tr.is-now td { background: var(--surface-2); }
+
+/* ── 2026-11-23 디자인 심사(직관성): 흐름 4단계 · 내 메소로 어디까지 · AI 한 줄 입력 ── */
+/* 누를 수 있는 칩(예시 질문·자주 쓰는 금액): 알약 + 옅은 바탕. 누를 수 없는 조건 칩과 구분된다 */
+button.pill { min-height: 32px; padding: 4px 14px; border-radius: 999px; background: var(--surface-2); color: var(--text-2);
+  border: 1px solid var(--line-strong); font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { button.pill:hover:not(:disabled) { border-color: var(--accent-fill); color: var(--accent); background: var(--surface); } }
+
+/* AI에게 물어보기: 제목 줄 + 입력 한 줄 + 예시 칩 — 추천 결과를 밀어내지 않게 낮게 */
+.panel.agent { margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4); }
+.agent-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
+.agent-head h3 { margin: 0; font-size: var(--fs-base); font-weight: 800; }
+.agent-quota { margin-left: auto; padding: 1px 10px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); font-weight: 600; white-space: nowrap; }
+.agent .chat:empty { display: none; }
+.agent .chat { margin: var(--sp-2) 0; }
+form.agent-ask { display: flex; gap: var(--sp-2); margin: var(--sp-2) 0 0; }
+form.agent-ask input { flex: 1; min-width: 0; min-height: 44px; }
+form.agent-ask button { flex: none; min-height: 44px; }
+.agent-quick { margin: var(--sp-2) 0 0; }
+.agent-notice { margin-top: var(--sp-2); }
+.agent-notice > summary { font-size: var(--fs-xs); color: var(--muted); cursor: pointer; }
+.agent-notice > p { margin: var(--sp-1) 0 0; }
+
+/* 진행 순서 4단계: 추천 → 경매장 검색 → 화면 공유 → 실딜 */
+.flow-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2); }
+.flow-steps li { position: relative; display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line); border-radius: var(--radius-inner); background: var(--surface); }
+.flow-steps li:not(:last-child)::after { content: "›"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); z-index: 1;
+  width: 16px; text-align: center; color: var(--muted); font-weight: 800; background: var(--bg); }
+.flow-no, .step-no { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: var(--fs-xs); }
+.flow-text { display: flex; flex-direction: column; min-width: 0; font-size: var(--fs-sm); }
+.flow-text .muted { font-size: var(--fs-xs); line-height: 1.45; }
+.cond-head { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.top1 .cond-head { font-size: var(--fs-sm); color: var(--text); }
+.rank-help, .rank-mobile-note { color: var(--text-2); line-height: 1.5; }
+.top1 .rank-foot { align-items: center; }
+
+/* 내 메소로 어디까지 */
+.budget-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-2) 0 0; }
+.budget-form input { width: 200px; min-height: 44px; font-size: var(--fs-md); font-weight: 700; }
+.budget-form > button[type="submit"] { min-height: 44px; }
+.budget-quick { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.budget-result { margin-top: var(--sp-4); }
+.budget-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-2); margin: 0; padding: var(--sp-3) var(--sp-4);
+  border: 2px solid var(--accent-fill); border-radius: var(--radius-inner); background: var(--rank-bg); font-size: var(--fs-base); color: var(--text-2); }
+.budget-headline strong { color: var(--text); }
+.budget-headline .budget-gain { font-size: var(--fs-xl); font-weight: 800; color: var(--up); line-height: 1.1; }
+.budget-spend { margin-left: auto; }
+.budget-steps { list-style: none; margin: var(--sp-3) 0 0; padding: 0; }
+.budget-steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto minmax(190px, auto); align-items: center; gap: var(--sp-1) var(--sp-3);
+  padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
+.budget-steps li:last-child { border-bottom: 0; }
+.budget-no { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); background: var(--surface-3); font-weight: 800; font-size: var(--fs-xs); }
+.budget-what { display: flex; flex-direction: column; min-width: 0; }
+.budget-what .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.budget-cost { font-weight: 800; white-space: nowrap; }
+.budget-sum { text-align: right; white-space: nowrap; }
+.budget-sum strong { color: var(--up); }
+.budget-next { margin: var(--sp-3) 0 0; font-size: var(--fs-sm); color: var(--text-2); }
+
+/* 홈: 처음 안내는 검색창 아래 전체 폭 4칸(하게 될 일 순서) */
+.home-below { grid-template-columns: minmax(0, 1fr); }
+.first-visit .step-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
+.first-visit .step-list li { grid-template-columns: 32px minmax(0, 1fr); padding: var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-inner); }
+.first-visit .step-list li:last-child { border-bottom: 1px solid var(--line); }
+.first-visit .step-list li > .muted { grid-column: 2; }
+
+@media (max-width: 1000px) {
+  .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flow-steps li:not(:last-child)::after { content: none; }
+  .first-visit .step-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .first-visit .step-list { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .flow-steps { grid-template-columns: minmax(0, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--radius-inner); background: var(--surface); }
+  .flow-steps li { border: 0; border-radius: 0; padding: var(--sp-2) var(--sp-3); }
+  .flow-steps li + li { border-top: 1px solid var(--line); }
+  .rank-foot.foot-pc { display: none; }
+  .rank-top { grid-template-columns: auto minmax(0, 1fr); }
+  .rank-top .rank-eff { grid-column: 1 / -1; display: flex; align-items: baseline; gap: var(--sp-2); }
+  .budget-form input { flex: 1; width: auto; min-width: 0; }
+  .budget-quick { flex-basis: 100%; }
+  .budget-spend { margin-left: 0; flex-basis: 100%; }
+  .budget-steps li { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .budget-sum { grid-column: 2 / -1; text-align: left; }
+  .agent-quota { margin-left: 0; }
+  form.agent-ask button { padding: 0 14px; }
+}
+/* 카드 안 입력 줄은 상자를 한 겹 더 두르지 않는다(심사: 이중 상자) */
+form.agent-ask, form.budget-form { border: 0; padding: 0; background: none; border-radius: 0; }
+@media (max-width: 720px) { .cond-head.pc-only-inline { display: none; } }

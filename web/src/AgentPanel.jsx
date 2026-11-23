@@ -125,11 +125,13 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
     );
   }
   return (
-    <section className="panel">
-      <h3>{title}</h3>
-      {quota && !quota.admin && <p className="muted small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</p>}
-      <p className="muted small">질문과 답변은 품질 확인을 위해 기록돼요 — 답변을 만들려고 OpenAI로, 기록은 Langfuse(EU)로 보내요. 개인정보는 적지 말아 주세요(IP는 남기지 않아요).</p>
-      {name && <p className="muted">조회한 캐릭터 {name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</p>}
+    <section className="panel agent">
+      {/* 2026-11-23 디자인 심사: 빈 질문 폼(약 400px)과 고지문이 추천 결과·탭을 첫 화면 밖으로 밀었다 → 제목 줄 + 입력 한 줄 + 예시 칩 */}
+      <div className="agent-head">
+        <h3>{title}</h3>
+        {name && <span className="muted small agent-who">{name} 기준으로 답해요{screenItems.some((i) => !isListOnly(i)) ? ` · 화면 매물 ${screenItems.filter((i) => !isListOnly(i)).length}개를 함께 보내요` : ""}</span>}
+        {quota && !quota.admin && <span className="agent-quota small">오늘 남은 질문 {quota.remaining}/{quota.limit}회</span>}
+      </div>
       <div className="chat">
         {log.map((ev, i) => {
           if (ev.type === "user") return <p key={i} className="me">🙋 {ev.text}</p>;
@@ -143,18 +145,23 @@ export default function AgentPanel({ name = "", screenItems = [], feeRate = null
           return null;
         })}
       </div>
+      <form onSubmit={send} className="search agent-ask">
+        <input aria-label="질문" value={question} onChange={(e) => setQuestion(e.target.value)}
+               placeholder={name ? "예: 50억으로 뭐부터 할까?" : "예: 내 닉네임은 ○○야. 50억으로 뭐부터 할까?"} />
+        <button type="submit" disabled={busy}>{busy ? "답하는 중…" : "보내기"}</button>
+      </form>
       {name && (
-        <p className="chips" aria-label="바로 물어보기">
+        <p className="chips agent-quick" aria-label="바로 물어보기">
           {QUICK_QUESTIONS.map((q) => (
-            <button key={q} type="button" className="ghost small" disabled={busy} onClick={() => ask(q)}>{q}</button>
+            <button key={q} type="button" className="pill" disabled={busy} onClick={() => ask(q)}>{q}</button>
           ))}
         </p>
       )}
-      <form onSubmit={send} className="search">
-        <label>질문<input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="내신부레테 50억으로 뭐부터 할까?" /></label>
-        <button type="submit" disabled={busy}>보내기</button>
-      </form>
       {error && <p role="alert" className="error">{error.message}</p>}
+      <details className="agent-notice">
+        <summary>질문과 답변은 품질 확인을 위해 기록돼요 · 자세히</summary>
+        <p className="muted small">답변을 만들려고 OpenAI로, 기록은 Langfuse(EU)로 보내요. 개인정보는 적지 말아 주세요(IP는 남기지 않아요).</p>
+      </details>
     </section>
   );
 }

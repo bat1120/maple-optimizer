@@ -64,6 +64,14 @@
         {
           "what": "탭이 3개다",
           "js": "document.querySelectorAll('nav.tabs [role=tab]').length === 3"
+        },
+        {
+          "what": "추천 결과가 AI 질문칸보다 위에 있다",
+          "js": "(() => { const p = document.querySelector('.picks'), a = document.querySelector('.agent'); return !!p && !!a && p.getBoundingClientRect().top < a.getBoundingClientRect().top; })()"
+        },
+        {
+          "what": "AI 질문 영역이 낮다(220px 이하) — 결과를 밀어내지 않는다",
+          "js": "document.querySelector('.agent').getBoundingClientRect().height <= 220"
         }
       ]
     },
@@ -99,6 +107,14 @@
         {
           "what": "불러오는 중 표시가 남아 있지 않다",
           "js": "!document.querySelector('[data-testid=skeleton]')"
+        },
+        {
+          "what": "진행 순서 4단계가 보인다",
+          "js": "document.querySelectorAll('.flow-steps li').length === 4"
+        },
+        {
+          "what": "가진 메소 입력칸이 순위보다 위에 있다",
+          "js": "(() => { const b = document.querySelector('.budget-panel input'), r = document.querySelector('.rank-card'); return !!b && !!r && b.getBoundingClientRect().top < r.getBoundingClientRect().top; })()"
         }
       ]
     },
@@ -191,6 +207,37 @@
         {
           "what": "오류 안내가 없다",
           "js": "![...document.querySelectorAll('[role=alert]')].some(e => e.innerText.trim())"
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "title": "내 메소로 어디까지 — 금액을 누르면 예산 안의 순서와 누적 실딜이 나온다",
+      "url": "/#/c/{character}?tab=upgrade",
+      "ready": "!!document.querySelector('.budget-panel .budget-quick button')",
+      "steps": [
+        {
+          "js": "[...document.querySelectorAll('.budget-panel .budget-quick button')].find(b => b.textContent === '50억').click()",
+          "wait": "!!document.querySelector('.budget-headline')",
+          "timeout": 60
+        }
+      ],
+      "expect": [
+        {
+          "what": "결론 한 줄에 실딜 상승률이 있다",
+          "js": "/\\+\\d+\\.\\d\\d%/.test(document.querySelector('.budget-gain')?.textContent || '')"
+        },
+        {
+          "what": "예산 안의 단계가 1개 이상이다",
+          "js": "document.querySelectorAll('.budget-steps li').length > 0"
+        },
+        {
+          "what": "가로로 넘치지 않는다",
+          "js": "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
+        },
+        {
+          "what": "오류 알림이 없다",
+          "js": "!document.querySelector('.budget-panel [role=alert]')"
         }
       ]
     }

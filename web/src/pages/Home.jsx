@@ -4,12 +4,12 @@ import { addRecent, clearRecent, closeHint, hintClosed, loadRecent } from "../re
 import { getMarketStats } from "../api.js";
 import Icon from "../ui/icons.jsx";
 
-// 처음 온 사람용 안내 — 실제 있는 화면만 설명한다.
-const FIRST_STEPS = [
-  { title: "닉네임 검색", text: "캐릭터 닉네임을 넣으면 넥슨 Open API로 지금 스펙을 불러와요." },
-  { title: "요약 탭", text: "프리셋별 장비창과, 장비·하이퍼·어빌 프리셋 조합의 보스 세팅 순위를 봐요." },
-  { title: "업그레이드 탭", text: "부위별 잠재·에디 다음 단계와 가격 대비 순위, 경매장 검색 조건을 알려 드려요." },
-  { title: "계산기 탭", text: "스타포스 기대 비용, 큐브 목표 확률, 매물 vs 직작을 계산해요." },
+// 처음 온 사람용 안내 — 실제 있는 기능만, 사용자가 하게 될 일 순서로(2026-11-23 심사: 탭 이름 나열이라 흐름이 안 보였다).
+export const FIRST_STEPS = [
+  { title: "닉네임 검색", text: "지금 스펙을 불러와 내 템을 진단해요." },
+  { title: "추천 확인", text: "같은 메소로 보스 딜이 가장 많이 오르는 부위와 옵션을 알려 드려요. 가진 메소를 넣으면 어디까지 올릴지도 계산해요." },
+  { title: "게임 경매장에서 검색", text: "추천 조건을 게임 경매장 상세 검색에 그대로 넣어요." },
+  { title: "검색 화면 공유", text: "검색 결과 화면을 공유하면 매물을 읽어, 끼웠을 때 실제 딜이 얼마나 오르는지 계산해요(PC)." },
 ];
 
 export default function Home() {
@@ -72,7 +72,6 @@ export default function Home() {
                 <li key={s.title}><strong>{s.title}</strong><span className="muted">{s.text}</span></li>
               ))}
             </ol>
-            <p className="muted small">탭은 주소에 남아서 새로고침하거나 링크를 공유해도 같은 화면이 열려요.</p>
           </section>
         )}
 

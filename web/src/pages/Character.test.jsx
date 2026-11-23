@@ -165,13 +165,17 @@ describe("character page", () => {
   it("업그레이드 탭: PC용 경매장 화면 평가(일반 유저 모드)와 휴대폰 안내", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    const watch = (await screen.findByText("게임 경매장 화면을 읽어 매물 평가 (PC 전용)")).closest("details");
+    const watch = (await screen.findByText("3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
     expect(screen.queryByRole("heading", { name: "경매장 화면 평가" })).toBeNull();   // 펼치기 전엔 그리지 않는다
     await act(async () => { watch.open = true; fireEvent(watch, new Event("toggle")); });
     expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
-    expect(screen.getByText(/매물을 평가하는 기능은 PC에서만/)).toBeInTheDocument();
+    expect(screen.getByText(/3·4단계는 PC에서 돼요/)).toBeInTheDocument();
+    // 2026-11-23: 흐름 4단계와 '내 메소로 어디까지'가 순위보다 위, 화면 공유는 '고급 도구'가 아니라 순위 바로 아래
+    expect(within(screen.getByRole("list", { name: "이렇게 진행해요" })).getAllByRole("listitem")).toHaveLength(4);
+    expect(screen.getByLabelText("가진 메소")).toBeInTheDocument();
+    expect(screen.queryByText("고급 도구")).toBeNull();
   });
 
   it("탭마다 할 수 있는 것 한 줄과 사용 방법이 붙는다", async () => {
@@ -222,9 +226,9 @@ describe("character page", () => {
       return ok(SUMMARY);
     });
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    const watch = (await screen.findByText("게임 경매장 화면을 읽어 매물 평가 (PC 전용)")).closest("details");
+    const watch = (await screen.findByText("3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
-    fireEvent.click(await screen.findByRole("button", { name: "이 조건으로 찾은 매물 평가하기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
     expect(watch).toHaveAttribute("open");
     const note = screen.getByRole("note", { name: "찾는 조건" });
     expect(note).toHaveTextContent("부위엠블렘");
@@ -263,7 +267,7 @@ describe("character page — AI 상담은 모두에게, 일반 사용자는 하�
   it("관리자면 탭보다 위에 AI 상담(비밀번호 없이)과 바로 물어볼 질문, 횟수 제한 표시 없음", async () => {
     withSession(true);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
-    const ai = await screen.findByRole("heading", { name: "AI 상담" });
+    const ai = await screen.findByRole("heading", { name: "AI에게 물어보기" });
     const tabs = screen.getByRole("tablist", { name: "캐릭터 화면 탭" });
     expect(ai.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
@@ -273,7 +277,7 @@ describe("character page — AI 상담은 모두에게, 일반 사용자는 하�
   it("일반 사용자도 AI 상담을 쓰고, 오늘 남은 질문 수를 본다", async () => {
     withSession(false);
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
-    expect(await screen.findByRole("heading", { name: "AI 상담" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "AI에게 물어보기" })).toBeInTheDocument();
     expect(await screen.findByText(/오늘 남은 질문 3\/5회/)).toBeInTheDocument();
     expect(screen.queryByLabelText("관리자 비밀번호")).toBeNull();
   });

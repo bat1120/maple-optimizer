@@ -407,6 +407,33 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
                      "(입력칸이 없어요) — 그 몫은 hexa_core_multiplier.")}
 
 
+MIN_BUDGET = 10_000  # 이보다 작은 예산은 '50억'을 50으로 넣은 단위 실수다
+_BUDGET_STEP = ("slot", "path", "name", "kind", "grade", "target", "flame", "from_star", "to_star", "from_level", "to_level",
+                "cost_text", "delta_pct", "per_100m", "total_cost_text")
+
+
+def budget_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, budget: float) -> dict:
+    """가진 메소로 어디까지 올릴 수 있나(2026-11-23 사용자: 프로젝트 목적). 목표 배율 로드맵 엔진의 예산 모드 —
+    억당 효율 순으로 쌓고, 남은 돈으로 못 하는 단계는 건너뛰어 그다음 효율 단계로 예산을 채운다. 추옵 재설정 포함."""
+    if not isinstance(budget, (int, float)) or budget < MIN_BUDGET:
+        raise ValueError(f"budget은 메소 정수다(50억 → 5000000000). {budget}는 억·만 단위로 넣은 것 같다 — 메소로 다시 넣는다")
+    r = target_roadmap(snap, defense, observed, 100.0, 1e9, None, budget=budget, flames=True)
+    brief = lambda s: {k: s[k] for k in _BUDGET_STEP if s.get(k) is not None}  # noqa: E731
+    steps, spent, skipped = r["steps"], r["total_cost"], r["skipped_first"]
+    return {"evaluation_setting": r["evaluation_setting"], "boss": r["boss"], "basis_warning": r.get("basis_warning"),
+            "budget": budget, "budget_text": meso_text(budget),
+            "steps": [brief(s) | {"gain_pct_after": (s["multiplier"] - 1) * 100} for s in steps],
+            "spent_text": meso_text(spent) if spent else "0", "left_text": meso_text(budget - spent),
+            "gain_pct": (steps[-1]["multiplier"] - 1) * 100 if steps else 0.0,
+            "next_step": None if skipped is None else (
+                brief(skipped | {"cost_text": meso_text(skipped["cost"])})
+                | {"short_text": meso_text(skipped["cost"] - (budget - spent))}),
+            "note": ("억당 효율이 높은 단계부터 쌓고, 남은 돈으로 못 하는 단계는 건너뛰어 그다음 효율 단계로 예산을 채웠어요. "
+                     "next_step은 건너뛴 단계 중 효율이 가장 높은 것, short_text는 그 단계를 하려면 더 필요한 금액이에요. "
+                     "비용은 평균 기대값이라 실제로는 더 들거나 덜 들 수 있어요. 추옵은 목표 이상에서 멈췄을 때의 평균 상승(근사)이에요. "
+                     "스타포스 스페어 값·이벤트 할인·경매장 구매는 들어 있지 않아요 — 매물은 화면으로 받아 따로 평가해요.")}
+
+
 def _total_key(total: dict | None) -> tuple:
     """총 옵션 비교용: 값이 있는 칸만, 정렬해서."""
     return tuple(sorted((k, v) for k, v in (total or {}).items() if v))

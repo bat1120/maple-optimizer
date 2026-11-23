@@ -89,7 +89,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                         <span className="rank-eff-k">보스 실딜</span><strong className="num">{formatPct(v.delta_pct)}</strong></span>
                     </div>
                     {/* 칩 = 게임 경매장 상세 검색 칸 순서(부위 → 등급 → 1·2·3줄, 각 줄은 '이상') */}
-                    {i === 0 && <span className="cond-head">경매장 상세 검색</span>}
+                    {i === 0 && <span className="cond-head"><span className="step-no">1</span>게임 경매장 › 상세 검색에 이 조건을 넣어 검색해요</span>}
                     <ul className="rank-cond" aria-label="경매장 검색 조건">
                       <li className="cond-slot"><span className="cond-k">부위</span>{v.slot}</li>
                       <li className={`cond-grade ${gradeClass(v.grade)}`}><span className="cond-k">{v.kind}</span>{v.grade}</li>
@@ -103,12 +103,13 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {/* 아래 줄(2026-10-17 사용자): 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 검색한 뒤
                         화면 공유로 매물을 평가하는 버튼(PC). 휴대폰은 화면 공유가 안 돼 안내만. 못 사는 템은 큐브 계산기 */}
-                    <div className="rank-foot">
+                    <div className={`rank-foot${v.route !== "큐브" && i > 0 ? " foot-pc" : ""}`}>
                       {v.route !== "큐브" ? (onEvaluate && (
                         <>
+                          {i === 0 && <span className="cond-head pc-only-inline"><span className="step-no">2</span>검색 결과가 보이면</span>}
                           <button type="button" className={`rank-copy pc-only-inline${i === 0 ? "" : " ghost small"}`} onClick={() => onEvaluate(v)}>
-                            이 조건으로 찾은 매물 평가하기</button>
-                          {i === 0 && <span className="muted small mobile-only-inline">PC에서 게임 화면을 공유하면 찾은 매물을 평가해요</span>}
+                            검색 화면 공유해서 매물 읽기</button>
+                          {i === 0 && <span className="small mobile-only-inline rank-mobile-note">휴대폰에서는 여기까지예요. PC에서 이 주소를 열면 검색 화면을 읽어 실제 딜을 계산해요.</span>}
                         </>
                       )) : (
                         // 경매장에서 못 사는 템(5회차: 다음 행동이 없었다) → 같은 자리·같은 모양으로 큐브 비용 계산기
@@ -117,7 +118,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                           <span className="muted small">경매장 구매 불가 템 — 지금 템에 큐브</span>
                         </>
                       )}
-                      {i === 0 && v.route !== "큐브" && <span className="muted small pc-only-inline">게임 경매장 › 상세 검색에서 위 칩대로 찾은 뒤 눌러 주세요</span>}
+                      {i === 0 && v.route !== "큐브" && <span className="small pc-only-inline rank-help">브라우저가 공유할 창을 물어봐요 — 메이플 창을 고르면 매물의 옵션·가격을 읽어, 끼웠을 때 오르는 실딜을 계산해요.</span>}
                     </div>
                   </li>
                 ))}

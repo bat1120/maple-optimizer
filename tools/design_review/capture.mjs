@@ -49,7 +49,8 @@ const CHECKS = `(() => {
     while (w.nextNode()) { if (!w.currentNode.textContent.trim()) continue; const r = document.createRange(); r.selectNodeContents(w.currentNode);
       for (const rc of r.getClientRects()) if (rc.width > 1) tops.push(rc.top); }
     return tops.sort((a, b) => a - b).filter((t, i, a) => i === 0 || t - a[i - 1] > 4).length; };
-  out.two_line_click = [...document.querySelectorAll('button, [role=tab], .button-link, .nav-link, .bottom-tabs a')]
+  // 장비창 칸(button.slot)은 '이름 약칭 / ★성'을 위아래로 쌓은 타일이라 꺾인 버튼이 아니다(2026-11-23: 화면마다 10건씩 헛경보) → 뺀다
+  out.two_line_click = [...document.querySelectorAll('button:not(.slot), [role=tab], .button-link, .nav-link, .bottom-tabs a')]
     .filter(el => vis(el) && el.innerText.trim() && textTops(el) > 1).slice(0, 10).map(label);
   // 글자 대비(WCAG): 색은 캔버스로 sRGB로 바꿔 계산(oklch 등 어떤 형식이든), 배경은 투명이면 부모로
   const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
