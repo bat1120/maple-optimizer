@@ -28,6 +28,10 @@ export const SCREENS = [
   // 내 메소로 어디까지(2026-11-23): 50억을 눌러 결과가 나온 상태를 찍는다
   { id: "budget", url: `/#/c/${c}?tab=upgrade`, ready: "!!document.querySelector('.budget-quick button') && document.querySelectorAll('.plan-row').length > 0",
     act: "[...document.querySelectorAll('.budget-quick button')].find(b => b.textContent === '50억').click()", after: "!!document.querySelector('.budget-headline')" },
+  // 계획의 경매장 줄을 열고 화면 공유 칸까지 연 상태(2·3단계) — 2026-11-23
+  { id: "auction", url: `/#/c/${c}?tab=upgrade`, ready: "!!document.querySelector('.plan-act button')",
+    act: "document.querySelector('.plan-act button').click(); setTimeout(() => document.querySelector('.plan-detail button.rank-copy')?.click(), 400)",
+    after: "!!document.querySelector('.plan-watch details[open]')" },
   { id: "calc", url: "/#/calc", ready: "!!document.querySelector('.calc-grid')" },
   { id: "scouter", url: "/#/scouter", ready: "!!document.querySelector('.scouter-page, h1')" },
   { id: "error", url: `/#/c/${encodeURIComponent("없는캐릭터zq9")}?tab=summary`, ready: "!!document.querySelector('[role=alert]')" },
