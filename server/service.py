@@ -93,7 +93,22 @@ def summary(snap: CharacterSnapshot) -> dict:
                                        for it in items.values()]
                               for n, items in snap.equipment_presets.items() if items},
         "excluded": sorted(set(snap.excluded)),
+        "baseline": _baseline(snap),
     }
+
+
+def _baseline(snap: CharacterSnapshot) -> dict | None:
+    """버프 없는 기준을 썼는지(화면이 알려 줄 수 있게). 기준이 없으면 None."""
+    if not snap.floors:
+        return None
+    from engine.stats.residual import FLOOR_KEYS, _raw_calibrate
+    pending = bool(snap.floors.get("pending"))
+    raw = _raw_calibrate(snap, CATALOG)
+    lowered = [k for k in FLOOR_KEYS if k in snap.floors and getattr(raw, k) > snap.floors[k] + 1e-9]
+    return {"pending": pending, "buffed": bool(lowered), "lowered": lowered,
+            "note": ("접속을 끝낼 때 버프가 켜져 있던 스탯창이라, 버프가 없던 날 기준으로 계산했어요." if lowered else
+                     "최근 며칠의 스탯창을 불러와 버프가 섞였는지 확인하는 중이에요." if pending else
+                     "최근 며칠의 스탯창과 비교해 버프가 섞이지 않은 것을 확인했어요.")}
 
 
 FREE_AXES = ("equipment", "hyper", "ability", "union", "link")

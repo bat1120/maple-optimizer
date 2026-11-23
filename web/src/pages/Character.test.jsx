@@ -312,3 +312,50 @@ describe("character page — 방어율 입력은 멈춘 뒤에 한 번만 다시
     expect(f.mock.calls.at(-1)[0]).toContain("boss_defense=380");
   });
 });
+
+describe("character page — 버프 없는 기준은 뒤에서(2026-11-23)", () => {
+  it("과거 날짜를 불러오는 동안은 그대로 보여 주고, 버프가 섞여 있었으면 알리고 계획을 다시 계산한다", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let baseline = { pending: true, buffed: false, lowered: [], note: "확인하는 중이에요." };
+      const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+        if (String(url).includes("/settings")) return ok(SETTINGS);
+        if (String(url).includes("/budget-roadmap")) return ok(PLAN);
+        return ok({ ...SUMMARY, baseline });
+      });
+      const plans = () => f.mock.calls.filter((c) => String(c[0]).includes("/budget-roadmap") && !String(c[0]).includes("steps=1")).length;
+      render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+      await screen.findByText("귀고리 추옵 재설정");
+      expect(screen.queryByRole("note")).toBeNull();           // 확인하는 동안은 조용히
+      expect(plans()).toBe(1);
+      baseline = { pending: false, buffed: true, lowered: ["dmg"], note: "접속을 끝낼 때 버프가 켜져 있던 스탯창이라, 버프가 없던 날 기준으로 계산했어요." };
+      await act(async () => { await vi.advanceTimersByTimeAsync(8100); });
+      expect(await screen.findByRole("note")).toHaveTextContent("버프가 없던 날 기준으로 계산했어요");
+      await waitFor(() => expect(plans()).toBe(2));            // 버프가 섞여 있었으니 계획을 다시 받는다
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("버프가 없었으면 다시 계산하지 않는다", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let baseline = { pending: true, buffed: false, lowered: [], note: "확인하는 중이에요." };
+      const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+        if (String(url).includes("/settings")) return ok(SETTINGS);
+        if (String(url).includes("/budget-roadmap")) return ok(PLAN);
+        return ok({ ...SUMMARY, baseline });
+      });
+      const plans = () => f.mock.calls.filter((c) => String(c[0]).includes("/budget-roadmap") && !String(c[0]).includes("steps=1")).length;
+      render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+      await screen.findByText("귀고리 추옵 재설정");
+      baseline = { pending: false, buffed: false, lowered: [], note: "확인했어요." };
+      await act(async () => { await vi.advanceTimersByTimeAsync(8100); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(8100); });
+      expect(plans()).toBe(1);
+      expect(screen.queryByRole("note")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

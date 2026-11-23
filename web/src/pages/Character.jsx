@@ -142,6 +142,8 @@ function NotFound({ name }) {
   );
 }
 
+export const BASELINE_POLL_MS = 8000; // 과거 날짜 3개를 불러오는 데 10초 안팎 — 그동안 이 간격으로 다시 묻는다
+
 export default function Character({ route }) {
   const { name, tab } = route;
   const [defense, setDefense] = useState(300); // 입력칸에 보이는 값(보스 id 또는 방어율)
@@ -190,6 +192,20 @@ export default function Character({ route }) {
   }, [name]);
 
   useEffect(() => { setSummary(null); setSettings(null); }, [name]);
+  // 버프 없는 기준(2026-11-23): 서버가 과거 날짜를 뒤에서 불러오는 동안은 baseline.pending. 다 되면 한 번 더 받아,
+  // 버프가 섞여 있었던 경우에만 계산을 다시 한다(숫자가 달라지는 건 그 경우뿐이다)
+  const [calcKey, setCalcKey] = useState(0);
+  useEffect(() => {
+    if (!summary?.baseline?.pending) return undefined;
+    const t = setTimeout(async () => {
+      try {
+        const s = await getCharacter(name);
+        setSummary(s);
+        if (!s.baseline?.pending && s.baseline?.buffed) setCalcKey((k) => k + 1);
+      } catch { /* 다음 조회 때 다시 본다 */ }
+    }, BASELINE_POLL_MS);
+    return () => clearTimeout(t);
+  }, [summary, name]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (summary) loadSettings(); }, [summary, loadSettings]);
   // 보스 목록은 캐릭터를 불러온 뒤 한 번(목록이 없으면 직접 입력만)
@@ -210,11 +226,14 @@ export default function Character({ route }) {
         <div className="fade-in">
           <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
+          {summary.baseline?.buffed && (
+            <p className="baseline-note small" role="note"><Icon name="info" size={14} />{summary.baseline.note}</p>
+          )}
           {/* 추천 상자 하나에 두 줄(2026-10-11 심사 5회차: 띠 두 개가 모양이 달라 별개 부품처럼 보였다) */}
           {tab === "summary" && (
             <div className="picks">
               <FreeSwitch ranking={settings?.ranking} breakdown={settings?.free_breakdown} />
-              <TopPick name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
+              <TopPick key={calcKey} name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
             </div>
           )}
           {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다.
@@ -259,7 +278,7 @@ export default function Character({ route }) {
               {/* 2026-11-23 사용자: 계획 하나로 합친다 — 흐름 4단계 → 내 업그레이드 계획(추천 1 · 검색 조건 2 · 화면 공유와 결과 3·4)
                   → 다른 기준(잠재·에디만 본 순위 포함). 화면 공유 칸은 계획에서 고른 줄 바로 아래에 온다 */}
               <FlowSteps current={watchOpen ? 3 : stage} />
-              <PlanPanel name={name} defense={calcDefense} onEvaluate={evaluate}
+              <PlanPanel key={calcKey} name={name} defense={calcDefense} onEvaluate={evaluate}
                          onStage={(n) => { setStage(n); if (n < 3) setWatchOpen(false); }}
                          watch={(
                            <div className="pc-only">

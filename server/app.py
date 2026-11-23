@@ -1,5 +1,7 @@
 """FastAPI 앱. 넥슨 오류·엔진 오류를 구분된 HTTP 상태와 한국어 메시지로 돌려준다 (스펙 §12)."""
+import dataclasses
 import datetime as dt
+import threading
 import hashlib
 import hmac
 import os
@@ -54,18 +56,26 @@ import logging  # noqa: E402
 _log = logging.getLogger("uvicorn.error")
 
 
+BASELINE_STEP = 4  # 버프 없는 기준을 보는 과거 날짜 간격(일)
+BASELINE_RETRY = 600  # 기준일을 못 불러왔으면 이만큼(초) 지난 뒤에만 다시 시도한다
+
+
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
                agent_daily_token_budget: int = 200_000, auction_mcp_command=None,
                vision_dataset_dir: str | None = None, vision_public_daily: int = 20, agent_ping_seconds: float = 10.0, agent_public_daily: int = 5, agent_public_request_tokens: int = 60000, agent_tracer=None,
-               vision_frames_per_min: int = 240, ocr=None) -> FastAPI:
+               vision_frames_per_min: int = 240, ocr=None, baseline_dates: int = 0, baseline_background: bool = True) -> FastAPI:
+    # baseline_dates: 버프 없는 기준을 뽑으려고 같이 보는 과거 날짜 수(0 = 끔). 날짜 하나에 넥슨 호출 13번쯤.
+    # baseline_background: 과거 날짜를 뒤에서 불러온다(첫 조회가 느려지지 않게). False면 조회 안에서 불러온다(테스트용)
+    baseline_busy, baseline_retry, baseline_lock = set(), {}, threading.Lock()
     app = FastAPI(title="maple-optimizer", docs_url=None, redoc_url=None, openapi_url=None)  # 운영에 API 목록 노출 안 함
     usage = admin.UsageStore(db_path, clock)
     if agent_tracer is None:  # AI 상담 추적(Langfuse) — 키가 없으면 아무것도 안 한다(agent/tracing.py)
         from agent.tracing import from_env
         agent_tracer = from_env()
     cache = BundleCache(db_path, clock)
+    app.state.baseline_jobs = []  # 뒤에서 도는 기준일 불러오기(테스트가 끝나기를 기다릴 수 있게)
     from server.observations import PUBLIC_SOURCE, open_log
     observations = open_log(db_path, clock)  # 지우지 않는 관측 기록 — DATABASE_URL(Neon)이면 Postgres
     prices = observations  # 지금 시세 = 관측 기록의 최근 30일(rows) — 서버가 다시 떠도 남는다(2026-10-13)
@@ -157,7 +167,68 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             if any(body[ep] is None for ep in ENDPOINTS if ep in body):
                 raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
             cache.put(name, day, body)
-        return snapshot(body)
+        snap = snapshot(body)
+        if day is None and baseline_dates > 0:
+            snap = dataclasses.replace(snap, floors=_floors(name, snap))
+        return snap
+
+    def _anchors() -> list:
+        """버프 없는 기준을 보는 과거 기준일들. 4일마다 하나로 고정해 캐시(과거 날짜 30일 보관)를 여러 날 다시 쓴다."""
+        today = dt.datetime.fromtimestamp(clock(), dt.timezone(dt.timedelta(hours=9))).date()
+        first = today - dt.timedelta(days=2)                      # 어제 데이터는 아직 준비 중일 수 있다
+        first -= dt.timedelta(days=first.toordinal() % BASELINE_STEP)
+        return [first - dt.timedelta(days=BASELINE_STEP * i) for i in range(baseline_dates)]
+
+    def _fetch_anchors(name: str, days: list) -> None:
+        """없는 기준일을 넥슨에서 불러와 캐시에 넣는다. 실패하면 멈추고 잠시 뒤에만 다시 시도한다(호출량 초과 때 계속 두드리지 않게)."""
+        try:
+            for day in days:
+                try:
+                    body = fetcher(name, day)
+                except (NexonError, ValueError):
+                    baseline_retry[name.casefold()] = clock() + BASELINE_RETRY
+                    return
+                cache.put(name, day, body)                         # 빈 날짜(캐릭터 생성 전)도 저장해 다시 부르지 않는다
+        finally:
+            with baseline_lock:
+                baseline_busy.discard(name.casefold())
+
+    def _floors(name: str, now) -> dict:
+        """버프 없는 기준: 지금 + 과거 기준일들의 잔차 중 항목별 최저(engine/stats/residual.py clean_floors).
+        넥슨 스탯창은 접속 종료 시점 값이라 그때 켜져 있던 버프가 섞인다(2026-11-23 실측: 같은 장비·세팅인데 데미지 91→209%).
+        과거 날짜는 뒤에서 불러온다(2026-11-23 사용자 결정) — 첫 조회는 지금처럼 바로 답하고 pending 표시만 붙인다. 불러오는 동안·실패해도
+        조회 자체는 그대로 된다."""
+        from engine.stats.residual import _raw_calibrate, clean_floors
+        days = _anchors()
+        bodies = [cache.get(name, d) for d in days]
+        missing = [d for d, body in zip(days, bodies) if body is None]
+        key = name.casefold()
+        if missing and clock() >= baseline_retry.get(key, 0):
+            if not baseline_background:
+                baseline_busy.add(key)
+                _fetch_anchors(name, missing)
+                bodies = [cache.get(name, d) for d in days]
+                missing = [d for d, body in zip(days, bodies) if body is None]
+            else:
+                with baseline_lock:
+                    start = key not in baseline_busy
+                    baseline_busy.add(key)
+                if start:
+                    t = threading.Thread(target=_fetch_anchors, args=(name, missing), daemon=True)
+                    app.state.baseline_jobs.append(t)
+                    t.start()
+        cals = [_raw_calibrate(now, service.CATALOG)]
+        for body in bodies:
+            if body is None:
+                continue
+            try:
+                past = snapshot(body)
+                if past.character_class == now.character_class:
+                    cals.append(_raw_calibrate(past, service.CATALOG))
+            except Exception:  # noqa: BLE001 — 그 날짜 데이터가 비어 있거나 모자라면 건너뛴다
+                continue
+        floors = clean_floors(cals) if len(cals) > 1 else {}
+        return floors | ({"pending": True} if key in baseline_busy else {})
 
     def pick(snap, boss_defense: float, boss: str | None = None, arcane_force: int | None = None,
              authentic_force: int | None = None):
@@ -670,6 +741,7 @@ def default_app() -> FastAPI:
                       vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
                       agent_public_daily=int(_env("AGENT_PUBLIC_DAILY") or 5),
                       vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240),
+                      baseline_dates=int(_env("BASELINE_DATES") or 3),  # 2026-11-23 사용자 결정: 뒤에서 불러오기로 켠다(0이면 끔)
                       ocr=_ocr.lazy_reader())
 
 

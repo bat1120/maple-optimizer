@@ -1030,3 +1030,8 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .plan-no.is-next { grid-column: 1 / -1; justify-self: start; }
   .plan-no.is-next ~ .plan-what > strong, .plan-no.is-next ~ .plan-eff { grid-row: 2; }
 }
+
+/* 버프 없는 기준으로 계산했다는 알림(2026-11-23) */
+.baseline-note { display: flex; align-items: center; gap: 6px; margin: var(--sp-3) 0 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface-2); color: var(--text-2); }
+.baseline-note .icon { flex: none; color: var(--accent); }

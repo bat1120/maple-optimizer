@@ -11,7 +11,7 @@
 데미지·보공·크뎀·크확  합연산 잔차 / 최종뎀 곱연산 잔차 / 방무 곱연산 잔차
 """
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from engine.stats.model import StatBlock
 from engine.stats.sets import NOT_WORN_SLOTS, SetCatalog, count_sets, set_block
@@ -98,7 +98,22 @@ def _ied_remain(values: list[float]) -> float:
     return r
 
 
-def calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
+# 버프가 얹히는 잔차(더해지기만 한다): 데미지·보공·크뎀·크확·공/마 고정값·최종뎀 배수.
+# 주스탯 잔차%와 방무는 레벨업·성장으로 실제로 변해서 바닥으로 자르지 않는다(2026-11-23 과거 15일 실측: 주스탯 잔차 45→55, 방무 잔여 0.46→0.24로 꾸준히 이동)
+FLOOR_KEYS = ("dmg", "boss", "cd", "cr", "fd_factor")
+
+
+def clean_floors(cals: list[Calibration]) -> dict:
+    """여러 날짜의 보정에서 '버프 없는 기준'을 뽑는다 — 버프는 값을 올리기만 하므로 항목마다 가장 낮은 값.
+    2026-11-23 실측(같은 캐릭터 15일): 평소 데미지 33·보공 65·크뎀 25·크확 65·최종뎀 배수 2.867로 같고, 버프가 켜진 날만 44~151·100~131 등으로 튀었다."""
+    if not cals:
+        return {}
+    out = {k: min(getattr(c, k) for c in cals) for k in FLOOR_KEYS}
+    out["attack_flat"] = {k: min(c.attack_flat[k] for c in cals) for k in ATTACKS}
+    return out
+
+
+def _raw_calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
     src = sources_for(snap, snap.active_setting, catalog)
     f, p, n = snap.final, src.pct, src.nopct
     stat_pct = {}
@@ -122,6 +137,17 @@ def calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
         fd_factor=(1 + f.fd / 100) / (1 + total.fd / 100),
         ied_remain=(1 - f.ied / 100) / remain if remain > 0 else 1.0,
     )
+
+
+def calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
+    """지금 스냅샷에서 보이지 않는 출처를 역산한다. snap.floors(버프 없는 기준)가 있으면 버프가 얹히는 항목을 그 값까지 내린다 —
+    조회 시점에 버프가 켜져 있었는지에 따라 추천이 달라지지 않게."""
+    cal = _raw_calibrate(snap, catalog)
+    fl = snap.floors
+    if not fl:
+        return cal
+    return replace(cal, **{k: min(getattr(cal, k), fl[k]) for k in FLOOR_KEYS if k in fl},
+                   attack_flat={k: min(v, fl.get("attack_flat", {}).get(k, v)) for k, v in cal.attack_flat.items()})
 
 
 def predict(cal: Calibration, src: Sources) -> Predicted:

@@ -73,6 +73,9 @@ class CharacterSnapshot:
     #   "require_growth", "other_effect", "stats"}] — growth는 지금 레벨에서 쌓인 성장치(필요치를 넘을 수 있다)
     symbol_items: list = field(default_factory=list)
     # 포스(2026-10-11): character/stat의 '아케인포스'·'어센틱포스'(없으면 None)와 하이퍼 프리셋별 아케인포스(stat_increase)
+    # 버프 없는 기준(2026-11-23): 과거 날짜들의 잔차 중 가장 낮은 값(engine/stats/residual.py clean_floors).
+    # 넥슨 스탯창은 접속 종료 시점 값이라 그때 켜져 있던 버프가 섞인다 — 있으면 보정이 이 값을 넘지 않게 자른다. 없으면 예전처럼 지금 스냅샷만
+    floors: dict = field(default_factory=dict)
     arcane_force: int | None = None
     authentic_force: int | None = None
     hyper_force: dict = field(default_factory=dict)
