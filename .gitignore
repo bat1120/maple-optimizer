@@ -42,3 +42,6 @@ tools/verify_ui/out/
 
 # AI 상담 평가 결과(답변·토큰 기록)
 tools/agent_eval/out/
+
+# 과거 기록 대조 결과(실제 캐릭터 수치)
+tools/backtest_out/
