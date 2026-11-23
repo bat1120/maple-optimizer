@@ -139,6 +139,7 @@ def main() -> int:
     ap.add_argument("--dates", type=int, default=3, help="직업마다 볼 과거 날짜 수")
     ap.add_argument("--names", default="", help="쉼표로 나눈 닉네임(계정에 없는 직업을 채울 때). 계정 목록에 더해 본다")
     ap.add_argument("--deep-level", type=int, default=0, help="이 레벨 이상인 캐릭터만 둘째 날짜부터 본다(호출 아끼기)")
+    ap.add_argument("--own-level", type=int, default=200, help="계정 캐릭터는 이 레벨 이상만 쓴다 — 그 아래(안 키우는 부캐)면 랭킹에서 본다")
     ap.add_argument("--no-ranking", action="store_true", help="계정에 없는 직업을 공식 랭킹에서 채우지 않는다")
     ap.add_argument("--offline", action="store_true", help="넥슨을 부르지 않고 캐시에 있는 것만으로 표를 만든다")
     args = ap.parse_args()
@@ -210,7 +211,8 @@ def main() -> int:
     for job in ALL_JOBS:
         if job in jobs._UNSUPPORTED:
             continue
-        pick = next((n for n in by_job.get(job, [])[:2] if usable(n)), None)   # 계정 캐릭터 먼저(레벨 높은 둘까지)
+        mine = [c["name"] for c in sorted(chars, key=lambda c: -c["level"]) if c["job"] == job and c["level"] >= max(200, args.own_level)]
+        pick = next((n for n in mine[:2] if usable(n)), None)                  # 계정 캐릭터 먼저(레벨 높은 둘까지)
         if pick:
             source[job] = "계정"
         elif not args.no_ranking:                          # 계정에 없거나 못 쓰는 상태면 공식 랭킹에서 하나

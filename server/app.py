@@ -748,7 +748,7 @@ def default_app() -> FastAPI:
                       vision_public_daily=int(_env("VISION_PUBLIC_DAILY") or 20),
                       agent_public_daily=int(_env("AGENT_PUBLIC_DAILY") or 5),
                       vision_frames_per_min=int(_env("VISION_FRAMES_PER_MIN") or 240),
-                      baseline_dates=int(_env("BASELINE_DATES") or 3),  # 2026-11-23 사용자 결정: 뒤에서 불러오기로 켠다(0이면 끔)
+                      baseline_dates=int(_env("BASELINE_DATES") or 0),  # 2026-11-24 사용자 결정: 끈다 — 3개 날짜로는 기준 없을 때보다 더 흔들리는 캐릭터가 있었다(7개면 3% 안). 켜려면 BASELINE_DATES
                       ocr=_ocr.lazy_reader())
 
 
