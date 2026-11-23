@@ -12,7 +12,8 @@ API 키 주인 계정의 캐릭터 목록(공식 Open API character/list, 호출
 - 주스탯 예측 오차: 앞 날짜에서 보정하고 뒤 날짜의 장비·세팅을 넣어 맞혀 본 값(날짜 2개부터)
 - 버프 섞인 날: 잔차(데미지·보공·크뎀·크확·최종뎀)가 그 캐릭터의 최저보다 높은 날 수
 
-호출량: 날짜 하나에 13번쯤. 대량·주기 수집용이 아니다 — 계정에 없는 직업은 표에 '캐릭터 없음'으로만 적는다(이름을 --names로 주면 본다).
+호출량: 날짜 하나에 13번쯤. 대량·주기 수집용이 아니다 — 계정에 없는 직업은 공식 종합 랭킹(ranking/overall, 직업당 호출 1~2번, 한 번 찾으면 파일에 적어 둔다)에서
+맨 위 캐릭터 하나만 본다(2026-11-23 사용자 결정). --no-ranking이면 '캐릭터 없음'으로만 적는다.
 키는 .env나 환경변수에서 읽고 출력하지 않는다.
 """
 import argparse
@@ -66,6 +67,45 @@ def account(client) -> list[dict]:
     return chars
 
 
+# 공식 랭킹(ranking/overall)의 class 값 후보. 넥슨 문서의 표기는 '계열-직업' 또는 '직업-전체 전직'인데 직업마다 어느 쪽인지는
+# 응답으로 확인한다(돌려받은 캐릭터의 직업이 찾는 직업과 같을 때만 쓴다) — 틀린 후보는 빈 결과라 호출 한두 번만 더 든다.
+_RANK_GROUPS = {
+    "전사": ("히어로", "팔라딘", "다크나이트"), "마법사": ("아크메이지(불,독)", "아크메이지(썬,콜)", "비숍"),
+    "궁수": ("보우마스터", "신궁", "패스파인더"), "도적": ("나이트로드", "섀도어", "듀얼블레이더"), "해적": ("바이퍼", "캡틴", "캐논마스터"),
+    "기사단": ("소울마스터", "플레임위자드", "윈드브레이커", "나이트워커", "스트라이커", "미하일"),
+    "레지스탕스": ("배틀메이지", "와일드헌터", "메카닉", "데몬슬레이어", "데몬어벤져", "제논", "블래스터"),
+    "초월자": ("제로",), "프렌즈 월드": ("키네시스",),
+}
+
+
+def rank_classes(job: str) -> list[str]:
+    out = [f"{g}-{job}" for g, js in _RANK_GROUPS.items() if job in js]
+    return out + [f"{job}-전체 전직"]
+
+
+def ranked(client, job: str, day: dt.date) -> str | None:
+    """계정에 없는 직업(2026-11-23 사용자: "없는 직업은 랭킹에서 해봐"): 공식 종합 랭킹에서 그 직업의 맨 위 캐릭터 하나.
+    직업마다 한 번만 찾고 파일에 적어 둔다. 못 찾으면 None(호출량 초과는 그대로 올린다)."""
+    path = OUT / "ranking.json"
+    saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if job in saved or client is None:
+        return saved.get(job)
+    for cls in rank_classes(job):
+        try:
+            body = client._request("ranking/overall", {"date": day.isoformat(), "class": cls})
+        except RateLimited:
+            raise
+        except NexonError:
+            continue
+        for r in body.get("ranking") or []:
+            if job in (r.get("sub_class_name"), r.get("class_name")) and r.get("character_name"):
+                saved[job] = r["character_name"]
+                OUT.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(saved, ensure_ascii=False), encoding="utf-8")
+                return saved[job]
+    return None
+
+
 def measure(snaps: list) -> dict:
     """한 캐릭터의 날짜들(옛 → 최근)에서 직업 한 줄."""
     last = snaps[-1]
@@ -94,6 +134,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dates", type=int, default=3, help="직업마다 볼 과거 날짜 수")
     ap.add_argument("--names", default="", help="쉼표로 나눈 닉네임(계정에 없는 직업을 채울 때). 계정 목록에 더해 본다")
+    ap.add_argument("--no-ranking", action="store_true", help="계정에 없는 직업을 공식 랭킹에서 채우지 않는다")
     ap.add_argument("--offline", action="store_true", help="넥슨을 부르지 않고 캐시에 있는 것만으로 표를 만든다")
     args = ap.parse_args()
 
@@ -115,6 +156,17 @@ def main() -> int:
     for c in sorted(chars, key=lambda c: -c["level"]):
         if c["job"] in jobs._BRANCHES and c["level"] >= 200:
             by_job.setdefault(c["job"], []).append(c["name"])
+    source = {job: "계정" for job in by_job}
+    if not args.no_ranking:
+        for job in ALL_JOBS:                              # 계정에 없는 직업은 공식 랭킹에서 하나
+            if job in by_job or job in jobs._UNSUPPORTED:
+                continue
+            try:
+                name = ranked(client if stopped is None else None, job, days[0])
+            except RateLimited:
+                stopped, name = f"랭킹 {job}(호출량 초과)", ranked(None, job, days[0])
+            if name:
+                by_job[job], source[job] = [name], "랭킹"
     targets = [(job, names[0]) for job, names in by_job.items()] + [(None, n) for n in extra]
 
     bodies: dict[str, dict] = {name: {} for _, name in targets}
@@ -152,7 +204,7 @@ def main() -> int:
             continue
         key = job or snaps[-1].character_class
         try:
-            rows[key] = {"name": name, "status": "측정함"} | measure(snaps)
+            rows[key] = {"name": name, "status": "측정함", "source": source.get(job, "직접 지정")} | measure(snaps)
         except Exception as e:  # noqa: BLE001
             rows[key] = {"name": name, "status": "계산 실패", "why": f"{type(e).__name__}: {e}"[:160]}
     for job in ALL_JOBS:
@@ -170,7 +222,7 @@ def main() -> int:
             print(f"{job:14} {r['status']} {r.get('why', '')}")
             continue
         ms = r.get("main_stat_error_pct")
-        print(f"{job:14} Lv{r['level']} 날짜 {r['dates']} · 식 {r['formula_error_pct']:.3f}% · "
+        print(f"{job:14} {r['source']} Lv{r['level']} 날짜 {r['dates']} · 식 {r['formula_error_pct']:.3f}% · "
               + (f"주스탯 {ms['mean']:.2f}/{ms['max']:.2f}% · 버프 {r['buffed_days']}일 · " if ms else "")
               + (f"계획 오류 {r['plan_error']}" if "plan_error" in r else f"계획 {r['plan_steps']}단계"))
     return 0
