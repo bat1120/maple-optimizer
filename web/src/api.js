@@ -155,9 +155,11 @@ export function getSwaps(name, bossDefense = 300, starforce = 18) {
   return request(`${base(name)}/swaps?${bq(bossDefense)}&starforce=${starforce}`);
 }
 
-// 내 메소로 어디까지(2026-11-23): budget은 메소 정수
-export function getBudgetRoadmap(name, bossDefense = 300, budget) {
-  const q = new URLSearchParams({ ...bossQuery(bossDefense), budget: String(Math.round(budget)) });
+// 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개
+export function getBudgetRoadmap(name, bossDefense = 300, budget = null, steps = null) {
+  const q = new URLSearchParams(bossQuery(bossDefense));
+  if (budget) q.set("budget", String(Math.round(budget)));
+  if (steps) q.set("steps", String(steps));
   return request(`${base(name)}/budget-roadmap?${q}`);
 }
 

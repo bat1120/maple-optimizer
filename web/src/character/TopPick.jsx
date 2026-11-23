@@ -1,36 +1,38 @@
 import { useEffect, useState } from "react";
-import { getRoadmap } from "../api.js";
+import { getBudgetRoadmap } from "../api.js";
 import { formatPct } from "../format.js";
 import { hashFor } from "../router.js";
+import { HOW, stepLabel } from "../PlanPanel.jsx";
 import Icon from "../ui/icons.jsx";
 
-// 요약 탭 위 '업그레이드 1순위' 한 줄(2026-10-11 디자인 심사: 서비스의 답이 기본 탭 밖에 묻혀 있었다).
-// 가격 대비 순위 1위만 보여 주고, 전체는 업그레이드 탭. 못 불러오면 아무것도 그리지 않는다(요약은 그대로).
+// 요약 탭 위 '가장 먼저 할 것' 한 줄(2026-10-11 디자인 심사: 서비스의 답이 기본 탭 밖에 묻혀 있었다).
+// 2026-11-23: 업그레이드 계획의 1번 줄을 그대로 보여 준다 — 전에는 잠재·에디 순위 1위(평균 105억)를 보여 줘서
+// 계획표의 첫 줄(추옵 재설정 4395만)과 '먼저 할 일'이 서로 달랐다. 못 불러오면 아무것도 그리지 않는다(요약은 그대로).
 export default function TopPick({ name, defense, after = false }) {
   const [top, setTop] = useState(undefined); // undefined = 계산 중, null = 없음
   useEffect(() => {
     let alive = true;
     setTop(undefined);
-    getRoadmap(name, defense).then((d) => alive && setTop(d?.value_ranking?.[0] || null)).catch(() => alive && setTop(null));
+    getBudgetRoadmap(name, defense, null, 1).then((d) => alive && setTop(d?.steps?.[0] || null)).catch(() => alive && setTop(null));
     return () => { alive = false; };
   }, [name, defense]);
   if (top === null) return null;
+  const where = top && (top.path === "큐브" ? top.target?.join(" / ") : HOW[top.path] || top.path);
   return (
     <section className="top-pick" aria-label="업그레이드 1순위" aria-busy={top === undefined}>
-      <span className="pick-label">{after ? "경매장에서 찾는다면" : "경매장 1순위"}</span>
+      <span className="pick-label">{after ? "다음으로 메소를 쓴다면" : "업그레이드 1순위"}</span>
       {top === undefined ? (
-        <span className="muted small">가격 대비 순위를 계산하는 중이에요…</span>
+        <span className="muted small">업그레이드 계획을 계산하는 중이에요…</span>
       ) : (
         <span className="top-pick-body">
-          <strong>{top.slot} {top.kind}</strong>
-          <span className="muted">{top.grade} {top.lines_good}줄 · {top.target.join(" / ")}</span>
-          {/* 강조는 하나: 순위 기준인 억당 효율만 주황 큰 숫자(5회차: 한 줄에 강조 5종) */}
-          <span className="top-pick-gain">실딜 {formatPct(top.delta_pct)}</span>
+          <strong>{stepLabel(top)}</strong>
+          <span className="muted">{where}</span>
+          {/* 강조는 하나: 순서의 기준인 1억 메소당 효율만 주황 큰 숫자 */}
           <span className="top-pick-eff">1억 메소당 <strong className="num">{formatPct(top.per_100m)}</strong>
-            {top.cube_cost_text && <span className="muted"> · 큐브 평균 {top.cube_cost_text}</span>}</span>
+            <span className="muted"> · 평균 {top.cost_text} · 실딜 {formatPct(top.delta_pct)}</span></span>
         </span>
       )}
-      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>내 메소로 어디까지 · 순위 보기<Icon name="chevron" size={14} /></a>
+      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>내 업그레이드 계획 보기<Icon name="chevron" size={14} /></a>
     </section>
   );
 }

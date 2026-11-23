@@ -115,25 +115,11 @@ describe("roadmap panel", () => {
     expect(within(chips).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["부위엠블렘", "에디레전드리", "1줄마력 +12% 이상", "2줄마력 +9% 이상"]);
   });
 
-  it("1위 카드: 단계 번호는 흐름과 같고(2·3단계), 사는 쪽과 큐브 쪽의 기준을 말한다", async () => {
+  it("큰 숫자는 순위 기준인 1억 메소당이다(2026-11-23 사용자 결정)", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
-    render(<RoadmapPanel name="레테" defense={300} autoLoad onEvaluate={() => {}} />);
+    render(<RoadmapPanel name="레테" defense={300} autoLoad />);
     const first = (await screen.findByText("엠블렘 에디")).closest("li.rank-card");
-    expect(first).toHaveTextContent("2단계");
-    expect(first).toHaveTextContent("3단계");
-    expect(first).toHaveTextContent("253억 8269만보다 싸면 사는 쪽이");
-    expect(within(first).getByRole("button", { name: "이 화면 주소 복사" })).toBeInTheDocument();
-  });
-
-  it("예산을 넣으면 예산 안의 것이 먼저, 번호는 전체 순위 그대로 — 화면 공유 칸은 첫 카드 바로 아래", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
-    render(<RoadmapPanel name="레테" defense={300} autoLoad onEvaluate={() => {}} budget={5_000_000_000} watch={<div>화면 공유 칸</div>} />);
-    const first = (await screen.findByText("하의 잠재")).closest("li.rank-card");
-    expect(first).toHaveClass("top1");                       // 30억짜리 2위가 맨 위(253억짜리 1위는 예산 밖)
-    expect(within(first).getByText("2")).toBeInTheDocument(); // 번호는 그대로 2
-    expect(first.nextElementSibling).toHaveClass("rank-watch");
-    expect(screen.queryByText("엠블렘 에디")).toBeNull();       // 예산 밖은 '더 보기' 뒤로
-    fireEvent.click(screen.getByRole("button", { name: /나머지 순위 1개 더 보기/ }));
-    expect(screen.getByText("엠블렘 에디").closest("li.rank-card")).toHaveClass("over-budget");
+    expect(first.querySelector(".rank-eff")).toHaveTextContent("1억 메소당+0.029%");
+    expect(first.querySelector(".eff-value")).toHaveTextContent("보스 실딜 +7.362%");
   });
 });

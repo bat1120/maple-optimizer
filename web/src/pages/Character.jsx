@@ -11,7 +11,7 @@ import FreeSwitch from "../character/FreeSwitch.jsx";
 import StatSummary from "../character/StatSummary.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
-import BudgetPanel from "../BudgetPanel.jsx";
+import PlanPanel from "../PlanPanel.jsx";
 import { FLOW, WATCH_TITLE } from "../flow.js";
 import PathsPanel from "../PathsPanel.jsx";
 import SwapsPanel from "../SwapsPanel.jsx";
@@ -153,7 +153,7 @@ export default function Character({ route }) {
   }, [defense]);
   // 순위 카드 [이 조건으로 찾은 매물 평가하기] → 화면 공유 평가 칸을 열고 찾는 조건을 보여 준다(2026-10-17)
   const [watchOpen, setWatchOpen] = useState(false);
-  const [budget, setBudget] = useState(null); // '내 메소로' 계산에 넣은 메소 — 순위 카드가 예산 밖인지 표시한다
+  const [stage, setStage] = useState(1); // 계획 패널이 알려 주는 지금 단계(1 추천 · 2 검색 조건 · 3 화면 공유)
   const [watchTarget, setWatchTarget] = useState(null);
   const watchRef = useRef(null);
   const evaluate = (v) => {
@@ -256,27 +256,25 @@ export default function Character({ route }) {
           )}
           {tab === "upgrade" && (
             <div className="stack">
-              {/* 순서(2026-11-23): 흐름 4단계 → 내 메소로 어디까지 → 순위(1·2단계) → 검색 화면 공유(3·4단계) → 다른 기준 */}
-              <FlowSteps current={watchOpen ? 3 : 1} />
-              {/* 화면 공유(3·4단계)는 순위 카드 바로 아래, 같은 상자 안에 둔다 — 1위 카드에서 멀면 결과가 나올 자리가 안 보인다 */}
-              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} budget={budget}
-                            before={<BudgetPanel name={name} defense={calcDefense} onBudget={setBudget} />}
-                            watch={(
-                              <div className="pc-only">
-                                <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
-                                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
-                                </Fold>
-                              </div>
-                            )}
-                            after={(
-                              <p className="mobile-only muted note-box">
-                                <Icon name="monitor" size={16} />
-                                검색 화면을 읽어 매물을 평가하는 3·4단계는 PC에서 돼요. PC에서 이 주소를 열면 이어서 할 수 있어요.
-                              </p>
-                            )} />
+              {/* 2026-11-23 사용자: 계획 하나로 합친다 — 흐름 4단계 → 내 업그레이드 계획(추천 1 · 검색 조건 2 · 화면 공유와 결과 3·4)
+                  → 다른 기준(잠재·에디만 본 순위 포함). 화면 공유 칸은 계획에서 고른 줄 바로 아래에 온다 */}
+              <FlowSteps current={watchOpen ? 3 : stage} />
+              <PlanPanel name={name} defense={calcDefense} onEvaluate={evaluate} onStage={setStage}
+                         watch={(
+                           <div className="pc-only">
+                             <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
+                               <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
+                             </Fold>
+                           </div>
+                         )} />
+              <p className="card mobile-only muted note-box">
+                <Icon name="monitor" size={16} />
+                검색 화면을 읽어 매물을 평가하는 3·4단계는 PC에서 돼요. PC에서 이 주소를 열면 이어서 할 수 있어요.
+              </p>
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
+              <Fold title="잠재·에디만 가격 대비 순위로 보기"><RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} /></Fold>
               <Fold title="실딜만 보고 고르기 — 가격은 안 봐요"><RecommendPanel name={name} defense={calcDefense} autoLoad /></Fold>
               <Fold title="방법별 비교 — 구매·직작·큐브·강화"><PathsPanel name={name} defense={calcDefense} autoLoad showRefresh={false} /></Fold>
               <Fold title="방어구 세트 조합 — 카루타·앱솔·아케인·에테르넬"><ArmorSetsPanel name={name} defense={calcDefense} autoLoad /></Fold>

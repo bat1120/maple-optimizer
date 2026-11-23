@@ -24,9 +24,18 @@ const SETTINGS = { ranking: [
   { setting: { equipment: 1, hyper: 1, ability: 1 }, relative_to_active: 0.97, main_stat_vs_active: -1200 },
 ] };
 
+// 업그레이드 계획(2026-11-23 계획 하나): 추옵 1줄 + 경매장에서 살 수 있는 큐브 1줄
+const CUBE = { slot: "엠블렘", path: "큐브", kind: "에디", name: "골드 서버너 엠블렘", grade: "레전드리", lines_good: 2, route: "경매장",
+  target: ["마력 +12%", "마력 +9%"], delta_pct: 5.55, per_100m: 0.022, cost_text: "253억 8269만", total_cost_text: "254억 2664만", gain_pct_after: 5.7 };
+const PLAN = { evaluation_setting: { equipment: 2, hyper: 3, ability: 2 }, budget_text: null, spent_text: "254억 2664만", left_text: null, gain_pct: 5.7,
+  next_step: null, note: "비용은 평균 기대값이에요.", steps: [
+    { slot: "귀고리", path: "추옵", name: "에스텔라 이어링", delta_pct: 0.156, per_100m: 0.354, cost_text: "4395만", total_cost_text: "4395만", gain_pct_after: 0.156 },
+    CUBE] };
+
 function mockApi() {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
     if (String(url).includes("/settings")) return ok(SETTINGS);
+    if (String(url).includes("/budget-roadmap")) return ok(PLAN);
     if (String(url).includes("/roadmap")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", value_ranking: [], slots: [] });
     if (String(url).includes("/paths")) return ok({ evaluation_setting: SUMMARY.active_setting, observed_count: 0, note: "", all: [] });
     if (String(url).includes("/recommend")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", recommendations: [] });
@@ -89,18 +98,15 @@ describe("character page", () => {
     expect(screen.queryByRole("list", { name: "장비 목록" })).toBeNull();
   });
 
-  it("요약 탭 위에 '업그레이드 1순위' 한 줄 — 누르면 업그레이드 탭", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-      if (String(url).includes("/settings")) return ok(SETTINGS);
-      if (String(url).includes("/roadmap")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", slots: [], value_ranking: [
-        { slot: "엠블렘", kind: "에디", grade: "레전드리", lines_good: 2, target: ["마력 +12%", "마력 +9%"], delta_pct: 5.55, cube_cost_text: "253억 8269만", per_100m: 0.022 }] });
-      return ok(SUMMARY);
-    });
+  it("요약 탭 위에 '업그레이드 1순위' 한 줄 = 업그레이드 계획의 첫 줄 — 누르면 업그레이드 탭", async () => {
+    const f = mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     const pick = await screen.findByRole("region", { name: "업그레이드 1순위" });
-    expect(pick).toHaveTextContent("엠블렘 에디");
-    expect(pick).toHaveTextContent("+5.550%");
-    expect(within(pick).getByRole("link", { name: /순위 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
+    await within(pick).findByText("귀고리 추옵 재설정");
+    expect(pick).toHaveTextContent("1억 메소당 +0.354%");
+    expect(pick).toHaveTextContent("평균 4395만");
+    expect(f.mock.calls.some((c) => /budget-roadmap\?.*steps=1/.test(String(c[0])))).toBe(true);   // 첫 줄만 받는다
+    expect(within(pick).getByRole("link", { name: /내 업그레이드 계획 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
   });
 
   it("세팅 순위: 1위 메달", async () => {
@@ -110,15 +116,16 @@ describe("character page", () => {
     expect(t.querySelector(".medal-1")).not.toBeNull();
   });
 
-  it("탭: 위쪽 탭을 누르면 주소가 바뀌고, 업그레이드 탭은 들어가자마자 로드맵을 불러온다", async () => {
+  it("탭: 위쪽 탭을 누르면 주소가 바뀌고, 업그레이드 탭은 들어가자마자 계획만 불러온다", async () => {
     const f = mockApi();
     const { rerender } = render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     await screen.findByRole("heading", { name: "내신부레테" });
     expect(screen.getByRole("tab", { name: "업그레이드" })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
-    // 업그레이드 탭: 가격 대비 순위(로드맵)만 바로 계산, 나머지는 펼칠 때(2026-10-17 점검: 들어가자마자 요청이 몰려 분당 한도)
+    // 업그레이드 탭: 계획만 바로 계산, 나머지는 펼칠 때(2026-10-17 점검: 들어가자마자 요청이 몰려 분당 한도)
     const called = (k) => f.mock.calls.some((c) => String(c[0]).includes(k));
-    expect(called("/roadmap?")).toBe(true);
+    expect(called("/budget-roadmap?")).toBe(true);
+    expect(called("/roadmap?")).toBe(false);   // 잠재·에디만 본 순위는 '다른 기준으로 보기' 아래에서 펼칠 때
     expect(called("/paths")).toBe(false);
     expect(called("/recommend")).toBe(false);
     const paths = screen.getByText("방법별 비교 — 구매·직작·큐브·강화").closest("details");
@@ -172,7 +179,9 @@ describe("character page", () => {
     expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
     expect(screen.getByText(/3·4단계는 PC에서 돼요/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "내 업그레이드 계획" })).toBeInTheDocument();
     expect(screen.queryByText(/무엇을 바꾸면 보스 실딜이 오르는지/)).toBeNull();   // 업그레이드 탭은 단계 줄이 안내 띠를 대신한다
+    expect(screen.queryByRole("heading", { name: "잠재·에디 가격 대비 순위" })).toBeNull();   // 추천 목록은 계획 하나뿐
     // 2026-11-23: 흐름 4단계와 '내 메소로 어디까지'가 순위보다 위, 화면 공유는 '고급 도구'가 아니라 순위 바로 아래
     expect(within(screen.getByRole("list", { name: "이렇게 진행해요" })).getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByLabelText("가진 메소")).toBeInTheDocument();
@@ -215,22 +224,19 @@ describe("character page", () => {
     expect(screen.getByRole("button", { name: "프리셋 1" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  // 2026-10-17: 순위 카드에서 [이 조건으로 찾은 매물 평가하기] → 접혀 있던 화면 공유 평가가 열리고 찾는 조건이 위에 나온다
-  it("순위 카드의 평가 버튼을 누르면 화면 공유 평가 칸이 열리고 찾는 조건을 보여 준다", async () => {
-    const v = { slot: "엠블렘", kind: "에디", name: "골드 서버너 엠블렘", grade: "레전드리", lines_good: 2, target: ["마력 +12%", "마력 +9%"],
-                delta_pct: 5.5, per_100m: 0.022, cube_cost_text: "253억", route: "경매장" };
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-      if (String(url).includes("/settings")) return ok(SETTINGS);
-      if (String(url).includes("/roadmap")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", value_ranking: [v], slots: [] });
-      if (String(url).includes("/paths")) return ok({ evaluation_setting: SUMMARY.active_setting, observed_count: 0, note: "", all: [] });
-      if (String(url).includes("/recommend")) return ok({ evaluation_setting: SUMMARY.active_setting, note: "", recommendations: [] });
-      return ok(SUMMARY);
-    });
+  // 2026-11-23 계획 하나: 계획의 경매장 줄 → [경매장에서 찾기](2단계 조건) → [검색 화면 공유](3단계) → 그 줄 바로 아래 공유 칸
+  it("계획의 경매장 줄에서 공유를 누르면 화면 공유 평가 칸이 열리고 찾는 조건을 보여 준다", async () => {
+    mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
+    const flow = () => screen.getByRole("list", { name: "이렇게 진행해요" }).querySelector("[aria-current=step]");
     const watch = (await screen.findByText("3·4단계 · 검색 화면을 공유하면 여기에 매물별 실딜이 나와요 (PC)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
-    fireEvent.click(await screen.findByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
+    expect(flow()).toHaveTextContent("추천 확인");
+    fireEvent.click(screen.getByRole("button", { name: "경매장에서 찾기" }));
+    expect(flow()).toHaveTextContent("경매장에서 검색");
+    fireEvent.click(screen.getByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
     expect(watch).toHaveAttribute("open");
+    expect(flow()).toHaveTextContent("검색 화면 공유");
     const note = screen.getByRole("note", { name: "찾는 조건" });
     expect(note).toHaveTextContent("부위엠블렘");
     expect(note).toHaveTextContent("1줄마력 +12% 이상");
@@ -243,16 +249,16 @@ describe("character page", () => {
   });
 
   // 2026-10-11 디자인 심사 2회차: 1위가 셋(가격 대비·검색 추천·경로 비교)으로 갈림 → 가격 대비 순위만 펼치고 나머지는 접는다
-  it("업그레이드 탭은 가격 대비 순위만 펼치고, 검색 추천·경로 비교·목표 배율은 접어 둔다", async () => {
+  it("업그레이드 탭은 계획만 펼치고, 잠재·에디 순위·검색 추천·경로 비교·목표 배율은 접어 둔다", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    expect((await screen.findByRole("heading", { name: "가격 대비 업그레이드 순위" })).closest("details")).toBeNull();
-    for (const t of ["실딜만 보고 고르기 — 가격은 안 봐요", "방법별 비교 — 구매·직작·큐브·강화", "목표 보스 배율까지의 순서"]) {
+    expect((await screen.findByRole("heading", { name: "내 업그레이드 계획" })).closest("details")).toBeNull();
+    for (const t of ["잠재·에디만 가격 대비 순위로 보기", "실딜만 보고 고르기 — 가격은 안 봐요", "방법별 비교 — 구매·직작·큐브·강화", "목표 보스 배율까지의 순서"]) {
       const d = screen.getByText(t).closest("details");
       expect(d).not.toBeNull();
       expect(d).not.toHaveAttribute("open");
     }
-    for (const h of ["경매장 검색 추천", "업그레이드 경로 비교", "목표 배율 로드맵"]) {
+    for (const h of ["잠재·에디 가격 대비 순위", "경매장 검색 추천", "업그레이드 경로 비교", "목표 배율 로드맵"]) {
       expect(screen.queryByRole("heading", { name: h })).toBeNull();   // 펼치기 전엔 그리지도, 계산하지도 않는다
     }
   });

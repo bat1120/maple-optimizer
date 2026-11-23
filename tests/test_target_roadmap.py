@@ -166,3 +166,20 @@ def test_budget_roadmap_route_answers_how_far_the_budget_goes(tmp_path):
     assert body["budget_text"] == "50억" and body["steps"] and body["gain_pct"] > 0
     assert body["spent_text"] == body["steps"][-1]["total_cost_text"]
     assert c.get("/api/character/레테/budget-roadmap", params={"budget": 50}).status_code == 400
+
+
+def test_plan_without_budget_lists_the_first_steps_and_marks_buyable_cube_steps(tmp_path):
+    """2026-11-23 사용자: 계획 하나로 합친다 — 메소를 안 넣어도 효율 순서 앞 단계가 나오고, 큐브 단계는 경매장에서 살 수 있는지 알려 준다."""
+    from fastapi.testclient import TestClient
+    from server import service
+    from server.app import create_app
+    c = TestClient(create_app(lambda n, d: bundle("레테"), str(tmp_path / "c.sqlite3")))
+    body = c.get("/api/character/레테/budget-roadmap").json()
+    assert body["budget"] is None and body["budget_text"] is None and body["left_text"] is None
+    assert len(body["steps"]) == service.PLAN_STEPS
+    eff = [s["per_100m"] for s in body["steps"]]
+    assert eff[0] == max(eff)
+    cube = [s for s in body["steps"] if s["path"] == "큐브"]
+    assert cube and all(s["route"] in ("경매장", "큐브") and s["target"] and s["lines_good"] for s in cube)
+    assert len(c.get("/api/character/레테/budget-roadmap", params={"steps": 1}).json()["steps"]) == 1
+    assert c.get("/api/character/레테/budget-roadmap", params={"steps": 0}).status_code == 400

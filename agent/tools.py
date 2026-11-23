@@ -279,6 +279,8 @@ class ToolBox:
         return r
 
     def _budget_roadmap(self, name, budget):
+        if not isinstance(budget, (int, float)) or isinstance(budget, bool):
+            raise ValueError(f"budget은 메소 정수다(50억 → 5000000000): {budget}")
         r = service.budget_roadmap(self._load(name), 300.0, self._observed(), budget)
         return {k: v for k, v in r.items() if k not in ("boss", "basis_warning", "budget")}
 

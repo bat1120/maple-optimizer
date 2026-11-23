@@ -931,3 +931,69 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .rank-watch { display: none; }
   .flow-steps li.flow-go { border-top: 1px solid var(--line); padding: var(--sp-2); }
 }
+
+/* ── 계획 하나(2026-11-23 사용자 결정): 내 업그레이드 계획 — 줄마다 큰 숫자는 1억 메소당 ── */
+.plan-panel .budget-form { align-items: center; }
+.budget-label { margin: 0 var(--sp-1) 0 0; flex-direction: row; font-size: var(--fs-sm); font-weight: 700; color: var(--text); }
+.plan-cols, .plan-line { display: grid; grid-template-columns: 28px minmax(0, 1fr) 110px 120px 190px 132px; align-items: center; gap: var(--sp-1) var(--sp-3); }
+.plan-cols { margin: var(--sp-3) 0 0; padding-bottom: var(--sp-1); border-bottom: 1px solid var(--line-strong); font-weight: 600; }
+.plan-cols > :first-child { grid-column: 1 / 3; }
+.plan-cols > :nth-child(n+2) { text-align: right; }
+.plan-cols > :last-child { grid-column: 5; }
+.plan-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.plan-row { border-bottom: 1px solid var(--line); }
+.plan-line { padding: var(--sp-2) 0; font-size: var(--fs-sm); }
+.plan-no { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); background: var(--surface-3); font-weight: 800; font-size: var(--fs-xs); }
+.plan-row:first-child .plan-no { background: var(--btn); color: var(--on-btn); }
+.plan-what { display: flex; flex-direction: column; min-width: 0; }
+.plan-what strong { font-size: var(--fs-base); }
+.plan-what .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-eff { text-align: right; }
+.plan-eff strong { font-size: var(--fs-lg); font-weight: 800; color: var(--accent); }
+.plan-cost { text-align: right; font-weight: 700; white-space: nowrap; }
+.plan-sum { text-align: right; white-space: nowrap; }
+.plan-sum strong { color: var(--up); }
+.plan-act { display: flex; justify-content: flex-end; }
+.plan-act button, .plan-act .button-ghost { min-height: 36px; white-space: nowrap; }
+.plan-row.is-open { border: 2px solid var(--accent-fill); border-radius: var(--radius-inner); background: var(--rank-bg); margin: var(--sp-2) 0; }
+.plan-row.is-open .plan-line { padding: var(--sp-3) var(--sp-4) var(--sp-2); }
+.plan-detail { display: flex; flex-direction: column; gap: var(--sp-2); padding: 0 var(--sp-4) var(--sp-4); }
+.plan-detail p { margin: 0; }
+.plan-detail .cond-head { font-size: var(--fs-sm); font-weight: 700; color: var(--text); }
+.plan-detail .cond-head .rank-copy { margin-left: var(--sp-2); }
+.cond-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-2); }
+.cond-form li { display: flex; flex-direction: column; align-items: flex-start; padding: 6px 10px; border-radius: var(--radius); font-size: var(--fs-sm); color: var(--text); }
+.cond-form li .cond-k { margin: 0; font-size: var(--fs-xs); }
+.plan-watch { list-style: none; }
+.plan-watch:not(:has(details[open])) { display: none; }
+.plan-watch details.fold { margin: 0 0 var(--sp-2); border: 2px solid var(--accent-fill); }
+.plan-watch details.fold > summary { color: var(--text); }
+@media (max-width: 1000px) {
+  .plan-cols { display: none; }
+  .plan-line { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .plan-eff { grid-column: 3; grid-row: 1; }
+  .plan-eff strong::before { content: "1억당 "; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+  .plan-cost { grid-column: 2; text-align: left; font-weight: 600; }
+  .plan-cost::before { content: "평균 "; font-weight: 400; color: var(--muted); }
+  .plan-sum { grid-column: 3; grid-row: 2; }
+  .plan-act { grid-column: 2 / -1; justify-content: flex-start; }
+  .plan-act:empty { display: none; }
+  .plan-what .muted { white-space: normal; }
+}
+@media (max-width: 720px) {
+  .budget-label { flex-basis: 100%; }
+  .plan-watch { display: none; }
+  .plan-act button, .plan-act .button-ghost { min-height: 40px; }
+}
+.plan-row.after-gap::before { content: attr(data-gap); display: block; padding: var(--sp-2) 0 0 40px; font-size: var(--fs-xs); color: var(--muted); }
+.plan-panel > .panel-head { margin-bottom: 0; }
+.plan-panel .panel-sub { margin-top: 0; }
+.plan-panel .budget-form { margin-top: var(--sp-1); }
+.plan-cols { margin-top: var(--sp-2); }
+/* 계획 머리: 제목과 한 줄 설명을 같은 줄에, 입력 줄은 낮게 — 첫 줄이 첫 화면에 들어오게 */
+@media (min-width: 1001px) {
+  .plan-panel .panel-head-text { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--sp-3); }
+  .plan-panel .budget-form input, .plan-panel .budget-form > button[type="submit"] { min-height: 40px; }
+  .plan-panel { padding-top: var(--sp-4); }
+  .plan-cols { margin-top: var(--sp-1); }
+}

@@ -426,13 +426,16 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return service.target_roadmap(snap, b, prices.rows(), current_ratio, target_ratio, events)
 
     @app.get("/api/character/{name}/budget-roadmap")
-    def budget_roadmap(name: str, budget: float, boss_defense: float = 300.0, date: str | None = None, boss: str | None = None,
+    def budget_roadmap(name: str, budget: float | None = None, steps: int | None = None, boss_defense: float = 300.0,
+                       date: str | None = None, boss: str | None = None,
                        arcane_force: int | None = None, authentic_force: int | None = None):
-        """가진 메소(budget)로 어디까지 올릴 수 있나 — 억당 효율 순으로 예산을 채운 단계와 누적 실딜."""
-        if not service.MIN_BUDGET <= budget <= 1e13:
+        """업그레이드 계획: 억당 효율 순 단계와 누적 실딜. budget(가진 메소)이 있으면 그 안에서, 없으면 앞의 steps개."""
+        if budget is not None and not service.MIN_BUDGET <= budget <= 1e13:
             raise ApiError(400, "BAD_BUDGET", "예산은 메소로 넣어 주세요(50억 → 5000000000).")
+        if steps is not None and not 1 <= steps <= 120:
+            raise ApiError(400, "BAD_STEPS", "단계 수는 1~120 사이여야 해요.")
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.budget_roadmap(snap, b, prices.rows(), budget)
+        return service.budget_roadmap(snap, b, prices.rows(), budget, steps)
 
     class MarketRefreshIn(BaseModel):
         name: str

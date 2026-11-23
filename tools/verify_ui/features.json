@@ -99,38 +99,38 @@
     },
     {
       "id": "upgrade",
-      "title": "업그레이드 — 무엇부터 바꿀지 순위",
+      "title": "업그레이드 — 내 업그레이드 계획(무엇부터, 어디서)",
       "url": "/#/c/{character}?tab=upgrade",
-      "ready": "document.querySelectorAll('.rank-card').length > 0",
+      "ready": "document.querySelectorAll('.plan-steps li.plan-row').length > 0",
       "settle": 3000,
       "expect": [
         {
-          "what": "순위 카드가 1개 이상이다",
-          "js": "document.querySelectorAll('.rank-card').length > 0"
+          "what": "계획 줄이 1개 이상이다",
+          "js": "document.querySelectorAll('.plan-steps li.plan-row').length > 0"
         },
         {
           "what": "불러오는 중 표시가 남아 있지 않다",
           "js": "!document.querySelector('[data-testid=skeleton]')"
         },
         {
-          "what": "진행 순서 4단계가 보인다",
-          "js": "document.querySelectorAll('.flow-steps li').length === 4"
+          "what": "진행 순서 4단계가 보이고 지금 단계 표시가 하나다",
+          "js": "document.querySelectorAll('.flow-steps li').length === 4 && document.querySelectorAll('.flow-steps li[aria-current=step]').length === 1"
         },
         {
-          "what": "가진 메소 입력칸이 순위보다 위에 있다",
-          "js": "(() => { const b = document.querySelector('.budget-panel input'), r = document.querySelector('.rank-card'); return !!b && !!r && b.getBoundingClientRect().top < r.getBoundingClientRect().top; })()"
+          "what": "가진 메소 입력칸이 계획 첫 줄보다 위에 있다",
+          "js": "document.querySelector('.plan-panel input').getBoundingClientRect().top < document.querySelector('.plan-row').getBoundingClientRect().top"
         },
         {
-          "what": "진행 순서에 지금 단계 표시가 하나 있다",
-          "js": "document.querySelectorAll('.flow-steps li[aria-current=step]').length === 1"
+          "what": "계획 첫 줄이 첫 화면 가까이 있다(PC 700px, 휴대폰 900px 이내에서 시작)",
+          "js": "document.querySelector('.plan-row').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 700 : 900)"
         },
         {
-          "what": "1위 카드가 첫 화면 가까이 있다(PC 780px, 휴대폰 1000px 이내에서 시작)",
-          "js": "document.querySelector('.rank-card').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 780 : 1000)"
+          "what": "줄마다 큰 숫자(1억 메소당)가 있고 위에서 아래로 줄어든다",
+          "js": "(() => { const v = [...document.querySelectorAll('.plan-eff')].map(e => parseFloat(e.textContent.replace('+',''))); return v.length > 1 && v.every((x, i) => i === 0 || x <= v[i - 1] + 1e-9); })()"
         },
         {
-          "what": "화면 공유 칸이 1위 카드 바로 아래에 붙어 있다(PC)",
-          "js": "window.innerWidth <= 720 || document.querySelector('.rank-card.top1').nextElementSibling?.classList.contains('rank-watch')"
+          "what": "가로로 넘치지 않는다",
+          "js": "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
         }
       ]
     },
@@ -228,12 +228,12 @@
     },
     {
       "id": "budget",
-      "title": "내 메소로 어디까지 — 금액을 누르면 예산 안의 순서와 누적 실딜이 나온다",
+      "title": "내 업그레이드 계획 — 가진 메소를 넣으면 그 안에서 끊는다",
       "url": "/#/c/{character}?tab=upgrade",
-      "ready": "!!document.querySelector('.budget-panel .budget-quick button')",
+      "ready": "!!document.querySelector('.plan-panel .budget-quick button') && document.querySelectorAll('.plan-steps li.plan-row').length > 0",
       "steps": [
         {
-          "js": "[...document.querySelectorAll('.budget-panel .budget-quick button')].find(b => b.textContent === '50억').click()",
+          "js": "[...document.querySelectorAll('.plan-panel .budget-quick button')].find(b => b.textContent === '50억').click()",
           "wait": "!!document.querySelector('.budget-headline')",
           "timeout": 60
         }
@@ -244,8 +244,12 @@
           "js": "/\\+\\d+\\.\\d\\d%/.test(document.querySelector('.budget-gain')?.textContent || '')"
         },
         {
-          "what": "예산 안의 단계가 1개 이상이다",
-          "js": "document.querySelectorAll('.budget-steps li').length > 0"
+          "what": "예산 안의 줄이 1개 이상이다",
+          "js": "document.querySelectorAll('.plan-steps li.plan-row').length > 0"
+        },
+        {
+          "what": "추천 목록은 하나뿐이다(순위 카드가 따로 펼쳐져 있지 않다)",
+          "js": "document.querySelectorAll('.rank-card').length === 0"
         },
         {
           "what": "가로로 넘치지 않는다",
@@ -253,15 +257,46 @@
         },
         {
           "what": "오류 알림이 없다",
-          "js": "!document.querySelector('.budget-panel [role=alert]')"
+          "js": "!document.querySelector('.plan-panel [role=alert]')"
+        }
+      ]
+    },
+    {
+      "id": "plan-auction",
+      "title": "계획에서 경매장 줄을 누르면 2단계 검색 조건과 3단계 공유 버튼이 그 줄에 열린다",
+      "devices": [
+        "pc"
+      ],
+      "url": "/#/c/{character}?tab=upgrade",
+      "ready": "!!document.querySelector('.plan-act button')",
+      "steps": [
+        {
+          "js": "document.querySelector('.plan-act button').click()",
+          "wait": "!!document.querySelector('.plan-detail')",
+          "timeout": 10
         },
         {
-          "what": "예산을 넣으면 맨 위 순위 카드는 예산 안의 것이다",
-          "js": "!document.querySelector('.rank-card.top1').classList.contains('over-budget')"
+          "js": "document.querySelector('.plan-detail button.rank-copy').click()",
+          "wait": "!!document.querySelector('.plan-watch details[open]')",
+          "timeout": 10
+        }
+      ],
+      "expect": [
+        {
+          "what": "메소를 넣지 않아도 경매장에서 살 수 있는 줄이 보인다",
+          "js": "!!document.querySelector('.plan-act button')"
         },
         {
-          "what": "예산 결과는 처음 5단계만 펼쳐져 있다",
-          "js": "document.querySelectorAll('.budget-steps li').length <= 5"
+          "what": "검색 조건이 경매장 칸 모양(부위·등급·옵션)으로 보인다",
+          "js": "document.querySelectorAll('.plan-detail .cond-form li').length >= 3"
+        },
+        {
+          "what": "공유 칸이 누른 줄 바로 아래에 열린다(120px 이내)",
+          "js": "(() => { const r = document.querySelector('.plan-row.is-open').getBoundingClientRect(), w = document.querySelector('.plan-watch').getBoundingClientRect(); return w.top >= r.bottom - 2 && w.top - r.bottom <= 120; })()"
+        },
+        {
+          "what": "진행 순서가 3단계를 가리킨다",
+          "js": "document.querySelector('.flow-steps li[aria-current=step] .flow-no')?.textContent.trim() === '3'"
         }
       ]
     }
