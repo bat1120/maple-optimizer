@@ -84,14 +84,14 @@ describe("roadmap panel", () => {
   });
 
   // 2026-10-17 사용자: 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 찾은 뒤 화면 공유로 평가하는 버튼
-  it("순위 카드 [검색 화면 공유해서 매물 읽기] — 그 카드의 조건을 onEvaluate로 넘긴다", async () => {
+  it("순위 카드 [화면 공유 칸 열기] — 그 카드의 조건을 onEvaluate로 넘긴다", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
     const onEvaluate = vi.fn();
     render(<RoadmapPanel name="내신부레테" defense={300} onEvaluate={onEvaluate} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "전체 부위 로드맵" })); });
     const first = cards()[0];
     expect(within(first).queryByRole("button", { name: "경매장 검색 조건 복사" })).toBeNull();
-    fireEvent.click(within(first).getByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
+    fireEvent.click(within(first).getByRole("button", { name: "화면 공유 칸 열기" }));
     expect(onEvaluate).toHaveBeenCalledWith(expect.objectContaining({ slot: "엠블렘", kind: "에디", target: ["마력 +12%", "마력 +9%"] }));
   });
 

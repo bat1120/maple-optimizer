@@ -85,7 +85,9 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
   // 처음엔 앞의 FIRST줄 + 경매장에서 살 수 있는 첫 줄(뒤쪽에 있어도) — 그 줄이 안 보이면 2~4단계로 갈 길이 없다
   const firstBuy = steps.findIndex(buyable);
   const keep = new Set([firstBuy, open, shared, data?.next_step ? done : null].filter((i) => i != null && i >= 0));
-  const shown = steps.map((s, i) => ({ s, i })).filter(({ i }) => all || i < FIRST || keep.has(i));
+  // 메소를 넣었으면 그 메소로 하는 줄을 전부 보여 준다 — '47억을 쓴다'면서 6줄(18억)까지만 보이면 무엇을 사는지 알 수 없다(6회차 심사)
+  const first = data?.budget_text ? done : FIRST;
+  const shown = steps.map((s, i) => ({ s, i })).filter(({ i }) => all || i < first || keep.has(i));
   return (
     <section className="panel plan-panel" aria-label="내 업그레이드 계획">
       <PanelHead title="내 업그레이드 계획" icon="trend"
@@ -122,7 +124,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
               <ol className="plan-steps" aria-label="할 순서">
                 {shown.map(({ s, i }, n) => (
                   <li key={i} className={`plan-row${open === i ? " is-open" : ""}${(n > 0 && shown[n - 1].i !== i - 1) || s.isPick ? " after-gap" : ""}`}
-                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요` : s.isPick ? "위 순서에는 경매장에서 살 수 있는 것이 없어요 — 경매장에서 찾아본다면 효율이 가장 좋은 것은" : undefined}>
+                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요${i === firstBuy ? " — 아래는 경매장에서 살 수 있는 첫 순서라 먼저 보여 드려요" : ""}` : s.isPick ? "위 순서에는 경매장에서 살 수 있는 것이 없어요 — 경매장에서 찾아본다면 효율이 가장 좋은 것은" : undefined}>
                     <div className="plan-line">
                       <span className={`plan-no${s.isNext || s.isPick ? " is-next" : ""}`}>{s.isNext ? "다음" : s.isPick ? "경매장" : i + 1}</span>
                       <span className="plan-what"><strong>{stepLabel(s)}</strong>
@@ -137,7 +139,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
                         : <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>}
                       <span className="plan-act">
                         {buyable(s) ? (
-                          <button type="button" className={open === i ? "small" : "ghost small"} aria-expanded={open === i} onClick={() => toggle(i)}>
+                          <button type="button" className={open === i || i === firstBuy ? "small" : "ghost small"} aria-expanded={open === i} onClick={() => toggle(i)}>
                             {open === i ? "접기" : "경매장에서 찾기"}</button>
                         ) : s.path === "큐브" ? (
                           <a className="button-ghost" href={hashFor({ page: "character", name, tab: "calc" })}>큐브 비용 계산</a>
@@ -155,8 +157,8 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
                         </ul>
                         <p className="rank-buy small">매물이 <strong>{s.cost_text}</strong>보다 싸면 사는 쪽이, 비싸면 내 템에 큐브를 직접 돌리는 쪽이 이득이에요.</p>
                         <p className="cond-head pc-only-inline"><span className="step-tag">{stepName(3)}</span>검색 결과가 보이면
-                          <button type="button" className="rank-copy" onClick={() => share(s, i)}>검색 화면 공유해서 매물 읽기</button></p>
-                        <p className="small rank-help pc-only-inline">브라우저가 공유할 창을 물어봐요 — 메이플 창을 고르면 매물의 옵션·가격을 읽어, 끼웠을 때 오르는 실딜을 바로 아래에 보여 드려요.</p>
+                          <button type="button" className="rank-copy" onClick={() => share(s, i)}>화면 공유 칸 열기</button></p>
+                        <p className="small rank-help pc-only-inline">바로 아래에 공유 칸이 열려요. 거기서 [경매장 화면 연결]을 누르고 메이플 창을 고르면, 매물의 옵션·가격을 읽어 끼웠을 때 오르는 실딜을 보여 드려요.</p>
                         <p className="small mobile-only-inline rank-mobile-note">{stepName(3)}부터는 PC에서 돼요 — PC에서 이 주소를 열면 검색 화면을 읽어 실제 딜을 계산해요.</p>
                         <CopyLink />
                       </div>

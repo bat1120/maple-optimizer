@@ -234,7 +234,7 @@ describe("character page", () => {
     expect(flow()).toHaveTextContent("추천 확인");
     fireEvent.click(screen.getByRole("button", { name: "경매장에서 찾기" }));
     expect(flow()).toHaveTextContent("경매장에서 검색");
-    fireEvent.click(screen.getByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
+    fireEvent.click(screen.getByRole("button", { name: "화면 공유 칸 열기" }));
     expect(watch).toHaveAttribute("open");
     expect(flow()).toHaveTextContent("검색 화면 공유");
     const note = screen.getByRole("note", { name: "찾는 조건" });

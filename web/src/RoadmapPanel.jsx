@@ -108,7 +108,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                       {v.route !== "큐브" ? (onEvaluate && (
                         <>
                           <button type="button" className={`rank-copy pc-only-inline${i === 0 ? "" : " ghost small"}`} onClick={() => onEvaluate(v)}>
-                            검색 화면 공유해서 매물 읽기</button>
+                            화면 공유 칸 열기</button>
                           {i === 0 && <span className="muted small mobile-only-inline">PC에서 게임 화면을 공유하면 찾은 매물을 평가해요</span>}
                         </>
                       )) : (

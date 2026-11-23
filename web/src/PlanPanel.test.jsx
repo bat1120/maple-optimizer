@@ -78,7 +78,7 @@ describe("PlanPanel — 계획 하나", () => {
     expect(row).toHaveTextContent("2단계");
     expect(within(row).getByRole("list", { name: "경매장 검색 조건" })).toHaveTextContent("옵션 1INT +12% 이상");
     expect(row).toHaveTextContent("30억 4736만보다 싸면 사는 쪽이");
-    fireEvent.click(within(row).getByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
+    fireEvent.click(within(row).getByRole("button", { name: "화면 공유 칸 열기" }));
     expect(onEvaluate).toHaveBeenCalledWith(cube);
     expect(stages).toEqual([1, 2, 3]);
     const watch = screen.getByText("화면 공유 칸").closest("li");
@@ -122,6 +122,15 @@ describe("PlanPanel — 계획 하나", () => {
     render(<PlanPanel name="레테" defense={300} />);
     await screen.findByText("귀고리 추옵 재설정");
     expect(rows().some((li) => li.querySelector(".plan-no").textContent === "경매장")).toBe(false);
+  });
+
+  it("메소를 넣었으면 그 메소로 하는 줄을 전부 보여 준다(접지 않는다)", async () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({ slot: `부위${i}`, path: "추옵", name: `템${i}`, cost_text: "1억", total_cost_text: `${i + 1}억`, per_100m: 0.1, gain_pct_after: i + 1 }));
+    mock({ ...budgeted, steps: many, next_step: null });
+    render(<PlanPanel name="레테" defense={300} />);
+    await screen.findByText("부위0 추옵 재설정");
+    expect(rows()).toHaveLength(9);
+    expect(screen.queryByRole("button", { name: /모두 보기/ })).toBeNull();
   });
 
   it("단계 이름과 살 수 있는지 판단", () => {

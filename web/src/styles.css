@@ -1003,3 +1003,14 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .plan-line { grid-template-columns: minmax(28px, auto) minmax(0, 1fr) 110px 120px 190px 132px; }
 .plan-no.is-next { white-space: nowrap; }
 @media (max-width: 1000px) { .plan-line { grid-template-columns: minmax(28px, auto) minmax(0, 1fr) auto; } }
+
+/* 6회차 심사(2026-11-23): 휴대폰에서 '평균 비용'과 오른쪽 글자가 겹쳤다 → 좁은 화면에서는 비용·누적을 각각 한 줄씩 */
+@media (max-width: 1000px) {
+  .plan-line { grid-template-columns: minmax(28px, auto) minmax(0, 1fr) auto; }
+  .plan-cost, .plan-sum { grid-column: 2 / -1; grid-row: auto; text-align: left; white-space: normal; }
+  .plan-eff { align-self: start; }
+}
+/* 공유 칸 안의 '찾는 조건'은 바로 위 줄에 이미 있다 — 계획 안에서는 한 번만 */
+.plan-watch .watch-target { display: none; }
+/* 열린 줄과 공유 칸을 한 덩어리로(주황 상자가 세 겹으로 보였다) */
+.plan-watch details.fold { border-width: 1px; border-color: var(--line-strong); }
