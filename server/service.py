@@ -1,7 +1,7 @@
 """엔진 호출을 API 응답 형태로 묶는다. 계산은 전부 engine이 한다."""
 from dataclasses import asdict
 
-from engine.market.listing import DEFAULT_FEE_RATE, Listing, item_from_input, net_resale, rank_listings
+from engine.market.listing import DEFAULT_FEE_RATE, Listing, NoDamage, item_from_input, net_resale, rank_listings
 from engine.market.recommend import cooldown_seconds
 from engine.stats.evaluate import evaluate_setting, rank_settings
 from engine.stats.formula import stat_attack_max
@@ -37,13 +37,31 @@ def _basis_warning(snap, setting, b) -> str | None:
             "실제보다 과장됐을 수 있으니, 방무 위주 추천은 환산 사이트로 한 번 더 확인해 주세요.")
 
 
+def no_damage_text(snap, defense: float) -> str | None:
+    """이 보스 방어율에 피해가 아예 안 들어가는 캐릭터면 안내 문구, 아니면 None.
+    2026-11-24 직업별 측정: 계정의 200레벨 캐릭터 19개 직업이 방어율 300%에서 실딜 지수 0 → 추천 API가 전부 500이었다."""
+    defense = getattr(defense, "defense", defense)       # 숫자 또는 BossProfile
+    armor = 1 - defense / 100 * (1 - snap.final.ied / 100)
+    if armor > 0:
+        return None
+    need = (1 - 100 / defense) * 100
+    return (f"이 캐릭터는 방어율 무시가 {snap.final.ied:.1f}%라, 방어율 {defense:g}% 보스에는 피해가 들어가지 않아요"
+            f"({need:.1f}%를 넘어야 해요). 지금 잡는 보스에 맞게 위의 보스 방어율을 낮추면 추천이 나와요.")
+
+
 def with_basis(fn):
     """추천 결과(note·evaluation_setting·boss가 있는 dict)에 계산 기준 고지와 낮은 방어율 계수 경고를 붙인다."""
     import functools
 
     @functools.wraps(fn)
     def wrapper(snap, defense, *args, **kwargs):
-        r = fn(snap, defense, *args, **kwargs)
+        try:
+            r = fn(snap, defense, *args, **kwargs)
+        except ZeroDivisionError:
+            text = no_damage_text(snap, defense)        # 지금 실딜이 0이면 '몇 % 오른다'를 정의할 수 없다
+            if text is None:
+                raise
+            raise NoDamage(text) from None
         r["note"] = f"{r.get('note') or ''} {BASIS_NOTE}".strip()
         r["basis_warning"] = _basis_warning(snap, Setting(**r["evaluation_setting"]), boss(defense))
         return r

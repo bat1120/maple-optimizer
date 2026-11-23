@@ -26,7 +26,14 @@ _GROUPS: dict[float, tuple[str, ...]] = {
 WEAPON_CONSTANTS: dict[str, float] = {name: k for k, names in _GROUPS.items() for name in names}
 
 
-def weapon_constant(part: str) -> float:
+# 직업에 따라 다른 상수. 2026-11-24 직업별 측정(계정의 200레벨 히어로, 두손검): 스탯창 최대 스탯공격력 24,568 ÷ 식(1.34) 22,861.9 = 1.0746
+# = 1.44 ÷ 1.34(소수 넷째 자리까지). 히어로 fixture의 두손도끼도 1.44다. 히어로의 한손검·한손도끼는 표본이 없어 그대로 둔다(추정하지 않는다).
+JOB_CONSTANTS: dict[tuple[str, str], float] = {("히어로", "두손검"): 1.44}
+
+
+def weapon_constant(part: str, job: str | None = None) -> float:
+    if (job, part) in JOB_CONSTANTS:
+        return JOB_CONSTANTS[(job, part)]
     try:
         return WEAPON_CONSTANTS[part]
     except KeyError:

@@ -52,6 +52,8 @@ def test_weapon_constants():
     assert weapon_constant("카르타") == 1.2
     assert weapon_constant("아대") == 1.75
     assert weapon_constant("에너지소드") == 1.3125
+    # 히어로의 두손검은 1.44(2026-11-24 실측) — 다른 직업의 두손검은 그대로 1.34
+    assert weapon_constant("두손검", "히어로") == 1.44 and weapon_constant("두손검", "카이저") == 1.34 == weapon_constant("두손검")
     with pytest.raises(UnknownWeapon):  # Review Focus 3
         weapon_constant("처음보는무기")
 

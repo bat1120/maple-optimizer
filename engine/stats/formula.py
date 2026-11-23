@@ -14,4 +14,4 @@ def stat_value(final: FinalStats, job: JobProfile) -> float:
 def stat_attack_max(final: FinalStats, job: JobProfile, weapon_part: str) -> float:
     attack = final.matk if job.attack == "MATK" else final.atk
     return (stat_value(final, job) * attack * (1 + final.dmg / 100) * (1 + final.fd / 100)
-            * weapon_constant(weapon_part))
+            * weapon_constant(weapon_part, job.name))

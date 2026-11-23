@@ -143,6 +143,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     async def unsupported_job(_: Request, e: UnsupportedJob):
         return _err(ApiError(422, "UNSUPPORTED", f"계산 제외: {e}"))
 
+    @app.exception_handler(NoDamage)
+    async def no_damage(_: Request, e: NoDamage):
+        return _err(ApiError(422, "NO_DAMAGE", str(e)))
+
     @app.exception_handler(UnknownWeapon)
     async def unknown_weapon(_: Request, e: UnknownWeapon):
         return _err(ApiError(422, "UNSUPPORTED", f"계산 제외: {e}"))
@@ -168,6 +172,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
             cache.put(name, day, body)
         snap = snapshot(body)
+        if "무기" not in snap.equipment_presets.get(snap.active_equipment_preset, {}):
+            # 2026-11-24 직업별 측정: 무기를 뺀 채 접속을 끝낸 캐릭터는 모든 조회가 500이었다(스탯공격력 1)
+            raise ApiError(422, "NO_WEAPON", "무기를 끼지 않은 상태로 저장된 캐릭터예요. 무기를 끼고 게임에 접속했다 나온 뒤 다시 조회해 주세요.")
         if day is None and baseline_dates > 0:
             snap = dataclasses.replace(snap, floors=_floors(name, snap))
         return snap

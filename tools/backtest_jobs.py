@@ -29,6 +29,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
 from backtest_history import compare, pct  # noqa: E402
+from engine.market.listing import NoDamage  # noqa: E402
 from engine.stats import jobs  # noqa: E402
 from engine.stats.jobs import UnsupportedJob, job_profile  # noqa: E402
 from engine.stats.metrics import stat_attack  # noqa: E402
@@ -114,7 +115,10 @@ def measure(snaps: list) -> dict:
                                                         preset_items(s, s.active_equipment_preset)["무기"].part), s.final.stat_attack_max))
                                     for s in snaps)}
     try:
-        plan = service.budget_roadmap(last, 300.0, None)
+        try:
+            plan = service.budget_roadmap(last, 300.0, None)
+        except NoDamage:                                   # 방무가 모자란 캐릭터 — 서버는 방어율을 낮추라고 안내한다. 낮춘 값으로 본다
+            plan, row["plan_defense"] = service.budget_roadmap(last, 100.0, None), 100
         row["plan_steps"] = len(plan["steps"])
         row["plan_first"] = " ".join(str(plan["steps"][0].get(k)) for k in ("slot", "path") if plan["steps"]) if plan["steps"] else None
     except Exception as e:  # noqa: BLE001 — 직업별로 어디서 깨지는지가 측정 대상이다
@@ -134,6 +138,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dates", type=int, default=3, help="직업마다 볼 과거 날짜 수")
     ap.add_argument("--names", default="", help="쉼표로 나눈 닉네임(계정에 없는 직업을 채울 때). 계정 목록에 더해 본다")
+    ap.add_argument("--deep-level", type=int, default=0, help="이 레벨 이상인 캐릭터만 둘째 날짜부터 본다(호출 아끼기)")
     ap.add_argument("--no-ranking", action="store_true", help="계정에 없는 직업을 공식 랭킹에서 채우지 않는다")
     ap.add_argument("--offline", action="store_true", help="넥슨을 부르지 않고 캐시에 있는 것만으로 표를 만든다")
     args = ap.parse_args()
@@ -156,42 +161,79 @@ def main() -> int:
     for c in sorted(chars, key=lambda c: -c["level"]):
         if c["job"] in jobs._BRANCHES and c["level"] >= 200:
             by_job.setdefault(c["job"], []).append(c["name"])
-    source = {job: "계정" for job in by_job}
-    if not args.no_ranking:
-        for job in ALL_JOBS:                              # 계정에 없는 직업은 공식 랭킹에서 하나
-            if job in by_job or job in jobs._UNSUPPORTED:
-                continue
+    fetched = 0
+    bodies: dict[str, dict] = {}
+
+    def get(name: str, day):
+        """캐시 우선. 못 불러오면 None(호출량 초과면 그 뒤로는 부르지 않는다)."""
+        nonlocal stopped, fetched
+        if day in bodies.setdefault(name, {}):
+            return bodies[name][day]
+        body = cache.get(name, day)
+        if body is None and client is not None and stopped is None:
+            try:
+                body = client.fetch_bundle(name, day)
+            except RateLimited:
+                stopped = f"{name} {day}(호출량 초과)"
+                return None
+            except NexonError as e:
+                print(f"{name} {day}: 불러오지 못함({e.code})")
+                bodies[name][day] = None                  # 이번 실행에서는 다시 두드리지 않는다
+                return None
+            cache.put(name, day, body)
+            fetched += 1
+        if body is not None:
+            bodies[name][day] = body
+        return body
+
+    def usable(name: str) -> bool:
+        """첫 기준일 데이터가 있고 무기를 끼고 있어야 잴 수 있다."""
+        body = get(name, days[0])
+        if body is None:
+            return False
+        try:
+            snap = snapshot(body)
+            return "무기" in preset_items(snap, snap.active_equipment_preset)
+        except UnsupportedJob:
+            return True                                    # 표에 '지원 안 함'으로 적는다
+        except Exception:  # noqa: BLE001
+            return False
+
+    def deep(name: str) -> bool:
+        """날짜를 더 볼 캐릭터인지 — 안 키우는 부캐는 날짜마다 똑같아 호출만 쓴다."""
+        try:
+            return snapshot(get(name, days[0])).level >= args.deep_level
+        except Exception:  # noqa: BLE001
+            return False
+
+    targets, source = [], {}
+    for job in ALL_JOBS:
+        if job in jobs._UNSUPPORTED:
+            continue
+        pick = next((n for n in by_job.get(job, [])[:2] if usable(n)), None)   # 계정 캐릭터 먼저(레벨 높은 둘까지)
+        if pick:
+            source[job] = "계정"
+        elif not args.no_ranking:                          # 계정에 없거나 못 쓰는 상태면 공식 랭킹에서 하나
             try:
                 name = ranked(client if stopped is None else None, job, days[0])
             except RateLimited:
                 stopped, name = f"랭킹 {job}(호출량 초과)", ranked(None, job, days[0])
-            if name:
-                by_job[job], source[job] = [name], "랭킹"
-    targets = [(job, names[0]) for job, names in by_job.items()] + [(None, n) for n in extra]
+            if name and usable(name):
+                pick, source[job] = name, "랭킹"
+        if pick:
+            targets.append((job, pick))
+    targets += [(None, n) for n in extra]
 
-    bodies: dict[str, dict] = {name: {} for _, name in targets}
-    fetched = 0
-    for day in days:                                   # 넓게 먼저: 모든 직업의 첫 날짜 → 그다음 날짜
+    for day in days[1:]:                               # 넓게 먼저: 첫 날짜는 위에서 채웠다 → 그다음 날짜
         for _, name in targets:
-            body = cache.get(name, day)
-            if body is None and client is not None and stopped is None:
-                try:
-                    body = client.fetch_bundle(name, day)
-                except RateLimited:
-                    stopped = f"{name} {day}(호출량 초과)"
-                    continue
-                except NexonError as e:
-                    print(f"{name} {day}: 불러오지 못함({e.code})")
-                    continue
-                cache.put(name, day, body)
-                fetched += 1
-            if body is not None:
-                bodies[name][day] = body
+            if deep(name):
+                get(name, day)
+    bodies = {name: {d: b for d, b in by_day.items() if b is not None} for name, by_day in bodies.items()}
 
     rows: dict[str, dict] = {}
     for job, name in targets:
         snaps = []
-        for day in sorted(bodies[name]):
+        for day in sorted(bodies.get(name, {})):
             try:
                 snaps.append(snapshot(bodies[name][day]))
             except UnsupportedJob as e:
@@ -202,6 +244,10 @@ def main() -> int:
         if not snaps:
             rows.setdefault(job or name, {"name": name, "status": "아직 못 불러옴" if name not in rows.get("_skipped", {}) else "변환 실패"})
             continue
+        snaps = [x for x in snaps if "무기" in preset_items(x, x.active_equipment_preset)]   # 무기를 뺀 날은 잴 수 없다
+        if not snaps:
+            rows[job or name] = {"name": name, "status": "무기 없음"}
+            continue
         key = job or snaps[-1].character_class
         try:
             rows[key] = {"name": name, "status": "측정함", "source": source.get(job, "직접 지정")} | measure(snaps)
@@ -209,7 +255,8 @@ def main() -> int:
             rows[key] = {"name": name, "status": "계산 실패", "why": f"{type(e).__name__}: {e}"[:160]}
     for job in ALL_JOBS:
         if job not in rows:
-            rows[job] = {"status": "지원 안 함", "why": jobs._UNSUPPORTED[job]} if job in jobs._UNSUPPORTED else {"status": "캐릭터 없음"}
+            rows[job] = ({"status": "지원 안 함", "why": jobs._UNSUPPORTED[job]} if job in jobs._UNSUPPORTED else
+                         {"status": "아직 못 불러옴" if stopped else "캐릭터 없음"})
 
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "jobs.json").write_text(json.dumps({"days": [d.isoformat() for d in days], "stopped": stopped, "jobs": rows},
@@ -224,7 +271,8 @@ def main() -> int:
         ms = r.get("main_stat_error_pct")
         print(f"{job:14} {r['source']} Lv{r['level']} 날짜 {r['dates']} · 식 {r['formula_error_pct']:.3f}% · "
               + (f"주스탯 {ms['mean']:.2f}/{ms['max']:.2f}% · 버프 {r['buffed_days']}일 · " if ms else "")
-              + (f"계획 오류 {r['plan_error']}" if "plan_error" in r else f"계획 {r['plan_steps']}단계"))
+              + (f"계획 오류 {r['plan_error']}" if "plan_error" in r else f"계획 {r['plan_steps']}단계")
+              + (f"(방어율 {r['plan_defense']}%로 — 300%에는 피해가 안 들어감)" if "plan_defense" in r else ""))
     return 0
 
 
