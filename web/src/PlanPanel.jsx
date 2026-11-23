@@ -76,10 +76,12 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
   const toggle = (i) => { const next = open === i ? null : i; setOpen(next); if (shared == null) onStage?.(next == null ? 1 : 2); };
   const share = (s, i) => { setShared(i); onStage?.(3); onEvaluate?.(s); };
 
-  const steps = data?.steps || [];
+  // 예산이 모자라 건너뛴 다음 목표도 같은 목록의 마지막 줄로 둔다 — 경매장에서 살 수 있으면 예산 안의 매물을 찾아볼 수 있다
+  const steps = [...(data?.steps || []), ...(data?.next_step ? [{ ...data.next_step, isNext: true }] : [])];
+  const done = data?.steps?.length || 0;
   // 처음엔 앞의 FIRST줄 + 경매장에서 살 수 있는 첫 줄(뒤쪽에 있어도) — 그 줄이 안 보이면 2~4단계로 갈 길이 없다
   const firstBuy = steps.findIndex(buyable);
-  const keep = new Set([firstBuy, open, shared].filter((i) => i != null && i >= 0));
+  const keep = new Set([firstBuy, open, shared, data?.next_step ? done : null].filter((i) => i != null && i >= 0));
   const shown = steps.map((s, i) => ({ s, i })).filter(({ i }) => all || i < FIRST || keep.has(i));
   return (
     <section className="panel plan-panel" aria-label="내 업그레이드 계획">
@@ -98,7 +100,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
       {busy && !data && <RowsSkeleton rows={5} />}
       {data && (
         <div className="budget-result" aria-live="polite">
-          {data.budget_text && (steps.length > 0 ? (
+          {data.budget_text && (done > 0 ? (
             <p className="budget-headline">
               <span><strong>{data.budget_text}</strong>이면 보스 실딜</span>
               <strong className="budget-gain num">{pct(data.gain_pct)}</strong>
@@ -117,15 +119,17 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
               <ol className="plan-steps" aria-label="할 순서">
                 {shown.map(({ s, i }, n) => (
                   <li key={i} className={`plan-row${open === i ? " is-open" : ""}${n > 0 && shown[n - 1].i !== i - 1 ? " after-gap" : ""}`}
-                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요 — 아래는 경매장에서 살 수 있는 첫 순서예요` : undefined}>
+                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요` : undefined}>
                     <div className="plan-line">
-                      <span className="plan-no">{i + 1}</span>
+                      <span className={`plan-no${s.isNext ? " is-next" : ""}`}>{s.isNext ? "다음" : i + 1}</span>
                       <span className="plan-what"><strong>{stepLabel(s)}</strong>
                         <span className="muted small">{[stepSub(s), how(s)].filter(Boolean).join(" · ")}</span></span>
                       {/* 큰 숫자 = 순서의 기준인 1억 메소당 효율(2026-11-23 사용자 결정 — 전에는 보스 실딜이 커서 순서가 틀린 것처럼 보였다) */}
                       <span className="plan-eff" title="이 순서의 기준: 1억 메소를 쓸 때 오르는 보스 실딜"><strong className="num">{pct(s.per_100m, 3)}</strong></span>
                       <span className="plan-cost num">{s.cost_text}</span>
-                      <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>
+                      {s.isNext
+                        ? <span className="plan-sum muted small">큐브로는 <strong className="plan-short">{s.short_text}</strong> 더 필요</span>
+                        : <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>}
                       <span className="plan-act">
                         {buyable(s) ? (
                           <button type="button" className={open === i ? "small" : "ghost small"} aria-expanded={open === i} onClick={() => toggle(i)}>
@@ -159,16 +163,10 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
               </ol>
               {steps.length > shown.length || all ? (
                 <button type="button" className="ghost more-ranks" onClick={() => setAll(!all)}>
-                  {all ? "처음 단계만 보기" : `${steps.length}단계 모두 보기`}
+                  {all ? "처음 단계만 보기" : `${done}단계 모두 보기`}
                 </button>
               ) : null}
             </>
-          )}
-          {data.next_step && (
-            <p className="budget-next">
-              <span className="basis-k">다음 목표</span>
-              <strong>{stepLabel(data.next_step)}</strong> — 평균 {data.next_step.cost_text}, <strong>{data.next_step.short_text}</strong> 더 모으면 할 수 있어요.
-            </p>
           )}
           {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           <details className="note basis">

@@ -997,3 +997,5 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .plan-panel { padding-top: var(--sp-4); }
   .plan-cols { margin-top: var(--sp-1); }
 }
+.plan-no.is-next { width: auto; padding: 0 6px; background: var(--accent-soft); color: var(--accent); }
+.plan-short { color: var(--text); }

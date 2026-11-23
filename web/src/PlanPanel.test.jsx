@@ -48,7 +48,11 @@ describe("PlanPanel — 계획 하나", () => {
     expect(await screen.findByText("+3.93%")).toBeInTheDocument();
     expect(f.mock.calls[1][0]).toContain("budget=5000000000");
     expect(screen.getByText(/47억 7020만 사용 · 2억 2979만 남음/)).toBeInTheDocument();
-    expect(screen.getByText(/103억 6016만/)).toBeInTheDocument();
+    // 예산이 모자란 다음 목표는 같은 목록의 마지막 줄 — 경매장에서 살 수 있으면 예산 안의 매물을 찾아볼 수 있다
+    const next = rows().at(-1);
+    expect(next.querySelector(".plan-no")).toHaveTextContent("다음");
+    expect(next).toHaveTextContent("103억 6016만 더 필요");
+    expect(within(next).getByRole("button", { name: "경매장에서 찾기" })).toBeInTheDocument();
   });
 
   it("금액을 읽을 수 없으면 서버를 부르지 않고 적는 법을 알려 준다", async () => {
