@@ -183,3 +183,13 @@ def test_plan_without_budget_lists_the_first_steps_and_marks_buyable_cube_steps(
     assert cube and all(s["route"] in ("경매장", "큐브") and s["target"] and s["lines_good"] for s in cube)
     assert len(c.get("/api/character/레테/budget-roadmap", params={"steps": 1}).json()["steps"]) == 1
     assert c.get("/api/character/레테/budget-roadmap", params={"steps": 0}).status_code == 400
+
+
+def test_plan_always_names_the_best_auction_buyable_cube_step():
+    """2026-11-23 실제 캐릭터: 계획 16단계가 추옵·스타포스·심볼뿐이라 경매장으로 이어지는 줄이 없었다 → auction_pick을 따로 준다."""
+    from server import service
+    snap = snapshot(bundle("레테"))
+    r = service.budget_roadmap(snap, 300.0, [], steps=2)
+    assert all(s["path"] != "큐브" for s in r["steps"])            # 앞의 두 줄에는 큐브가 없다
+    pick = r["auction_pick"]
+    assert pick["path"] == "큐브" and pick["route"] == "경매장" and pick["target"] and pick["cost_text"]

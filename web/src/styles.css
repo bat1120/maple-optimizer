@@ -999,3 +999,7 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 }
 .plan-no.is-next { width: auto; padding: 0 6px; background: var(--accent-soft); color: var(--accent); }
 .plan-short { color: var(--text); }
+/* '다음'·'경매장' 배지는 번호 칸보다 넓다 — 칸을 내용만큼 늘린다 */
+.plan-line { grid-template-columns: minmax(28px, auto) minmax(0, 1fr) 110px 120px 190px 132px; }
+.plan-no.is-next { white-space: nowrap; }
+@media (max-width: 1000px) { .plan-line { grid-template-columns: minmax(28px, auto) minmax(0, 1fr) auto; } }

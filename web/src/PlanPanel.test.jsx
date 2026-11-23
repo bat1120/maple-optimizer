@@ -108,6 +108,22 @@ describe("PlanPanel — 계획 하나", () => {
     expect(within(list[6]).getByRole("button", { name: "경매장에서 찾기" })).toBeInTheDocument();
   });
 
+  it("계획에 경매장에서 살 수 있는 줄이 없으면 '경매장에서 찾는다면' 줄을 붙인다(계획에 있으면 안 붙인다)", async () => {
+    const only = plan.steps.slice(0, 2);
+    mock({ ...plan, steps: only, auction_pick: cube });
+    const { unmount } = render(<PlanPanel name="레테" defense={300} />);
+    await screen.findByText("귀고리 추옵 재설정");
+    const last = rows().at(-1);
+    expect(last.querySelector(".plan-no")).toHaveTextContent("경매장");
+    expect(last).toHaveTextContent("경매장에서 찾는다면 이것부터");
+    expect(within(last).getByRole("button", { name: "경매장에서 찾기" })).toBeInTheDocument();
+    unmount();
+    mock({ ...plan, auction_pick: cube });   // 계획 안에 이미 살 수 있는 줄이 있다
+    render(<PlanPanel name="레테" defense={300} />);
+    await screen.findByText("귀고리 추옵 재설정");
+    expect(rows().some((li) => li.querySelector(".plan-no").textContent === "경매장")).toBe(false);
+  });
+
   it("단계 이름과 살 수 있는지 판단", () => {
     expect(stepLabel(cube)).toBe("하의 잠재 레전드리 2줄");
     expect(stepLabel({ path: "심볼", name: "어센틱심볼 : 아르크스", from_level: 3, to_level: 4 })).toBe("어센틱심볼 : 아르크스 3→4레벨");

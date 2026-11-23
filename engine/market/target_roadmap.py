@@ -52,7 +52,7 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
     need = target_ratio / current_ratio if current_ratio > 0 else float("inf")
     out = {"current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": need, "steps": [],
            "reached": need <= 1, "final_ratio": current_ratio, "total_cost": 0.0, "changed": {}, "hexa_stat": {},
-           "symbols": {}, "skipped_first": None}
+           "symbols": {}, "skipped_first": None, "cube_candidates": []}
     if need <= 1:
         return out
     pl = _Planner(snap, setting, boss, catalog, None, events.miracle)
@@ -106,6 +106,11 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
             continue  # 스타포스는 아래에서 한 성씩, 구매·직작은 넣지 않는다
         if key not in cands or p["per_100m"] > cands[key]["per_100m"]:
             cands[key] = p
+
+    # 큐브 후보(처음 상태 기준, 억당 순) — 계획에 큐브 줄이 하나도 안 들어가도 '경매장에서 찾는다면'을 보여 줄 수 있게(2026-11-23:
+    # 실제 캐릭터에서 추옵·스타포스·심볼만으로 계획이 차서 경매장으로 이어지는 줄이 없었다)
+    out["cube_candidates"] = sorted(({k: v for k, v in p.items() if not k.startswith("_")} for key, p in cands.items() if key[0] == "큐브"),
+                                    key=lambda p: p["per_100m"], reverse=True)
 
     def sf_candidate(slot):
         it = raw[slot]

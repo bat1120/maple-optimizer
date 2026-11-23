@@ -77,7 +77,10 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
   const share = (s, i) => { setShared(i); onStage?.(3); onEvaluate?.(s); };
 
   // 예산이 모자라 건너뛴 다음 목표도 같은 목록의 마지막 줄로 둔다 — 경매장에서 살 수 있으면 예산 안의 매물을 찾아볼 수 있다
-  const steps = [...(data?.steps || []), ...(data?.next_step ? [{ ...data.next_step, isNext: true }] : [])];
+  // 계획에 경매장에서 살 수 있는 줄이 하나도 없으면 '경매장에서 찾는다면'(살 수 있는 것 중 효율 1위)을 마지막에 붙인다 —
+  // 실제 캐릭터에서 추옵·스타포스·심볼만으로 계획이 차서 2~4단계로 갈 길이 없었다(2026-11-23)
+  const planned = [...(data?.steps || []), ...(data?.next_step ? [{ ...data.next_step, isNext: true }] : [])];
+  const steps = [...planned, ...(data?.auction_pick && !planned.some(buyable) ? [{ ...data.auction_pick, isPick: true }] : [])];
   const done = data?.steps?.length || 0;
   // 처음엔 앞의 FIRST줄 + 경매장에서 살 수 있는 첫 줄(뒤쪽에 있어도) — 그 줄이 안 보이면 2~4단계로 갈 길이 없다
   const firstBuy = steps.findIndex(buyable);
@@ -118,16 +121,18 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
               <p className="plan-cols muted small" aria-hidden="true"><span>순서 · 무엇을</span><span>1억 메소당</span><span>평균 비용</span><span>여기까지 · 누적 실딜</span></p>
               <ol className="plan-steps" aria-label="할 순서">
                 {shown.map(({ s, i }, n) => (
-                  <li key={i} className={`plan-row${open === i ? " is-open" : ""}${n > 0 && shown[n - 1].i !== i - 1 ? " after-gap" : ""}`}
-                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요` : undefined}>
+                  <li key={i} className={`plan-row${open === i ? " is-open" : ""}${(n > 0 && shown[n - 1].i !== i - 1) || s.isPick ? " after-gap" : ""}`}
+                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요` : s.isPick ? "위 순서에는 경매장에서 살 수 있는 것이 없어요 — 경매장에서 찾아본다면 효율이 가장 좋은 것은" : undefined}>
                     <div className="plan-line">
-                      <span className={`plan-no${s.isNext ? " is-next" : ""}`}>{s.isNext ? "다음" : i + 1}</span>
+                      <span className={`plan-no${s.isNext || s.isPick ? " is-next" : ""}`}>{s.isNext ? "다음" : s.isPick ? "경매장" : i + 1}</span>
                       <span className="plan-what"><strong>{stepLabel(s)}</strong>
                         <span className="muted small">{[stepSub(s), how(s)].filter(Boolean).join(" · ")}</span></span>
                       {/* 큰 숫자 = 순서의 기준인 1억 메소당 효율(2026-11-23 사용자 결정 — 전에는 보스 실딜이 커서 순서가 틀린 것처럼 보였다) */}
                       <span className="plan-eff" title="이 순서의 기준: 1억 메소를 쓸 때 오르는 보스 실딜"><strong className="num">{pct(s.per_100m, 3)}</strong></span>
                       <span className="plan-cost num">{s.cost_text}</span>
-                      {s.isNext
+                      {s.isPick
+                        ? <span className="plan-sum muted small">경매장에서 찾는다면 이것부터</span>
+                        : s.isNext
                         ? <span className="plan-sum muted small">큐브로는 <strong className="plan-short">{s.short_text}</strong> 더 필요</span>
                         : <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>}
                       <span className="plan-act">

@@ -401,6 +401,7 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
             "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
             "scouter": scouter, "hexa_core_multiplier": mult_core, "skipped_first": r["skipped_first"],
+            "cube_candidates": r["cube_candidates"],
             "note": ("스페어 값·썬데이 이벤트·추옵(환생의 불꽃)은 아직 로드맵에 넣지 않아요 — 실제 비용은 이보다 클 수 있어요. "
                      "배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
                      "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "
@@ -434,12 +435,15 @@ def budget_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
         return out
 
     done, spent, skipped = r["steps"], r["total_cost"], r["skipped_first"]
+    # 경매장에서 찾는다면: 살 수 있는 큐브 후보 중 억당이 가장 좋은 것(계획에 이미 있어도 준다 — 화면이 겹치면 안 그린다)
+    auction = next((b for b in (brief(c | {"cost_text": meso_text(c["cost"])}) for c in r["cube_candidates"]) if b.get("route") == "경매장"), None)
     return {"evaluation_setting": r["evaluation_setting"], "boss": r["boss"], "basis_warning": r.get("basis_warning"),
             "budget": budget, "budget_text": meso_text(budget) if budget is not None else None,
             "steps": [brief(s) | {"gain_pct_after": (s["multiplier"] - 1) * 100} for s in done],
             "spent_text": (meso_text(spent) if spent else "0"),
             "left_text": meso_text(budget - spent) if budget is not None else None,
             "gain_pct": (done[-1]["multiplier"] - 1) * 100 if done else 0.0,
+            "auction_pick": auction,
             "next_step": None if skipped is None else (
                 brief(skipped | {"cost_text": meso_text(skipped["cost"])})
                 | {"short_text": meso_text(skipped["cost"] - (budget - spent))}),
