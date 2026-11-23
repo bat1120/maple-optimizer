@@ -3,14 +3,10 @@ import { hashFor, navigate } from "../router.js";
 import { addRecent, clearRecent, closeHint, hintClosed, loadRecent } from "../recent.js";
 import { getMarketStats } from "../api.js";
 import Icon from "../ui/icons.jsx";
+import { FLOW } from "../flow.js";
 
-// 처음 온 사람용 안내 — 실제 있는 기능만, 사용자가 하게 될 일 순서로(2026-11-23 심사: 탭 이름 나열이라 흐름이 안 보였다).
-export const FIRST_STEPS = [
-  { title: "닉네임 검색", text: "지금 스펙을 불러와 내 템을 진단해요." },
-  { title: "추천 확인", text: "같은 메소로 보스 딜이 가장 많이 오르는 부위와 옵션을 알려 드려요. 가진 메소를 넣으면 어디까지 올릴지도 계산해요." },
-  { title: "게임 경매장에서 검색", text: "추천 조건을 게임 경매장 상세 검색에 그대로 넣어요." },
-  { title: "검색 화면 공유", text: "검색 결과 화면을 공유하면 매물을 읽어, 끼웠을 때 실제 딜이 얼마나 오르는지 계산해요(PC)." },
-];
+// 처음 온 사람용 안내 — 업그레이드 탭과 같은 4단계(flow.js). 실제 있는 기능만 적는다.
+export const FIRST_STEPS = FLOW.map((s) => ({ title: s.title, text: s.home }));
 
 export default function Home() {
   const [q, setQ] = useState("");
@@ -64,7 +60,7 @@ export default function Home() {
         {showHint && (
           <section className="first-visit" aria-labelledby="first-visit-title">
             <div className="first-visit-head">
-              <h2 id="first-visit-title">처음이신가요? 이렇게 써 보세요</h2>
+              <h2 id="first-visit-title">처음이신가요? 닉네임을 검색하면 이렇게 진행해요</h2>
               <button type="button" className="icon-button" onClick={hideHint} aria-label="안내 닫기"><Icon name="close" size={16} /></button>
             </div>
             <ol className="step-list">

@@ -12,6 +12,7 @@ import StatSummary from "../character/StatSummary.jsx";
 import SettingsRanking from "../character/SettingsRanking.jsx";
 import RoadmapPanel from "../RoadmapPanel.jsx";
 import BudgetPanel from "../BudgetPanel.jsx";
+import { FLOW, WATCH_TITLE } from "../flow.js";
 import PathsPanel from "../PathsPanel.jsx";
 import SwapsPanel from "../SwapsPanel.jsx";
 import ArmorSetsPanel from "../ArmorSetsPanel.jsx";
@@ -68,13 +69,6 @@ export function TabIntro({ tab, defense, onDefense }) {
 }
 
 // 이 서비스의 흐름을 순서로 보여 준다(2026-11-23 심사 3명 공통: 추천 → 경매장 검색 → 화면 공유 → 딜 계산이 화면에 순서로 안 보였다)
-export const FLOW = [
-  { title: "추천 확인", text: "아래 순위에서 올릴 부위를 골라요" },
-  { title: "경매장에서 검색", text: "게임 경매장 상세 검색에 그 조건을 넣어요" },
-  { title: "검색 화면 공유", text: "결과 화면을 공유하면 매물을 읽어요 (PC)" },
-  { title: "실딜 확인", text: "끼웠을 때 오르는 딜과 1억당 효율을 봐요" },
-];
-
 export function FlowSteps() {
   return (
     <ol className="flow-steps" aria-label="이렇게 진행해요">
@@ -120,8 +114,6 @@ function Fold({ title, children, open, onToggle, foldRef }) {
     </details>
   );
 }
-
-export const WATCH_TITLE = "3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)";
 
 // 닉네임을 못 찾았을 때(404): 같은 이름 '다시 시도'는 막다른 길이라, 그 닉네임을 채운 검색창으로 고쳐 찾게 한다(2026-10-11 디자인 심사)
 function NotFound({ name }) {
@@ -231,7 +223,7 @@ export default function Character({ route }) {
               </a>
             ))}
           </nav>
-          <TabIntro tab={tab} />
+          {tab !== "upgrade" && <TabIntro tab={tab} />}
           {tab === "summary" && (
             <div className="summary-grid">
               <div className="stack summary-side">
@@ -256,8 +248,8 @@ export default function Character({ route }) {
             <div className="stack">
               {/* 순서(2026-11-23): 흐름 4단계 → 내 메소로 어디까지 → 순위(1·2단계) → 검색 화면 공유(3·4단계) → 다른 기준 */}
               <FlowSteps />
-              <BudgetPanel name={name} defense={calcDefense} />
-              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} />
+              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate}
+                            before={<BudgetPanel name={name} defense={calcDefense} />} />
               {/* 화면 공유는 이 서비스의 핵심 단계다 — '고급 도구' 아래 접어 두지 않고 순위 바로 아래에 둔다 */}
               <div className="pc-only">
                 <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>

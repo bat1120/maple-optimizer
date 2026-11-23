@@ -4,6 +4,16 @@ import { formatMeso, formatPct, settingLabel } from "./format.js";
 import { EmptyState, HowTo, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 import { gradeClass } from "./character/grades.js";
 import { hashFor } from "./router.js";
+import { stepName } from "./flow.js";
+
+// 휴대폰 → PC로 넘기기(2026-11-23 심사: '휴대폰에서는 여기까지'에서 흐름이 끊겼다)
+function CopyLink() {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(window.location.href); setDone(true); } catch { setDone(false); }
+  };
+  return <button type="button" className="ghost small mobile-only-inline copy-link" onClick={copy}>{done ? "주소를 복사했어요" : "이 화면 주소 복사"}</button>;
+}
 
 // 전체 부위 로드맵: 부위마다 잠재·에디의 '다음 단계'(실딜이 처음 0.1% 이상 오르는 등급·줄 수)와 모든 단계를 보여 준다.
 const KINDS = ["잠재", "에디"];
@@ -20,7 +30,7 @@ function Next({ row, kind }) {
 }
 
 // onEvaluate(v): '이 조건으로 찾은 매물 평가하기' — 화면 공유 평가를 열고 찾는 조건을 넘긴다(없으면 버튼을 안 그린다)
-export default function RoadmapPanel({ name, defense, autoLoad = false, active = null, onEvaluate = null }) {
+export default function RoadmapPanel({ name, defense, autoLoad = false, active = null, onEvaluate = null, before = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -44,8 +54,9 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
   return (
     <section className="panel">
       {/* 2026-10-11 심사 3회차: 1위 카드까지 제목 2개·접힘 2개를 지나야 했다 → 제목 하나, 기준은 접힘 하나 */}
+      {before}
       <PanelHead title="가격 대비 업그레이드 순위" icon="trend"
-                 subtitle="잠재·에디를 올렸을 때 1억 메소당 보스 실딜이 많이 오르는 순서예요(같은 메소로 더 많이 오르는 게 위).">
+                 subtitle="경매장에서 찾아볼 잠재·에디 순서예요 — 1억 메소당 보스 실딜이 많이 오르는 게 위. 추옵·스타포스처럼 내 템에 직접 하는 강화는 위 '내 메소로' 계산에 함께 들어 있어요.">
         <button type="button" className={autoLoad ? "ghost small" : undefined} onClick={load} disabled={!name || busy}>
           {autoLoad ? (busy ? "계산 중…" : "다시 계산") : "전체 부위 로드맵"}
         </button>
@@ -89,7 +100,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                         <span className="rank-eff-k">보스 실딜</span><strong className="num">{formatPct(v.delta_pct)}</strong></span>
                     </div>
                     {/* 칩 = 게임 경매장 상세 검색 칸 순서(부위 → 등급 → 1·2·3줄, 각 줄은 '이상') */}
-                    {i === 0 && <span className="cond-head"><span className="step-no">1</span>게임 경매장 › 상세 검색에 이 조건을 넣어 검색해요</span>}
+                    {i === 0 && <span className="cond-head"><span className="step-tag">{stepName(2)}</span>게임 경매장 › 상세 검색에 이 조건을 넣어 검색해요</span>}
                     <ul className="rank-cond" aria-label="경매장 검색 조건">
                       <li className="cond-slot"><span className="cond-k">부위</span>{v.slot}</li>
                       <li className={`cond-grade ${gradeClass(v.grade)}`}><span className="cond-k">{v.kind}</span>{v.grade}</li>
@@ -97,19 +108,23 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                     </ul>
                     <div className="rank-cost">
                       <span className="eff-value" title="순위 기준">1억 메소당 <strong className="num">{formatPct(v.per_100m)}</strong></span>
-                      <span className="muted">큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
+                      <span className="muted" title="이 옵션을 내 템에 큐브로 직접 띄울 때 드는 평균 메소">직접 큐브 평균 <strong className="num">{v.cube_cost_text}</strong></span>
                     </div>
                     <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
+                    {i === 0 && v.route !== "큐브" && v.cube_cost_text && (
+                      <p className="rank-buy small">경매장에 이 조건의 매물이 <strong>{v.cube_cost_text}</strong>보다 싸면 사는 쪽이, 비싸면 큐브를 직접 돌리는 쪽이 이득이에요.</p>
+                    )}
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {/* 아래 줄(2026-10-17 사용자): 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 검색한 뒤
                         화면 공유로 매물을 평가하는 버튼(PC). 휴대폰은 화면 공유가 안 돼 안내만. 못 사는 템은 큐브 계산기 */}
                     <div className={`rank-foot${v.route !== "큐브" && i > 0 ? " foot-pc" : ""}`}>
                       {v.route !== "큐브" ? (onEvaluate && (
                         <>
-                          {i === 0 && <span className="cond-head pc-only-inline"><span className="step-no">2</span>검색 결과가 보이면</span>}
+                          {i === 0 && <span className="cond-head pc-only-inline"><span className="step-tag">{stepName(3)}</span>검색 결과가 보이면</span>}
                           <button type="button" className={`rank-copy pc-only-inline${i === 0 ? "" : " ghost small"}`} onClick={() => onEvaluate(v)}>
                             검색 화면 공유해서 매물 읽기</button>
-                          {i === 0 && <span className="small mobile-only-inline rank-mobile-note">휴대폰에서는 여기까지예요. PC에서 이 주소를 열면 검색 화면을 읽어 실제 딜을 계산해요.</span>}
+                          {i === 0 && <span className="small mobile-only-inline rank-mobile-note">{stepName(3)}부터는 PC에서 돼요 — PC에서 이 주소를 열면 검색 화면을 읽어 실제 딜을 계산해요.</span>}
+                          {i === 0 && <CopyLink />}
                         </>
                       )) : (
                         // 경매장에서 못 사는 템(5회차: 다음 행동이 없었다) → 같은 자리·같은 모양으로 큐브 비용 계산기

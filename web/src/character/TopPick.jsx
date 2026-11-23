@@ -17,7 +17,7 @@ export default function TopPick({ name, defense, after = false }) {
   if (top === null) return null;
   return (
     <section className="top-pick" aria-label="업그레이드 1순위" aria-busy={top === undefined}>
-      <span className="pick-label">{after ? "다음으로 메소를 쓴다면" : "업그레이드 1순위"}</span>
+      <span className="pick-label">{after ? "경매장에서 찾는다면" : "경매장 1순위"}</span>
       {top === undefined ? (
         <span className="muted small">가격 대비 순위를 계산하는 중이에요…</span>
       ) : (
@@ -30,7 +30,7 @@ export default function TopPick({ name, defense, after = false }) {
             {top.cube_cost_text && <span className="muted"> · 큐브 평균 {top.cube_cost_text}</span>}</span>
         </span>
       )}
-      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>순위 전체 보기<Icon name="chevron" size={14} /></a>
+      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>내 메소로 어디까지 · 순위 보기<Icon name="chevron" size={14} /></a>
     </section>
   );
 }

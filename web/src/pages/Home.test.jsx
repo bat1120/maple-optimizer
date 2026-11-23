@@ -31,7 +31,7 @@ describe("home page", () => {
   it("처음 오면 사용 안내(검색·탭 설명)가 보이고, 닫으면 다시 안 뜬다", () => {
     render(<Home />);
     const hint = screen.getByRole("region", { name: /처음이신가요/ });
-    for (const t of ["닉네임 검색", "추천 확인", "게임 경매장에서 검색", "검색 화면 공유"]) expect(hint).toHaveTextContent(t);
+    for (const t of ["추천 확인", "경매장에서 검색", "검색 화면 공유", "실딜 확인"]) expect(hint).toHaveTextContent(t);
     fireEvent.click(screen.getByRole("button", { name: "안내 닫기" }));
     expect(screen.queryByRole("region", { name: /처음이신가요/ })).toBeNull();
     cleanup();
@@ -51,5 +51,11 @@ describe("home page", () => {
     render(<Home />);
     expect(await screen.findByText(/경매장 관측 1,234건/)).toBeInTheDocument();
   });
-});
 
+  it("홈 안내와 업그레이드 탭 단계 줄은 같은 이름·같은 순서다(번호가 화면마다 달랐다)", async () => {
+    const { FIRST_STEPS } = await import("./Home.jsx");
+    const { FLOW } = await import("../flow.js");
+    expect(FIRST_STEPS.map((s) => s.title)).toEqual(FLOW.map((s) => s.title));
+    expect(FLOW).toHaveLength(4);
+  });
+});

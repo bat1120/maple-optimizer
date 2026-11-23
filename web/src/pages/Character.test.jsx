@@ -100,7 +100,7 @@ describe("character page", () => {
     const pick = await screen.findByRole("region", { name: "업그레이드 1순위" });
     expect(pick).toHaveTextContent("엠블렘 에디");
     expect(pick).toHaveTextContent("+5.550%");
-    expect(within(pick).getByRole("link", { name: /순위 전체 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
+    expect(within(pick).getByRole("link", { name: /순위 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
   });
 
   it("세팅 순위: 1위 메달", async () => {
@@ -172,6 +172,7 @@ describe("character page", () => {
     expect(screen.getByRole("heading", { name: "경매장 화면 평가" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장비창 채점" })).toBeNull();
     expect(screen.getByText(/3·4단계는 PC에서 돼요/)).toBeInTheDocument();
+    expect(screen.queryByText(/무엇을 바꾸면 보스 실딜이 오르는지/)).toBeNull();   // 업그레이드 탭은 단계 줄이 안내 띠를 대신한다
     // 2026-11-23: 흐름 4단계와 '내 메소로 어디까지'가 순위보다 위, 화면 공유는 '고급 도구'가 아니라 순위 바로 아래
     expect(within(screen.getByRole("list", { name: "이렇게 진행해요" })).getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByLabelText("가진 메소")).toBeInTheDocument();
@@ -186,7 +187,7 @@ describe("character page", () => {
     expect(screen.getAllByText("사용 방법").length).toBeGreaterThan(0);
     expect(screen.getByText(/칸을 누르면 잠재·에디 옵션이 열려요/)).toBeInTheDocument();
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />); });
-    expect(screen.getByText(/무엇을 바꾸면 보스 실딜이 오르는지/)).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "이렇게 진행해요" })).toBeInTheDocument();   // 업그레이드 탭 안내 = 단계 줄(2026-11-23)
     expect(screen.getByText("방법별 비교 — 구매·직작·큐브·강화")).toBeInTheDocument();
     await act(async () => { rerender(<Character route={{ page: "character", name: "내신부레테", tab: "calc" }} />); });
     expect(screen.getByText(/스타포스·큐브 비용과 매물 vs 직작/)).toBeInTheDocument();

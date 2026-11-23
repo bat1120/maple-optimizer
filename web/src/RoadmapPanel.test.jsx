@@ -114,4 +114,14 @@ describe("roadmap panel", () => {
     const chips = within(first).getByRole("list", { name: "경매장 검색 조건" });
     expect(within(chips).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["부위엠블렘", "에디레전드리", "1줄마력 +12% 이상", "2줄마력 +9% 이상"]);
   });
+
+  it("1위 카드: 단계 번호는 흐름과 같고(2·3단계), 사는 쪽과 큐브 쪽의 기준을 말한다", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => body });
+    render(<RoadmapPanel name="레테" defense={300} autoLoad onEvaluate={() => {}} />);
+    const first = (await screen.findByText("엠블렘 에디")).closest("li.rank-card");
+    expect(first).toHaveTextContent("2단계");
+    expect(first).toHaveTextContent("3단계");
+    expect(first).toHaveTextContent("253억 8269만보다 싸면 사는 쪽이");
+    expect(within(first).getByRole("button", { name: "이 화면 주소 복사" })).toBeInTheDocument();
+  });
 });
