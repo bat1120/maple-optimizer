@@ -58,6 +58,17 @@ describe("BudgetPanel", () => {
     expect(await screen.findByText(/지금 할 수 있는 단계가 없어요/)).toBeInTheDocument();
   });
 
+  it("단계가 많으면 처음 5개만 보이고, 눌러서 모두 본다", async () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ slot: `부위${i}`, path: "추옵", name: `템${i}`, cost_text: "1억", total_cost_text: `${i + 1}억`, gain_pct_after: i + 1 }));
+    mock({ ...body, steps: many });
+    render(<BudgetPanel name="레테" defense={300} />);
+    fireEvent.click(screen.getByRole("button", { name: "50억" }));
+    const list = await screen.findByRole("list", { name: "예산 안에서 할 순서" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(5);
+    fireEvent.click(screen.getByRole("button", { name: "8단계 모두 보기" }));
+    expect(within(list).getAllByRole("listitem")).toHaveLength(8);
+  });
+
   it("단계 이름을 사람이 읽는 말로 만든다", () => {
     expect(stepLabel({ path: "큐브", slot: "보조무기", kind: "잠재", grade: "레전드리" })).toBe("보조무기 잠재 레전드리");
     expect(stepLabel({ path: "심볼", name: "어센틱심볼 : 아르크스", from_level: 3, to_level: 4 })).toBe("어센틱심볼 : 아르크스 3→4레벨");

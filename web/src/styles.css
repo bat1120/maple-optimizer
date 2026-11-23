@@ -906,3 +906,28 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .flow-text .muted { font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .flow-steps li { padding: var(--sp-2) var(--sp-3); align-items: center; }
 }
+
+/* ── 구조 변경(2026-11-23, 4회차 뒤): 누르는 곳 바로 아래에 결과 · 예산 안의 것부터 · 요약 탭의 다음 행동 ── */
+.rank-watch { grid-column: 1 / -1; list-style: none; }
+.rank-watch details.fold { margin: 0; border: 2px dashed var(--accent-fill); background: var(--surface); }
+.rank-watch details.fold > summary { min-height: 44px; color: var(--text); }
+.rank-watch details.fold[open] { border-style: solid; }
+.rank-watch:has(.pc-only:only-child) { display: list-item; }
+.rank-budget-note { margin: var(--sp-3) 0 0; color: var(--text-2); }
+.budget-more { margin-top: var(--sp-2); }
+/* 1위 카드의 검색 조건은 게임 경매장 상세 검색 칸처럼(칸 이름 위, 값 아래) */
+.top1 .rank-cond { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-2); }
+.top1 .rank-cond li { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 10px; border-radius: var(--radius); font-size: var(--fs-sm); color: var(--text); }
+.top1 .rank-cond li .cond-k { margin: 0; font-size: var(--fs-xs); }
+.top1 .rank-cond .cond-grade { display: flex; }
+.top1 .rank-cond .cond-grade::before { position: absolute; margin: 22px 0 0 -2px; display: none; }
+/* 요약 탭: 단계 줄 끝의 시작 버튼 */
+.flow-steps.with-go { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; margin-top: var(--sp-3); }
+.flow-steps li.flow-go { border: 0; background: none; padding: 0; align-items: stretch; }
+.flow-steps li.flow-go::after, .flow-steps.with-go li:nth-child(4)::after { content: none; }
+.flow-go .button-link { display: inline-flex; align-items: center; white-space: nowrap; min-height: 44px; }
+@media (max-width: 1000px) { .flow-steps.with-go { grid-template-columns: repeat(2, minmax(0, 1fr)); } .flow-steps li.flow-go { grid-column: 1 / -1; } .flow-go .button-link { width: 100%; justify-content: center; } }
+@media (max-width: 720px) {
+  .rank-watch { display: none; }
+  .flow-steps li.flow-go { border-top: 1px solid var(--line); padding: var(--sp-2); }
+}

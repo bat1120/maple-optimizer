@@ -8,6 +8,7 @@ import { RowsSkeleton } from "./ui/Guide.jsx";
 // 계산은 서버(예산 로드맵) — 여기서는 금액을 메소로 바꿔 보내고 결과를 그대로 보여 준다.
 const QUICK = ["10억", "50억", "100억", "300억"];
 const MIN = 10_000;
+const FIRST = 5; // 처음에 보이는 단계 수
 const pct = (x) => `+${Number(x).toFixed(2)}%`;
 
 export function stepLabel(s) {
@@ -27,6 +28,7 @@ export default function BudgetPanel({ name, defense, onBudget = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [all, setAll] = useState(false);
 
   const run = async (value) => {
     const meso = parsePrice(value);
@@ -78,7 +80,7 @@ export default function BudgetPanel({ name, defense, onBudget = null }) {
           )}
           {data.steps.length > 0 && (
             <ol className="budget-steps" aria-label="예산 안에서 할 순서">
-              {data.steps.map((s, i) => (
+              {(all ? data.steps : data.steps.slice(0, FIRST)).map((s, i) => (
                 <li key={i}>
                   <span className="budget-no">{i + 1}</span>
                   <span className="budget-what"><strong>{stepLabel(s)}</strong><span className="muted small">{[stepSub(s), how(s)].filter(Boolean).join(" · ")}</span></span>
@@ -87,6 +89,11 @@ export default function BudgetPanel({ name, defense, onBudget = null }) {
                 </li>
               ))}
             </ol>
+          )}
+          {data.steps.length > FIRST && (
+            <button type="button" className="ghost small budget-more" onClick={() => setAll(!all)}>
+              {all ? "처음 단계만 보기" : `${data.steps.length}단계 모두 보기`}
+            </button>
           )}
           {data.steps.length > 0 && <p className="muted small budget-rel">위 순서는 추옵·스타포스·심볼 같은 내 템 강화까지 포함해 같은 메소로 가장 많이 오르는 순서예요. 아래 순위는 그중 경매장에서 찾아볼 잠재·에디만 모은 거예요.</p>}
           {data.next_step && (

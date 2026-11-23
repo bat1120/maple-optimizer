@@ -72,6 +72,10 @@
         {
           "what": "AI 질문은 접힌 한 줄(64px 이하)이다 — 결과를 밀어내지 않는다",
           "js": "document.querySelector('.agent-fold').getBoundingClientRect().height <= 64"
+        },
+        {
+          "what": "요약 탭에 진행 순서와 '업그레이드 순서 보기' 버튼이 있다",
+          "js": "document.querySelectorAll('.flow-steps li:not(.flow-go)').length === 4 && !!document.querySelector('.flow-go a')"
         }
       ]
     },
@@ -123,6 +127,10 @@
         {
           "what": "1위 카드가 첫 화면 가까이 있다(PC 780px, 휴대폰 1000px 이내에서 시작)",
           "js": "document.querySelector('.rank-card').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 780 : 1000)"
+        },
+        {
+          "what": "화면 공유 칸이 1위 카드 바로 아래에 붙어 있다(PC)",
+          "js": "window.innerWidth <= 720 || document.querySelector('.rank-card.top1').nextElementSibling?.classList.contains('rank-watch')"
         }
       ]
     },
@@ -248,8 +256,12 @@
           "js": "!document.querySelector('.budget-panel [role=alert]')"
         },
         {
-          "what": "예산을 넘는 순위 카드에 '예산 밖' 표시가 붙는다",
-          "js": "document.querySelectorAll('.rank-card.over-budget .rank-over').length > 0"
+          "what": "예산을 넣으면 맨 위 순위 카드는 예산 안의 것이다",
+          "js": "!document.querySelector('.rank-card.top1').classList.contains('over-budget')"
+        },
+        {
+          "what": "예산 결과는 처음 5단계만 펼쳐져 있다",
+          "js": "document.querySelectorAll('.budget-steps li').length <= 5"
         }
       ]
     }
