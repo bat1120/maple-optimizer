@@ -64,6 +64,10 @@ TOOL_DEFS = [
                                                        "target_ratio": {"type": "number"},
                                                        "fragment_price": {"type": "number", "description": "솔 에르다 조각 1개 메소(넣으면 HEXA 포함)"}},
                       "required": ["name", "current_ratio", "target_ratio"]}},
+    {"name": "budget_roadmap", "description": "사용자가 쓸 수 있는 메소(예산)를 말했을 때: '50억 있는데 어디까지 올려', '예산 100억으로 뭐 할까'. 억당 효율 순으로 업그레이드 단계(추옵 재설정, 스타포스는 한 성씩, 큐브·심볼·HEXA)를 예산이 찰 때까지 쌓아 돌려준다. steps[].total_cost_text는 그 단계까지 누적 비용, gain_pct_after는 그 단계까지 누적 실딜 상승률. spent_text·gain_pct가 합계, next_step은 예산이 모자라 건너뛴 단계 중 효율이 가장 높은 것. 경매장 구매는 들어 있지 않다(매물은 화면으로 받아 evaluate_listings).",
+     "input_schema": {"type": "object", "properties": {"name": _NAME,
+                                                       "budget": {"type": "integer", "description": "메소 정수(50억 → 5000000000). 사용자가 말한 금액"}},
+                      "required": ["name", "budget"]}},
     {"name": "refresh_market", "description": "웹 경매장을 검색해 관측 시세를 갱신한다(로컬 연결 시만). 로드맵 다음 단계 조건으로 판매 중·판매 완료(체결가)를 찾는다. 일일 검색 한도(100회)를 쓰므로 시세가 필요할 때만, max_searches는 작게(기본 10), 질문 하나에 두 번까지. 갱신 뒤 upgrade_paths를 다시 부른다.",
      "input_schema": {"type": "object", "properties": {"name": _NAME,
                                                          "slots": {"type": "array", "items": {"type": "string"}},
@@ -273,6 +277,28 @@ class ToolBox:
                                    target_ratio, Events(fragment_price=fragment_price or 0.0))
         r.pop("scouter", None)
         return r
+
+    def _budget_roadmap(self, name, budget):
+        if not isinstance(budget, (int, float)) or budget < MIN_LISTING_PRICE:
+            raise ValueError(f"budget은 메소 정수다(50억 → 5000000000). {budget}는 억·만 단위로 넣은 것 같다 — 메소로 다시 넣는다")
+        from engine.market.events import Events
+        # 목표 배율 로드맵 엔진의 예산 모드: 닿지 않는 목표를 주고, 남은 돈으로 못 사는 단계는 건너뛰며 예산이 찰 때까지 쌓는다
+        r = service.target_roadmap(self._load(name), 300.0, self._observed(), 100.0, 1e9, Events(), budget=budget, flames=True)
+        keep = ("slot", "path", "name", "kind", "grade", "target", "flame", "from_star", "to_star", "from_level", "to_level",
+                "cost_text", "delta_pct", "per_100m", "total_cost_text")
+        brief = lambda s: {k: s[k] for k in keep if s.get(k) is not None}  # noqa: E731
+        steps, spent, skipped = r["steps"], r["total_cost"], r["skipped_first"]
+        return {"evaluation_setting": r["evaluation_setting"], "budget_text": service.meso_text(budget),
+                "steps": [brief(s) | {"gain_pct_after": (s["multiplier"] - 1) * 100} for s in steps],
+                "spent_text": service.meso_text(spent) if spent else "0", "left_text": service.meso_text(budget - spent),
+                "gain_pct": (steps[-1]["multiplier"] - 1) * 100 if steps else 0.0,
+                "next_step": None if skipped is None else (
+                    brief(skipped | {"cost_text": service.meso_text(skipped["cost"])})
+                    | {"short_text": service.meso_text(skipped["cost"] - (budget - spent))}),
+                "note": ("억당 효율이 높은 단계부터 쌓고, 남은 돈으로 못 하는 단계는 건너뛰어 그다음 효율 단계로 예산을 채웠어요. "
+                         "next_step은 건너뛴 단계 중 효율이 가장 높은 것, short_text는 그 단계를 하려면 더 필요한 금액이에요. "
+                         "비용은 평균 기대값이라 실제로는 더 들거나 덜 들 수 있어요. 추옵은 목표 이상에서 멈췄을 때의 평균 상승(근사)이에요. "
+                         "스타포스 스페어 값·이벤트 할인·경매장 구매는 들어 있지 않아요 — 매물은 화면으로 받아 따로 평가해요.")}
 
     def _refresh_market(self, name, slots=None, max_searches=10):
         if not self._refresh:

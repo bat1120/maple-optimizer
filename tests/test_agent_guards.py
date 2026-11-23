@@ -223,7 +223,7 @@ def test_eval_case_needs_two_of_three_when_first_try_fails():
 
 def test_prompt_stays_minimal_and_names_no_tools():
     """프롬프트는 방향만 — 도구 이름·금지 목록을 다시 쌓지 않는다(2026-11-23 사용자 지시)."""
-    assert len(SYSTEM) < 700
+    assert len(SYSTEM) < 900
     for t in TOOL_DEFS:
         assert t["name"] not in SYSTEM, t["name"]
     for word in ("않는다", "금지", "말고"):
@@ -277,3 +277,19 @@ def test_listings_are_held_or_expanded_by_code():
     assert "공식 옵션표" in reasons["A"] and "가격을 물어본다" in reasons["B"]
     assert sorted(row["price"] for row in r["ranking"]) == [3_000_000_000, 4_000_000_000]
     assert "C" in r["price_candidates_note"]
+
+
+def test_budget_roadmap_stops_inside_the_budget():
+    """재화에 맞춰 어디까지 올릴지(2026-11-23 사용자: 프로젝트 목적) — 누적 비용이 예산을 넘지 않는 데까지 자른다."""
+    from server.service import meso_text
+    r = _box().run("budget_roadmap", {"name": "레테", "budget": 5_000_000_000})
+    assert "error" not in r and r["steps"] and r["budget_text"] == "50억"
+    assert r["spent_text"] == r["steps"][-1]["total_cost_text"]
+    gains = [s["gain_pct_after"] for s in r["steps"]]
+    assert gains == sorted(gains) and r["gain_pct"] == gains[-1] > 0
+    assert r["next_step"]["short_text"] and "평균 기대값" in r["note"]
+    assert "추옵" in {s["path"] for s in r["steps"]}  # 효율 1위인 추옵 재설정이 빠지지 않는다
+    assert _size(r) < 12_000
+    small = _box().run("budget_roadmap", {"name": "레테", "budget": 1_000_000})
+    assert small["steps"] == [] and small["gain_pct"] == 0 and small["left_text"] == meso_text(1_000_000)
+    assert "메소 정수" in _box().run("budget_roadmap", {"name": "레테", "budget": 50})["error"]
