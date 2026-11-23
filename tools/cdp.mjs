@@ -39,7 +39,8 @@ export async function launchChrome({ chromePath = findChrome(), port = 9333 } = 
   if (process.platform === "linux") args.push("--no-sandbox"); // CI 러너(컨테이너)에서는 샌드박스를 못 쓴다
   const chrome = spawn(chromePath, [...args, "about:blank"], { stdio: "ignore" });
   let version;
-  for (let i = 0; i < 50 && !version; i++) { await sleep(200); try { version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); } catch { /* 아직 */ } }
+  for (let i = 0; i < 150 && !version; i++) { await sleep(200);  // 최대 30초 — CI 러너에서 10초로는 모자라 증거 잡이 실패했다(2026-11-23)
+    try { version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); } catch { /* 아직 */ } }
   if (!version) { chrome.kill(); throw new Error("크롬 디버그 포트에 연결하지 못했어요"); }
   const cdp = new CDP(version.webSocketDebuggerUrl);
   await cdp.open;
