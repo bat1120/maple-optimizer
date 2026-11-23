@@ -25,6 +25,9 @@ export const SCREENS = [
   { id: "summary-tooltip", url: `/#/c/${c}?tab=summary`, ready: "document.querySelectorAll('.equip-grid button.slot').length > 5 && !document.querySelector('.top-pick[aria-busy=true]')",
     act: "document.querySelector('.equip-grid button.slot').click()", after: "!!document.querySelector('.tooltip')" },
   { id: "upgrade", url: `/#/c/${c}?tab=upgrade`, ready: "document.querySelectorAll('.rank-card').length > 0", settle: 4000 },
+  // 내 메소로 어디까지(2026-11-23): 50억을 눌러 결과가 나온 상태를 찍는다
+  { id: "budget", url: `/#/c/${c}?tab=upgrade`, ready: "!!document.querySelector('.budget-quick button') && document.querySelectorAll('.rank-card').length > 0",
+    act: "[...document.querySelectorAll('.budget-quick button')].find(b => b.textContent === '50억').click()", after: "!!document.querySelector('.budget-headline')" },
   { id: "calc", url: "/#/calc", ready: "!!document.querySelector('.calc-grid')" },
   { id: "scouter", url: "/#/scouter", ready: "!!document.querySelector('.scouter-page, h1')" },
   { id: "error", url: `/#/c/${encodeURIComponent("없는캐릭터zq9")}?tab=summary`, ready: "!!document.querySelector('[role=alert]')" },
