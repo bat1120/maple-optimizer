@@ -128,3 +128,28 @@ def test_roadmap_keeps_crit_rate_by_default():
     setting = rank_settings(snap, BOSS, CAT)[0][0]
     free = target_roadmap(snap, setting, BOSS, CAT, Events(), [], 34.52, 50.0, keep_crit=False)
     assert any(s["slot"] == "엠블렘" and s["path"] == "큐브" for s in free["steps"])  # 끄면 크확을 내주는 교환도 고른다
+
+
+def test_budget_mode_fills_the_budget_and_skips_what_it_cannot_afford():
+    """2026-11-23: 예산 모드 — 남은 돈으로 못 사는 단계는 건너뛰고 그다음 효율 단계로 채운다. 예산을 넘지 않는다."""
+    snap = snapshot(bundle("레테"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    budget = 5_000_000_000
+    r = target_roadmap(snap, setting, BOSS, CAT, Events(), [], 100.0, 1e9, budget=budget, flames=True)
+    assert r["steps"] and r["total_cost"] <= budget
+    skipped = r["skipped_first"]
+    assert skipped and skipped["cost"] > budget - r["steps"][-1]["total_cost"]
+    # 건너뛴 뒤에도 더 싼 단계를 이어서 쌓았다(앞에서 자르기만 하면 34억대에서 멈춘다)
+    assert any(s["per_100m"] < skipped["per_100m"] for s in r["steps"])
+    mults = [s["multiplier"] for s in r["steps"]]
+    assert mults == sorted(mults) and mults[0] > 1
+
+
+def test_flames_join_only_when_asked_and_target_mode_is_unchanged():
+    snap = snapshot(bundle("레테"))
+    setting = rank_settings(snap, BOSS, CAT)[0][0]
+    plain = target_roadmap(snap, setting, BOSS, CAT, Events(), [], 34.52, 36.0)
+    assert "추옵" not in {s["path"] for s in plain["steps"]} and plain["skipped_first"] is None
+    with_flames = target_roadmap(snap, setting, BOSS, CAT, Events(), [], 100.0, 1e9, budget=5_000_000_000, flames=True)
+    flame_slots = [s["slot"] for s in with_flames["steps"] if s["path"] == "추옵"]
+    assert flame_slots and len(flame_slots) == len(set(flame_slots))  # 부위마다 한 번

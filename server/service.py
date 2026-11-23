@@ -358,7 +358,7 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
 
 @with_basis
 def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict] | None, current_ratio: float,
-                   target_ratio: float, events=None) -> dict:
+                   target_ratio: float, events=None, budget: float | None = None, flames: bool = False) -> dict:
     """목표 배율 로드맵 + 사람이 읽는 장비 변화량(변화량 복사: 큐브·스타포스·HEXA 스탯·심볼. HEXA 코어는 칸이 없어 빠진다)."""
     from engine.market.events import Events
     from engine.market.hexa_paths import _block, _lines
@@ -369,7 +369,7 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
     events = events or Events()
     b = boss(defense)
     chosen = rank_settings(snap, b, CATALOG)[0][0]
-    r = build(snap, chosen, b, CATALOG, events, observed or [], current_ratio, target_ratio)
+    r = build(snap, chosen, b, CATALOG, events, observed or [], current_ratio, target_ratio, budget=budget, flames=flames)
     job = job_profile(snap.character_class)
     extra = None
     for core in snap.hexa_stat:
@@ -399,7 +399,7 @@ def target_roadmap(snap: CharacterSnapshot, defense: float, observed: list[dict]
             "current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": r["needed_multiplier"],
             "reached": r["reached"], "final_ratio": r["final_ratio"], "total_cost": r["total_cost"],
             "total_cost_text": meso_text(r["total_cost"]), "steps": steps, "equipment_steps": eq,
-            "scouter": scouter, "hexa_core_multiplier": mult_core,
+            "scouter": scouter, "hexa_core_multiplier": mult_core, "skipped_first": r["skipped_first"],
             "note": ("스페어 값·썬데이 이벤트·추옵(환생의 불꽃)은 아직 로드맵에 넣지 않아요 — 실제 비용은 이보다 클 수 있어요. "
                      "배율은 실딜 %만큼 비례해서 오른다고 본 추정이에요(레벨 보정은 그대로, 포스 보정은 고른 보스의 요구 포스로 계산 — 심볼로 포스가 오르면 실딜에 들어가요). 스타포스는 한 성씩, 심볼은 한 레벨씩 이어서"
                      "(심볼 비용은 강화 메소만 — 심볼 개수는 단계마다 따로), "

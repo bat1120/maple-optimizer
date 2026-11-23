@@ -8,6 +8,9 @@
 - (2026-10-17) 후보는 고르기 직전에 지금 상태 기준으로 다시 잰다(지연 탐욕) — 처음 상태 실딜을 그대로 곱하면
   같은 칸(보공·주스탯%)을 채울수록 줄어드는 효과가 빠져 '도달'을 거짓으로 보였다. 배율은 고른 변경을 모두 적용해 다시 잰 값.
   HEXA 코어(스킬 최종뎀)·HEXA 스탯 '강화 계속'(분포 평균)만 그 값을 곱한다. 경매장 구매·직작은 넣지 않는다
+- (2026-11-23) 예산 모드(budget): 목표 대신 쓸 수 있는 메소로 멈춘다 — 남은 돈으로 못 사는 후보는 건너뛰고 그다음 효율 후보를
+  본다(남는 돈을 채운다). 가장 먼저 건너뛴 후보는 skipped_first. flames=True면 추옵 재설정(부위마다 억당이 가장 좋은 목표 1개)도
+  후보다 — 추옵 실딜은 '목표 이상에서 멈췄을 때 평균'(선형 근사)이라 상태로 못 나타내 HEXA 코어처럼 그 값을 곱한다
 - 크확을 깎는 큐브는 기본으로 빼고(keep_crit), 실딜 평가 자체도 크확이 줄면 손해로 잡는다(engine/stats/evaluate.py)
 """
 import copy
@@ -41,14 +44,15 @@ def apply_star(it, target: int):
 
 
 def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed, current_ratio: float,
-                   target_ratio: float, max_steps: int = 120, keep_crit: bool = True) -> dict:
+                   target_ratio: float, max_steps: int = 120, keep_crit: bool = True,
+                   budget: float | None = None, flames: bool = False) -> dict:
     """keep_crit: 크확을 깎는 큐브는 고르지 않는다(기본). MapleScouter는 크확 100% 미만이면 결과를 안 보여 주고,
     넥슨 스탯창 크확에는 직업 스킬 크확이 빠져 있어 여유분을 알 수 없다(2026-10-09)."""
     events = events or Events()
     need = target_ratio / current_ratio if current_ratio > 0 else float("inf")
     out = {"current_ratio": current_ratio, "target_ratio": target_ratio, "needed_multiplier": need, "steps": [],
            "reached": need <= 1, "final_ratio": current_ratio, "total_cost": 0.0, "changed": {}, "hexa_stat": {},
-           "symbols": {}}
+           "symbols": {}, "skipped_first": None}
     if need <= 1:
         return out
     pl = _Planner(snap, setting, boss, catalog, None, events.miracle)
@@ -96,6 +100,8 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
             key = ("HEXA 코어", p["name"].rsplit(" ", 1)[0])
         elif p["path"] == "HEXA 스탯":
             key = ("HEXA 스탯", p["core"])
+        elif p["path"] == "추옵" and flames:
+            key = ("추옵", p["slot"])
         else:
             continue  # 스타포스는 아래에서 한 성씩, 구매·직작은 넣지 않는다
         if key not in cands or p["per_100m"] > cands[key]["per_100m"]:
@@ -177,6 +183,10 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
             cands[key], fresh[key] = p, step_no
             continue
         p = cands.pop(key)
+        if budget is not None and out["total_cost"] + p["cost"] > budget:  # 남은 돈으로 못 산다 → 건너뛰고 다음 효율 후보
+            if out["skipped_first"] is None:
+                out["skipped_first"] = {k: v for k, v in p.items() if not k.startswith("_")}
+            continue
         step_no += 1
         if p["path"] in ("스타포스", "큐브"):
             raw[p["slot"]] = p["_item"]
@@ -188,7 +198,7 @@ def target_roadmap(snap, setting, boss, catalog, events: Events | None, observed
                     hexa[k] = hexa[k] + p["_hextra"][k]
             else:
                 fixed[0] *= 1 + p["delta_pct"] / 100
-        elif p["path"] == "HEXA 코어":
+        elif p["path"] in ("HEXA 코어", "추옵"):
             fixed[0] *= 1 + p["delta_pct"] / 100
         elif p["path"] == "심볼":  # 같은 심볼의 다음 1레벨(지금까지 오른 스탯 기준으로 다시)
             sym = p["_sym"]
