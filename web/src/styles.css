@@ -863,3 +863,7 @@ form.agent-ask, form.budget-form { border: 0; padding: 0; background: none; bord
   .agent-quick::-webkit-scrollbar { display: none; }
   .agent-quick .pill { flex: none; }
 }
+/* 단계 표시는 '1단계'가 한 줄로(숫자와 '단계'가 위아래로 쌓였다) · 안내 닫기 버튼은 휴대폰에서 36px 이상 */
+.flow-no { display: inline-flex; align-items: center; }
+.first-visit-head .icon-button { flex: none; min-width: 36px; min-height: 36px; }
+@media (max-width: 720px) { .budget-what .muted { white-space: normal; } }
