@@ -867,3 +867,42 @@ form.agent-ask, form.budget-form { border: 0; padding: 0; background: none; bord
 .flow-no { display: inline-flex; align-items: center; }
 .first-visit-head .icon-button { flex: none; min-width: 36px; min-height: 36px; }
 @media (max-width: 720px) { .budget-what .muted { white-space: normal; } }
+
+/* ── 3회차(2026-11-23): AI 질문은 접힌 한 줄 · 지금 단계 표시 · 예산 밖 표시 · 화면 공유는 순위 상자 안 ── */
+details.agent-fold { margin: var(--sp-3) 0 0; border: 1px solid var(--line-strong); border-radius: var(--radius-lg); background: var(--surface); }
+details.agent-fold > summary { display: flex; align-items: center; gap: var(--sp-2); min-height: 48px; padding: 0 var(--sp-4); cursor: pointer; list-style: none; font-size: var(--fs-sm); }
+details.agent-fold > summary::-webkit-details-marker { display: none; }
+details.agent-fold > summary .icon { color: var(--accent); flex: none; }
+details.agent-fold > summary strong { flex: none; font-size: var(--fs-base); }
+details.agent-fold > summary .muted { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.agent-fold > summary::after { content: "열기"; flex: none; font-weight: 700; color: var(--accent); }
+details.agent-fold[open] > summary::after { content: "접기"; }
+details.agent-fold[open] > summary { border-bottom: 1px solid var(--line); }
+details.agent-fold > .panel.agent { margin: 0; border: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.flow-steps li.is-now { border-color: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent-fill); background: var(--rank-bg); }
+.flow-steps li.is-now .flow-no { background: var(--btn); color: var(--on-btn); }
+.flow-steps li.is-done { opacity: 0.6; }
+.flow-text .muted { font-size: var(--fs-sm); color: var(--text-2); }
+.rank-card.over-budget { background: var(--surface-2); border-color: var(--line); border-width: 1px; }
+.rank-card.over-budget .rank-eff strong, .rank-card.over-budget .eff-value strong { color: var(--text-2); }
+.rank-card.over-budget > .eff .bar { background: var(--line-strong); }
+.rank-over { margin: 0; color: var(--text-2); }
+.panel > .pc-only > details.fold { margin: var(--sp-3) 0; border-color: var(--accent-fill); }
+.panel > .pc-only > details.fold > summary { color: var(--text); }
+.panel > .note-box { margin: var(--sp-3) 0; }
+@media (max-width: 720px) {
+  .top-pick-body > .muted:first-of-type { white-space: normal; overflow: visible; }
+  .flow-steps li.is-now { box-shadow: inset 3px 0 0 var(--accent-fill); }
+  .flow-text .muted { display: none; }
+  .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flow-steps li + li { border-top: 0; }
+  .flow-steps li:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .flow-steps li:nth-child(even) { border-left: 1px solid var(--line); }
+}
+/* PC: 예산 제목과 입력을 한 줄에, 단계 설명은 한 줄로 — 1위 카드를 첫 화면 가까이 */
+@media (min-width: 721px) {
+  .budget-title { flex-basis: auto; margin: 0 var(--sp-2) 0 0; }
+  .flow-text .muted { font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flow-steps li { padding: var(--sp-2) var(--sp-3); align-items: center; }
+}

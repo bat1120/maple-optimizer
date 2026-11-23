@@ -67,11 +67,11 @@
         },
         {
           "what": "추천 결과가 AI 질문칸보다 위에 있다",
-          "js": "(() => { const p = document.querySelector('.picks'), a = document.querySelector('.agent'); return !!p && !!a && p.getBoundingClientRect().top < a.getBoundingClientRect().top; })()"
+          "js": "(() => { const p = document.querySelector('.picks'), a = document.querySelector('.agent-fold'); return !!p && !!a && p.getBoundingClientRect().top < a.getBoundingClientRect().top; })()"
         },
         {
-          "what": "AI 질문 영역이 낮다(220px 이하) — 결과를 밀어내지 않는다",
-          "js": "document.querySelector('.agent').getBoundingClientRect().height <= 220"
+          "what": "AI 질문은 접힌 한 줄(64px 이하)이다 — 결과를 밀어내지 않는다",
+          "js": "document.querySelector('.agent-fold').getBoundingClientRect().height <= 64"
         }
       ]
     },
@@ -115,6 +115,14 @@
         {
           "what": "가진 메소 입력칸이 순위보다 위에 있다",
           "js": "(() => { const b = document.querySelector('.budget-panel input'), r = document.querySelector('.rank-card'); return !!b && !!r && b.getBoundingClientRect().top < r.getBoundingClientRect().top; })()"
+        },
+        {
+          "what": "진행 순서에 지금 단계 표시가 하나 있다",
+          "js": "document.querySelectorAll('.flow-steps li[aria-current=step]').length === 1"
+        },
+        {
+          "what": "1위 카드가 첫 화면 가까이 있다(PC 780px, 휴대폰 1000px 이내에서 시작)",
+          "js": "document.querySelector('.rank-card').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 780 : 1000)"
         }
       ]
     },
@@ -171,10 +179,10 @@
         "mobile"
       ],
       "url": "/#/c/{character}?tab=summary",
-      "ready": "!!document.querySelector('[aria-label=\"바로 물어보기\"] button')",
+      "ready": "!!document.querySelector('.agent-fold > summary')",
       "steps": [
         {
-          "js": "document.querySelector('[aria-label=\"바로 물어보기\"] button').click()",
+          "js": "document.querySelector('.agent-fold').open = true; document.querySelector('[aria-label=\"바로 물어보기\"] button').click()",
           "wait": "!!document.querySelector('.chat .answer') && !document.querySelector('form.search button[type=submit]').disabled",
           "timeout": 150
         }
@@ -238,6 +246,10 @@
         {
           "what": "오류 알림이 없다",
           "js": "!document.querySelector('.budget-panel [role=alert]')"
+        },
+        {
+          "what": "예산을 넘는 순위 카드에 '예산 밖' 표시가 붙는다",
+          "js": "document.querySelectorAll('.rank-card.over-budget .rank-over').length > 0"
         }
       ]
     }

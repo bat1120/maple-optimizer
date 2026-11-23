@@ -165,7 +165,7 @@ describe("character page", () => {
   it("업그레이드 탭: PC용 경매장 화면 평가(일반 유저 모드)와 휴대폰 안내", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    const watch = (await screen.findByText("3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)")).closest("details");
+    const watch = (await screen.findByText("3·4단계 · 검색 화면을 공유하면 여기에 매물별 실딜이 나와요 (PC)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
     expect(screen.queryByRole("heading", { name: "경매장 화면 평가" })).toBeNull();   // 펼치기 전엔 그리지 않는다
     await act(async () => { watch.open = true; fireEvent(watch, new Event("toggle")); });
@@ -227,7 +227,7 @@ describe("character page", () => {
       return ok(SUMMARY);
     });
     render(<Character route={{ page: "character", name: "내신부레테", tab: "upgrade" }} />);
-    const watch = (await screen.findByText("3단계 · 경매장 검색 화면을 공유해 매물 읽기 (PC)")).closest("details");
+    const watch = (await screen.findByText("3·4단계 · 검색 화면을 공유하면 여기에 매물별 실딜이 나와요 (PC)")).closest("details");
     expect(watch).not.toHaveAttribute("open");
     fireEvent.click(await screen.findByRole("button", { name: "검색 화면 공유해서 매물 읽기" }));
     expect(watch).toHaveAttribute("open");

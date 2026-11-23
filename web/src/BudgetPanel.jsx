@@ -22,7 +22,7 @@ const stepSub = (s) => (s.path === "큐브" && s.target?.length ? s.target.join(
 export const HOW = { 추옵: "게임에서 추가옵션 재설정", 스타포스: "게임에서 스타포스 강화", 큐브: "경매장 구매 또는 큐브 — 아래 순위", 심볼: "게임에서 심볼 강화" };
 const how = (s) => HOW[s.path] || (String(s.path).startsWith("HEXA") ? "게임에서 HEXA 강화" : s.path);
 
-export default function BudgetPanel({ name, defense }) {
+export default function BudgetPanel({ name, defense, onBudget = null }) {
   const [text, setText] = useState("");
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -38,6 +38,7 @@ export default function BudgetPanel({ name, defense }) {
     setError(null);
     try {
       setData(await getBudgetRoadmap(name, defense, meso));
+      onBudget?.(meso);
     } catch (e) {
       setError(e);
     } finally {

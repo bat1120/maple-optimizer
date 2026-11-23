@@ -30,7 +30,7 @@ function Next({ row, kind }) {
 }
 
 // onEvaluate(v): '이 조건으로 찾은 매물 평가하기' — 화면 공유 평가를 열고 찾는 조건을 넘긴다(없으면 버튼을 안 그린다)
-export default function RoadmapPanel({ name, defense, autoLoad = false, active = null, onEvaluate = null, before = null }) {
+export default function RoadmapPanel({ name, defense, autoLoad = false, active = null, onEvaluate = null, before = null, after = null, budget = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -92,7 +92,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                   (심사 6회차는 억당을, 7회차는 실딜을 크게 하라고 엇갈렸다) */}
               <ol className="rank-cards" aria-label="가격 대비 순위">
                 {(showAll ? data.value_ranking : data.value_ranking.slice(0, TOP)).map((v, i) => (
-                  <li key={`${v.slot}-${v.kind}`} className={`rank-card${i === 0 ? " top1" : ""}`}>
+                  <li key={`${v.slot}-${v.kind}`} className={`rank-card${i === 0 ? " top1" : ""}${budget && v.cube_cost > budget ? " over-budget" : ""}`}>
                     <div className="rank-top">
                       <span className={`medal medal-${i + 1}`}>{i + 1}</span>
                       <span className="rank-slot"><strong>{v.slot} {v.kind}</strong><span className="muted">{v.name}</span></span>
@@ -113,6 +113,10 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
                     <span className="eff" aria-hidden="true"><span className="bar" style={{ width: `${best > 0 ? Math.max(4, (100 * (v.per_100m || 0)) / best) : 0}%` }} /></span>
                     {i === 0 && v.route !== "큐브" && v.cube_cost_text && (
                       <p className="rank-buy small">경매장에 이 조건의 매물이 <strong>{v.cube_cost_text}</strong>보다 싸면 사는 쪽이, 비싸면 큐브를 직접 돌리는 쪽이 이득이에요.</p>
+                    )}
+                    {/* 넣은 예산보다 큐브 평균이 비싸면 그렇게 말한다(3회차 심사: 50억을 넣어도 105억짜리 1위가 그대로 강조됐다) */}
+                    {budget && v.cube_cost > budget && (
+                      <p className="rank-over small"><span className="basis-k">예산 밖</span>직접 큐브로는 넣으신 메소를 넘어요 — 경매장에 예산 안의 매물이 있는지만 찾아보세요.</p>
                     )}
                     {v.market && <p className="rank-market muted small">{marketText(v.market)}</p>}
                     {/* 아래 줄(2026-10-17 사용자): 게임 경매장은 드롭다운이라 복사할 곳이 없다 → 칩대로 검색한 뒤
@@ -145,6 +149,7 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
               )}
             </>
           )}
+          {after}
           {data.value_ranking?.length === 0 && data.slots.length === 0 && (
             <EmptyState icon="trend" title="올릴 수 있는 단계를 찾지 못했어요">지금 장비 기준으로 계산된 단계가 없어요.</EmptyState>
           )}

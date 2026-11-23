@@ -7,4 +7,5 @@ export const FLOW = [
   { title: "실딜 확인", text: "끼웠을 때 오르는 딜과 1억당 효율을 봐요", home: "그 매물을 끼웠을 때 실제 딜이 얼마나 오르는지, 1억 메소당 효율은 얼마인지 계산해요." },
 ];
 export const stepName = (n) => `${n}단계`;
-export const WATCH_TITLE = `${stepName(3)} · 경매장 검색 화면을 공유해 매물 읽기 (PC)`;
+// 3단계(화면 공유)를 하면 4단계(실딜) 결과가 같은 자리에 나온다 — 결과가 나올 자리가 화면에 안 보였다(3회차 심사)
+export const WATCH_TITLE = "3·4단계 · 검색 화면을 공유하면 여기에 매물별 실딜이 나와요 (PC)";

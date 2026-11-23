@@ -69,11 +69,13 @@ export function TabIntro({ tab, defense, onDefense }) {
 }
 
 // 이 서비스의 흐름을 순서로 보여 준다(2026-11-23 심사 3명 공통: 추천 → 경매장 검색 → 화면 공유 → 딜 계산이 화면에 순서로 안 보였다)
-export function FlowSteps() {
+// current: 지금 단계(1 = 추천을 보는 중, 3 = 화면 공유 칸을 연 상태). 지난 단계는 흐리게, 지금 단계는 주황 테두리
+export function FlowSteps({ current = 1 }) {
   return (
     <ol className="flow-steps" aria-label="이렇게 진행해요">
       {FLOW.map((s, i) => (
-        <li key={s.title}><span className="flow-no">{i + 1}</span><span className="flow-text"><strong>{s.title}</strong><span className="muted">{s.text}</span></span></li>
+        <li key={s.title} className={i + 1 === current ? "is-now" : i + 1 < current ? "is-done" : undefined}
+            aria-current={i + 1 === current ? "step" : undefined}><span className="flow-no">{i + 1}</span><span className="flow-text"><strong>{s.title}</strong><span className="muted">{s.text}</span></span></li>
       ))}
     </ol>
   );
@@ -149,6 +151,7 @@ export default function Character({ route }) {
   }, [defense]);
   // 순위 카드 [이 조건으로 찾은 매물 평가하기] → 화면 공유 평가 칸을 열고 찾는 조건을 보여 준다(2026-10-17)
   const [watchOpen, setWatchOpen] = useState(false);
+  const [budget, setBudget] = useState(null); // '내 메소로' 계산에 넣은 메소 — 순위 카드가 예산 밖인지 표시한다
   const [watchTarget, setWatchTarget] = useState(null);
   const watchRef = useRef(null);
   const evaluate = (v) => {
@@ -214,8 +217,12 @@ export default function Character({ route }) {
           )}
           {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다.
               2026-11-23: 추천 결과 아래로 내리고 한 줄 입력으로 줄였다(결과가 질문 폼에 밀리지 않게) */}
-          <AgentPanel key={name} name={name} initialAuthed title="AI에게 물어보기" showQuota
-                      watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
+          <details className="agent-fold">
+            <summary><Icon name="info" size={16} /><strong>AI에게 물어보기</strong>
+              <span className="muted">예: 50억으로 뭐부터 할까? · 경매장에서 뭘 검색할까?</span></summary>
+            <AgentPanel key={name} name={name} initialAuthed title="AI에게 물어보기" showQuota
+                        watchProps={{ job: summary.character_class, level: summary.level, defense: calcDefense }} />
+          </details>
           <nav className="tabs" role="tablist" aria-label="캐릭터 화면 탭">
             {Object.entries(TAB_LABEL).map(([t, label]) => (
               <a key={t} role="tab" aria-selected={tab === t} href={hashFor({ page: "character", name, tab: t })}>
@@ -247,19 +254,23 @@ export default function Character({ route }) {
           {tab === "upgrade" && (
             <div className="stack">
               {/* 순서(2026-11-23): 흐름 4단계 → 내 메소로 어디까지 → 순위(1·2단계) → 검색 화면 공유(3·4단계) → 다른 기준 */}
-              <FlowSteps />
-              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate}
-                            before={<BudgetPanel name={name} defense={calcDefense} />} />
-              {/* 화면 공유는 이 서비스의 핵심 단계다 — '고급 도구' 아래 접어 두지 않고 순위 바로 아래에 둔다 */}
-              <div className="pc-only">
-                <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
-                  <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
-                </Fold>
-              </div>
-              <p className="card mobile-only muted note-box">
-                <Icon name="monitor" size={16} />
-                검색 화면을 읽어 매물을 평가하는 3·4단계는 PC에서 돼요. PC에서 이 주소를 열면 이어서 할 수 있어요.
-              </p>
+              <FlowSteps current={watchOpen ? 3 : 1} />
+              {/* 화면 공유(3·4단계)는 순위 카드 바로 아래, 같은 상자 안에 둔다 — 1위 카드에서 멀면 결과가 나올 자리가 안 보인다 */}
+              <RoadmapPanel name={name} defense={calcDefense} autoLoad active={summary.active_setting} onEvaluate={evaluate} budget={budget}
+                            before={<BudgetPanel name={name} defense={calcDefense} onBudget={setBudget} />}
+                            after={(
+                              <>
+                                <div className="pc-only">
+                                  <Fold title={WATCH_TITLE} open={watchOpen} onToggle={setWatchOpen} foldRef={watchRef}>
+                                    <ScreenWatch name={name} job={summary?.character_class} level={summary?.level} defense={calcDefense} admin={false} target={watchTarget} />
+                                  </Fold>
+                                </div>
+                                <p className="mobile-only muted note-box">
+                                  <Icon name="monitor" size={16} />
+                                  검색 화면을 읽어 매물을 평가하는 3·4단계는 PC에서 돼요. PC에서 이 주소를 열면 이어서 할 수 있어요.
+                                </p>
+                              </>
+                            )} />
               {/* 2026-10-11 심사 3회차: 경매장 경로가 세 군데로 갈렸다 → 순위 카드의 [경매장 검색 조건 복사]가 기본,
                   나머지는 '다른 기준으로 보기' 아래 접힘으로, 화면 평가는 '고급 도구' 하나로 */}
               <h3 className="section-label">다른 기준으로 보기</h3>
