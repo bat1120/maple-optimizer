@@ -1014,3 +1014,19 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .plan-watch .watch-target { display: none; }
 /* 열린 줄과 공유 칸을 한 덩어리로(주황 상자가 세 겹으로 보였다) */
 .plan-watch details.fold { border-width: 1px; border-color: var(--line-strong); }
+
+/* 휴대폰 계획 줄 다듬기(2026-11-23): 줄 하나가 네 줄로 쌓여 50억 계획이 화면 세 개 분량이었다 →
+   이름 + 큰 숫자 / 설명은 전체 폭 한 줄 / 평균·누적은 한 줄에 나란히. '다음'·'경매장' 배지는 이름 위로 */
+.plan-meta { display: contents; }
+@media (max-width: 1000px) {
+  .plan-what { display: contents; }
+  .plan-what > strong { grid-column: 2; grid-row: 1; align-self: center; }
+  .plan-what > .muted { grid-column: 2 / -1; white-space: normal; }
+  .plan-eff { grid-column: 3; grid-row: 1; align-self: center; }
+  .plan-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-3); grid-column: 2 / -1; }
+  .plan-meta .plan-cost, .plan-meta .plan-sum { grid-column: auto; white-space: nowrap; }
+  .plan-line { row-gap: 2px; padding: var(--sp-2) 0; }
+  .plan-no { grid-row: 1; align-self: center; }
+  .plan-no.is-next { grid-column: 1 / -1; justify-self: start; }
+  .plan-no.is-next ~ .plan-what > strong, .plan-no.is-next ~ .plan-eff { grid-row: 2; }
+}

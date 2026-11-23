@@ -131,12 +131,15 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
                         <span className="muted small">{[stepSub(s), how(s)].filter(Boolean).join(" · ")}</span></span>
                       {/* 큰 숫자 = 순서의 기준인 1억 메소당 효율(2026-11-23 사용자 결정 — 전에는 보스 실딜이 커서 순서가 틀린 것처럼 보였다) */}
                       <span className="plan-eff" title="이 순서의 기준: 1억 메소를 쓸 때 오르는 보스 실딜"><strong className="num">{pct(s.per_100m, 3)}</strong></span>
-                      <span className="plan-cost num">{s.cost_text}</span>
-                      {s.isPick
-                        ? <span className="plan-sum muted small">경매장에서 찾는다면 이것부터</span>
-                        : s.isNext
-                        ? <span className="plan-sum muted small">큐브로는 <strong className="plan-short">{s.short_text}</strong> 더 필요</span>
-                        : <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>}
+                      {/* 비용·누적은 한 묶음: PC에서는 칸 두 개(display: contents), 휴대폰에서는 한 줄로 나란히 */}
+                      <span className="plan-meta">
+                        <span className="plan-cost num">{s.cost_text}</span>
+                        {s.isPick
+                          ? <span className="plan-sum muted small">경매장에서 찾는다면 이것부터</span>
+                          : s.isNext
+                          ? <span className="plan-sum muted small">큐브로는 <strong className="plan-short">{s.short_text}</strong> 더 필요</span>
+                          : <span className="plan-sum muted small">{s.total_cost_text} · <strong className="num">{pct(s.gain_pct_after)}</strong></span>}
+                      </span>
                       <span className="plan-act">
                         {buyable(s) ? (
                           <button type="button" className={open === i || i === firstBuy ? "small" : "ghost small"} aria-expanded={open === i} onClick={() => toggle(i)}>
