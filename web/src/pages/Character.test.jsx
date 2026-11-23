@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import Character from "./Character.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); window.location.hash = ""; });
@@ -240,6 +240,10 @@ describe("character page", () => {
     const note = screen.getByRole("note", { name: "찾는 조건" });
     expect(note).toHaveTextContent("부위엠블렘");
     expect(note).toHaveTextContent("1줄마력 +12% 이상");
+    // 2026-11-23 운영에서 발견: 계획을 다시 계산해도 진행 순서가 3단계에 머물렀다 → 다시 계산하면 공유 칸을 접고 1단계로
+    fireEvent.click(screen.getByRole("button", { name: "50억" }));
+    await waitFor(() => expect(flow()).toHaveTextContent("추천 확인"));
+    expect(watch).not.toHaveAttribute("open");
   });
 
   it("장비가 없으면 빈 상태 안내", async () => {
