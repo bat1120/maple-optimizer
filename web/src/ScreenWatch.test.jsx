@@ -41,6 +41,8 @@ describe("screen watch panel", () => {
     const card = screen.getByRole("list", { name: "읽은 매물(억당 순)" }).firstElementChild;
     expect(card).toHaveTextContent("반지4 자리");
     expect(card).toHaveTextContent("지금 템 대비+1.234%");
+    // 2026-11-25: 게임 툴팁의 '전투력 증가량'과 기준이 다르다는 안내
+    expect(screen.getByText(/게임 툴팁의 ‘전투력 증가량’은 지금 게임에서 끼고 있는 템 기준/)).toBeInTheDocument();
     expect(cards().getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
   });
 });
