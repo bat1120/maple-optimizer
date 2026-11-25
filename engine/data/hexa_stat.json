@@ -68,5 +68,7 @@
   "2": 20000000,
   "3": 35000000
  },
- "xenon_main_mult": 0.66
+ "xenon_main_mult": 0.66,
+ "hp_main_mult": 21,
+ "_hp_main_source": "데몬어벤져는 주스탯 자리에 MAX HP: 1레벨 2,100 · 5레벨 12,600 · 8레벨 27,300(일반 100 · 600 · 1,300의 21배) — 나무위키 HEXA 매트릭스 2.2 HEXA 스탯 표(2026-11-13 판), auxilism hexa_stat 계산기의 '2100 for da'와 일치"
 }

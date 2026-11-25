@@ -89,8 +89,10 @@ def stat_block(lines: list[tuple[str, int, bool]], main_stat: str, xenon: bool =
             pct.flat[key] = pct.flat.get(key, 0.0) + v
         else:  # 주력 스탯 증가
             keys = ("STR", "DEX", "LUK") if xenon else (main_stat,)
+            # 데몬어벤져(주스탯 HP)는 같은 자리에 MAX HP를 21배로 받는다(2026-11-25, 표 출처는 hexa_stat.json)
+            mult = _T["xenon_main_mult"] if xenon else _T["hp_main_mult"] if main_stat == "HP" else 1
             for k in keys:
-                nopct.flat[k] = nopct.flat.get(k, 0.0) + v * (_T["xenon_main_mult"] if xenon else 1)
+                nopct.flat[k] = nopct.flat.get(k, 0.0) + v * mult
     return {"pct": pct, "nopct": nopct, "unknown": unknown}
 
 

@@ -111,3 +111,11 @@ def test_demon_avenger_hp_is_explained_by_visible_sources(stars, pure, item_flat
     base = pure + item_flat + demon_avenger_conversion_hp(stars) + DA_SKILL_HP
     assert (base * (1 + pct / 100) + symbols + union_flat) == pytest.approx(hp, rel=0.03)
 
+
+def test_demon_avenger_hexa_main_stat_is_max_hp():
+    """HEXA 스탯의 주스탯 자리: 데몬어벤져는 MAX HP 2,100(1레벨) · 12,600(5레벨) — 일반 직업 100 · 600의 21배."""
+    from engine.stats import hexa
+    assert hexa.stat_block([("주력 스탯 증가", 1, True)], "HP")["nopct"].flat == {"HP": 2100}
+    assert hexa.stat_block([("주력 스탯 증가", 5, True)], "HP")["nopct"].flat == {"HP": 12600}
+    assert hexa.stat_block([("주력 스탯 증가", 5, True)], "STR")["nopct"].flat == {"STR": 600}
+
