@@ -124,7 +124,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
               <ol className="plan-steps" aria-label="할 순서">
                 {shown.map(({ s, i }, n) => (
                   <li key={i} className={`plan-row${open === i ? " is-open" : ""}${(n > 0 && shown[n - 1].i !== i - 1) || s.isPick ? " after-gap" : ""}`}
-                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2}~${i}번은 '모두 보기'에 있어요${i === firstBuy ? " — 아래는 경매장에서 살 수 있는 첫 순서라 먼저 보여 드려요" : ""}` : s.isPick ? "위 순서에는 경매장에서 살 수 있는 것이 없어요 — 경매장에서 찾아본다면 효율이 가장 좋은 것은" : undefined}>
+                      style={{ order: i * 2 }} data-gap={n > 0 && shown[n - 1].i !== i - 1 ? `${shown[n - 1].i + 2 === i ? i : `${shown[n - 1].i + 2}~${i}`}번은 '모두 보기'에 있어요${i === firstBuy ? " — 아래는 경매장에서 살 수 있는 첫 순서라 먼저 보여 드려요" : ""}` : s.isPick ? "위 순서에는 경매장에서 살 수 있는 것이 없어요 — 경매장에서 찾아본다면 효율이 가장 좋은 것은" : undefined}>
                     <div className="plan-line">
                       <span className={`plan-no${s.isNext || s.isPick ? " is-next" : ""}`}>{s.isNext ? "다음" : s.isPick ? "경매장" : i + 1}</span>
                       <span className="plan-what"><strong>{stepLabel(s)}</strong>

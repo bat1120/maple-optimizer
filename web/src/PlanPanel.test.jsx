@@ -105,7 +105,17 @@ describe("PlanPanel — 계획 하나", () => {
     expect(list[6]).toHaveTextContent("하의 잠재 레전드리 2줄");
     expect(list[6].querySelector(".plan-no")).toHaveTextContent("10");
     expect(list[6]).toHaveClass("after-gap");
+    expect(list[6].dataset.gap).toMatch(/^7~9번은 '모두 보기'에 있어요/);
     expect(within(list[6]).getByRole("button", { name: "경매장에서 찾기" })).toBeInTheDocument();
+  });
+
+  // 2026-11-25 운영 화면: 건너뛴 줄이 하나일 때 '7~7번'이라고 나왔다
+  it("건너뛴 줄이 하나면 '7번'이라고 적는다", async () => {
+    const many = Array.from({ length: 7 }, (_, i) => ({ slot: `부위${i}`, path: "추옵", name: `템${i}`, cost_text: "1억", total_cost_text: `${i + 1}억`, per_100m: 0.1, gain_pct_after: i + 1 }));
+    mock({ ...plan, steps: [...many, cube] });
+    render(<PlanPanel name="레테" defense={300} />);
+    await screen.findByText("부위0 추옵 재설정");
+    expect(rows()[6].dataset.gap).toMatch(/^7번은 '모두 보기'에 있어요/);
   });
 
   it("계획에 경매장에서 살 수 있는 줄이 없으면 '경매장에서 찾는다면' 줄을 붙인다(계획에 있으면 안 붙인다)", async () => {
