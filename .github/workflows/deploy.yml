@@ -58,6 +58,22 @@ jobs:
           done
           docker logs smoke
           exit 1
+      - name: 로컬 OCR이 서버 사용자(root 아님)로 글자를 읽는다
+        # 2026-11-25: 운영에서 첫 툴팁에 PermissionError — 글자 모델이 이미지에 없어 서버가 받으려다 실패했고, 모든 판독이 AI로 갔다
+        run: |
+          cat > /tmp/ocr_check.py <<'PY'
+          from PIL import Image, ImageDraw, ImageFont
+          from server.ocr import reader
+          read = reader()
+          assert read, "OCR 꺼짐"
+          im = Image.new("RGB", (320, 80), (40, 46, 52))
+          ImageDraw.Draw(im).text((12, 16), "Lv. 200  STR +12%", font=ImageFont.load_default(30), fill=(255, 255, 255))
+          got = read(im)
+          print(got)
+          assert any("200" in t for _, _, t in got), got
+          PY
+          docker cp /tmp/ocr_check.py smoke:/tmp/ocr_check.py
+          docker exec --user app --workdir /app smoke /app/.venv/bin/python /tmp/ocr_check.py
 
   image:
     needs: [test, smoke]
