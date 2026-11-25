@@ -128,7 +128,10 @@ describe("character page", () => {
     await within(pick).findByText("귀고리 추옵 재설정");
     expect(pick).toHaveTextContent("1억 메소당 +0.354%");
     expect(pick).toHaveTextContent("평균 4395만");
-    expect(f.mock.calls.some((c) => /budget-roadmap\?.*steps=1/.test(String(c[0])))).toBe(true);   // 첫 줄만 받는다
+    // 2026-11-25: 계획표와 똑같은 요청을 보낸다(steps 없음) — 서버가 한 번 계산한 답을 같이 쓴다. 전에는 steps=1로 따로 계산했다
+    const planCalls = f.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/budget-roadmap"));
+    expect(planCalls.length).toBeGreaterThan(0);
+    expect(planCalls.every((u) => !u.includes("steps="))).toBe(true);
     expect(within(pick).getByRole("link", { name: /내 업그레이드 계획 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
   });
 

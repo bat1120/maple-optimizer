@@ -293,3 +293,40 @@ def test_serves_saved_data_when_nexon_is_blocked(tmp_path, clock):
     state["blocked"] = False
     clock.t += 6 * 60                                          # 잠시 뒤에는 다시 불러 새 값으로 바꾼다
     assert c.get("/api/character/a").json()["stale_minutes"] is None and len(calls) == 4
+
+
+def test_same_plan_request_is_computed_once(tmp_path, clock, monkeypatch):
+    """2026-11-25 운영: 계획 23초 — 화면이 같은 계획을 두 번 부르고 탭을 오갈 때마다 다시 계산했다.
+    같은 캐릭터 데이터·같은 조건이면 잠깐(MEMO_TTL) 한 번 계산한 답을 쓰고, 동시에 온 요청은 먼저 온 계산을 기다린다."""
+    import threading
+    import time
+
+    from server import app as app_module
+    from server import service
+    real, runs = service.budget_roadmap, []
+
+    def counted(*a, **kw):
+        runs.append(a[3:])
+        time.sleep(0.2)
+        return real(*a, **kw)
+    monkeypatch.setattr(service, "budget_roadmap", counted)
+    c = make(tmp_path, clock)
+    assert c.get("/api/character/x").status_code == 200
+    out = []
+    ts = [threading.Thread(target=lambda: out.append(c.get("/api/character/x/budget-roadmap").json())) for _ in range(3)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert len(runs) == 1 and out[0] == out[1] == out[2] and out[0]["steps"]
+    c.get("/api/character/X/budget-roadmap")                       # 대소문자만 다른 이름도 같은 캐릭터
+    assert len(runs) == 1
+    c.get("/api/character/x/budget-roadmap?boss_defense=100")      # 조건이 다르면 따로 계산
+    c.get("/api/character/x/budget-roadmap?budget=5000000000")
+    assert len(runs) == 3
+    clock.t += app_module.MEMO_TTL + 1                              # 시간이 지나면 새로 계산(시세가 바뀌었을 수 있다)
+    c.get("/api/character/x/budget-roadmap")
+    assert len(runs) == 4
+    clock.t += 16 * 60                                              # 캐릭터 데이터를 새로 받으면 새로 계산
+    c.get("/api/character/x/budget-roadmap")
+    assert len(runs) == 5

@@ -35,6 +35,12 @@ class BundleCache:
                 return None          # 지우지 않는다 — 넥슨이 막혔을 때 stale()로 꺼내 쓴다(30일 넘은 줄은 put이 지운다)
         return json.loads(row[1])
 
+    def fetched(self, name: str, day: dt.date | None) -> float | None:
+        """그 번들을 받은 시각(없으면 None). 계산 결과를 다시 쓸 때 '같은 데이터인가'를 가르는 데 쓴다."""
+        with self._lock:
+            row = self._db.execute("SELECT fetched FROM bundles WHERE key = ?", (self._key(name, day),)).fetchone()
+        return row[0] if row else None
+
     def stale(self, name: str, day: dt.date | None) -> tuple[dict, float] | None:
         """기한이 지났어도 남아 있는 값과 받은 시각. 넥슨 호출 한도·점검 때만 쓴다(30일 안)."""
         with self._lock:

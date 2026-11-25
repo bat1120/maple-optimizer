@@ -60,6 +60,8 @@ BASELINE_STEP = 4  # 버프 없는 기준을 보는 과거 날짜 간격(일)
 BASELINE_RETRY = 600  # 기준일을 못 불러왔으면 이만큼(초) 지난 뒤에만 다시 시도한다
 
 
+MEMO_TTL, MEMO_SIZE = 60, 300  # 계산 결과를 다시 쓰는 시간(초)과 개수
+
 STALE_HOLD = 5 * 60  # 넥슨이 막혔을 때 같은 캐릭터를 다시 불러 보기까지 기다리는 시간(초)
 
 
@@ -269,6 +271,40 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         floors = clean_floors(cals) if len(cals) > 1 else {}
         return floors | ({"pending": True} if key in baseline_busy else {})
 
+    # 계산 결과 잠깐 다시 쓰기. 2026-11-25 운영 실측: 계획 23초·갈아타기 25초·방법별 비교 17초 — 화면이 같은 계획을
+    # '1순위 한 줄'과 '계획표'로 두 번 부르고, 탭을 오갈 때마다 다시 계산했다. 같은 캐릭터 데이터(받은 시각이 같다)·같은 조건이면
+    # MEMO_TTL초 동안 한 번 계산한 답을 쓰고, 동시에 온 같은 요청은 먼저 온 계산을 기다린다. 시세(관측 기록)가 바뀌어도
+    # MEMO_TTL초 뒤에는 새로 계산한다
+    memo_vals: dict = {}
+    memo_locks: dict = {}
+    memo_guard = threading.Lock()
+
+    def memo(kind: str, name: str, date: str | None, params: tuple, compute):
+        try:
+            stamp = cache.fetched(name, dt.date.fromisoformat(date) if date else None)
+        except ValueError:
+            stamp = None
+        if stamp is None:
+            return compute()
+        key = (kind, name.casefold(), date, stamp, params)
+        with memo_guard:
+            for k in [k for k, (_, at) in memo_vals.items() if clock() - at >= MEMO_TTL]:
+                del memo_vals[k]
+            if len(memo_locks) > 2000:
+                for k in [k for k, v in memo_locks.items() if not v.locked()]:
+                    del memo_locks[k]
+            lock = memo_locks.setdefault(key, threading.Lock())
+        with lock:
+            hit = memo_vals.get(key)
+            if hit is not None and clock() - hit[1] < MEMO_TTL:
+                return hit[0]
+            out = compute()
+            with memo_guard:
+                memo_vals[key] = (out, clock())
+                while len(memo_vals) > MEMO_SIZE:
+                    memo_vals.pop(next(iter(memo_vals)))
+            return out
+
     def pick(snap, boss_defense: float, boss: str | None = None, arcane_force: int | None = None,
              authentic_force: int | None = None):
         """(스냅샷, 보스): boss(보스 목록 id)가 있으면 그 방어율·요구 포스, 없으면 boss_defense 숫자(하위 호환)."""
@@ -296,19 +332,22 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.get("/api/character/{name}/settings")
     def settings(name: str, boss_defense: float = 300.0, date: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
-        return service.settings(*pick(load(name, date), boss_defense, boss, arcane_force, authentic_force))
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return memo("settings", name, date, (boss_defense, boss, arcane_force, authentic_force), lambda: service.settings(snap, b))
 
     @app.get("/api/character/{name}/recommend")
     def recommend(name: str, boss_defense: float = 300.0, top: int = 5, cooldown_main_pct: float | None = None,
                   date: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.recommend(snap, b, max(1, min(top, 20)), cooldown_main_pct)
+        return memo("recommend", name, date, (boss_defense, boss, arcane_force, authentic_force, top, cooldown_main_pct),
+                    lambda: service.recommend(snap, b, max(1, min(top, 20)), cooldown_main_pct))
 
     @app.get("/api/character/{name}/roadmap")
     def roadmap(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
                 miracle: bool = False, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.roadmap(snap, b, cooldown_main_pct, prices.rows(), miracle=miracle)
+        return memo("roadmap", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, miracle),
+                    lambda: service.roadmap(snap, b, cooldown_main_pct, prices.rows(), miracle=miracle))
 
     @app.get("/api/character/{name}/swaps")
     def swaps(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
@@ -318,7 +357,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         if starforce not in SWAP_STARS:  # 고를 수 있는 성(2026-11-16 사용자: 17 18 21 22가 대표적)
             return JSONResponse({"detail": f"스타포스는 {', '.join(map(str, SWAP_STARS))}성 중에서 골라 주세요"}, status_code=422)
-        return service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)), starforce)
+        return memo("swaps", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, per_slot, starforce),
+                    lambda: service.swaps(snap, b, cooldown_main_pct, max(1, min(per_slot, 10)), starforce))
 
     @app.get("/api/character/{name}/armor-sets")
     def armor_sets(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
@@ -328,7 +368,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         if starforce not in SWAP_STARS:
             return JSONResponse({"detail": f"스타포스는 {', '.join(map(str, SWAP_STARS))}성 중에서 골라 주세요"}, status_code=422)
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.armor_sets(snap, b, cooldown_main_pct, starforce)
+        return memo("armor-sets", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, starforce),
+                    lambda: service.armor_sets(snap, b, cooldown_main_pct, starforce))
 
     @app.post("/api/character/{name}/listings")
     def listings(name: str, body: ListingsIn, date: str | None = None):
@@ -520,7 +561,9 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         except ValueError as e:
             raise ApiError(400, "BAD_EVENTS", str(e)) from None
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.paths(snap, b, prices.rows(), cooldown_main_pct, events=events)
+        return memo("paths", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, sf, miracle, spare_price,
+                                         fragment_price, hexa_sunday, spare_by_slot, flame_prices),
+                    lambda: service.paths(snap, b, prices.rows(), cooldown_main_pct, events=events))
 
     @app.get("/api/character/{name}/target-roadmap")
     def target_roadmap(name: str, current_ratio: float, target_ratio: float = 50.0, boss_defense: float = 300.0,
@@ -548,7 +591,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         if steps is not None and not 1 <= steps <= 120:
             raise ApiError(400, "BAD_STEPS", "단계 수는 1~120 사이여야 해요.")
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return service.budget_roadmap(snap, b, prices.rows(), budget, steps)
+        return memo("budget-roadmap", name, date, (boss_defense, boss, arcane_force, authentic_force, budget, steps),
+                    lambda: service.budget_roadmap(snap, b, prices.rows(), budget, steps))
 
     class MarketRefreshIn(BaseModel):
         name: str

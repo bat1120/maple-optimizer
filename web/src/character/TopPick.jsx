@@ -13,7 +13,8 @@ export default function TopPick({ name, defense, after = false }) {
   useEffect(() => {
     let alive = true;
     setTop(undefined);
-    getBudgetRoadmap(name, defense, null, 1).then((d) => alive && setTop(d?.steps?.[0] || null)).catch(() => alive && setTop(null));
+    // 계획표(PlanPanel)와 똑같은 요청을 보낸다 — 서버가 한 번 계산한 답을 같이 쓴다(1단계만 달라고 해도 계산 시간은 같았다. 2026-11-25)
+    getBudgetRoadmap(name, defense).then((d) => alive && setTop(d?.steps?.[0] || null)).catch(() => alive && setTop(null));
     return () => { alive = false; };
   }, [name, defense]);
   if (top === null) return null;
