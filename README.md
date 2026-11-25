@@ -41,13 +41,13 @@ powershell -ExecutionPolicy Bypass -File scripts/run-local.ps1   # 웹 빌드 �
 | `OPENAI_MODEL` | `.env` | 기본 `gpt-6-luna`(저가). `gpt-6.1-sol`(중간)·`gpt-6-astra`(상위)로 바꿀 수 있다 |
 | `ADMIN_PASSWORD_HASH` | `.env` | `uv run python -c "from server.admin import make_password_hash as h; print(h('비밀번호'))"` 결과. 비밀번호 원문은 저장하지 않는다 |
 | `SESSION_SECRET` | `.env` | 32자 이상 임의 문자열 (관리자 쿠키 서명) |
-| `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 OpenAI를 호출하지 않는다(에이전트·화면 분석 공통) |
+| `AGENT_DAILY_TOKEN_BUDGET` | `.env` | 하루 토큰 상한(기본 200,000). 넘으면 OpenAI를 호출하지 않는다(에이전트·화면 분석 공통). 운영 값은 `docker-compose.yml`의 `environment`(1,000,000)가 `.env`보다 우선한다 |
 | `VISION_DATASET_DIR` | `.env` | 화면 분석 학습·진단 데이터 폴더(선택). 로컬 `.data/vision`, VM은 캐시 볼륨 안 `/app/.cache/vision` 권장. 비우면 저장 안 함 |
 | `VM_HOST`, `VM_USER`, `VM_SSH_KEY` | GitHub Actions Secrets | 배포용 SSH. 쓰기 전용 — 한 번 넣으면 다시 읽을 수 없다 (H3) |
 | `DEPLOY_ENABLED` | GitHub Actions Variables (`true`) | 서버 준비 전에는 배포 단계를 건너뛴다 |
 | `DEPLOY_DOMAIN` | GitHub Actions Variables | 서버 주소(예: `52-79-34-11.sslip.io`). Caddy 자동 HTTPS·배포 뒤 확인·바깥 감시(uptime)에 쓴다 |
 | `DATABASE_URL` | 서버 `.env` | 경매장 관측 기록 영구 저장 — Neon 무료 Postgres 연결 문자열(`postgresql://...?sslmode=require`). 비우면 SQLite. 서버 cron이 매일 백업(`deploy/backup.sh`) |
-| `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | `.env` | 일반 사용자 화면 분석: IP당 하루 AI 판독 횟수(기본 20), 분당 화면 수(기본 240) |
+| `VISION_PUBLIC_DAILY`, `VISION_FRAMES_PER_MIN` | `.env` | 일반 사용자 화면 분석: IP당 하루 AI 판독 횟수(기본 20, 운영은 `docker-compose.yml`에서 60), 분당 화면 수(기본 240) |
 | `VISION_OCR` | `.env` | 경매장 매물 툴팁을 로컬 OCR로 먼저 읽는다(기본 켬, `0`이면 AI 판독만). OCR로 읽은 툴팁은 AI 한도를 쓰지 않는다 |
 | `AGENT_PUBLIC_DAILY` | `.env` | 일반 사용자 AI 상담 IP당 하루 질문 수(기본 5) |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` | `.env` | AI 상담 추적(Langfuse). 비우면 추적 안 함. 기본 지역 EU |

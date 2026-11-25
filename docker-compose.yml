@@ -12,6 +12,11 @@ services:
     image: ${IMAGE:-maple-optimizer:local}
     build: .
     env_file: .env            # NEXON_API_KEY (README "시크릿" 표)
+    # 비밀이 아닌 운영 한도는 여기서 정한다(서버 .env보다 우선). 2026-11-25 사용자 결정: 화면 평가를 실제로 써 보니 하루 20만 토큰·
+    # 판독 20회가 매물 몇 개에 다 찼다 → 하루 AI 토큰 100만, 일반 사용자 AI 판독 60회로 늘린다
+    environment:
+      AGENT_DAILY_TOKEN_BUDGET: "1000000"
+      VISION_PUBLIC_DAILY: "60"
     volumes:
       - cache:/app/.cache     # SQLite 캐시 (15분/30일)
     expose:
