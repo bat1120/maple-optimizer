@@ -169,6 +169,15 @@ def parse_tooltip(boxes, names=None, why: list | None = None) -> dict | None:
     return no(f"괄호 합 불일치: {failed}") if failed else item
 
 
+def warm_up(engine) -> bool:
+    """글자가 있는 그림을 한 번 읽힌다(글자 모델 내려받기·불러오기). 읽은 글자가 있으면 True."""
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFont
+    im = Image.new("RGB", (320, 80), (40, 46, 52))
+    ImageDraw.Draw(im).text((12, 16), "Lv. 200  STR +12%", font=ImageFont.load_default(30), fill=(255, 255, 255))
+    return bool(engine(np.asarray(im)[..., ::-1].copy()).txts)
+
+
 def reader():
     """툴팁 이미지 → [(x, y, 글자)]를 돌려주는 함수. VISION_OCR=0이거나 OCR 패키지가 없으면 None(AI만 쓴다)."""
     if os.environ.get("VISION_OCR", "1").lower() in ("0", "false", "off"):
@@ -181,7 +190,11 @@ def reader():
         logging.getLogger("RapidOCR").setLevel(logging.WARNING)
         engine = RapidOCR(params={"Rec.lang_type": LangRec.KOREAN, "Rec.ocr_version": OCRVersion.PPOCRV5,
                                   "Rec.model_type": ModelType.MOBILE, "Global.use_cls": False})
-        engine(np.zeros((64, 160, 3), np.uint8))  # 글자 모델은 처음 읽을 때 받는다 — 여기서 미리 받아 둔다
+        # 글자 모델은 '글자가 있는 그림'을 처음 읽을 때 받는다 — 여기서 글자를 그려 읽혀 미리 받아 둔다.
+        # 2026-11-25 운영: 빈 그림으로 미리 돌렸더니 글자 모델이 안 받아졌고, 서버(root 아님)는 첫 툴팁에서 받으려다
+        # PermissionError — 로컬 OCR이 운영에서 한 번도 안 돌아 모든 판독이 AI로 갔다
+        if not warm_up(engine):
+            raise RuntimeError("OCR이 시험 글자를 읽지 못했다")
     except Exception as e:  # noqa: BLE001 — 패키지·모델이 없으면 OCR 없이 돈다
         _log.warning("툴팁 OCR 꺼짐(AI만 사용): %s", type(e).__name__)
         return None

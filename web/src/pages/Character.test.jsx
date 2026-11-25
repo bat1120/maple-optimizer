@@ -62,7 +62,7 @@ describe("character page", () => {
     });
     render(<Character route={{ page: "character", name: "약한캐릭", tab: "summary" }} />);
     expect(await screen.findByText(/방어율 100% 보스 기준으로 계산했어요/)).toBeInTheDocument();
-    expect(asked).toEqual([300, 100]);
+    await waitFor(() => expect(asked).toEqual([300, 100]));   // 안내가 뜬 직후에는 두 번째 요청이 아직 안 나갔을 수 있다(CI에서 흔들림)
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByLabelText("보스 방어율(%)")).toHaveValue(100);
   });
