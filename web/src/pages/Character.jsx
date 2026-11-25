@@ -257,7 +257,8 @@ export default function Character({ route }) {
             <div className="summary-grid">
               <div className="stack summary-side">
                 <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} active={summary.active_setting} />
-                <StatSummary final={settings?.best?.final || summary.final} setting={settings?.best ? settings.best.setting : null} />
+                <StatSummary final={settings?.best?.final || summary.final} setting={settings?.best ? settings.best.setting : null}
+                             hpMain={summary.character_class === "데몬어벤져"} />
                 {summary.excluded?.length > 0 && (
                   <section className="card">
                     <h3 className="panel-title">계산에서 뺀 옵션</h3>

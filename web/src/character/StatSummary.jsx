@@ -4,9 +4,11 @@ import { settingLabel } from "../format.js";
 const n = (v) => (v == null ? "—" : Math.round(v).toLocaleString("ko-KR"));
 const pct = (v) => (v == null ? "—" : `${Number(v).toFixed(v % 1 ? 1 : 0)}%`);
 
-export default function StatSummary({ final, setting = null }) {
+// hpMain: 주스탯이 HP인 직업(데몬어벤져)은 HP를 맨 앞에 보여 준다 — 2026-11-25 운영 화면에서 빠져 있었다.
+// 스탯창 HP는 500,000에서 멈추지만 여기 값은 서버가 스탯공격력에서 되짚은 실제 HP다.
+export default function StatSummary({ final, setting = null, hpMain = false }) {
   if (!final) return null;
-  const four = ["STR", "DEX", "INT", "LUK"].map((k) => [k, final.stats?.[k]]);
+  const four = [...(hpMain ? ["HP"] : []), "STR", "DEX", "INT", "LUK"].map((k) => [k, final.stats?.[k]]);
   const rows = [
     ...four.map(([k, v]) => [k, n(v)]),
     ["공격력", n(final.atk)], ["마력", n(final.matk)],
