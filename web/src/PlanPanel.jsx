@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getBudgetRoadmap } from "./api.js";
 import { parsePrice } from "./format.js";
 import { hashFor } from "./router.js";
@@ -50,17 +50,23 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
   const [open, setOpen] = useState(null);     // 검색 조건을 펼친 줄
   const [shared, setShared] = useState(null); // 화면 공유를 누른 줄 — 그 아래에 공유 칸이 온다
 
+  // 늦게 도착한 옛 요청의 답은 버린다. 2026-11-25 운영: 약한 캐릭터에서 방어율이 300 → 100%로 자동으로 바뀔 때, 먼저 보낸 300%
+  // 요청의 '피해가 들어가지 않아요' 오류가 나중에 도착해 100% 계획 위에 빨간 오류가 그대로 남았다
+  const seq = useRef(0);
   const load = async (meso) => {
+    const mine = ++seq.current;
     setBusy(true);
     setError(null);
     try {
-      setData(await getBudgetRoadmap(name, defense, meso));
+      const got = await getBudgetRoadmap(name, defense, meso);
+      if (mine !== seq.current) return;
+      setData(got);
       setOpen(null); setShared(null); setAll(false);
       onStage?.(1);
     } catch (e) {
-      setError(e);
+      if (mine === seq.current) setError(e);
     } finally {
-      setBusy(false);
+      if (mine === seq.current) setBusy(false);
     }
   };
   useEffect(() => { if (name) load(null); }, [name, defense]); // eslint-disable-line react-hooks/exhaustive-deps

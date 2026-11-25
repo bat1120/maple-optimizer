@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import PlanPanel, { buyable, effPct, stepLabel } from "./PlanPanel.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -152,6 +152,19 @@ describe("PlanPanel — 계획 하나", () => {
 
   it("1억 메소당 효율은 값이 크면 소수 자리를 줄인다(줄이 넘치지 않게)", () => {
     expect([effPct(0.354), effPct(68.062), effPct(218.635)]).toEqual(["+0.354%", "+68.1%", "+219%"]);
+  });
+
+  it("방어율이 바뀌면 늦게 온 옛 요청의 오류는 보여 주지 않는다", async () => {
+    let failOld;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => (String(url).includes("boss_defense=300")
+      ? new Promise((r) => { failOld = () => r({ ok: false, status: 422, json: async () => ({ code: "NO_DAMAGE", message: "피해가 들어가지 않아요" }) }); })
+      : Promise.resolve({ ok: true, status: 200, json: async () => plan })));
+    const { rerender } = render(<PlanPanel name="레테" defense={300} />);
+    rerender(<PlanPanel name="레테" defense={100} />);
+    await screen.findByRole("list", { name: "할 순서" });
+    await act(async () => { failOld(); });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("list", { name: "할 순서" })).toBeInTheDocument();
   });
 
   it("단계 이름과 살 수 있는지 판단", () => {
