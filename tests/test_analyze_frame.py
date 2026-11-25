@@ -162,13 +162,20 @@ def test_same_tooltip_arriving_concurrently_calls_ai_once():
     cache = FrameCache()
     fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)])
     slow = fake._create
-    fake.responses = NS(create=lambda **kw: (time.sleep(0.3), slow(**kw))[1])
+    # AI 판독은 다른 두 요청이 돌아올 때까지 끝나지 않는다 — 전에는 0.3초 잠으로 겹치게 했는데, 느린 CI에서는 뒤 요청이
+    # 판독이 끝난 뒤에 도착해(캐시 적중) 가끔 실패했다(2026-11-25 배포 실패). 기대하는 동작은 그대로다
+    others_back = threading.Event()
+    fake.responses = NS(create=lambda **kw: (others_back.wait(20), slow(**kw))[1])
     frames = [_url(_frame([((520, 120), _tooltip(lit=18))])) for _ in range(3)]
     out = [None] * 3
     ts = [threading.Thread(target=lambda i=i: out.__setitem__(i, analyze_frame(fake, frames[i], cache=cache)))
           for i in range(3)]
     for t in ts:
         t.start()
+    deadline = time.monotonic() + 20
+    while sum(o is not None for o in out) < 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    others_back.set()
     for t in ts:
         t.join()
     assert len(fake.calls) == 1
