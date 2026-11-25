@@ -13,6 +13,7 @@
 import math
 from dataclasses import dataclass, field, replace
 
+from engine.options import StatLine
 from engine.stats.model import StatBlock
 from engine.stats.sets import NOT_WORN_SLOTS, SetCatalog, count_sets, set_block
 from engine.stats.jobs import job_profile
@@ -84,6 +85,11 @@ def sources_for(snap: CharacterSnapshot, setting: Setting, catalog: SetCatalog,
            + union_state)
     nopct = (snap.hyper_presets.get(setting.hyper, StatBlock()) + snap.ability_presets.get(setting.ability, StatBlock())
              + snap.symbols + snap.union)
+    if snap.character_class == "데몬어벤져":
+        # 컨버전 스타포스·이너 스트렝스의 HP(HP% 적용). 스타포스를 올리면 HP가 같이 오른다 — 빼먹으면 HP% 줄 가치가 낮게 나온다
+        from engine.stats.formula import DA_SKILL_HP, demon_avenger_conversion_hp
+        stars = sum(it.starforce for it in worn if it.slot != "훈장")
+        pct.add(StatLine("HP", demon_avenger_conversion_hp(stars) + DA_SKILL_HP, False))
     # 지금 HEXA 스탯(2026-10-11): 주력 스탯은 %미적용이라 빼먹으면 주스탯 잔차%로 흡수돼 고정 주스탯 가치가 ~10% 부풀었다
     if snap.hexa_stat:
         from engine.stats import hexa

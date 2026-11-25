@@ -18,6 +18,24 @@ from engine.stats.weapons import weapon_constant
 DA_HP_PER_LEVEL, DA_HP_BASE, HP_DISPLAY_CAP = 15, 344, 500_000
 
 
+# 컨버전 스타포스(0차 패시브): 장착 장비의 스타포스 합에 따라 최대 HP. 구간마다 1성당 증가량이 다르고 구간별로 쌓인다(최대 550성, 훈장 제외).
+# 표 출처: 나무위키 데몬 어벤져/스킬(2026-11-23 판, 원출처 인벤 2294/450419). (구간 끝 성, 1성당 HP)
+# 2026-11-25 실측(HP가 표시 상한 아래인 2명, 55성·63성): '구간별 누적 + HP% 적용'일 때만 스탯창 HP와 0.04~0.4% 안으로 맞았다
+# ('총 성수 × 그 구간 값'이나 '%미적용'은 2~7% 어긋남).
+DA_CONVERSION = ((10, 35), (35, 60), (60, 80), (90, 100), (125, 120), (150, 135), (175, 138), (200, 140), (225, 142), (250, 144),
+                 (270, 146), (290, 148), (310, 150), (320, 152), (330, 154), (340, 156), (350, 158), (360, 160), (370, 162),
+                 (380, 164), (390, 166), (435, 168), (550, 170))
+DA_SKILL_HP = 600  # 이너 스트렝스(2차 패시브, 영구 최대 HP 600 — 스킬 설명문). 레벨에 따라 다른 패시브(바디 오브 스틸 등)는 잔차로 둔다
+
+
+def demon_avenger_conversion_hp(stars: int) -> int:
+    out, low = 0, 0
+    for high, per_star in DA_CONVERSION:
+        out += max(0, min(stars, high) - low) * per_star
+        low = high
+    return out
+
+
 def demon_avenger_pure_hp(ap_hp: float, level: int) -> float:
     return ap_hp + DA_HP_PER_LEVEL * level + DA_HP_BASE
 

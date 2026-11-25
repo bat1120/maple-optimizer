@@ -92,3 +92,22 @@ def test_weapon_sample_stat_attack_equals_api(name):
     f = final_stats(b["character/stat"])
     got = stat_attack_max(f, job_profile(b["character/stat"]["character_class"]), weapon_part(b["character/item-equipment"]))
     assert got == pytest.approx(f.stat_attack_max, rel=1e-4), name
+
+
+def test_demon_avenger_conversion_star_force_stacks_by_tier():
+    """컨버전 스타포스: 구간별로 쌓인다(1~10성 35, 11~35성 60, 36~60성 80, 61~90성 100 …, 최대 550성)."""
+    from engine.stats.formula import demon_avenger_conversion_hp as conv
+    assert conv(0) == 0 and conv(10) == 350 and conv(55) == 350 + 25 * 60 + 20 * 80 and conv(63) == 350 + 1500 + 2000 + 3 * 100
+    assert conv(550) == conv(9999) and conv(436) - conv(435) == 170
+
+
+@pytest.mark.parametrize("stars,pure,item_flat,union_flat,pct,symbols,hp", [
+    (55, 14879, 2670, 4000, 8.0, 0, 27937),          # 2026-11-25 실측: HP가 표시 상한 아래인 두 캐릭터(250·260레벨)
+    (63, 23954, 28380, 0, 121.0, 168000, 294486),
+])
+def test_demon_avenger_hp_is_explained_by_visible_sources(stars, pure, item_flat, union_flat, pct, symbols, hp):
+    """순수 HP + 장비 + 컨버전 스타포스 + 이너 스트렝스에 HP%를 곱하고 심볼을 더하면 스탯창 HP와 3% 안으로 맞는다(나머지는 잔차)."""
+    from engine.stats.formula import DA_SKILL_HP, demon_avenger_conversion_hp
+    base = pure + item_flat + demon_avenger_conversion_hp(stars) + DA_SKILL_HP
+    assert (base * (1 + pct / 100) + symbols + union_flat) == pytest.approx(hp, rel=0.03)
+
