@@ -354,7 +354,7 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
         character_class=basic["character_class"],
         level=level,
         date=bundle["character/stat"].get("date"),
-        final=final_stats(bundle["character/stat"]),
+        final=_final(bundle["character/stat"], basic["character_class"], level, equipment[active_eq]),
         equipment_presets=equipment,
         active_equipment_preset=active_eq,
         hyper_presets=hyper,
@@ -383,6 +383,22 @@ def snapshot(bundle: dict[str, dict]) -> CharacterSnapshot:
                     for s in (bundle.get("battle-practice/result") or {}).get("skill_statistic") or []
                     if s.get("skill_name") and s.get("damage_percent") not in (None, "")},
     )
+
+
+def _final(stat_json: dict, character_class: str, level: int, items: dict) -> FinalStats:
+    """스탯창 최종값. 데몬어벤져는 ap["HP"]를 순수 HP(레벨 기본 포함)로 바꾸고, HP가 표시 상한(500,000)에 걸렸으면
+    최대 스탯공격력에서 되짚은 값으로 바꾼다(engine/stats/formula.py)."""
+    import dataclasses
+
+    from engine.stats import formula
+    final = final_stats(stat_json)
+    if character_class != formula.DEMON_AVENGER:
+        return final
+    pure = formula.demon_avenger_pure_hp(final.ap["HP"], level)
+    hp = final.stats["HP"]
+    if hp >= formula.HP_DISPLAY_CAP and "무기" in items and final.atk > 0:
+        hp = formula.demon_avenger_hp(final.stat_attack_max, pure, final.stats["STR"], final.atk, final.dmg, final.fd, items["무기"].part)
+    return dataclasses.replace(final, stats={**final.stats, "HP": hp}, ap={**final.ap, "HP": pure})
 
 
 def _hexa_stat(j: dict | None) -> list:

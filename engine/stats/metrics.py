@@ -41,5 +41,8 @@ def equivalent_main_stat(pred, job: JobProfile, ratio: float) -> float:
     스탯공격력 ∝ (주스탯×4 + 부스탯) 이므로 ΔM = (ratio − 1) × (4×Σ주스탯 + Σ부스탯) / 4.
     주스탯이 여럿(제논)이면 주스탯 합 기준. 사이트마다 정의가 다르므로 화면에 이 정의를 적는다.
     """
+    if job.name == "데몬어벤져":                       # 주스탯이 HP — 스탯 반영치(÷4)로 환산한다
+        from engine.stats.formula import stat_value
+        return (ratio - 1) * stat_value(pred, job) * 100 / 4
     base = 4 * sum(pred.stats[m] for m in job.mains) + sum(pred.stats[s] for s in job.subs)
     return (ratio - 1) * base / 4

@@ -160,6 +160,7 @@
    "branches": [
     "도적",
     "마법사",
+    "전사",
     "해적"
    ],
    "wearers": 5,
@@ -1231,7 +1232,9 @@
     "STR"
    ],
    "sf_stats_16": [],
-   "branches": [],
+   "branches": [
+    "전사"
+   ],
    "wearers": 1,
    "flames": [
     {

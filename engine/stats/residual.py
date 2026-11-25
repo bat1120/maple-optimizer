@@ -19,6 +19,7 @@ from engine.stats.jobs import job_profile
 from engine.stats.snapshot import CharacterSnapshot, Item, Setting
 
 STATS = ("STR", "DEX", "INT", "LUK")
+ALL_STATS = (*STATS, "HP")  # HP는 데몬어벤져의 주스탯 — 같은 식(순수 HP + %적용 고정) × (1 + %) + %미적용 고정으로 본다
 ATTACKS = ("ATK", "MATK")
 
 
@@ -56,6 +57,7 @@ class Predicted:
     cd: float
     cr: float
     ied: float
+    pure_hp: float = 0.0   # 데몬어벤져 스탯공격력 식에 쓰는 순수 HP
 
 
 def preset_items(snap: CharacterSnapshot, equipment_preset: int) -> dict[str, Item]:
@@ -117,7 +119,7 @@ def _raw_calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
     src = sources_for(snap, snap.active_setting, catalog)
     f, p, n = snap.final, src.pct, src.nopct
     stat_pct = {}
-    for k in STATS:
+    for k in ALL_STATS:
         base = f.ap.get(k, 0) + p.flat.get(k, 0)
         known = p.pct.get(k, 0) + n.pct.get(k, 0)
         stat_pct[k] = ((f.stats[k] - n.flat.get(k, 0)) / base - 1) * 100 - known if base > 0 else 0.0
@@ -153,7 +155,7 @@ def calibrate(snap: CharacterSnapshot, catalog: SetCatalog) -> Calibration:
 def predict(cal: Calibration, src: Sources) -> Predicted:
     p, n, total = src.pct, src.nopct, src.total()
     stats = {}
-    for k in STATS:
+    for k in ALL_STATS:
         base = cal.ap.get(k, 0) + p.flat.get(k, 0)
         pct = p.pct.get(k, 0) + n.pct.get(k, 0) + cal.stat_pct[k]
         stats[k] = math.floor(base * (1 + pct / 100) + 1e-9) + n.flat.get(k, 0)
@@ -169,4 +171,5 @@ def predict(cal: Calibration, src: Sources) -> Predicted:
         cd=total.cd + cal.cd,
         cr=total.cr + cal.cr,
         ied=(1 - _ied_remain(total.ied) * cal.ied_remain) * 100,
+        pure_hp=cal.ap.get("HP", 0),
     )

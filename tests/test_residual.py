@@ -12,7 +12,7 @@ from nexon.convert import snapshot
 
 CAT = SetCatalog.load()
 BOSS = BossProfile("기준", 300.0)
-SUPPORTED = [c for c in classes() if c != "데몬어벤져"]
+SUPPORTED = classes()  # 데몬어벤져 포함(2026-11-25)
 
 
 @pytest.mark.parametrize("cls", SUPPORTED)
@@ -22,6 +22,8 @@ def test_active_setting_reproduces_api(cls):
     f = snap.final
     for k in ("STR", "DEX", "INT", "LUK"):
         assert abs(pred.stats[k] - f.stats[k]) <= 1, (k, pred.stats[k], f.stats[k])
+    if cls == "데몬어벤져":
+        assert abs(pred.stats["HP"] - f.stats["HP"]) <= 1 and pred.pure_hp == f.ap["HP"]
     assert abs(pred.atk - f.atk) <= 1 and abs(pred.matk - f.matk) <= 1
     for k in ("dmg", "boss", "fd", "cd", "ied"):
         assert getattr(pred, k) == pytest.approx(getattr(f, k), abs=1e-6), k

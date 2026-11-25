@@ -7,6 +7,7 @@ from engine.stats.jobs import UnsupportedJob, job_profile
 from helpers import classes, load, weapon_bundle, weapon_samples
 from nexon.convert import final_stats, num, weapon_part
 
+# 데몬어벤져는 스탯창 HP가 표시 상한(500,000)이라 final_stats만으로는 안 맞는다 — 아래에서 따로 본다(snapshot이 HP를 되짚는다)
 SUPPORTED = [c for c in classes() if c != "데몬어벤져"]
 
 
@@ -38,9 +39,37 @@ def test_engine_stat_attack_equals_api(cls):
     assert got == pytest.approx(f.stat_attack_max, rel=1e-4), cls
 
 
-def test_demon_avenger_is_explicitly_unsupported():
+def test_unknown_job_is_unsupported():
     with pytest.raises(UnsupportedJob):
-        job_profile(load("데몬어벤져", "character/stat")["character_class"])
+        job_profile("처음보는직업")
+
+
+@pytest.mark.parametrize("level,hp,ap_hp,strength,atk,dmg,fd,expected", [
+    (250, 27937, 10785, 1080, 281, 25.0, 0.0, 37968),      # 2026-11-25 실측: HP가 표시 상한 아래인 두 캐릭터의 스탯창
+    (260, 294486, 19710, 935, 392, 66.0, 15.0, 677225),
+])
+def test_demon_avenger_formula_matches_uncapped_stat_windows(level, hp, ap_hp, strength, atk, dmg, fd, expected):
+    import math
+
+    from engine.stats.formula import demon_avenger_hp, demon_avenger_pure_hp
+    from engine.stats.model import FinalStats
+    pure = demon_avenger_pure_hp(ap_hp, level)
+    f = FinalStats(stats={"STR": strength, "DEX": 0, "INT": 0, "LUK": 0, "HP": hp}, ap={"HP": pure}, atk=atk, matk=0, dmg=dmg, boss=0, fd=fd,
+                   cd=0, cr=0, ied=0, stat_attack_min=0, stat_attack_max=expected, combat_power=0)
+    assert math.floor(stat_attack_max(f, job_profile("데몬어벤져"), "데스페라도")) == expected       # 1 단위까지
+    # 스탯공격력에서 HP를 되짚으면 ±3.5 안(⌊추가 HP ÷ 3.5⌋까지만 알 수 있다)
+    assert abs(demon_avenger_hp(expected, pure, strength, atk, dmg, fd, "데스페라도") - hp) <= 3.5
+
+
+def test_demon_avenger_capped_hp_is_recovered_from_stat_attack():
+    from helpers import bundle
+    from nexon.convert import snapshot
+    snap = snapshot(bundle("데몬어벤져"))
+    f = snap.final
+    assert load("데몬어벤져", "character/stat") and f.stats["HP"] > 500_000          # 스탯창은 500,000(표시 상한)
+    assert f.ap["HP"] == 22701 + 15 * 300 + 344                                     # 순수 HP = AP 배분 + 레벨 기본
+    got = stat_attack_max(f, job_profile("데몬어벤져"), snap.equipment_presets[snap.active_equipment_preset]["무기"].part)
+    assert got == pytest.approx(f.stat_attack_max, rel=1e-6)
 
 
 @pytest.mark.parametrize("missing", ["최종 데미지", "데미지", "마력", "INT", "최대 스탯공격력"])

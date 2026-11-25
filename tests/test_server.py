@@ -94,8 +94,20 @@ def test_listing_defaults_to_best_boss_setting(tmp_path, clock):
 
 
 def test_unsupported_job_is_422(tmp_path, clock):
-    r = make(tmp_path, clock, source=lambda _: bundle("데몬어벤져")).get("/api/character/x")
-    assert r.status_code == 422 and r.json()["code"] == "UNSUPPORTED" and "데몬어벤져" in r.json()["message"]
+    import copy
+    body = copy.deepcopy(bundle("레테"))
+    body["character/basic"]["character_class"] = "처음보는직업"
+    r = make(tmp_path, clock, source=lambda _: body).get("/api/character/x")
+    assert r.status_code == 422 and r.json()["code"] == "UNSUPPORTED" and "처음보는직업" in r.json()["message"]
+
+
+def test_demon_avenger_is_supported(tmp_path, clock):
+    """2026-11-25: 스탯창 HP는 표시 상한(500,000)이지만 스탯공격력에서 되짚어 계산한다."""
+    c = make(tmp_path, clock, source=lambda _: bundle("데몬어벤져"))
+    r = c.get("/api/character/x")
+    assert r.status_code == 200 and r.json()["character_class"] == "데몬어벤져"
+    plan = c.get("/api/character/x/budget-roadmap")
+    assert plan.status_code == 200 and plan.json()["steps"]
 
 
 def test_no_damage_is_422(tmp_path, clock):

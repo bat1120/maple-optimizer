@@ -25,6 +25,8 @@ _GROUPS = [
     (("LUK",), ("DEX",), "ATK", "나이트로드 나이트워커 팬텀 칼리 호영"),
     (("LUK",), ("DEX", "STR"), "ATK", "섀도어 듀얼블레이더 카데나"),
     (("STR", "DEX", "LUK"), (), "ATK", "제논"),
+    # 데몬어벤져: 주스탯이 HP, 부스탯 STR. 스탯공격력 식이 달라 engine/stats/formula.py에서 따로 계산한다(2026-11-25)
+    (("HP",), ("STR",), "ATK", "데몬어벤져"),
 ]
 _BRANCH_GROUPS = {
     "전사": "히어로 팔라딘 다크나이트 소울마스터 미하일 블래스터 데몬슬레이어 데몬어벤져 아란 카이저 아델 제로 렌",
@@ -40,7 +42,10 @@ for _b, _names in _BRANCH_GROUPS.items():
 
 _TABLE = {name: JobProfile(name, mains, subs, atk, _BRANCHES[name])
           for mains, subs, atk, names in _GROUPS for name in names.split()}
-_UNSUPPORTED = {"데몬어벤져": "API가 HP를 표시 상한(500,000)으로만 줘서 순수/추가 HP를 나눌 수 없음"}
+# 계산하지 않는 직업. 데몬어벤져는 2026-11-25에 뺐다 — API의 HP는 표시 상한(500,000)에 걸리지만 스탯공격력은 안 걸려서
+# 거기서 HP를 되짚을 수 있다(사용자 제안. engine/stats/formula.py demon_avenger_hp)
+_UNSUPPORTED: dict[str, str] = {}
+DEMON_AVENGER = "데몬어벤져"
 
 
 def job_profile(character_class: str) -> JobProfile:

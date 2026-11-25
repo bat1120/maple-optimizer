@@ -42,8 +42,7 @@ def test_job_profiles():
 
 
 def test_unsupported_and_unknown_jobs_raise():  # Review Focus 3
-    with pytest.raises(UnsupportedJob):
-        job_profile("데몬어벤져")
+    assert job_profile("데몬어벤져").mains == ("HP",) and job_profile("데몬어벤져").subs == ("STR",)   # 2026-11-25 지원
     with pytest.raises(UnsupportedJob):
         job_profile("처음보는직업")
 
