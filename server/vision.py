@@ -483,6 +483,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
 
     from server.tooltip import crop, find_tooltips, stars_near
     listing_only = False  # 매물 툴팁만 보낸다(화면 전체 없이)
+    open_error = None
     try:
         img = Image.open(io.BytesIO(base64.b64decode(image_data_url.split(",", 1)[1])))
         if img.size[0] * img.size[1] > MAX_PIXELS:  # 헤더만 읽은 상태 — 아직 풀지 않았다
@@ -503,10 +504,16 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             keep = [i for i, n in enumerate(color) if n >= max(FrameCache.COLOR_MIN, max(color) / 2)]
             boxes, stars, tips = [boxes[i] for i in keep], [stars[i] for i in keep], [tips[i] for i in keep]
             listing_only = True
-    except (ValueError, OSError, Image.DecompressionBombError):  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
+    except (ValueError, OSError, Image.DecompressionBombError) as e:  # 이미지를 열 수 없으면 툴팁 자르기 없이 화면 전체만 보낸다
+        import traceback
+        where = traceback.extract_tb(e.__traceback__)[-1]
+        open_error = f"{type(e).__name__}: {str(e)[:120]} ({pathlib.Path(where.filename).name}:{where.lineno} {where.name})"
         img, boxes, tips, stars = None, [], [], []
     rows = _list_rows(img)  # 목록 줄 가격·전투력(AI 없이) — 툴팁이 가격 칸을 가리기 전에 읽어 둔다(2026-11-13)
     extra = {"list_rows": rows, "frame_size": img.size if img is not None else None}
+    # 진단 기본값: 툴팁 수, 툴팁만 읽기 여부, 화면 크기. open_error = 화면을 못 열었거나 툴팁 찾기가 실패해 화면 전체를 AI로 보내게 된 까닭
+    extra["diag"] = {"tips": len(tips), "tooltips_only": tooltips_only, "listing_only": listing_only, "size": extra["frame_size"],
+                     **({"open_error": open_error} if open_error else {})}
     if tooltips_only and img is not None and not tips:
         # 툴팁이 없는 화면은 AI에 보내지 않는다(실측: 장비창 훑기 46장 중 31장이 툴팁 없음, 판독 0)
         return {"tooltip_visible": False, "fee_rate": None, "listings": [], "equipped": [], "equipped_items": [],
@@ -518,7 +525,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             key = tuple(cache.textprint(t, b) for t, b in zip(tips, boxes))  # 왼쪽부터 순서대로
             near = cache.nearest(key)  # 진단: 새 툴팁으로 봤다면 기억한 것과 무엇이 달랐나
             hit, mine = cache.claim(key)
-            extra["diag"] = {"tips": len(tips), "hit": hit is not None, "nearest": None if hit is not None else near}
+            extra["diag"] = {**extra["diag"], "hit": hit is not None, "nearest": None if hit is not None else near}
             if on_tip is not None:
                 on_tip(key, hit is not None)  # 인식(AI와 상관없이) — 이전 판독을 쓰면 바로 '완료'
             if hit is None and mine is None:
