@@ -178,12 +178,18 @@ export default function Character({ route }) {
   const [lowered, setLowered] = useState(null);  // 자동으로 낮췄다면 낮춘 값
   const pickDefense = (v) => { touched.current = true; setLowered(null); setDefense(v); };
   const loadSettings = useCallback(async () => {
+    // 피해가 0인지: 세팅 순위는 오류 없이 1위 실딜 지수 0으로 온다(운영에서 확인 — 처음엔 NO_DAMAGE 오류만 봐서 안 낮춰졌다). 오류로 와도 같게 다룬다
+    const lower = () => {
+      const next = !touched.current && typeof calcDefense === "number" ? AUTO_DEFENSES.find((d) => d < calcDefense) : null;
+      if (next != null) { setLowered(next); setDefense(next); setCalcDefense(next); }
+      return next != null;
+    };
     try {
-      setSettings(await getSettings(name, calcDefense));
+      const got = await getSettings(name, calcDefense);
+      if (got?.ranking?.length && got.ranking[0].index === 0 && lower()) return;
+      setSettings(got);
     } catch (e) {
-      const next = e.code === "NO_DAMAGE" && !touched.current && typeof calcDefense === "number" ? AUTO_DEFENSES.find((d) => d < calcDefense) : null;
-      if (next == null) { setError(e); return; }
-      setLowered(next); setDefense(next); setCalcDefense(next);
+      if (!(e.code === "NO_DAMAGE" && lower())) setError(e);
     }
   }, [name, calcDefense]);
   const load = useCallback(async () => {

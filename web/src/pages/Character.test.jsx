@@ -53,10 +53,11 @@ describe("character page", () => {
       if (u.includes("/bosses")) return ok({ bosses: [] });
       if (u.includes("/settings")) {
         asked.push(d);
-        if (d > 100) return { ok: false, status: 422, json: async () => ({ code: "NO_DAMAGE", message: "피해가 들어가지 않아요" }) };
+        // 실제 서버 응답 모양: 피해가 0이어도 200이고 순위의 실딜 지수가 0이다
+        if (d > 100) return ok({ ...SETTINGS, ranking: SETTINGS.ranking.map((r) => ({ ...r, index: 0, relative_to_active: null, main_stat_vs_active: null })) });
         return ok(SETTINGS);
       }
-      if (u.includes("/budget-roadmap")) return ok({ steps: [], note: "" });
+      if (u.includes("/budget-roadmap")) return d > 100 ? { ok: false, status: 422, json: async () => ({ code: "NO_DAMAGE", message: "피해가 들어가지 않아요" }) } : ok({ steps: [], note: "" });
       return ok(SUMMARY);
     });
     render(<Character route={{ page: "character", name: "약한캐릭", tab: "summary" }} />);
