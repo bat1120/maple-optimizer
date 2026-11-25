@@ -142,6 +142,10 @@ function NotFound({ name }) {
   );
 }
 
+// 약한 캐릭터: 방어율 무시가 낮으면 기본값(방어율 300%) 보스에는 피해가 0이라 추천을 만들 수 없다. 사용자가 방어율을 직접
+// 고르기 전이라면 피해가 들어가는 값까지 차례로 낮춰서 보여 준다(2026-11-25 — 전에는 오류 문구만 나와 직접 낮춰야 했다)
+export const AUTO_DEFENSES = [100, 50, 10];
+
 export const BASELINE_POLL_MS = 8000; // 과거 날짜 3개를 불러오는 데 10초 안팎 — 그동안 이 간격으로 다시 묻는다
 
 export default function Character({ route }) {
@@ -170,11 +174,16 @@ export default function Character({ route }) {
   const [bosses, setBosses] = useState(null);
 
   // 캐릭터 정보는 이름이 바뀔 때만, 세팅 순위는 보스가 바뀔 때도 다시 부른다
+  const touched = useRef(false);                 // 사용자가 보스·방어율을 직접 골랐는지
+  const [lowered, setLowered] = useState(null);  // 자동으로 낮췄다면 낮춘 값
+  const pickDefense = (v) => { touched.current = true; setLowered(null); setDefense(v); };
   const loadSettings = useCallback(async () => {
     try {
       setSettings(await getSettings(name, calcDefense));
     } catch (e) {
-      setError(e);
+      const next = e.code === "NO_DAMAGE" && !touched.current && typeof calcDefense === "number" ? AUTO_DEFENSES.find((d) => d < calcDefense) : null;
+      if (next == null) { setError(e); return; }
+      setLowered(next); setDefense(next); setCalcDefense(next);
     }
   }, [name, calcDefense]);
   const load = useCallback(async () => {
@@ -191,7 +200,10 @@ export default function Character({ route }) {
     }
   }, [name]);
 
-  useEffect(() => { setSummary(null); setSettings(null); }, [name]);
+  useEffect(() => {
+    setSummary(null); setSettings(null);
+    if (!touched.current) { setLowered(null); setDefense(300); setCalcDefense(300); }   // 자동으로 낮춘 값은 다음 캐릭터로 가져가지 않는다
+  }, [name]);
   // 버프 없는 기준(2026-11-23): 서버가 과거 날짜를 뒤에서 불러오는 동안은 baseline.pending. 다 되면 한 번 더 받아,
   // 버프가 섞여 있었던 경우에만 계산을 다시 한다(숫자가 달라지는 건 그 경우뿐이다)
   const [calcKey, setCalcKey] = useState(0);
@@ -224,8 +236,12 @@ export default function Character({ route }) {
       ))}
       {summary && (
         <div className="fade-in">
-          <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={setDefense} onRefresh={load} busy={busy}
+          <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={pickDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
+          {lowered != null && (
+            <p className="baseline-note small" role="note"><Icon name="info" size={14} />
+              방어율 무시가 낮아 방어율 300% 보스에는 피해가 들어가지 않아요. 그래서 방어율 {lowered}% 보스 기준으로 계산했어요 — 잡는 보스에 맞게 위에서 바꿀 수 있어요.</p>
+          )}
           {summary.baseline?.buffed && (
             <p className="baseline-note small" role="note"><Icon name="info" size={14} />{summary.baseline.note}</p>
           )}

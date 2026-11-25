@@ -44,6 +44,28 @@ function mockApi() {
 }
 
 describe("character page", () => {
+  // 2026-11-25: 약한 캐릭터는 방어율 300%에 피해가 0 — 오류만 띄우지 않고 피해가 들어가는 방어율로 낮춰서 보여 준다
+  it("방어율 300%에 피해가 안 들어가면 자동으로 낮춰 계산하고, 그 사실을 알린다", async () => {
+    const asked = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const u = String(url);
+      const d = Number(new URL(u, "http://x").searchParams.get("boss_defense") ?? 300);
+      if (u.includes("/bosses")) return ok({ bosses: [] });
+      if (u.includes("/settings")) {
+        asked.push(d);
+        if (d > 100) return { ok: false, status: 422, json: async () => ({ code: "NO_DAMAGE", message: "피해가 들어가지 않아요" }) };
+        return ok(SETTINGS);
+      }
+      if (u.includes("/budget-roadmap")) return ok({ steps: [], note: "" });
+      return ok(SUMMARY);
+    });
+    render(<Character route={{ page: "character", name: "약한캐릭", tab: "summary" }} />);
+    expect(await screen.findByText(/방어율 100% 보스 기준으로 계산했어요/)).toBeInTheDocument();
+    expect(asked).toEqual([300, 100]);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByLabelText("보스 방어율(%)")).toHaveValue(100);
+  });
+
   it("조회 중에는 뼈대 화면, 다 오면 프로필 카드와 큰 숫자", async () => {
     mockApi();
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
