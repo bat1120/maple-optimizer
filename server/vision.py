@@ -323,6 +323,35 @@ class FrameCache:
             return False
         return FrameCache._color_close(a[5], b[5])
 
+    MOVED_TEXT = 0.08  # 마우스를 따라 옮겨 간 같은 툴팁의 글자 지문 거리 상한(2026-11-25 실측 0.015~0.046)
+
+    @staticmethod
+    def _big_number(t: tuple) -> bool:
+        import numpy as np
+        return len(t) > 5 and int(np.unpackbits(np.frombuffer(t[5][1], np.uint8)).sum()) >= FrameCache.COLOR_MIN
+
+    @staticmethod
+    def key_close(a: tuple, b: tuple) -> bool:
+        """화면 한 장의 툴팁 묶음이 같은가.
+        2026-11-25 실사용(귀고리 매물 4개에 AI 판독 28회): 경매장 툴팁은 마우스를 따라 움직인다 — 같은 매물인데 자리가
+        4~105px, 글자 지문이 0.015~0.046 달라 '같은 자리' 규칙(tip_close)에 한 번도 안 걸렸고 화면마다 AI로 다시 읽었다.
+        그래서 큰 색 숫자(전투력 증가량)가 있는 툴팁이 들어 있는 묶음은 자리를 보지 않는다: 크기가 같고(4px), 큰 숫자가 같고,
+        글자 지문이 MOVED_TEXT 안이면 같은 매물이다. 큰 숫자가 하나도 없는 묶음(장비창 등)은 전처럼 자리까지 본다."""
+        if len(a) != len(b):
+            return False
+        if not any(FrameCache._big_number(t) for t in a) or not any(FrameCache._big_number(t) for t in b):
+            return all(map(FrameCache.tip_close, a, b))
+        for x, y in zip(a, b):
+            if abs(x[2] - y[2]) > 4 or abs(x[3] - y[3]) > 4:
+                return False
+            if FrameCache._big_number(x) != FrameCache._big_number(y):
+                return False
+            if sum(abs(p - q) for p, q in zip(x[4], y[4])) / len(x[4]) >= FrameCache.MOVED_TEXT:
+                return False
+            if FrameCache._big_number(x) and not FrameCache._color_close(x[5], y[5]):
+                return False
+        return True
+
     COLOR_MIN = 200    # 색 글자 칸이 이만큼 있어야 비교한다('현재 장착 중인 장비' 툴팁은 20~30칸)
     COLOR_DIFF = 0.5   # 2026-11-14 실측 불일치: 다른 매물 0.75~0.81, 같은 툴팁 재압축 0.20~0.24
 
@@ -357,7 +386,7 @@ class FrameCache:
         for k, (v, at) in list(self.tips.items()):
             if now - at > (self.NUMBER_HOLD_S if self._has_number(k) else self.HOLD_S):
                 del self.tips[k]
-            elif len(k) == len(key) and all(map(self.tip_close, k, key)):
+            elif self.key_close(k, key):
                 self.tips[k] = (v, now)  # 대고 있는 동안은 계속 연장
                 return v
         return None
@@ -386,7 +415,7 @@ class FrameCache:
             hit = self.find(key)
             if hit is not None:
                 return hit, None
-            if any(len(k) == len(key) and all(map(self.tip_close, k, key)) for k, _ in self.pending):
+            if any(self.key_close(k, key) for k, _ in self.pending):
                 return None, None
             mine = (key, threading.Event())
             self.pending.append(mine)
@@ -450,7 +479,7 @@ class ScanRegistry:
             got = self._live(scan, now)
             tips = got[1] if got else []
             for e in tips:
-                if len(e[0]) == len(key) and all(map(FrameCache.tip_close, e[0], key)):
+                if FrameCache.key_close(e[0], key):
                     e[1] = e[1] or done
                     break
             else:
