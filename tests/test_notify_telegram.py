@@ -41,3 +41,22 @@ def test_missing_settings_say_which(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e:
         notify.send_document(tmp_path / "없음.html", "")
     assert "TELEGRAM_BOT_TOKEN" in str(e.value)
+
+
+def test_reads_only_new_replies_from_my_chat(tmp_path, monkeypatch):
+    """답장 읽기: 설정한 채팅의 글만, 한 번 읽은 것은 다시 안 나온다(읽은 자리를 파일에 적는다)."""
+    import json
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:abc")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "42")
+    updates = [{"update_id": 7, "message": {"chat": {"id": 42}, "text": "4개 올렸어"}},
+               {"update_id": 8, "message": {"chat": {"id": 999}, "text": "남이 보낸 글"}},
+               {"update_id": 9, "message": {"chat": {"id": 42}, "text": "값은 맞아"}}]
+    asked = []
+
+    def handler(request):
+        offset = json.loads(request.read())["offset"]
+        asked.append(offset)
+        return httpx.Response(200, json={"ok": True, "result": [u for u in updates if u["update_id"] >= offset]})
+    t, f = httpx.MockTransport(handler), tmp_path / "offset.txt"
+    assert notify.read_replies(transport=t, offset_file=f) == ["4개 올렸어", "값은 맞아"]
+    assert notify.read_replies(transport=t, offset_file=f) == [] and asked == [0, 10]
