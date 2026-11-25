@@ -270,13 +270,38 @@ def _item_names() -> tuple[str, ...]:
     return tuple(dict.fromkeys([*SetCatalog.load().items, *BASES]))
 
 
+BIG_GLYPH_H = 14  # 큰 숫자 한 글자의 최소 높이(px). 본문 글자는 11px쯤
+
+
 def _power_mask(tip):
     """큰 색 글자(경매장 '전투력 증가량' 숫자) 칸 — 툴팁 오른쪽 위. 착용 장비 툴팁('현재 장착 중인 장비')은 20~30칸뿐."""
     import numpy as np
     c = np.asarray(tip.convert("RGB"), dtype=np.int16)[48:176]
     c = c[:, c.shape[1] * 2 // 5:max(c.shape[1] * 2 // 5 + 1, c.shape[1] - 4)]  # 오른쪽 테두리 4px 제외(뒤 배경색이 JPEG로 번진다)
     hi, lo = c.max(axis=2), c.min(axis=2)
-    return (hi > 150) & (hi - lo > 90)
+    colored = (hi > 150) & (hi - lo > 90)
+    # 전투력이 오르는 매물은 숫자가 흰색이다(2026-11-25 실제 화면 '+530만 6506') — 색만 보면 매물 툴팁을 못 알아봤다.
+    # 흰 글자 중 높이가 BIG_GLYPH_H 이상인 글자(큰 숫자)만 더한다: 작은 글자(11px)는 빠진다
+    white = lo > 215
+    tall = np.zeros_like(white)
+    seen = np.zeros_like(white)
+    for y0, x0 in zip(*np.nonzero(white)):
+        if seen[y0, x0]:
+            continue
+        stack, cells = [(y0, x0)], []
+        seen[y0, x0] = True
+        while stack:
+            cy, cx = stack.pop()
+            cells.append((cy, cx))
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
+                if 0 <= ny < white.shape[0] and 0 <= nx < white.shape[1] and white[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    stack.append((ny, nx))
+        ys = [c[0] for c in cells]
+        if max(ys) - min(ys) + 1 >= BIG_GLYPH_H:        # 큰 글자 한 자(획 전체)
+            for cy, cx in cells:
+                tall[cy, cx] = True
+    return colored | tall
 
 
 class FrameCache:
@@ -284,6 +309,7 @@ class FrameCache:
     - 툴팁이 있으면: 잘라낸 툴팁들의 축소 회색조 지문이 같으면 이전 판독을 그대로 쓴다.
     - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
 
+    TEXT_ROWS = 400  # 글자 지문에 쓰는 높이(별 줄 48px 아래부터)
     HOLD_S = 3.0  # 재사용은 '방금 대고 있던 툴팁'만 — 마지막으로 쓴 지 3초 안
     # 전투력 숫자(큰 색 글자)까지 맞대 본 툴팁은 다른 매물일 수 없다 — 다시 대도 60초 안이면 재사용(2026-11-14: 같은 매물 3번 판독)
     NUMBER_HOLD_S = 60.0
@@ -305,7 +331,11 @@ class FrameCache:
         맨 위 별 줄(반짝이)은 뺀다 — 별은 재사용할 때 지금 화면에서 다시 센다."""
         import numpy as np
         from PIL import Image as _I
-        a = np.asarray(tip.convert("L"), dtype=np.uint8)[48:]
+        # 위에서 TEXT_ROWS줄만 본다(모자라면 빈 줄로 채운다): 툴팁이 화면 아래에 걸리면 아래가 잘려 높이가 달라진다
+        # (2026-11-25 실제 화면: 같은 매물이 507~620px) — 높이 전체를 줄여 비교하면 같은 매물도 다르게 나온다
+        a = np.asarray(tip.convert("L"), dtype=np.uint8)[48:48 + FrameCache.TEXT_ROWS]
+        if a.shape[0] < FrameCache.TEXT_ROWS:
+            a = np.vstack([a, np.zeros((FrameCache.TEXT_ROWS - a.shape[0], a.shape[1]), dtype=np.uint8)])
         m = _I.fromarray(((a > 170) * 255).astype(np.uint8)).resize((24, 40), _I.BOX)
         color = _power_mask(tip)
         return (box[0], box[1], tip.width, tip.height,
@@ -321,9 +351,14 @@ class FrameCache:
             return False
         if sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) >= 0.02:
             return False
-        return FrameCache._color_close(a[5], b[5])
+        if not FrameCache._color_close(a[5], b[5]):
+            return False
+        # 큰 숫자가 둘 다 있으면 자리별로도 본다 — 같은 자리에 뜬, 숫자 한두 자리만 다른 매물을 같은 것으로 보지 않게(2026-11-25)
+        return not (FrameCache._big_number(a) and FrameCache._big_number(b)) or FrameCache._digits_close(a[5], b[5])
 
-    MOVED_TEXT = 0.08  # 마우스를 따라 옮겨 간 같은 툴팁의 글자 지문 거리 상한(2026-11-25 실측 0.015~0.046)
+    # 마우스를 따라 옮겨 간 같은 툴팁의 글자 지문 거리 상한. 2026-11-25 실제 화면 24장(테두리 선으로 자른 툴팁):
+    # 같은 매물 0~0.0075, 다른 매물 0.0088~0.073 — 글자 지문만으로는 못 가른다(큰 숫자가 가른다). 여기서는 아주 다른 툴팁만 거른다
+    MOVED_TEXT = 0.03
 
     @staticmethod
     def _big_number(t: tuple) -> bool:
@@ -335,25 +370,53 @@ class FrameCache:
         """화면 한 장의 툴팁 묶음이 같은가.
         2026-11-25 실사용(귀고리 매물 4개에 AI 판독 28회): 경매장 툴팁은 마우스를 따라 움직인다 — 같은 매물인데 자리가
         4~105px, 글자 지문이 0.015~0.046 달라 '같은 자리' 규칙(tip_close)에 한 번도 안 걸렸고 화면마다 AI로 다시 읽었다.
-        그래서 큰 색 숫자(전투력 증가량)가 있는 툴팁이 들어 있는 묶음은 자리를 보지 않는다: 크기가 같고(4px), 큰 숫자가 같고,
+        그래서 큰 숫자(전투력 증가량)가 있는 툴팁이 들어 있는 묶음은 자리를 보지 않는다: 너비가 같고(4px), 큰 숫자가 같고,
         글자 지문이 MOVED_TEXT 안이면 같은 매물이다. 큰 숫자가 하나도 없는 묶음(장비창 등)은 전처럼 자리까지 본다."""
         if len(a) != len(b):
             return False
+        if all(map(FrameCache.tip_close, a, b)):       # 같은 자리의 같은 툴팁(전부터 쓰던 규칙)
+            return True
         if not any(FrameCache._big_number(t) for t in a) or not any(FrameCache._big_number(t) for t in b):
-            return all(map(FrameCache.tip_close, a, b))
+            return False
         for x, y in zip(a, b):
-            if abs(x[2] - y[2]) > 4 or abs(x[3] - y[3]) > 4:
+            if abs(x[2] - y[2]) > 4:        # 너비만 본다 — 높이는 화면 아래에 걸려 잘리면 달라진다
                 return False
             if FrameCache._big_number(x) != FrameCache._big_number(y):
                 return False
             if sum(abs(p - q) for p, q in zip(x[4], y[4])) / len(x[4]) >= FrameCache.MOVED_TEXT:
                 return False
-            if FrameCache._big_number(x) and not FrameCache._color_close(x[5], y[5]):
+            if FrameCache._big_number(x) and not (FrameCache._color_close(x[5], y[5]) and FrameCache._digits_close(x[5], y[5])):
                 return False
         return True
 
+    DIGIT_WIN, DIGIT_DIFF = 12, 0.5
+
+    @staticmethod
+    def _digits_close(a, b) -> bool:
+        """큰 숫자를 자리별로 본다: 한 자리만 다른 숫자는 전체로는 거의 같아 보인다(그린 숫자 실험: 한 자리 다름 0.05~0.3, 같은 매물
+        잡음 ~0.09). 가로 DIGIT_WIN px 창마다 불일치 비율을 재서 가장 큰 값을 본다 — 2026-11-25 실제 화면 24장:
+        같은 매물 0~0.279, 다른 매물 0.795~1.0. 모양이 비슷한 숫자(6·0)는 한 자리 차이를 못 가를 수 있다(그린 숫자 0.30)."""
+        import numpy as np
+        (sa, pa), (sb, pb) = a, b
+        x = np.unpackbits(np.frombuffer(pa, np.uint8), count=sa[0] * sa[1]).reshape(sa).astype(bool)
+        y = np.unpackbits(np.frombuffer(pb, np.uint8), count=sb[0] * sb[1]).reshape(sb).astype(bool)
+        h, w = min(x.shape[0], y.shape[0]), min(x.shape[1], y.shape[1])
+        x, y = x[:h, -w:], y[:h, -w:]
+        if w < FrameCache.DIGIT_WIN:
+            return True
+        win, best = np.ones(FrameCache.DIGIT_WIN), 9.0
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                z = np.roll(np.roll(y, dy, 0), dx, 1)
+                diff, both = np.convolve((x ^ z).sum(axis=0), win, "valid"), np.convolve((x | z).sum(axis=0), win, "valid")
+                ok = both >= 40
+                best = min(best, float((diff[ok] / both[ok]).max()) if ok.any() else 0.0)
+        return best < FrameCache.DIGIT_DIFF
+
     COLOR_MIN = 200    # 색 글자 칸이 이만큼 있어야 비교한다('현재 장착 중인 장비' 툴팁은 20~30칸)
-    COLOR_DIFF = 0.5   # 2026-11-14 실측 불일치: 다른 매물 0.75~0.81, 같은 툴팁 재압축 0.20~0.24
+    # 큰 숫자 불일치 비율. 2026-11-14 실측: 다른 매물 0.75~0.81, 같은 툴팁 재압축 0.20~0.24.
+    # 2026-11-25 실제 화면 24장(매물 8개, 흰 숫자): 같은 매물 0~0.093, 다른 매물 0.556~1.0
+    COLOR_DIFF = 0.35
 
     @staticmethod
     def _color_close(a, b) -> bool:
@@ -514,7 +577,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
 
     from PIL import Image
 
-    from server.tooltip import crop, find_tooltips, stars_near
+    from server.tooltip import crop, find_by_darkness, find_outlined, stars_near
     listing_only = False  # 매물 툴팁만 보낸다(화면 전체 없이)
     open_error = None
     try:
@@ -522,9 +585,16 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
         if img.size[0] * img.size[1] > MAX_PIXELS:  # 헤더만 읽은 상태 — 아직 풀지 않았다
             raise ImageTooLarge()
         img = img.convert("RGB")
-        boxes = find_tooltips(img)
+        boxes = find_outlined(img)
+        exact = bool(boxes)   # 테두리 선으로 찾은 상자는 픽셀 단위로 맞다(2026-11-25) — 가짜 상자가 없고 위가 잘리지 않는다
+        if not exact:
+            boxes = find_by_darkness(img)
         stars = [stars_near(img, b) for b in boxes]
-        if any(s is None for s in stars) and (any(s is not None for s in stars) or _auction_list_visible(img)):
+        if exact:
+            # 별 줄이 온전히 보이는데 노란 별이 없으면 0성이다(옛 방식은 상자 위가 잘렸을 수 있어 '모름'으로 뒀다).
+            # 실제 화면: 스타포스 없는 '에스텔라 이어링' 매물이 '모름'이라 로컬 OCR을 못 쓰고 AI로 넘어갔다
+            stars = [0 if s is None else s for s in stars]
+        elif any(s is None for s in stars) and (any(s is not None for s in stars) or _auction_list_visible(img)):
             # 경매장 다크모드(2026-11-13): 필터 칸·목록 칸도 어두운 상자로 잡힌다. 실제 캡처 3장의 가짜 상자 9개는 별 줄이 0개,
             # 진짜 툴팁 2개는 18성 — 목록의 동전 줄이 보이면 별 줄 없는 상자는 툴팁으로 보지 않는다.
             # 별 줄 있는 툴팁이 함께 있어도 뺀다(2026-11-14: 필터 칸 높이가 752·760·768로 흔들려 같은 툴팁을 AI로 또 읽음)

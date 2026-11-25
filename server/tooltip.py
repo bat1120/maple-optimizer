@@ -142,9 +142,91 @@ def _column_runs(grid: np.ndarray, max_gap: int = 0) -> list[tuple[int, int, int
     return out
 
 
+OUTLINE_LIGHT = (64, 110)  # 툴팁 테두리 선(1px)의 밝기 — 2026-11-25 실제 화면: 세로 79~81, 가로 77~98
+OUTLINE_STEP = 14          # 테두리 선이 양옆(바깥 어두운 선 43쯤·안쪽 바탕 52쯤)보다 이만큼 밝다
+OUTLINE_RUN, OUTLINE_GAP = 150, 10
+
+
+def _outline_runs(m: np.ndarray, min_run: int) -> list[tuple[int, int]]:
+    """참인 구간들(OUTLINE_GAP 이하 끊김은 잇는다) 중 min_run 이상인 것."""
+    out, start, last = [], None, None
+    for y in np.nonzero(m)[0]:
+        if start is None:
+            start = last = y
+        elif y - last - 1 <= OUTLINE_GAP:
+            last = y
+        else:
+            if last - start + 1 >= min_run:
+                out.append((int(start), int(last)))
+            start = last = y
+    if start is not None and last - start + 1 >= min_run:
+        out.append((int(start), int(last)))
+    return [(s, e) for s, e in out if m[s:e + 1].mean() >= 0.8]
+
+
+def _outline_hline(luma: np.ndarray, y_from: int, y_to: int, x0: int, x1: int, below_dark: bool) -> int | None:
+    """가로 테두리 줄: 밝은 줄의 바로 위(위 테두리) 또는 바로 아래(아래 테두리)가 어두운 선이고 너비의 60% 이상."""
+    best = None
+    for y in range(max(1, y_from), min(luma.shape[0] - 1, y_to)):
+        row, other = luma[y, x0:x1], luma[y + 1 if below_dark else y - 1, x0:x1]
+        cover = float(((row >= OUTLINE_LIGHT[0] - 2) & (other <= row - OUTLINE_STEP) & (other <= 58)).mean())
+        if cover >= 0.6 and (best is None or cover > best[1]):
+            best = (y, cover)
+    return best[0] if best else None
+
+
+def find_outlined(img: Image.Image) -> list[tuple[int, int, int, int]]:
+    """툴팁을 테두리 선으로 찾는다: [바깥 어두운 선 | 밝은 테두리 1px | 안쪽 바탕]이 세로로 길게 이어진 왼쪽·오른쪽 끝을 짝짓고,
+    위·아래 가로 테두리로 높이를 정한다. 어두운 영역으로 찾는 방식(_find)은 경매장 다크모드에서 창 전체가 어두워 어긋났다 —
+    2026-11-25 실제 화면 23장: 툴팁 위 목록 줄까지 한 상자로 잡고(위 끝 200, 실제 290), 붙어 뜬 매물·착용 툴팁의 경계가
+    화면마다 달라(매물 툴팁 너비 362~521) 같은 매물을 화면마다 AI로 다시 읽었고, 검색 조건 칸도 툴팁으로 잡았다.
+    이 방식은 같은 23장에서 툴팁 둘만 잡고 너비가 모두 321로 같다(툴팁 없는 화면 55장에서는 0개).
+    마우스 커서·아이콘에 가려 끊긴 세로선은 한 열 안에서 잇는다. 못 찾으면 빈 목록 — 부르는 쪽이 옛 방식으로 넘어간다."""
+    a = np.asarray(img.convert("RGB")).astype(np.int16)
+    luma = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
+    light = (luma >= OUTLINE_LIGHT[0]) & (luma <= OUTLINE_LIGHT[1])
+    thin = np.zeros_like(light)
+    thin[:, 1:-1] = light[:, 1:-1] & (luma[:, :-2] <= luma[:, 1:-1] - OUTLINE_STEP) & (luma[:, 2:] <= luma[:, 1:-1] - OUTLINE_STEP)
+    left, right = [], []
+    for x in np.nonzero(thin.sum(axis=0) >= OUTLINE_RUN * 0.8)[0]:
+        runs = _outline_runs(thin[:, x], 60)
+        if not runs:
+            continue
+        s, e = runs[0][0], runs[-1][1]
+        if e - s + 1 < OUTLINE_RUN or thin[s:e + 1, x].mean() < 0.7:
+            continue
+        outer_left = np.median(luma[s:e + 1, x - 1]) < np.median(luma[s:e + 1, x + 1])   # 바깥쪽(어두운 선)이 더 어둡다
+        (left if outer_left else right).append((int(x), s, e))
+    out = []
+    for lx, ls, le in left:
+        cand = [(rx, rs, re) for rx, rs, re in right if MIN_W <= rx - lx <= SINGLE_MAX_W
+                and min(le, re) - max(ls, rs) >= 0.6 * max(le - ls, re - rs) and (abs(rs - ls) <= 12 or abs(re - le) <= 12)]
+        if not cand:
+            continue
+        rx, rs, re = min(cand)
+        top = _outline_hline(luma, min(ls, rs) - 16, max(ls, rs) + 8, lx + 12, rx - 12, below_dark=False)
+        bottom = _outline_hline(luma, min(le, re) - 8, max(le, re) + 16, lx + 12, rx - 12, below_dark=True)
+        y0 = top if top is not None else max(ls, rs)
+        y1 = (bottom if bottom is not None else min(le, re)) + 1
+        if y1 - y0 < MIN_H:
+            continue
+        med = np.median(a[y0 + 20:y1 - 20:4, lx + 8:rx - 8:4].reshape(-1, 3), axis=0)
+        if 35 <= med.mean() <= 70 and med[2] >= med[0]:      # 안쪽이 툴팁 바탕(어두운 남회색)
+            out.append((lx, y0, rx + 1, y1))
+    return sorted(set(out))
+
+
 def find_tooltips(img: Image.Image) -> list[tuple[int, int, int, int]]:
     """툴팁 상자 [(x0, y0, x1, y1)] 왼쪽부터. 기본 방식 결과는 그대로 두고, 짧게 끊긴 열을 잇는 방식(훈장처럼 짧은 툴팁)으로
     찾은 상자 중 기존 상자와 겹치지 않는 것만 보탠다 — 바로 바꾸면 실제 화면 25/88장·수집본 74/174장의 상자가 달라졌다(2026-10-06)."""
+    outlined = find_outlined(img)
+    if outlined:               # 테두리 선이 보이면 그 상자가 픽셀 단위로 맞다(2026-11-25)
+        return outlined
+    return find_by_darkness(img)
+
+
+def find_by_darkness(img: Image.Image) -> list[tuple[int, int, int, int]]:
+    """옛 방식: 어두운 영역으로 툴팁을 찾는다(테두리 선이 안 보이는 화면용)."""
     base = _find(img, max_gap=0, widen=False)
     a = np.asarray(img.convert("RGB")).astype(np.int16)
     extra = [b for b in _find(img, max_gap=3, widen=True)

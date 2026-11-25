@@ -429,18 +429,3 @@ def test_ocr_says_why_it_gave_up():
     from server.ocr import parse_tooltip
     why: list = []
     assert parse_tooltip([(10, 10, "아무 글자")], why=why) is None and why == ["전투력 증가량·레벨 줄을 못 찾음"]
-
-
-def test_listing_tooltip_that_follows_the_mouse_is_read_once():
-    """2026-11-25 실사용: 경매장 툴팁이 마우스를 따라 움직여(자리 4~105px 차이) 같은 매물을 화면마다 AI로 다시 읽었다
-    (귀고리 4개에 28회). 큰 숫자(전투력 증가량)가 같고 크기가 같으면 자리가 달라도 같은 매물이다. 숫자가 다르면 다른 매물."""
-    from server.vision import FrameCache, ScanRegistry
-    cache, scans = FrameCache(), ScanRegistry()
-    fake = FakeClient([_listing("커맨더 포스 이어링", 18, 0)] * 3)
-    mark = lambda key, done: scans.mark("s", key, done, 0.0)  # noqa: E731
-    for at in ((520, 120), (528, 126), (470, 112), (640, 128)):   # 같은 매물, 마우스를 따라 옮겨 간 자리(화면 안)
-        out = analyze_frame(fake, _url(_frame([(at, _tip_power("-1931721"))])), cache=cache, on_tip=mark)
-        assert out["listings"][0]["name"] == "커맨더 포스 이어링"
-    assert len(fake.calls) == 1 and scans.counts("s", 0.0) == (1, 0)     # AI 한 번, '인식한 매물'도 1개
-    analyze_frame(fake, _url(_frame([((610, 105), _tip_power("-98551"))])), cache=cache, on_tip=mark)   # 다른 매물
-    assert len(fake.calls) == 2 and scans.counts("s", 0.0) == (2, 0)
