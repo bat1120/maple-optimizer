@@ -67,3 +67,33 @@ def test_stat_attack_matches_ingame_screenshots():
     assert stat_value(hunting, lete) == pytest.approx((51896 * 4 + 5960) / 100)
     assert stat_attack_max(hunting, lete, "카르타") == pytest.approx(65_590_276, rel=1e-4)
     assert stat_attack_max(boss, lete, "카르타") == pytest.approx(75_958_618, rel=1e-4)
+
+
+def test_statblock_add_copies_without_sharing():
+    """2026-11-25: 더하기를 deepcopy 대신 얕은 복사로 바꿨다(속도). 결과가 같고, 더한 결과를 고쳐도 원래 것이 안 바뀌어야 한다."""
+    import copy
+
+    from engine.options import StatLine
+    from engine.stats.model import StatBlock
+    a = StatBlock(flat={"STR": 10.0, "ATK": 5.0}, pct={"STR": 9.0}, dmg=3.0, boss=30.0, cd=8.0, cr=5.0, fd=1.5, ied=[30.0, 20.0])
+    b = StatBlock(flat={"STR": 1.5, "HP": 100.0}, pct={"ALL": 6.0}, boss=10.0, ied=[15.0])
+    a0, b0 = copy.deepcopy(a), copy.deepcopy(b)
+    out = a + b
+    assert out == StatBlock(flat={"STR": 11.5, "ATK": 5.0, "HP": 100.0}, pct={"STR": 9.0, "ALL": 6.0}, dmg=3.0, boss=40.0, cd=8.0, cr=5.0,
+                            fd=1.5, ied=[30.0, 20.0, 15.0])
+    out.add(StatLine("STR", 7.0, False))
+    out.add(StatLine("IED", 40.0, True))
+    out.pct["STR"] += 1
+    assert a == a0 and b == b0
+
+
+def test_parse_option_cache_returns_fresh_lists():
+    """2026-11-25: 옵션 줄 풀이를 기억해 두고 다시 쓴다(속도). 받은 목록을 고쳐도 다음 결과가 안 바뀌고, 레벨이 다르면 따로 푼다."""
+    from engine.options import StatLine, parse_option
+    first = parse_option("올스탯 +9%", 200)
+    assert first == [StatLine(k, 9.0, True) for k in ("STR", "DEX", "INT", "LUK")]
+    first.clear()
+    assert len(parse_option("올스탯 +9%", 200)) == 4
+    assert parse_option("캐릭터 기준 9레벨 당 STR +2", 200) == [StatLine("STR", 44, False)]
+    assert parse_option("캐릭터 기준 9레벨 당 STR +2", 250) == [StatLine("STR", 54, False)]
+    assert parse_option("처음 보는 옵션 줄", 200) is None and parse_option("메소 획득량 +20%", 200) == []

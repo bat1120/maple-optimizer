@@ -8,6 +8,7 @@
 
 반환: 딜 관련 → StatLine 리스트, 딜 무관 → [], 모르는 표기 → None.
 """
+import functools
 import re
 from dataclasses import dataclass
 
@@ -59,9 +60,17 @@ _GRADE_PREFIX = re.compile(r"^(?:에디셔널\s*)?잠재\s*능력\s*:\s*")  # �
 
 
 def parse_option(text: str, level: int) -> list[StatLine] | None:
+    """옵션 한 줄 → 스탯 줄들(모르는 줄이면 None). 같은 글자·레벨은 한 번만 풀고 기억해 둔다 — 계획 한 번에 같은 옵션 줄을
+    7만 번 넘게 다시 풀고 있었다(2026-11-25 실측). 부르는 쪽이 고쳐도 되게 매번 새 목록을 준다."""
+    got = _parse_cached(text, level)
+    return None if got is None else list(got)
+
+
+@functools.lru_cache(maxsize=50_000)
+def _parse_cached(text: str, level: int) -> tuple[StatLine, ...] | None:
     text = _GRADE_PREFIX.sub("", text.strip())
     if text.startswith(_IRRELEVANT_PREFIXES):
-        return []
+        return ()
     parts = [text] if "(" in text else [p.strip() for p in text.split(",")]
     out: list[StatLine] = []
     for part in parts:
@@ -69,7 +78,7 @@ def parse_option(text: str, level: int) -> list[StatLine] | None:
         if lines is None:
             return None
         out.extend(lines)
-    return out
+    return tuple(out)
 
 
 def _parse_one(part: str, level: int) -> list[StatLine] | None:

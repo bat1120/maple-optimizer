@@ -1,5 +1,4 @@
 """스탯 묶음과 최종 스탯 타입. 값은 모두 퍼센트 포인트(84.0 = 84%)."""
-import copy
 from dataclasses import dataclass, field
 
 from engine.options import StatLine
@@ -30,7 +29,9 @@ class StatBlock:
             d[line.key] = d.get(line.key, 0.0) + line.value
 
     def __add__(self, other: "StatBlock") -> "StatBlock":
-        out = copy.deepcopy(self)
+        # 값이 전부 숫자라 사전·목록만 새로 만들면 된다. 전에는 copy.deepcopy였는데 계획 한 번에 10만 번 넘게 불려
+        # 계산 시간의 70%를 썼다(2026-11-25 실측). 결과는 같다 — tests/test_stats_core.py
+        out = StatBlock(dict(self.flat), dict(self.pct), self.dmg, self.boss, self.cd, self.cr, self.fd, list(self.ied))
         for k, v in other.flat.items():
             out.flat[k] = out.flat.get(k, 0.0) + v
         for k, v in other.pct.items():
