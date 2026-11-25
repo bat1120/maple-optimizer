@@ -403,7 +403,11 @@ class FrameCache:
             pos = max(max(abs(x - y) for x, y in zip(a[:4], b[:4])) for a, b in zip(k, key))
             text = max(sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) for a, b in zip(k, key))
             cand = {"pos_px": pos, "text_dist": round(text, 4), "number_same": all(self._color_close(a[5], b[5]) for a, b in zip(k, key)),
-                    "age_s": round(age, 1)}
+                    "age_s": round(age, 1), "same": self.key_close(k, key),
+                    # 툴팁마다: [x차, y차, 너비차, 높이차, 글자 지문 거리, 기억한 쪽 큰 숫자 있음, 지금 쪽 큰 숫자 있음, 큰 숫자 같음]
+                    "tips": [[abs(a[0] - b[0]), abs(a[1] - b[1]), abs(a[2] - b[2]), abs(a[3] - b[3]),
+                              round(sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]), 4),
+                              int(self._big_number(a)), int(self._big_number(b)), int(self._color_close(a[5], b[5]))] for a, b in zip(k, key)]}
             if best is None or (cand["text_dist"], cand["pos_px"]) < (best["text_dist"], best["pos_px"]):
                 best = cand
         return best
@@ -554,7 +558,9 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             key = tuple(cache.textprint(t, b) for t, b in zip(tips, boxes))  # 왼쪽부터 순서대로
             near = cache.nearest(key)  # 진단: 새 툴팁으로 봤다면 기억한 것과 무엇이 달랐나
             hit, mine = cache.claim(key)
-            extra["diag"] = {**extra["diag"], "hit": hit is not None, "nearest": None if hit is not None else near}
+            extra["diag"] = {**extra["diag"], "hit": hit is not None, "nearest": None if hit is not None else near,
+                             "boxes": [[t[0], t[1], t[2], t[3], int(FrameCache._big_number(t))] for t in key],   # x, y, 너비, 높이, 큰 숫자
+                             "known": len(cache.tips)}
             if on_tip is not None:
                 on_tip(key, hit is not None)  # 인식(AI와 상관없이) — 이전 판독을 쓰면 바로 '완료'
             if hit is None and mine is None:

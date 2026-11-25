@@ -415,7 +415,9 @@ def test_frame_diagnostics_say_why_a_tooltip_was_new():
     cache = FrameCache()
     fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)] * 2)
     first = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
-    assert first["diag"] == {"tips": 1, "tooltips_only": False, "listing_only": False, "size": first["frame_size"], "hit": False, "nearest": None}
+    assert {k: first["diag"][k] for k in ("tips", "tooltips_only", "listing_only", "hit", "nearest", "known")} == {
+        "tips": 1, "tooltips_only": False, "listing_only": False, "hit": False, "nearest": None, "known": 0}
+    assert len(first["diag"]["boxes"]) == 1 and len(first["diag"]["boxes"][0]) == 5
     again = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
     assert again["diag"]["hit"] is True and len(fake.calls) == 1
     moved = analyze_frame(fake, _url(_frame([((560, 150), _tooltip(lit=18))])), cache=cache)   # 같은 툴팁이 40px 옮겨 감 → 새 판독
