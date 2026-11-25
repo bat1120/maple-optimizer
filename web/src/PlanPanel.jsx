@@ -116,7 +116,10 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
             <p className="budget-headline"><span><strong>{data.budget_text}</strong>으로는 지금 할 수 있는 단계가 없어요.</span></p>
           ))}
           {!data.budget_text && steps.length === 0 && (
-            <EmptyState icon="trend" title="올릴 수 있는 단계를 찾지 못했어요">지금 장비 기준으로 계산된 단계가 없어요.</EmptyState>
+            /* 2026-11-25: 기본 장비 몇 개만 낀 캐릭터(직업별 측정의 200레벨 부캐들)는 강화할 것이 없어 계획이 빈다 — 다음에 할 일을 알려 준다 */
+            <EmptyState icon="trend" title="지금 낀 장비로는 강화해서 올릴 단계가 없어요">
+              장비 칸이 많이 비어 있거나 기본 장비라면, 강화보다 새 장비를 먼저 맞추는 쪽이 훨씬 크게 올라요. 아래 ‘방어구 세트 조합’에서 세트별 보스 실딜을 비교해 보세요.
+            </EmptyState>
           )}
           {steps.length > 0 && (
             <>

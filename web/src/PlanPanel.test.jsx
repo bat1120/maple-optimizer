@@ -143,6 +143,13 @@ describe("PlanPanel — 계획 하나", () => {
     expect(screen.queryByRole("button", { name: /모두 보기/ })).toBeNull();
   });
 
+  it("계획이 비면 새 장비부터 맞추라고 알려 준다(기본 장비만 낀 캐릭터)", async () => {
+    mock({ ...plan, steps: [], next_step: null, auction_pick: null });
+    render(<PlanPanel name="레테" defense={100} />);
+    expect(await screen.findByText("지금 낀 장비로는 강화해서 올릴 단계가 없어요")).toBeInTheDocument();
+    expect(screen.getByText(/방어구 세트 조합/)).toBeInTheDocument();
+  });
+
   it("단계 이름과 살 수 있는지 판단", () => {
     expect(stepLabel(cube)).toBe("하의 잠재 레전드리 2줄");
     expect(stepLabel({ path: "심볼", name: "어센틱심볼 : 아르크스", from_level: 3, to_level: 4 })).toBe("어센틱심볼 : 아르크스 3→4레벨");
