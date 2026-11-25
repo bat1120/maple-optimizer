@@ -13,6 +13,8 @@ const QUICK = ["10억", "50억", "100억", "300억"];
 const MIN = 10_000;
 const FIRST = 6; // 처음에 보이는 줄 수
 const pct = (x, d = 2) => `+${Number(x).toFixed(d)}%`;
+// 1억 메소당 효율: 값이 클수록 소수 자리를 줄인다 — 값싼 강화가 큰 캐릭터는 '+218.635%'처럼 길어져 %가 다음 줄로 넘어갔다(2026-11-25 운영)
+export const effPct = (x) => pct(x, Math.abs(x) >= 100 ? 0 : Math.abs(x) >= 10 ? 1 : 3);
 
 export function stepLabel(s) {
   if (s.path === "스타포스") return `${s.name} ${s.from_star}→${s.to_star}성`;
@@ -133,7 +135,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
                       <span className="plan-what"><strong>{stepLabel(s)}</strong>
                         <span className="muted small">{[stepSub(s), how(s)].filter(Boolean).join(" · ")}</span></span>
                       {/* 큰 숫자 = 순서의 기준인 1억 메소당 효율(2026-11-23 사용자 결정 — 전에는 보스 실딜이 커서 순서가 틀린 것처럼 보였다) */}
-                      <span className="plan-eff" title="이 순서의 기준: 1억 메소를 쓸 때 오르는 보스 실딜"><strong className="num">{pct(s.per_100m, 3)}</strong></span>
+                      <span className="plan-eff" title="이 순서의 기준: 1억 메소를 쓸 때 오르는 보스 실딜"><strong className="num">{effPct(s.per_100m)}</strong></span>
                       {/* 비용·누적은 한 묶음: PC에서는 칸 두 개(display: contents), 휴대폰에서는 한 줄로 나란히 */}
                       <span className="plan-meta">
                         <span className="plan-cost num">{s.cost_text}</span>

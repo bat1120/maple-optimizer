@@ -948,7 +948,7 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .plan-what { display: flex; flex-direction: column; min-width: 0; }
 .plan-what strong { font-size: var(--fs-base); }
 .plan-what .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plan-eff { text-align: right; }
+.plan-eff { text-align: right; white-space: nowrap; }
 .plan-eff strong { font-size: var(--fs-lg); font-weight: 800; color: var(--accent); }
 .plan-cost { text-align: right; font-weight: 700; white-space: nowrap; }
 .plan-sum { text-align: right; white-space: nowrap; }

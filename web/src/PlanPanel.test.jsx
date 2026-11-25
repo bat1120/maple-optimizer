@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import PlanPanel, { buyable, stepLabel } from "./PlanPanel.jsx";
+import PlanPanel, { buyable, effPct, stepLabel } from "./PlanPanel.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -148,6 +148,10 @@ describe("PlanPanel — 계획 하나", () => {
     render(<PlanPanel name="레테" defense={100} />);
     expect(await screen.findByText("지금 낀 장비로는 강화해서 올릴 단계가 없어요")).toBeInTheDocument();
     expect(screen.getByText(/방어구 세트 조합/)).toBeInTheDocument();
+  });
+
+  it("1억 메소당 효율은 값이 크면 소수 자리를 줄인다(줄이 넘치지 않게)", () => {
+    expect([effPct(0.354), effPct(68.062), effPct(218.635)]).toEqual(["+0.354%", "+68.1%", "+219%"]);
   });
 
   it("단계 이름과 살 수 있는지 판단", () => {
