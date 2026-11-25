@@ -34,9 +34,9 @@ SWAP_STARS = (17, 18, 21, 22)  # 갈아타기 후보에 가정할 수 있는 스
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str):
+    def __init__(self, status: int, code: str, message: str, extra: dict | None = None):
         super().__init__(message)
-        self.status, self.code, self.message = status, code, message
+        self.status, self.code, self.message, self.extra = status, code, message, extra or {}
 
 
 _NEXON = [  # 하위 클래스 먼저
@@ -49,7 +49,7 @@ _NEXON = [  # 하위 클래스 먼저
 
 
 def _err(e: ApiError) -> JSONResponse:
-    return JSONResponse(status_code=e.status, content={"code": e.code, "message": e.message})
+    return JSONResponse(status_code=e.status, content={"code": e.code, "message": e.message, **e.extra})
 
 
 import logging  # noqa: E402
@@ -669,14 +669,20 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(최대 약 4MB).")
         if agent_client is None:
             raise ApiError(503, "AGENT_DISABLED", "AI 기능이 설정되지 않았습니다(OPENAI_API_KEY).")
-        if usage.used() >= agent_daily_token_budget:
-            raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요.")
         if not body.image.startswith("data:image/"):
             raise ApiError(422, "INVALID_INPUT", "이미지(data URL)가 필요합니다.")
         from server.vision import ImageTooLarge, VisionError, VisionQuota, analyze_frame
         ip = request.client.host if request.client else "unknown"
         who = _quota_who(ip)
-        allow_ai = None if is_admin else (lambda: _quota_take(who) <= vision_public_daily)  # AI 부르기 직전에 차감
+        # AI를 부르기 직전에만 한도를 본다. 2026-11-25 실사용: 하루 토큰 한도가 차자 화면 평가 전체가 막혔다 — AI 없이 되는 일
+        # (같은 툴팁 재사용, 툴팁 없는 화면 건너뛰기, 로컬 OCR 판독)까지 막을 이유가 없다
+        blocked = []
+
+        def allow_ai() -> bool:
+            if usage.used() >= agent_daily_token_budget:
+                blocked.append("budget")
+                return False
+            return is_admin or _quota_take(who) <= vision_public_daily  # 일반 사용자는 AI 판독 횟수를 차감
         scan = f"{who}:{body.scan_id}" if body.scan_id else None  # 다른 사용자의 스캔과 섞이지 않게 IP 해시를 붙인다
         on_tip = (lambda key, done: scans.mark(scan, key, done, clock())) if scan else None
         try:
@@ -685,8 +691,12 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                                  ocr=ocr)
         except ImageTooLarge:
             raise ApiError(413, "IMAGE_TOO_LARGE", "화면 이미지가 너무 커요(4K 해상도 이하로 공유해 주세요).") from None
-        except VisionQuota:
-            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 평가 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.") from None
+        except VisionQuota as e:
+            extra = {"diag": {**e.diag, "kind": "AI 한도"}}  # 한도에 막혀도 진단은 돌려준다
+            if blocked:
+                raise ApiError(429, "TOKEN_BUDGET", f"오늘 AI 토큰 한도({agent_daily_token_budget:,})를 다 썼어요. "
+                               "이미 읽은 매물과 AI 없이 읽히는 매물은 계속 평가돼요.", extra) from None
+            raise ApiError(429, "VISION_QUOTA", f"오늘 화면 평가 한도({vision_public_daily}회)를 다 썼어요. 내일 다시 써 주세요.", extra) from None
         except VisionError as e:
             raise ApiError(422, "VISION_PARSE", str(e)) from None
         snap, vb = pick(load(body.name, None) if body.name else None, body.boss_defense, body.boss)

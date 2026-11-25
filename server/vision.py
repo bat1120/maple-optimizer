@@ -423,6 +423,10 @@ class ImageTooLarge(Exception):
 class VisionQuota(Exception):
     """AI 판독이 필요한데 한도가 끝났다(일반 유저 하루 상한). 건너뛰기·재사용은 한도와 무관하게 된다."""
 
+    def __init__(self, diag: dict | None = None):
+        super().__init__()
+        self.diag = diag or {}
+
 
 class ScanRegistry:
     """스캔(사용자·연결)마다 본 툴팁과 분석 상태 — '인식 N개 · 분석 중 M개'를 AI와 상관없이 바로 보여 준다(2026-11-14 요청).
@@ -542,7 +546,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                 extra.setdefault("diag", {})["ocr_fail"] = why[:3]
         if data is None:
             if allow_ai is not None and not allow_ai():
-                raise VisionQuota()
+                raise VisionQuota(extra.get("diag"))
             data = _read_frame(client, None if listing_only else image_data_url, model, on_usage, tips, stars)
     finally:
         if mine is not None:

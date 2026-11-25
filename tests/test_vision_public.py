@@ -132,3 +132,14 @@ def test_old_quota_days_are_deleted(tmp_path):
     c.post("/api/vision/listings", json={"image": AI_FRAME + "B"})
     db = sqlite3.connect(tmp_path / "c.sqlite3")
     assert db.execute("SELECT COUNT(*) FROM vision_quota").fetchone()[0] == 1
+
+
+def test_token_budget_only_blocks_frames_that_need_ai(tmp_path):
+    """2026-11-25 실사용: 하루 AI 토큰 한도가 차자 화면 평가 전체가 429였다. AI 없이 되는 화면(툴팁 없음·재사용·로컬 OCR)은 계속 돼야 한다."""
+    fake = Fake()
+    c = _app(tmp_path, fake, agent_daily_token_budget=2)
+    assert c.post("/api/vision/listings", json={"image": AI_FRAME}).status_code == 200      # 토큰 2개를 써서 한도가 찼다
+    skip = c.post("/api/vision/listings", json={"image": _plain_frame()})
+    assert skip.status_code == 200 and skip.json()["diag"]["kind"] == "건너뜀(툴팁 없음)"
+    r = c.post("/api/vision/listings", json={"image": AI_FRAME})
+    assert r.status_code == 429 and r.json()["code"] == "TOKEN_BUDGET" and r.json()["diag"]["kind"] == "AI 한도" and fake.calls == 1
