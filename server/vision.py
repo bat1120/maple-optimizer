@@ -310,6 +310,7 @@ class FrameCache:
     - 툴팁이 없으면: 바로 전 '툴팁 없는 화면'과 거의 같으면(목록이 안 바뀜) 이전 판독을 쓴다."""
 
     TEXT_ROWS = 400  # 글자 지문에 쓰는 높이(별 줄 48px 아래부터)
+    PLAIN_GAP_S = 10.0  # 툴팁 없는 화면을 AI에 다시 보내기까지 두는 간격(초)
     HOLD_S = 3.0  # 재사용은 '방금 대고 있던 툴팁'만 — 마지막으로 쓴 지 3초 안
     # 전투력 숫자(큰 색 글자)까지 맞대 본 툴팁은 다른 매물일 수 없다 — 다시 대도 60초 안이면 재사용(2026-11-14: 같은 매물 3번 판독)
     NUMBER_HOLD_S = 60.0
@@ -321,6 +322,7 @@ class FrameCache:
         self.tips: dict = {}  # 키 → (판독, 마지막으로 쓴 시각)
         self.size = size
         self.plain = None  # (지문, 판독)
+        self.plain_at = -1e9  # 툴팁 없는 화면을 마지막으로 AI에 보낸 시각
         # 화면이 동시에 여러 장 보내므로(2026-10-06) 같은 툴팁을 읽는 중이면 기다렸다가 그 판독을 쓴다
         self.lock = threading.Lock()
         self.pending: list = []  # (지문, threading.Event)
@@ -647,7 +649,9 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
                 return {**out, **extra}
         else:
             fp = cache.fingerprint(img, 32)
-            if cache.plain and cache.close(cache.plain[0], fp):
+            # 툴팁 없는 화면(관리자 '목록 화면도 읽기')은 통째로 AI에 간다 — 화면이 조금만 달라도(게임 배경이 계속 움직인다) 다시 보내
+            # 2026-11-25 실사용에서 한 번에 25장이 갔다. 방금(PLAIN_GAP_S초 안) 읽었으면 그 판독을 다시 쓴다
+            if cache.plain and (cache.close(cache.plain[0], fp) or cache.clock() - cache.plain_at < FrameCache.PLAIN_GAP_S):
                 return {**copy.deepcopy(cache.plain[1]), "cached": True, **extra}
     data = None
     try:
@@ -666,7 +670,7 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
             if on_tip is not None:
                 on_tip(mine[0], True)  # 판독이 끝났다(실패해도 '분석 중'에 남기지 않는다)
     if cache is not None and img is not None and not tips:
-        cache.plain = (cache.fingerprint(img, 32), copy.deepcopy(data))
+        cache.plain, cache.plain_at = (cache.fingerprint(img, 32), copy.deepcopy(data)), cache.clock()
     return {**data, **extra}
 
 

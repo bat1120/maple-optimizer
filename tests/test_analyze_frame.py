@@ -429,3 +429,27 @@ def test_ocr_says_why_it_gave_up():
     from server.ocr import parse_tooltip
     why: list = []
     assert parse_tooltip([(10, 10, "아무 글자")], why=why) is None and why == ["전투력 증가량·레벨 줄을 못 찾음"]
+
+
+def test_tooltip_less_screens_go_to_ai_at_most_once_per_gap():
+    """관리자 '목록 화면도 읽기': 툴팁 없는 화면이 통째로 AI에 간다. 게임 배경이 계속 움직여 화면마다 조금씩 달라도
+    방금 읽었으면 다시 보내지 않는다(2026-11-25 실사용: 한 번에 25장이 AI로 갔다)."""
+    import numpy as np
+    from PIL import Image
+
+    from server.vision import FrameCache
+    now = [0.0]
+    cache = FrameCache(clock=lambda: now[0])
+    fake = FakeClient([])
+
+    def screen(seed):
+        a = np.full((360, 640, 3), 235, dtype=np.uint8)                                   # 밝은 화면(툴팁 없음)
+        a[40 + seed * 30:120 + seed * 30, 60 + seed * 50:260 + seed * 50] = (200, 90, 60)   # 화면마다 다른 자리의 큰 덩어리
+        return Image.fromarray(a)
+    for seed in range(5):
+        analyze_frame(fake, _url(screen(seed)), cache=cache, tooltips_only=False)
+        now[0] += 1.0
+    assert len(fake.calls) == 1
+    now[0] += FrameCache.PLAIN_GAP_S
+    analyze_frame(fake, _url(screen(9)), cache=cache, tooltips_only=False)
+    assert len(fake.calls) == 2
