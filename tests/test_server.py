@@ -268,3 +268,28 @@ def test_concurrent_cold_lookups_call_nexon_once(tmp_path, clock):
     for t in ts:
         t.join()
     assert out == [200] * 4 and len(calls) == 1
+
+
+def test_serves_saved_data_when_nexon_is_blocked(tmp_path, clock):
+    """넥슨 호출 한도·점검 때: 전에 받아 둔 값이 있으면 그걸로 답하고 얼마나 된 데이터인지 알린다. 없으면 전처럼 503."""
+    from nexon.client import RateLimited
+    calls, state = [], {"blocked": False}
+
+    def fetcher(name, day):
+        calls.append(name)
+        if state["blocked"]:
+            raise RateLimited("OPENAPI00007", "limit", 429)
+        return bundle("레테")
+    c = TestClient(create_app(fetcher, str(tmp_path / "c.sqlite3"), clock=clock))
+    assert c.get("/api/character/a").json()["stale_minutes"] is None
+    state["blocked"] = True
+    clock.t += 40 * 60                                         # 캐시 기한(15분)이 지났고 넥슨은 막혔다
+    r = c.get("/api/character/a")
+    assert r.status_code == 200 and r.json()["stale_minutes"] == 40
+    assert c.get("/api/character/a/budget-roadmap").status_code == 200
+    assert len(calls) == 2                                     # 막힌 동안에는 요청마다 다시 두드리지 않는다
+    r = c.get("/api/character/처음보는캐릭터")
+    assert r.status_code == 503 and r.json()["code"] == "NEXON_RATE_LIMIT"
+    state["blocked"] = False
+    clock.t += 6 * 60                                          # 잠시 뒤에는 다시 불러 새 값으로 바꾼다
+    assert c.get("/api/character/a").json()["stale_minutes"] is None and len(calls) == 4

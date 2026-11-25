@@ -2,6 +2,9 @@ import { formatBig, settingLabel } from "../format.js";
 import Icon from "../ui/icons.jsx";
 import BossPicker, { ForceNote } from "./BossPicker.jsx";
 
+// 넥슨이 막혀 서버가 전에 받아 둔 값으로 답할 때(stale_minutes) 얼마나 된 데이터인지
+const ago = (m) => (m < 60 ? `${Math.max(m, 1)}분` : m < 1440 ? `${Math.floor(m / 60)}시간` : `${Math.floor(m / 1440)}일`);
+
 // 요약 카드: 아바타 · 이름 · 월드 · 길드 · 직업 · 레벨 + 큰 숫자. 이미지는 넥슨 Open API 주소 그대로(저장하지 않는다).
 // defense: 보스 id(보스 목록) 또는 방어율 숫자(직접 입력). force: 서버가 계산한 포스 보정(요구·지금·피해 %)
 export default function ProfileCard({ name, summary, best = null, defense, onDefense, onRefresh, busy, bosses = [], force = null }) {
@@ -40,7 +43,7 @@ export default function ProfileCard({ name, summary, best = null, defense, onDef
         <button type="button" className="ghost" onClick={onRefresh} disabled={busy}>
           <Icon name="refresh" size={16} className={busy ? "spin" : ""} />정보 갱신
         </button>
-        <span className="muted small updated"><Icon name="clock" size={13} />{summary.date ? `${summary.date} 기준` : "약 15분 전 데이터"}</span>
+        <span className="muted small updated"><Icon name="clock" size={13} />{summary.date ? `${summary.date} 기준` : summary.stale_minutes != null ? `넥슨 조회가 잠시 막혀 ${ago(summary.stale_minutes)} 전 데이터를 보여 드려요` : "약 15분 전 데이터"}</span>
       </div>
     </section>
   );

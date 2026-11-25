@@ -32,10 +32,16 @@ class BundleCache:
                 return None
             ttl = CURRENT_TTL if day is None else PAST_TTL
             if self._clock() - row[0] >= ttl:
-                self._db.execute("DELETE FROM bundles WHERE key = ?", (key,))
-                self._db.commit()
-                return None
+                return None          # 지우지 않는다 — 넥슨이 막혔을 때 stale()로 꺼내 쓴다(30일 넘은 줄은 put이 지운다)
         return json.loads(row[1])
+
+    def stale(self, name: str, day: dt.date | None) -> tuple[dict, float] | None:
+        """기한이 지났어도 남아 있는 값과 받은 시각. 넥슨 호출 한도·점검 때만 쓴다(30일 안)."""
+        with self._lock:
+            row = self._db.execute("SELECT fetched, body FROM bundles WHERE key = ?", (self._key(name, day),)).fetchone()
+        if row is None or self._clock() - row[0] >= PAST_TTL:
+            return None
+        return json.loads(row[1]), row[0]
 
     def put(self, name: str, day: dt.date | None, body: dict) -> None:
         now = self._clock()

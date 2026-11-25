@@ -60,6 +60,9 @@ BASELINE_STEP = 4  # 버프 없는 기준을 보는 과거 날짜 간격(일)
 BASELINE_RETRY = 600  # 기준일을 못 불러왔으면 이만큼(초) 지난 뒤에만 다시 시도한다
 
 
+STALE_HOLD = 5 * 60  # 넥슨이 막혔을 때 같은 캐릭터를 다시 불러 보기까지 기다리는 시간(초)
+
+
 def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, rate_limit: int = 30,
                window: float = 60.0, clock: Callable[[], float] = time.time, static_dir: str | None = None,
                agent_client=None, admin_password_hash: str | None = None, session_secret: str | None = None,
@@ -152,6 +155,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         return _err(ApiError(422, "UNSUPPORTED", f"계산 제외: {e}"))
 
     fetch_locks, fetch_guard = {}, threading.Lock()
+    stale_since: dict = {}  # (이름, 날짜) → 받은 시각. 넥슨이 막혀 오래된 캐시로 답하는 중인 캐릭터
+    stale_hold: dict = {}   # (이름, 날짜) → 이 시각까지는 넥슨을 다시 부르지 않고 오래된 값으로 답한다
 
     def _fetch_lock(name: str, day):
         with fetch_guard:
@@ -173,18 +178,31 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
             # 캐시가 빈 첫 조회에서 넥슨을 3번씩(각 13회) 겹쳐 불렀고, 초당 한도에 걸려 '호출 한도를 넘었습니다'가 나왔다
             with _fetch_lock(name, day):
                 body = cache.get(name, day)
+                key = (name.casefold(), day)
+                if body is None and clock() < stale_hold.get(key, 0):    # 방금 막혔던 캐릭터 — 잠깐은 다시 두드리지 않는다
+                    old = cache.stale(name, day)
+                    body = old[0] if old else None
                 if body is None:
                     try:
                         body = fetcher(name, day)
                     except ValueError as e:  # 클라이언트의 날짜 하한 검사
                         raise ApiError(400, "BAD_DATE", str(e)) from None
                     except NexonError as e:
-                        status, code, msg = next((s, c, m) for cls, s, c, m in _NEXON if isinstance(e, cls))
-                        raise ApiError(status, code, msg) from None
-                    # 필수 데이터만 '없음' 판정 — 연무장 기록·HEXA·6차 스킬은 비어 있어도 된다(2026-10-08 회귀: 기록 없는 캐릭터가 전부 404)
-                    if any(body[ep] is None for ep in ENDPOINTS if ep in body):
-                        raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
-                    cache.put(name, day, body)
+                        # 넥슨이 막혔으면(하루·초당 한도, 점검) 전에 받아 둔 값으로 답한다 — 오류 화면보다 조금 오래된 결과가 낫다.
+                        # 화면에는 언제 데이터인지 적는다(stale_minutes). 2026-11-25
+                        old = cache.stale(name, day) if isinstance(e, (RateLimited, Unavailable)) else None
+                        if old is None:
+                            status, code, msg = next((s, c, m) for cls, s, c, m in _NEXON if isinstance(e, cls))
+                            raise ApiError(status, code, msg) from None
+                        body, stale_since[key] = old
+                        stale_hold[key] = clock() + STALE_HOLD
+                    else:
+                        stale_since.pop(key, None)
+                        stale_hold.pop(key, None)
+                        # 필수 데이터만 '없음' 판정 — 연무장 기록·HEXA·6차 스킬은 비어 있어도 된다(2026-10-08 회귀: 기록 없는 캐릭터가 전부 404)
+                        if any(body[ep] is None for ep in ENDPOINTS if ep in body):
+                            raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
+                        cache.put(name, day, body)
         snap = snapshot(body)
         if "무기" not in snap.equipment_presets.get(snap.active_equipment_preset, {}):
             # 2026-11-24 직업별 측정: 무기를 뺀 채 접속을 끝낸 캐릭터는 모든 조회가 500이었다(스탯공격력 1)
@@ -271,7 +289,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.get("/api/character/{name}")
     def character(name: str, date: str | None = None):
-        return service.summary(load(name, date))
+        out = service.summary(load(name, date))
+        since = stale_since.get((name.casefold(), dt.date.fromisoformat(date) if date else None))
+        out["stale_minutes"] = None if since is None else int((clock() - since) // 60)
+        return out
 
     @app.get("/api/character/{name}/settings")
     def settings(name: str, boss_defense: float = 300.0, date: str | None = None, boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
