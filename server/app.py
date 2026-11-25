@@ -729,6 +729,8 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 "frame_id": frame_id, "items": items,
                 "equipped_items": data.get("equipped_items", []),  # 착용 템 판독(장비창 채점용, 매물 아님)
                 "ai_remaining": None if is_admin else max(0, vision_public_daily - _quota_used(who)),
+                # 진단(2026-11-25 실사용: 매물 4개에 '인식 13개', AI 판독 17회) — 왜 새 툴팁으로 봤는지·왜 AI로 넘어갔는지. 개인 정보 없음
+                "diag": {**(data.get("diag") or {}), "kind": kind},
                 **dict(zip(("recognized", "analyzing"), scans.counts(scan, clock()) if scan else (None, None)))}
 
     class VisionCorrectIn(BaseModel):

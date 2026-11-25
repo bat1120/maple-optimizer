@@ -276,6 +276,8 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           const r = await postVision({ image, name: name || null, ...bossBody(defense), seen: [...seen.current],
                                        tooltips_only: !readLists, scan_id: scanId.current });
           if (r.recognized != null) setScan({ recognized: r.recognized, analyzing: r.analyzing || 0 });
+          // 진단 기록(화면에는 안 보인다): 서버가 왜 새 툴팁으로 봤는지·왜 AI로 넘어갔는지 — 실사용 문제를 볼 때 콘솔에서 꺼내 본다
+          if (r.diag) (window.__visionDiag ||= []).push({ at: Date.now(), ...r.diag, items: r.items?.length || 0 });
           if (r.frame_id) refreshStats();
           if (r.ai_remaining != null) setRemaining(r.ai_remaining);
           if (r.fee_rate != null) onFeeRate?.(r.fee_rate); // 판매 등록 창 등에서 읽은 수수료

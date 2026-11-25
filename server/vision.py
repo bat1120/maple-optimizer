@@ -362,6 +362,23 @@ class FrameCache:
                 return v
         return None
 
+    def nearest(self, key: tuple) -> dict | None:
+        """진단용: 기억해 둔(또는 읽는 중인) 툴팁 중 가장 가까운 것과 얼마나 다른지 — 같은 매물을 왜 새 툴팁으로 봤는지 본다.
+        (자리 차이 px, 글자 지문 거리, 큰 숫자 일치 여부, 기억한 지 몇 초). 비교할 것이 없으면 None."""
+        now, best = self.clock(), None
+        with self.lock:
+            known = [(k, now - at) for k, (_, at) in self.tips.items()] + [(k, 0.0) for k, _ in self.pending]
+        for k, age in known:
+            if len(k) != len(key):
+                continue
+            pos = max(max(abs(x - y) for x, y in zip(a[:4], b[:4])) for a, b in zip(k, key))
+            text = max(sum(abs(x - y) for x, y in zip(a[4], b[4])) / len(a[4]) for a, b in zip(k, key))
+            cand = {"pos_px": pos, "text_dist": round(text, 4), "number_same": all(self._color_close(a[5], b[5]) for a, b in zip(k, key)),
+                    "age_s": round(age, 1)}
+            if best is None or (cand["text_dist"], cand["pos_px"]) < (best["text_dist"], best["pos_px"]):
+                best = cand
+        return best
+
     def claim(self, key: tuple):
         """(이전 판독, None) · (None, 내가 읽을 표시) · (None, None) = 같은 툴팁을 다른 요청이 읽는 중."""
         import threading
@@ -495,7 +512,9 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     if cache is not None and img is not None:
         if tips:
             key = tuple(cache.textprint(t, b) for t, b in zip(tips, boxes))  # 왼쪽부터 순서대로
+            near = cache.nearest(key)  # 진단: 새 툴팁으로 봤다면 기억한 것과 무엇이 달랐나
             hit, mine = cache.claim(key)
+            extra["diag"] = {"tips": len(tips), "hit": hit is not None, "nearest": None if hit is not None else near}
             if on_tip is not None:
                 on_tip(key, hit is not None)  # 인식(AI와 상관없이) — 이전 판독을 쓰면 바로 '완료'
             if hit is None and mine is None:
@@ -517,7 +536,10 @@ def analyze_frame(client, image_data_url: str, model: str | None = None, on_usag
     data = None
     try:
         if ocr is not None and listing_only:
-            data = _ocr_frame(ocr, tips, stars)
+            why: list = []
+            data = _ocr_frame(ocr, tips, stars, why)
+            if data is None:
+                extra.setdefault("diag", {})["ocr_fail"] = why[:3]
         if data is None:
             if allow_ai is not None and not allow_ai():
                 raise VisionQuota()
@@ -561,16 +583,20 @@ def power_of(item: dict) -> int | None:
     return parse_meso(text)
 
 
-def _ocr_frame(ocr, tips, stars) -> dict | None:
+def _ocr_frame(ocr, tips, stars, why: list | None = None) -> dict | None:
     """툴팁을 전부 로컬 OCR로 읽는다. 하나라도 확인되지 않으면(별을 못 셈·모르는 이름·괄호 합 불일치 등) None — AI가 읽는다."""
     from server.ocr import parse_tooltip
     items = []
     for i, tip in enumerate(tips):
         if stars[i] is None:
+            if why is not None:
+                why.append("별을 못 셈")
             return None
         try:
-            item = parse_tooltip(ocr(tip))
-        except Exception:  # noqa: BLE001 — OCR 오류가 화면 평가를 막으면 안 된다
+            item = parse_tooltip(ocr(tip), why=why)
+        except Exception as e:  # noqa: BLE001 — OCR 오류가 화면 평가를 막으면 안 된다
+            if why is not None:
+                why.append(f"OCR 오류: {type(e).__name__}")
             return None
         if item is None:
             return None

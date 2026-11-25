@@ -407,3 +407,23 @@ def test_tooltip_ocr_cannot_verify_is_read_by_ai():
         data = analyze_frame(fake, _url(_frame([((520, 120), _tip_power("-1162430"))])), tooltips_only=True, ocr=ocr)
         assert data["listings"][0]["name"] == "에테르넬 나이트글러브" and not data.get("ocr")
     assert len(fake.calls) == 2
+
+
+def test_frame_diagnostics_say_why_a_tooltip_was_new():
+    """2026-11-25 실사용: 매물 4개에 '인식 13개'·AI 판독 17회. 같은 툴팁을 왜 새 것으로 봤는지 진단 값을 같이 돌려준다."""
+    from server.vision import FrameCache
+    cache = FrameCache()
+    fake = FakeClient([_listing("에테르넬 나이트글러브", 18, 0)] * 2)
+    first = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
+    assert first["diag"] == {"tips": 1, "hit": False, "nearest": None}
+    again = analyze_frame(fake, _url(_frame([((520, 120), _tooltip(lit=18))])), cache=cache)
+    assert again["diag"]["hit"] is True and len(fake.calls) == 1
+    moved = analyze_frame(fake, _url(_frame([((560, 150), _tooltip(lit=18))])), cache=cache)   # 같은 툴팁이 40px 옮겨 감 → 새 판독
+    near = moved["diag"]["nearest"]
+    assert moved["diag"]["hit"] is False and near["pos_px"] >= 30 and near["text_dist"] < 0.02 and len(fake.calls) == 2
+
+
+def test_ocr_says_why_it_gave_up():
+    from server.ocr import parse_tooltip
+    why: list = []
+    assert parse_tooltip([(10, 10, "아무 글자")], why=why) is None and why == ["전투력 증가량·레벨 줄을 못 찾음"]

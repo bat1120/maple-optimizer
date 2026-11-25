@@ -97,18 +97,24 @@ def _section(rows, start: int, pitch: float) -> list[str] | None:
     return out
 
 
-def parse_tooltip(boxes, names=None) -> dict | None:
-    """OCR 상자 [(x, y, 글자)] → AI 판독과 같은 모양의 매물 dict. 확인되지 않으면 None(AI가 읽는다)."""
+def parse_tooltip(boxes, names=None, why: list | None = None) -> dict | None:
+    """OCR 상자 [(x, y, 글자)] → AI 판독과 같은 모양의 매물 dict. 확인되지 않으면 None(AI가 읽는다).
+    why(목록)를 주면 확인되지 않은 까닭을 한 줄 넣는다 — 운영에서 왜 AI로 넘어갔는지 보려고(2026-11-25)."""
+    def no(reason: str) -> None:
+        if why is not None:
+            why.append(reason)
+        return None
+
     from server.vision import _item_names, checksum_failures
     rows = _rows(boxes)
     squashed = [_squash(t) for _, t, _ in rows]
     power_at = next((i for i, s in enumerate(squashed) if "전투력증가량" in s), None)
     level_at = next((i for i, s in enumerate(squashed) if re.search(r"Lv\.?\d", s)), None)
     if power_at is None or level_at is None or level_at <= power_at:
-        return None
+        return no("전투력 증가량·레벨 줄을 못 찾음")
     name = _name(rows[:power_at], names or _item_names())
     if name is None:
-        return None
+        return no("모르는 이름: " + " / ".join(t for _, t, _ in rows[:power_at])[:60])
     equipped = any("현재장착중인장비" in s for s in squashed)
     power = None
     if not equipped and power_at + 1 < len(rows) and (m := _POWER.match(squashed[power_at + 1])) and m.group(1):
@@ -116,10 +122,10 @@ def parse_tooltip(boxes, names=None) -> dict | None:
     cats = {_squash(c): c for c in _OCR_CATEGORIES}
     found = [cats[_squash(t)] for _, _, ts in rows[power_at:level_at] for t in ts if _squash(t) in cats]
     if len(found) != 1:
-        return None
+        return no(f"장비 분류를 못 정함: {found}")
     category = found[0]
     if category == "반지" and any(re.search(r"\d레벨", s) for s in squashed):
-        return None  # 특수 반지(스킬 레벨)는 AI가 읽는다
+        return no("특수 반지")  # 특수 반지(스킬 레벨)는 AI가 읽는다
     lv = re.search(r"Lv\.?(\d+)(?:\((\d+)-\d+\))?", squashed[level_at])
     level = int(lv.group(2) or lv.group(1))  # 'Lv. 175 (200 - 25)'는 착용 레벨 감소 — 템의 원래 레벨 200
     pot_at = next((i for i, s in enumerate(squashed) if "잠재능력" in s and "에디셔널" not in s), None)
@@ -133,7 +139,7 @@ def parse_tooltip(boxes, names=None) -> dict | None:
             continue
         label = _closest(m.group(1), labels)
         if label is None:
-            return None  # 수치 줄인데 무슨 스탯인지 모른다
+            return no(f"모르는 스탯 줄: {s[:30]}")  # 수치 줄인데 무슨 스탯인지 모른다
         stat_ys.append(y)
         key = _STAT_KEYS.get(label)
         if key is None or key in total:
@@ -142,7 +148,7 @@ def parse_tooltip(boxes, names=None) -> dict | None:
         if m.group(4) is not None:
             breakdown[key] = [int(v.replace(",", "")) for v in re.findall(r"[\d,]+", m.group(4))]
     if not total or len(stat_ys) < 2:
-        return None
+        return no("스탯 줄이 2줄 미만")
     pitch = statistics.median(b - a for a, b in zip(stat_ys, stat_ys[1:]))
     grades, lines = [], []
     for at in (pot_at, add_at):
@@ -152,14 +158,15 @@ def parse_tooltip(boxes, names=None) -> dict | None:
         grade = next((g for g in _GRADES if squashed[at].endswith(g)), None)
         got = _section(rows, at, pitch)
         if got is None or (got and grade is None) or (grade is None and not squashed[at].endswith("없음")):
-            return None
+            return no("잠재 줄을 옵션표에서 못 찾음: " + " / ".join(t for _, t, _ in rows[at:at + 5])[:90])
         grades.append(grade), lines.append(got)
     item = {"name": name, "category": category, "part": category, "starforce": None, "level": level,
             "potential_grade": grades[0], "additional_grade": grades[1], "total": total, "breakdown": breakdown,
             "potentials": lines[0], "additional": lines[1], "price": None, "price_text": None,
             "power_delta_text": power, "equipped": equipped, "tooltip": None, "special_ring_level": None,
             "equip_type": None, "job_groups": None}
-    return None if checksum_failures(item) else item
+    failed = checksum_failures(item)
+    return no(f"괄호 합 불일치: {failed}") if failed else item
 
 
 def reader():
