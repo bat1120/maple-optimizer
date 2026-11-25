@@ -247,3 +247,24 @@ def test_required_endpoint_missing_is_no_data(tmp_path, clock):
         return b
     r = make(tmp_path, clock, source=src).get("/api/character/x")
     assert r.status_code == 404 and r.json()["code"] == "NO_DATA"
+
+
+def test_concurrent_cold_lookups_call_nexon_once(tmp_path, clock):
+    """2026-11-25 운영: 화면이 요약·세팅·계획을 한꺼번에 불러, 캐시가 빈 첫 조회에서 넥슨을 겹쳐 불렀다(초당 한도 초과 + 호출량 3배)."""
+    import threading
+    import time
+    calls, body = [], bundle("레테")
+
+    def slow(name, day):
+        calls.append(name)
+        time.sleep(0.3)                                    # 넥슨을 부르는 동안 다른 요청이 들어온다
+        return body
+    c = TestClient(create_app(slow, str(tmp_path / "c.sqlite3"), clock=clock))
+    out = []
+    paths = ["/api/character/x", "/api/character/x/settings", "/api/character/x/budget-roadmap", "/api/character/X"]
+    ts = [threading.Thread(target=lambda p=p: out.append(c.get(p).status_code)) for p in paths]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert out == [200] * 4 and len(calls) == 1

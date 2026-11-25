@@ -151,6 +151,15 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
     async def unknown_weapon(_: Request, e: UnknownWeapon):
         return _err(ApiError(422, "UNSUPPORTED", f"계산 제외: {e}"))
 
+    fetch_locks, fetch_guard = {}, threading.Lock()
+
+    def _fetch_lock(name: str, day):
+        with fetch_guard:
+            if len(fetch_locks) > 5000:                       # 이름마다 하나씩 쌓이지 않게(잠긴 것은 남긴다)
+                for k in [k for k, v in fetch_locks.items() if not v.locked()]:
+                    del fetch_locks[k]
+            return fetch_locks.setdefault((name.casefold(), day), threading.Lock())
+
     def load(name: str, date: str | None):
         day = None
         if date:
@@ -160,17 +169,22 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                 raise ApiError(400, "BAD_DATE", "날짜 형식은 YYYY-MM-DD 입니다.") from None
         body = cache.get(name, day)
         if body is None:
-            try:
-                body = fetcher(name, day)
-            except ValueError as e:  # 클라이언트의 날짜 하한 검사
-                raise ApiError(400, "BAD_DATE", str(e)) from None
-            except NexonError as e:
-                status, code, msg = next((s, c, m) for cls, s, c, m in _NEXON if isinstance(e, cls))
-                raise ApiError(status, code, msg) from None
-            # 필수 데이터만 '없음' 판정 — 연무장 기록·HEXA·6차 스킬은 비어 있어도 된다(2026-10-08 회귀: 기록 없는 캐릭터가 전부 404)
-            if any(body[ep] is None for ep in ENDPOINTS if ep in body):
-                raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
-            cache.put(name, day, body)
+            # 같은 캐릭터를 동시에 여러 요청이 찾으면 한 번만 넥슨을 부른다. 2026-11-25 운영: 화면이 요약·세팅·계획을 한꺼번에 불러
+            # 캐시가 빈 첫 조회에서 넥슨을 3번씩(각 13회) 겹쳐 불렀고, 초당 한도에 걸려 '호출 한도를 넘었습니다'가 나왔다
+            with _fetch_lock(name, day):
+                body = cache.get(name, day)
+                if body is None:
+                    try:
+                        body = fetcher(name, day)
+                    except ValueError as e:  # 클라이언트의 날짜 하한 검사
+                        raise ApiError(400, "BAD_DATE", str(e)) from None
+                    except NexonError as e:
+                        status, code, msg = next((s, c, m) for cls, s, c, m in _NEXON if isinstance(e, cls))
+                        raise ApiError(status, code, msg) from None
+                    # 필수 데이터만 '없음' 판정 — 연무장 기록·HEXA·6차 스킬은 비어 있어도 된다(2026-10-08 회귀: 기록 없는 캐릭터가 전부 404)
+                    if any(body[ep] is None for ep in ENDPOINTS if ep in body):
+                        raise ApiError(404, "NO_DATA", "해당 날짜의 데이터가 없습니다.")
+                    cache.put(name, day, body)
         snap = snapshot(body)
         if "무기" not in snap.equipment_presets.get(snap.active_equipment_preset, {}):
             # 2026-11-24 직업별 측정: 무기를 뺀 채 접속을 끝낸 캐릭터는 모든 조회가 500이었다(스탯공격력 1)

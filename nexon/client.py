@@ -5,6 +5,7 @@
 import datetime as dt
 import os
 import pathlib
+import threading
 import time
 
 import httpx
@@ -71,12 +72,14 @@ class NexonClient:
         )
         self._min_interval = min_interval
         self._last = 0.0
+        self._pace = threading.Lock()  # 요청 간격은 스레드가 여럿이어도 지킨다(서버는 작업 스레드 여러 개가 같은 클라이언트를 쓴다)
 
     def _request(self, path: str, params: dict) -> dict:
-        wait = self._min_interval - (time.monotonic() - self._last)
-        if wait > 0:
-            time.sleep(wait)
-        self._last = time.monotonic()
+        with self._pace:
+            wait = self._min_interval - (time.monotonic() - self._last)
+            if wait > 0:
+                time.sleep(wait)
+            self._last = time.monotonic()
         r = self._http.get(path, params=params)
         try:
             body = r.json()

@@ -120,3 +120,22 @@ def test_load_api_key_missing_raises(tmp_path, monkeypatch):
     monkeypatch.delenv("NEXON_API_KEY", raising=False)
     with pytest.raises(RuntimeError):
         load_api_key(tmp_path)
+
+
+def test_request_pacing_holds_across_threads():
+    """서버는 작업 스레드 여러 개가 같은 클라이언트를 쓴다 — 간격 검사가 겹치면 초당 한도를 넘는다(2026-11-25 운영)."""
+    import threading
+    import time
+    stamps = []
+
+    def handler(request):
+        stamps.append(time.monotonic())
+        return httpx.Response(200, json={"ok": 1})
+    c = NexonClient("test-key", transport=httpx.MockTransport(handler), min_interval=0.05)
+    ts = [threading.Thread(target=lambda: c._request("x", {})) for _ in range(6)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    stamps.sort()
+    assert stamps[-1] - stamps[0] >= 0.05 * 5 * 0.9
