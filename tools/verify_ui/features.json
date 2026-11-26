@@ -121,8 +121,12 @@
           "js": "document.querySelector('.plan-panel input').getBoundingClientRect().top < document.querySelector('.plan-row').getBoundingClientRect().top"
         },
         {
-          "what": "계획 첫 줄이 첫 화면 가까이 있다(PC 700px, 휴대폰 900px 이내에서 시작)",
-          "js": "document.querySelector('.plan-row').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 700 : 900)"
+          "what": "목표 세팅 컨설팅의 결론이 첫 화면 가까이 있다(PC 700px, 휴대폰 900px 이내) — 2026-11-26 사용자: 템 세팅은 한 번에 갈아타는 것, 그 답이 맨 위",
+          "js": "document.querySelector('.consult-headline').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 700 : 900)"
+        },
+        {
+          "what": "계획 첫 줄이 그 바로 아래에 있다(PC 1050px, 휴대폰 1350px 이내에서 시작) — 전에는 700·900px이었다: 컨설팅 결론이 그 위에 들어와 한 칸 밀렸다",
+          "js": "document.querySelector('.plan-row').getBoundingClientRect().top + window.scrollY <= (window.innerWidth > 720 ? 1050 : 1350)"
         },
         {
           "what": "줄마다 큰 숫자(1억 메소당)가 있고 위에서 아래로 줄어든다",

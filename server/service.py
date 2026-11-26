@@ -652,6 +652,34 @@ def armor_sets(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float
 
 
 @with_basis
+def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None) -> dict:
+    """목표 세팅 컨설팅(2026-11-26 사용자): 메소를 모아 오래 쓸 템들로 한 번에 갈아탈 때의 세팅을 통째로 계산한다.
+    성(17·18·21·22)마다 방어구·장신구 세팅 하나와, 살 템 목록·지금 템 강화 비용(평균)·세트 효과 변화를 준다. 템 시세는 없다."""
+    from engine.market.consult import consult as consult_builds
+    from engine.market.swaps import BASES
+    b = boss(defense)
+    setting = rank_settings(snap, b, CATALOG)[0][0]
+    builds = consult_builds(snap, setting, b, CATALOG, cooldown_main_pct=cooldown_main_pct)
+    for o in builds:
+        o["raise_cost_text"] = meso_text(o["raise_cost"]) if o["raise_cost"] else None
+        for r in o["raise"]:
+            r["cost_text"] = meso_text(r["cost"])
+        for x in o["buy"]:
+            x["set"] = (BASES.get(x["name"]) or {}).get("set")
+            x["level"] = (BASES.get(x["name"]) or {}).get("level")
+        for c in o["set_change"]:
+            tiers = {int(n): text for n, text in (CATALOG.tiers.get(c["set"]) or {}).items()}
+            c["lost"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["after"] < n <= c["before"]]
+            c["gained"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["before"] < n <= c["after"]]
+    return {"evaluation_setting": asdict(setting), "boss": asdict(b), "builds": builds,
+            "note": ("세팅 전체를 한 번에 낀 보스 실딜이에요(지금 보스 세팅 = 0%) — 세트 효과가 같이 바뀌는 것까지 들어 있어요. "
+                     "바꿀 템의 기본 옵션은 그 템을 낀 캐릭터들의 넥슨 API 실측이고, 스타포스는 고른 성(그 템 최대 성 이하), "
+                     "잠재·에디·추옵·주문서는 지금 그 자리 템과 같은 수준으로 맞춘다고 봤어요 — 새 템에 그만큼 맞추는 큐브·추옵 비용은 들어 있지 않아요. "
+                     "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 이벤트 없는 평균이에요(파괴 시 스페어 값 제외). "
+                     "살 템의 시세는 넥슨이 주지 않아서 직접 넣어야 합계가 나와요. 무기·보조무기·엠블렘·특수 반지는 그대로 둬요.")}
+
+
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

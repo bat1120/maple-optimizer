@@ -351,3 +351,20 @@ def test_listing_evaluation_says_which_set_effect_breaks():
     assert row["evaluated"] is True and row["slot"] == "귀고리"
     assert row["set_change"] == [{"set": "여명의 보스 세트", "before": 4, "after": 3, "gained": [],
                                   "lost": ["올스탯 +10, 최대 HP +250, 공격력 +10, 마력 +10, 방어력 +100, 몬스터 방어율 무시 +10%"]}]
+
+
+def test_consult_gives_whole_builds_per_star(tmp_path, clock):
+    """2026-11-26 사용자: 템 세팅은 한 단계씩이 아니라 메소를 모아 한 번에 갈아타는 것 — 세팅 전체를 한 번에 잰 목표 세팅을 준다."""
+    r = make(tmp_path, clock).get("/api/character/x/consult")
+    assert r.status_code == 200
+    builds = r.json()["builds"]
+    assert [b["starforce"] for b in builds] == [17, 18, 21, 22]
+    assert [b["delta_pct"] for b in builds] == sorted(b["delta_pct"] for b in builds) and builds[-1]["delta_pct"] > 0   # 성이 높을수록 높다
+    top = builds[-1]
+    assert top["buy"] and all(x["starforce"] <= 22 and x["name"] and x["slot"] for x in top["buy"])
+    names = [p["name"] for p in top["pieces"]]
+    assert len(names) == len(set(names))                                    # 같은 템을 두 번 끼지 않는다
+    assert all(x["starforce"] > x["from_star"] and x["cost"] > 0 and x["cost_text"] for x in top["raise"])
+    assert top["raise_cost"] == sum(x["cost"] for x in top["raise"])
+    assert all({"set", "before", "after", "lost", "gained"} <= set(c) and c["before"] != c["after"] for c in top["set_change"])
+    assert not {"무기", "보조무기", "엠블렘"} & {p["slot"] for p in top["pieces"]}   # 무기류는 그대로 둔다

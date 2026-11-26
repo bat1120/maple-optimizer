@@ -546,6 +546,14 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         tooltips_only: bool = True  # 툴팁 없는 화면은 AI에 보내지 않는다(목록 화면도 읽으려면 false)
         scan_id: str | None = Field(None, max_length=64)  # 화면 연결마다 새로(인식 개수를 연결 단위로 센다)
 
+    @app.get("/api/character/{name}/consult")
+    def consult(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
+                boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+        """목표 세팅 컨설팅: 성(17·18·21·22)마다 한 번에 갈아탈 방어구·장신구 세팅과 살 템·강화 비용."""
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        return memo("consult", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
+                    lambda: service.consult(snap, b, cooldown_main_pct))
+
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
                       date: str | None = None, sf: str | None = None, miracle: bool = False,

@@ -51,16 +51,22 @@ def _build(sw: _Swapper, slot: str, name: str) -> Item | None:
     return convert(j, sw.snap.level) if j else None
 
 
-def slot_candidates(sw: _Swapper, sets: tuple[str, ...] = SETS) -> dict[str, list[Cand]]:
-    """칸마다 후보: 지금 템(있으면) + 고른 세트들의 그 칸 템(이 직업 계열·레벨 이하·구매 가능)."""
+def slot_candidates(sw: _Swapper, sets: tuple[str, ...] = SETS, raise_kept: bool = False) -> dict[str, list[Cand]]:
+    """칸마다 후보: 지금 템(있으면) + 고른 세트들의 그 칸 템(이 직업 계열·레벨 이하·구매 가능).
+    raise_kept: 지금 템도 고른 성까지 강화한다고 본다(컨설팅 — 새 템만 22성으로 가정하면 지금 템이 부당하게 밀린다)."""
     out = {}
     for slot in ARMOR_SLOTS:
         cs = []
         cur = sw.pl.raw.get(slot)
         if cur is not None:  # 지금 템도 네 세트 중 하나면 그 세트로 센다(지금 3카3앱이면 '카루타 3 · 앱솔 3')
             hit = _set_of(cur.name)
-            cs.append(Cand(cur.name, SHORT[hit[0]] if hit else CURRENT, hit[1] if hit else None, sw.pl.items[slot],
-                           cur.starforce, kept=True))
+            kept_item, kept_star = sw.pl.items[slot], cur.starforce
+            if raise_kept and cur.name in BASES and sw.star_for(cur, cur.name) > cur.starforce:
+                up = sw.like_current(slot, cur.name)
+                if up is not None:
+                    kept_item, kept_star = _valued(up, sw.pl.mains, sw.pl.per_sec), up.starforce
+            cs.append(Cand(cur.name, SHORT[hit[0]] if hit else CURRENT, hit[1] if hit else None, kept_item,
+                           kept_star, kept=True))
         for name, b in BASES.items():
             hit = _set_of(name)
             if (hit is None or hit[0] not in sets or b["part"] != slot or b["level"] > sw.snap.level
@@ -93,9 +99,9 @@ def _label(combo: list[Cand], multi_branch: bool, catalog: SetCatalog) -> str:
 
 def armor_combos(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
                  starforce: int = 18, sets: tuple[str, ...] = SETS, cooldown_main_pct: float | None = None,
-                 top: int | None = None) -> list[dict]:
+                 top: int | None = None, raise_kept: bool = False) -> list[dict]:
     sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct, starforce)
-    cands = slot_candidates(sw, sets)
+    cands = slot_candidates(sw, sets, raise_kept)
     slots = [s for s in ARMOR_SLOTS if cands[s]]
     base, ev = sw.pl.base, sw.pl.ev
     # 1) 칸마다 템 자체 몫

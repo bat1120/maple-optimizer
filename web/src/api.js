@@ -155,6 +155,11 @@ export function getSwaps(name, bossDefense = 300, starforce = 18) {
   return request(`${base(name)}/swaps?${bq(bossDefense)}&starforce=${starforce}`);
 }
 
+// 목표 세팅 컨설팅(2026-11-26): 성(17·18·21·22)마다 한 번에 갈아탈 방어구·장신구 세팅
+export function getConsult(name, bossDefense = 300) {
+  return request(`${base(name)}/consult?${bq(bossDefense)}`);
+}
+
 // 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개
 export function getBudgetRoadmap(name, bossDefense = 300, budget = null, steps = null) {
   const q = new URLSearchParams(bossQuery(bossDefense));
