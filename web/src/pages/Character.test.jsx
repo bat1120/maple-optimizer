@@ -276,6 +276,8 @@ describe("character page", () => {
     expect(await screen.findByText("보스 세팅")).toBeInTheDocument();
     expect(screen.getByText("장비 1 · 하이퍼 3 · 어빌 2")).toBeInTheDocument();
     expect(screen.queryByText(/지금 착용: /)).toBeNull();
+    // 전투력은 게임에서 마지막으로 낀 세팅의 기록 — 보스 세팅과 다르면 그렇다고 알린다(2026-11-26)
+    expect(screen.getByText("게임에서 마지막으로 낀 세팅의 기록이라 보스 세팅 전투력과 달라요")).toBeInTheDocument();
     // 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자) — 스탯 공격력은 첫 화면에 없다
     expect(screen.getByText("전투력(인게임 기록)")).toBeInTheDocument();
     expect(screen.getByText("9,876만")).toBeInTheDocument();
