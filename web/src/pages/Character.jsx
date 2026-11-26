@@ -21,7 +21,7 @@ import RecommendPanel from "../RecommendPanel.jsx";
 import CalcPanels, { CALC_STEPS } from "../calc/CalcPanels.jsx";
 import ScreenWatch from "../ScreenWatch.jsx";
 import Icon from "../ui/icons.jsx";
-import { ErrorState } from "../ui/Guide.jsx";
+import { ErrorState, RowsSkeleton } from "../ui/Guide.jsx";
 
 // 탭마다 '이 화면에서 할 수 있는 것' 한 줄 + 사용 방법. 실제로 있는 기능만 적는다.
 export const TAB_GUIDE = {
@@ -169,6 +169,9 @@ export default function Character({ route }) {
   };
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
+  // 세팅 순위(보스 세팅)를 못 받았을 때만 지금 착용 기준으로 보여 준다. 받는 동안에는 지금 착용(사냥용일 수 있다)을 먼저
+  // 보여 주지 않는다 — 2026-11-26 사용자: 템 세팅을 보러 오는 곳이니 처음에 적용되는 것은 보스 세팅이어야 한다
+  const [settingsFailed, setSettingsFailed] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [bosses, setBosses] = useState(null);
@@ -189,7 +192,7 @@ export default function Character({ route }) {
       if (got?.ranking?.length && got.ranking[0].index === 0 && lower()) return;
       setSettings(got);
     } catch (e) {
-      if (!(e.code === "NO_DAMAGE" && lower())) setError(e);
+      if (!(e.code === "NO_DAMAGE" && lower())) { setError(e); setSettingsFailed(true); }
     }
   }, [name, calcDefense]);
   const load = useCallback(async () => {
@@ -207,7 +210,7 @@ export default function Character({ route }) {
   }, [name]);
 
   useEffect(() => {
-    setSummary(null); setSettings(null);
+    setSummary(null); setSettings(null); setSettingsFailed(false);
     if (!touched.current) { setLowered(null); setDefense(300); setCalcDefense(300); }   // 자동으로 낮춘 값은 다음 캐릭터로 가져가지 않는다
   }, [name]);
   // 버프 없는 기준(2026-11-23): 서버가 과거 날짜를 뒤에서 불러오는 동안은 baseline.pending. 다 되면 한 번 더 받아,
@@ -242,7 +245,7 @@ export default function Character({ route }) {
       ))}
       {summary && (
         <div className="fade-in">
-          <ProfileCard name={name} summary={summary} best={settings?.best} defense={defense} onDefense={pickDefense} onRefresh={load} busy={busy}
+          <ProfileCard name={name} summary={summary} best={settings?.best} pending={!settings && !settingsFailed} defense={defense} onDefense={pickDefense} onRefresh={load} busy={busy}
                        bosses={bosses || []} force={settings?.force} />
           {lowered != null && (
             <p className="baseline-note small" role="note"><Icon name="info" size={14} />
@@ -279,8 +282,13 @@ export default function Character({ route }) {
             <div className="summary-grid">
               <div className="stack summary-side">
                 <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} active={summary.active_setting} />
-                <StatSummary final={settings?.best?.final || summary.final} setting={settings?.best ? settings.best.setting : null}
-                             hpMain={summary.character_class === "데몬어벤져"} />
+                {!settings && !settingsFailed ? (
+                  <section className="card" aria-busy="true"><h3 className="panel-title">주요 스탯</h3>
+                    <p className="panel-sub">보스 세팅 기준으로 계산하는 중이에요…</p><RowsSkeleton rows={5} /></section>
+                ) : (
+                  <StatSummary final={settings?.best?.final || summary.final} setting={settings?.best ? settings.best.setting : null}
+                               hpMain={summary.character_class === "데몬어벤져"} />
+                )}
                 {summary.excluded?.length > 0 && (
                   <section className="card">
                     <h3 className="panel-title">계산에서 뺀 옵션</h3>
@@ -290,10 +298,15 @@ export default function Character({ route }) {
                 )}
               </div>
               {/* 처음엔 보스 세팅의 장비 프리셋(2026-10-17 사용자). 세팅 순위가 오면 다시 그린다 */}
-              <EquipmentGrid key={settings?.best?.setting.equipment ?? "worn"} presets={summary.equipment_presets}
-                             active={settings?.best?.setting.equipment ?? summary.active_setting?.equipment}
-                             boss={settings?.best?.setting.equipment} worn={summary.active_setting?.equipment}
-                             image={summary.profile?.image} name={name} />
+              {!settings && !settingsFailed ? (
+                <section className="card" aria-busy="true"><h3 className="panel-title">장비</h3>
+                  <p className="panel-sub">보스 세팅의 장비 프리셋을 고르는 중이에요…</p><RowsSkeleton rows={6} /></section>
+              ) : (
+                <EquipmentGrid key={settings?.best?.setting.equipment ?? "worn"} presets={summary.equipment_presets}
+                               active={settings?.best?.setting.equipment ?? summary.active_setting?.equipment}
+                               boss={settings?.best?.setting.equipment} worn={summary.active_setting?.equipment}
+                               image={summary.profile?.image} name={name} />
+              )}
             </div>
           )}
           {tab === "upgrade" && (

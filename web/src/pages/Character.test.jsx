@@ -44,6 +44,41 @@ function mockApi() {
 }
 
 describe("character page", () => {
+  // 2026-11-26 사용자: 템 세팅을 보러 오는 곳이니 처음에 적용되는 것은 보스 세팅이어야 한다 — 지금 착용(사냥용일 수 있다)을 먼저 보여 주지 않는다
+  it("보스 세팅을 받는 동안에는 지금 착용 세팅·프리셋을 먼저 보여 주지 않는다", async () => {
+    let giveSettings;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes("/settings")) return new Promise((r) => { giveSettings = () => r(ok(SETTINGS)); });
+      if (u.includes("/bosses")) return Promise.resolve(ok({ bosses: [] }));
+      if (u.includes("/budget-roadmap")) return Promise.resolve(ok(PLAN));
+      return Promise.resolve(ok(SUMMARY));
+    });
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    expect(await screen.findByRole("heading", { name: "내신부레테" })).toBeInTheDocument();
+    expect(screen.getByText("계산 중…")).toBeInTheDocument();
+    expect(screen.queryByText("지금 착용 중인 세팅")).toBeNull();
+    expect(screen.queryByRole("button", { name: /프리셋2/ })).toBeNull();          // 장비창(지금 착용 프리셋)도 아직 안 그린다
+    expect(screen.getByText("보스 세팅의 장비 프리셋을 고르는 중이에요…")).toBeInTheDocument();
+    await act(async () => { giveSettings(); });
+    await waitFor(() => expect(screen.queryByText("보스 세팅의 장비 프리셋을 고르는 중이에요…")).toBeNull());   // 보스 세팅이 오면 장비창을 그린다
+    expect(screen.queryByText("계산 중…")).toBeNull();
+    expect(screen.getAllByRole("button", { name: /프리셋/ }).length).toBeGreaterThan(0);
+  });
+
+  it("보스 세팅을 못 받으면 지금 착용 기준으로라도 보여 준다", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.includes("/settings")) return { ok: false, status: 500, json: async () => ({ code: "INTERNAL", message: "서버가 잠시 계산하지 못했어요." }) };
+      if (u.includes("/bosses")) return ok({ bosses: [] });
+      if (u.includes("/budget-roadmap")) return ok(PLAN);
+      return ok(SUMMARY);
+    });
+    render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
+    expect(await screen.findByText("지금 착용 중인 세팅")).toBeInTheDocument();
+    expect(screen.queryByText("계산 중…")).toBeNull();
+  });
+
   // 2026-11-25: 약한 캐릭터는 방어율 300%에 피해가 0 — 오류만 띄우지 않고 피해가 들어가는 방어율로 낮춰서 보여 준다
   it("방어율 300%에 피해가 안 들어가면 자동으로 낮춰 계산하고, 그 사실을 알린다", async () => {
     const asked = [];
