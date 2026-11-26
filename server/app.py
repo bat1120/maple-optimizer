@@ -554,7 +554,7 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         events = sf_events(sf)
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return memo("consult", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
-                    lambda: service.consult(snap, b, cooldown_main_pct, events))
+                    lambda: service.consult(snap, b, cooldown_main_pct, events, prices.rows()))
 
     def sf_events(sf: str | None):
         from engine.market.events import Events

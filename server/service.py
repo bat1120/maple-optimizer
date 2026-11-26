@@ -652,11 +652,28 @@ def armor_sets(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float
 
 
 ADDITIONAL_LABELS = {"epic2": "에픽 2줄", "unique2": "유니크 2줄", "legend2": "레전드리 2줄"}
+def _observed_for(name: str, star: int, rows: list[dict]) -> dict | None:
+    """살 템의 참고 시세(2026-11-27): 화면 공유로 읽은 경매장 관측(최근 30일, 공개 판독 제외) 중 같은 이름·그 성 이상·
+    팔리지 않은·같은 월드 매물. 관측 매물에는 잠재가 붙어 있어 '잠재 없는 매물 기준' 계획보다 비쌀 수 있다 — 숫자는 관측 값 그대로."""
+    hits = sorted((r for r in rows if r.get("name") == name and int(r.get("starforce") or 0) >= star
+                   and not r.get("sold") and not r.get("other_world") and r.get("price")), key=lambda r: r["price"])
+    if not hits:
+        return None
+    import datetime as _dt
+    kst = _dt.timezone(_dt.timedelta(hours=9))
+    latest = max(r["seen_at"] for r in hits)
+    mid = hits[(len(hits) - 1) // 2]["price"]
+    return {"count": len(hits), "min": hits[0]["price"], "min_text": meso_text(hits[0]["price"]),
+            "min_star": int(hits[0].get("starforce") or 0), "median": mid, "median_text": meso_text(mid),
+            "latest_day": _dt.datetime.fromtimestamp(latest, kst).date().isoformat()}
+
+
 POTENTIAL_LABELS = {"same": "지금 그대로", "legend2": "레전드리 2줄", "legend3": "레전드리 3줄"}
 
 
 @with_basis
-def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, events=None) -> dict:
+def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, events=None,
+            observed: list[dict] | None = None) -> dict:
     """목표 세팅 컨설팅(2026-11-26 사용자): 메소를 모아 오래 쓸 템들로 한 번에 갈아탈 때의 세팅을 통째로 계산한다.
     성(17·18·21·22)마다 방어구·장신구 세팅 하나와, 살 템 목록·지금 템 강화 비용(평균)·세트 효과 변화를 준다. 템 시세는 없다."""
     from engine.market.consult import consult as consult_builds
@@ -672,6 +689,7 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             r["cost_text"] = meso_text(r["cost"])
         o.pop("_order", None)
         for x in o["buy"]:
+            x["observed"] = _observed_for(x["name"], x["starforce"], observed or [])
             x["set"] = (BASES.get(x["name"]) or {}).get("set")
             x["level"] = (BASES.get(x["name"]) or {}).get("level")
             # 잠재·에디를 지금 그 자리 템 수준으로 큐브로 처음부터 맞추는 평균 비용(상한에 가깝다). None = 계산 못 함, 0 = 맞출 줄 없음

@@ -359,4 +359,20 @@ describe("목표 세팅 컨설팅", () => {
     expect(screen.getByLabelText("컨설팅에 쓸 메소")).toHaveValue("");
     localStorage.clear();
   });
+
+  it("살 템에 화면 공유로 읽은 관측 매물이 있으면 건수·최저가를 보여 주고, 최저가를 시세 칸에 넣을 수 있다", async () => {
+    // 실제 서버 응답 모양(2026-11-27): buy[*].observed
+    const obs = { count: 3, min: 3000000000, min_text: "30억", min_star: 22, median: 4000000000, median_text: "40억", latest_day: "2026-11-25" };
+    const data = { ...DATA, builds: DATA.builds.map((b) => ({ ...b, buy: b.buy.map((x, i) => ({ ...x, observed: i === 0 ? obs : null })) })) };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST : data));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    const o = screen.getByLabelText("커맨더 포스 이어링 관측 시세");
+    expect(o.textContent).toBe("관측 매물 3건 · 최저 30억(22성) · 가운데 40억 · 마지막 2026-11-25 최저가 넣기");
+    expect(screen.queryByLabelText("근원의 속삭임 관측 시세")).toBeNull();
+    fireEvent.click(within(o).getByRole("button", { name: "최저가 넣기" }));
+    expect(screen.getByLabelText("커맨더 포스 이어링 시세")).toHaveValue("30억");
+    expect(within(screen.getByLabelText("커맨더 포스 이어링 관측 시세")).queryByRole("button")).toBeNull();   // 넣은 뒤엔 버튼이 없다
+  });
 });

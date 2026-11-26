@@ -424,6 +424,13 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                           : `${x.target ? " — " : ""}${x.match_cost == null ? "잠재 맞추는 비용은 계산하지 못했어요" : x.match_cost === 0 ? "맞출 잠재 없음"
                             : x.target ? `에디(지금 수준)까지 합치면 평균 ${x.match_text}` : `잠재·에디까지 맞추면 평균 +${x.match_text}`}`}
                       </span>
+                      {/* 참고 시세(2026-11-27): 화면 공유로 읽은 관측 매물 — 잠재가 붙은 값이라 잠재 없는 매물보다 비쌀 수 있다 */}
+                      {x.observed && (
+                        <span className="consult-match muted small" aria-label={`${x.name} 관측 시세`}>
+                          관측 매물 {x.observed.count}건 · 최저 {x.observed.min_text}({x.observed.min_star}성){x.observed.count > 2 ? ` · 가운데 ${x.observed.median_text}` : ""} · 마지막 {x.observed.latest_day}
+                          {!prices[x.name] && <> <button type="button" className="link-button" onClick={() => setPrices((p) => ({ ...p, [x.name]: x.observed.min_text }))}>최저가 넣기</button></>}
+                        </span>
+                      )}
                     </span>
                     <input aria-label={`${x.name} 시세`} inputMode="text" autoComplete="off" placeholder="시세" value={prices[x.name] || ""}
                            onChange={(e) => setPrices((p) => ({ ...p, [x.name]: e.target.value }))} />

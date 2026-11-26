@@ -441,3 +441,21 @@ def test_consult_best_reuses_per_star_builds_across_budgets(tmp_path, clock, mon
     assert first == 4 and len(calls) == first                                          # 성 4개 — 두 번째는 다시 안 잰다
     assert [x["raise_cost"] for x in a["stars"]] == [x["raise_cost"] for x in b["stars"]]
     assert b["mix"]["delta_pct"] >= a["mix"]["delta_pct"]
+
+
+def test_consult_buy_items_carry_observed_auction_prices(tmp_path, clock):
+    """살 템 참고 시세(2026-11-27): 화면 공유로 읽은 관측 매물 중 같은 템·그 성 이상이면 건수·최저가·중앙값·마지막 본 날을 준다.
+    팔린 매물·다른 월드·성이 낮은 매물은 뺀다."""
+    from server import service
+    rows = [{"name": "커맨더 포스 이어링", "starforce": 22, "price": 40e8, "sold": False, "other_world": False, "seen_at": 1.0e9},
+            {"name": "커맨더 포스 이어링", "starforce": 22, "price": 30e8, "sold": False, "other_world": False, "seen_at": 1.1e9},
+            {"name": "커맨더 포스 이어링", "starforce": 23, "price": 50e8, "sold": False, "other_world": False, "seen_at": 1.0e9},
+            {"name": "커맨더 포스 이어링", "starforce": 17, "price": 5e8, "sold": False, "other_world": False, "seen_at": 1.0e9},
+            {"name": "커맨더 포스 이어링", "starforce": 22, "price": 1e8, "sold": True, "other_world": False, "seen_at": 1.0e9},
+            {"name": "커맨더 포스 이어링", "starforce": 22, "price": 2e8, "sold": False, "other_world": True, "seen_at": 1.0e9}]
+    got = service._observed_for("커맨더 포스 이어링", 22, rows)
+    assert got == {"count": 3, "min": 30e8, "min_text": "30억", "min_star": 22, "median": 40e8, "median_text": "40억",
+                   "latest_day": "2004-11-09"}                                            # 1.1e9초 = 2004-11-09 20:06 KST
+    assert service._observed_for("커맨더 포스 이어링", 22, []) is None
+    r = make(tmp_path, clock).get("/api/character/x/consult").json()
+    assert all("observed" in x for b in r["builds"] for x in b["buy"])                   # 관측이 없으면 None
