@@ -577,13 +577,27 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         if total is not None:
             total, prices = float(int(total // 1e8) * 1e8), float(int(prices // 1e8) * 1e8)
+            spent = {"builds_ms": 0.0, "builds_computed": 0}   # 운영 진단(2026-11-27): 저장한 계산을 실제로 다시 쓰는지
+
             def builds_for(star, setting, b_):           # 성마다의 컨설팅 계산은 가진 메소와 상관없다 — 저장해 두고 다시 쓴다
                 from engine.market.consult import consult as consult_builds
-                return memo("consult_star", name, date, (star, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
-                            lambda: consult_builds(snap, setting, b_, service.CATALOG, stars=(star,), cooldown_main_pct=cooldown_main_pct,
-                                                   sf=events.starforce()))
+                t0 = time.perf_counter()
+
+                def compute():
+                    spent["builds_computed"] += 1
+                    return consult_builds(snap, setting, b_, service.CATALOG, stars=(star,), cooldown_main_pct=cooldown_main_pct,
+                                          sf=events.starforce())
+                out = memo("consult_star", name, date, (star, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
+                           compute)
+                spent["builds_ms"] += (time.perf_counter() - t0) * 1000
+                return out
+
+            def best():
+                t0 = time.perf_counter()
+                r = service.consult_best(snap, b, total, prices, cooldown_main_pct, events, builds_for)
+                return {**r, "timing": {**spent, "total_ms": (time.perf_counter() - t0) * 1000}}
             return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
-                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct, events, builds_for))
+                        best)
         budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
         return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
                     lambda: service.consult_mix(snap, b, star, budget, cooldown_main_pct))
