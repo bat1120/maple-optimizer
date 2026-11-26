@@ -1046,7 +1046,9 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-stars { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-3) 0; }
 .consult-stars .pill.is-on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .consult-pick { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; margin: 2px 0; cursor: pointer; font-weight: 400; }
-.consult-pick input { width: 16px; height: 16px; min-height: 0; flex: none; margin: 0; padding: 0; }
+/* .consult-list input(시세 칸, 너비 100%)보다 뒤·더 구체적으로 — 2026-11-26 운영에서 체크 칸이 줄 전체를 차지해 글자가 세로로 밀렸다 */
+.consult-list .consult-pick input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; flex: none; margin: 0; padding: 0; }
+.consult-pick > span { flex: 1 1 auto; min-width: 0; }
 .consult-pick .is-off { text-decoration: line-through; opacity: .6; }
 .consult-pots { align-items: center; margin-top: calc(-1 * var(--sp-1)); }
 .consult-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); margin: var(--sp-2) 0 var(--sp-3); }
