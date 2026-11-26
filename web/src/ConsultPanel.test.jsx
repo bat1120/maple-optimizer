@@ -185,4 +185,38 @@ describe("목표 세팅 컨설팅", () => {
     const rows = within(screen.getByRole("table", { name: "나눠서 한다면" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(rows).toEqual(["장신구만약 +49.0%강화·큐브 28억 6672만 + 살 템 1개 시세", "방어구만약 +22.7%563억 6262만", "둘 다약 +77.2%강화·큐브 592억 2934만 + 살 템 1개 시세"]);
   });
+
+  it("가진 메소를 넣으면 강화를 먼저 빼고 남는 메소로 효율 높은 목표 칸부터 골라 주고, 그대로 체크할 수 있다", async () => {
+    const pot = (st, d) => build(st, d, {
+      potential: "legend3", potential_label: "레전드리 3줄", match_cost: 4000000000, match_cost_text: "40억", match_unknown: 0, additional_options: [],
+      buy: [{ slot: "귀고리", name: "커맨더 포스 이어링", starforce: st, group: "장신구", set: "칠흑의 보스 세트", level: 200,
+              target: ["INT +12%", "INT +9%", "INT +9%"], goal: { gain_pct: 2.5, cost: 2358260000, per_100m: 0.106, cost_text: "23억 5826만" },
+              match_cost: 4000000000, match_text: "40억", match_parts: { 잠재: { cost: 2358260000, text: "23억 5826만" }, 에디: { cost: 1641740000, text: "16억 4174만" } } }],
+      cube: [{ slot: "장갑", name: "에테르넬 메이지글러브", group: "방어구", from_grade: "유니크", target: ["INT +10%", "INT +10%", "INT +10%"],
+               cost: 11560000000, cost_text: "115억 6000만", gain_pct: 1.2, per_100m: 0.0104 },
+             { slot: "모자", name: "에테르넬 메이지햇", group: "방어구", from_grade: "레전드리", target: ["스킬 재사용 대기시간 -2초", "INT +10%", "INT +10%"],
+               cost: 80000000000, cost_text: "800억", gain_pct: 1.6, per_100m: 0.002 }],
+      cube_cost: 91560000000, cube_cost_text: "915억 6000만", cube_unknown: 0,
+    });
+    const same = (st, d) => build(st, d, { potential: "same", potential_label: "지금 그대로", cube: [], cube_cost: 0, additional_options: [] });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...DATA, builds: [same(22, 77.24), pot(22, 82.0)] }));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "잠재 목표" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "700억" } });
+    expect(screen.getByText(/잠재·에디 목표를 고르면 이 메소 안에서/)).toBeInTheDocument();   // 목표를 안 골랐을 때는 안내만
+    fireEvent.click(within(screen.getByRole("tablist", { name: "잠재 목표" })).getByRole("tab", { name: /레전드리 3줄/ }));
+    // 강화 563억 6262만 + 살 템 에디(지금 수준) 16억 4174만 = 580억 436만이 먼저 — 남는 119억 9564만으로 귀고리(23억)·장갑(115억) 중 효율 순
+    const fit = () => screen.getByLabelText("가진 메소로 고른 칸").textContent;
+    expect(fit()).toContain("700억이면 목표 칸 1/3개까지(큐브 평균 23억 5826만)");
+    expect(fit()).toContain("보스 실딜 약 +79.2%");                                   // 82.0 − 장갑 1.2 − 모자 1.6
+    fireEvent.click(screen.getByRole("button", { name: "이대로 체크하기" }));
+    expect(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기")).not.toBeChecked();
+    expect(screen.getByLabelText("에테르넬 메이지햇 잠재 목표 넣기")).not.toBeChecked();
+    expect(screen.getByLabelText("커맨더 포스 이어링 잠재 목표 넣기")).toBeChecked();
+    expect(document.querySelector(".consult-total").textContent).toContain("필요한 메소 603억 6262만");   // 563억 6262만 + 40억
+    expect(document.querySelector(".consult-gain").textContent).toBe("약 +79.2%");
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "500억" } });
+    expect(fit()).toContain("강화만으로 80억 436만 모자라요");
+  });
 });

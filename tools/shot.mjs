@@ -1,5 +1,5 @@
 // 화면 한 장 찍기(결과 보고서용). 설치된 크롬을 화면 없이 띄워 주소를 열고, 고른 부분만 잘라 JPEG으로 저장한다.
-//   node tools/shot.mjs --url <주소> --out <파일.jpg> [--width 1100] [--selector ".plan-panel"] [--wait "글자"] [--pad 8] [--max-height 1400] [--click "레전드리 3줄|보기"]
+//   node tools/shot.mjs --url <주소> --out <파일.jpg> [--width 1100] [--selector ".plan-panel"] [--wait "글자"] [--pad 8] [--max-height 1400] [--click "레전드리 3줄|보기"] [--type "컨설팅에 쓸 메소=3000억"] [--then-click "이대로 체크하기"]
 // --selector: 그 요소만 자른다(없으면 화면 위에서부터 --max-height까지). --wait: 이 글자가 화면에 보일 때까지 기다린다(최대 30초).
 // 운영 주소를 열면 서버가 넥슨을 부를 수 있다(캐시가 비었을 때 캐릭터 1회 조회) — 한 번에 여러 캐릭터를 찍지 않는다.
 import fs from "node:fs";
@@ -17,6 +17,7 @@ if (!url || !out) { console.error("--url 과 --out 이 필요해요"); process.e
 const width = Number(arg("width", "1100")), pad = Number(arg("pad", "8")), maxH = Number(arg("max-height", "1400"));
 const selector = arg("selector", ""), waitText = arg("wait", "");
 const clicks = arg("click", "").split("|").filter(Boolean);
+const types = arg("type", "").split("|").filter(Boolean), after = arg("then-click", "").split("|").filter(Boolean);
 
 const chrome = await launchChrome({ port: 9335 });
 let code = 0;
@@ -41,6 +42,22 @@ try {
   if (!ready) { console.error(`기다린 내용이 나오지 않았어요: ${waitText || selector || url}`); code = 1; }
   // --click "글자1|글자2": 그 글자가 든 버튼·탭·체크 칸(aria-label 포함)을 차례로 누른다(펼친 화면을 찍을 때)
   for (const label of clicks) {
+    const hit = await evalJs(`(() => { const want = ${JSON.stringify(label)};
+      const els = [...document.querySelectorAll("button, [role=tab], input[type=checkbox], summary")];
+      const e = els.find((x) => (x.getAttribute("aria-label") || x.innerText || "").includes(want)); if (!e) return false; e.click(); return true; })()`);
+    if (!hit) { console.error(`누를 곳을 찾지 못했어요: ${label}`); code = 1; }
+    await sleep(500);
+  }
+  // --type "입력칸 이름=값|…": aria-label에 그 글자가 든 입력칸에 값을 넣는다(React가 알아채게 input 이벤트까지). 누르기 뒤에 한다
+  for (const pair of types) {
+    const [label, value] = pair.split("=");
+    const hit = await evalJs(`(() => { const e = [...document.querySelectorAll("input")].find((x) => (x.getAttribute("aria-label") || "").includes(${JSON.stringify(label)}));
+      if (!e) return false; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(e, ${JSON.stringify(value)});
+      e.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
+    if (!hit) { console.error(`입력칸을 찾지 못했어요: ${label}`); code = 1; }
+    await sleep(400);
+  }
+  for (const label of after) {
     const hit = await evalJs(`(() => { const want = ${JSON.stringify(label)};
       const els = [...document.querySelectorAll("button, [role=tab], input[type=checkbox], summary")];
       const e = els.find((x) => (x.getAttribute("aria-label") || x.innerText || "").includes(want)); if (!e) return false; e.click(); return true; })()`);

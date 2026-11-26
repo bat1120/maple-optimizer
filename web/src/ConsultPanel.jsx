@@ -105,6 +105,31 @@ export default function ConsultPanel({ name, defense }) {
     build.armor && { label: "방어구만", text: shown(armorPct, "방어구"), ...part("방어구") },
     { label: "둘 다", text: shown(whole, null), ...part(null) },
   ].filter((o) => o && (o.buy > 0 || o.raise > 0)) : [];
+  // 가진 메소로 어디까지(2026-11-26): 강화·살 템(넣은 시세)은 먼저 들어가고, 남는 메소로 목표 칸(잠재·에디)을 100억당 효율 높은 순으로 채운다.
+  // 쓰는 값은 서버가 준 칸별 몫·큐브 평균뿐이다(새 숫자를 만들지 않는다). 칸 체크와 같은 근사라 실딜은 '약'
+  const units = !goal ? [] : [
+    ...(potGoal ? build.buy.filter((x) => x.goal).map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.goal.cost, gain: x.goal.gain_pct })) : []),
+    ...cubes.map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.cost, gain: x.gain_pct })),
+    ...addis.map((x) => ({ slot: x.slot, kind: "에디", name: x.name, cost: addiCost(x), gain: x.gain_pct })),
+  ].filter((u) => u.cost > 0 && u.gain > 0);
+  const fit = (() => {
+    if (!budget || !units.length) return null;
+    const on = (u) => !isOff(u.slot, u.kind);
+    const base = total - sum(units.filter(on), (u) => u.cost);          // 목표 칸을 다 뺀 합계(강화 + 넣은 시세 + 그 밖의 큐브)
+    if (base > budget) return { short: base - budget, base };
+    let left = budget - base;
+    const keep = [];
+    for (const u of [...units].sort((a, b) => b.gain / b.cost - a.gain / a.cost)) {
+      if (u.cost <= left) { keep.push(u); left -= u.cost; }
+    }
+    const gain = whole - sum(units.filter((u) => !keep.includes(u)), (u) => u.gain);
+    return { keep, spent: sum(keep, (u) => u.cost), gain, left };
+  })();
+  const applyFit = () => setOff((o) => {
+    const next = { ...o };
+    for (const u of units) next[offKey(u.slot, u.kind)] = !fit.keep.includes(u);
+    return next;
+  });
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
     if (o.cost > budget) return `${formatMeso(o.cost - budget)} 모자라요${o.missing ? `(시세를 안 넣은 템 ${o.missing}개 빼고도)` : ""}`;
@@ -180,6 +205,26 @@ export default function ConsultPanel({ name, defense }) {
                        onChange={(e) => setHave(e.target.value)} />
                 <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
               </div>
+              {budget > 0 && !goal && (
+                <p className="consult-fit muted small">잠재·에디 목표를 고르면 이 메소 안에서 100억당 효율이 높은 칸부터 골라 드려요.</p>
+              )}
+              {fit && (
+                <div className="consult-fit" aria-label="가진 메소로 고른 칸">
+                  {fit.short ? (
+                    <p><strong>강화{buyTotal ? "·살 템" : ""}만으로 {formatMeso(fit.short)} 모자라요</strong> <span className="muted small">— 목표 칸을 넣을 메소가 남지 않아요.</span></p>
+                  ) : (
+                    <>
+                      <p>
+                        {formatMeso(budget)}이면 목표 칸 <strong>{fit.keep.length}/{units.length}개</strong>까지(큐브 평균 {formatMeso(fit.spent) || "0"}) —
+                        보스 실딜 <strong className="num">{fit.keep.length < units.length ? `약 ${pct1(fit.gain)}` : pct1(whole)}</strong>
+                        {fit.keep.length < units.length && <> <button type="button" className="ghost small" onClick={applyFit}>이대로 체크하기</button></>}
+                      </p>
+                      <p className="muted small">강화{buyTotal ? "와 넣은 시세" : ""}를 먼저 빼고, 남는 메소로 100억당 효율 높은 칸부터 넣었어요.
+                        {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}{fit.keep.length < units.length ? " 실딜은 칸별 몫으로 계산해 '약'이에요." : ""}</p>
+                    </>
+                  )}
+                </div>
+              )}
               <table className="consult-options" aria-label="나눠서 한다면">
                 <thead><tr><th>나눠서 한다면</th><th className="num">보스 실딜</th><th>{budget ? `${formatMeso(budget)}으로` : "필요한 메소"}</th></tr></thead>
                 <tbody>

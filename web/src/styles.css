@@ -1082,3 +1082,6 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .consult-stars { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: var(--sp-2) 0; padding-bottom: 2px; }
   .consult-stars .pill, .consult-stars > span { flex: none; white-space: nowrap; }
 }
+.consult-fit { margin: 0 0 var(--sp-3); padding: var(--sp-2) var(--sp-3); border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: var(--radius-sm); }
+.consult-fit p { margin: 2px 0; }
+.consult-fit button { min-height: 32px; padding: 2px 10px; margin-left: var(--sp-1); }
