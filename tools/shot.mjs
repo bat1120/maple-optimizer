@@ -18,6 +18,7 @@ const width = Number(arg("width", "1100")), pad = Number(arg("pad", "8")), maxH 
 const selector = arg("selector", ""), waitText = arg("wait", "");
 const clicks = arg("click", "").split("|").filter(Boolean);
 const types = arg("type", "").split("|").filter(Boolean), after = arg("then-click", "").split("|").filter(Boolean);
+const afterWait = arg("after-wait", "");
 
 const chrome = await launchChrome({ port: 9335 });
 let code = 0;
@@ -64,6 +65,12 @@ try {
       const e = els.find((x) => (x.getAttribute("aria-label") || x.innerText || "").includes(want)); if (!e) return false; e.click(); return true; })()`);
     if (!hit) { console.error(`누를 곳을 찾지 못했어요: ${label}`); code = 1; }
     await sleep(500);
+  }
+  // --after-wait "글자": 누르기·입력 뒤에 이 글자가 보일 때까지 기다린다(최대 20초 — 서버 계산이 끝난 화면을 찍으려고)
+  if (afterWait) {
+    let ok = false;
+    for (let i = 0; i < 40 && !ok; i++) { await sleep(500); ok = await evalJs(`document.body.innerText.includes(${JSON.stringify(afterWait)})`); }
+    if (!ok) { console.error(`기다린 내용이 나오지 않았어요: ${afterWait}`); code = 1; }
   }
   await sleep(800); // 글꼴·그림이 자리 잡을 시간
   let clip = { x: 0, y: 0, width, height: Math.min(await evalJs("document.documentElement.scrollHeight"), maxH), scale: 1 };
