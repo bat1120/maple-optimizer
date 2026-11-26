@@ -1082,6 +1082,9 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .consult-stars { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: var(--sp-2) 0; padding-bottom: 2px; }
   .consult-stars .pill, .consult-stars > span { flex: none; white-space: nowrap; }
 }
+.consult-plan { margin: var(--sp-2) 0; padding-left: 1.4em; }
+.consult-plan li { margin: var(--sp-2) 0; }
+.consult-plan-items { display: block; font-size: var(--fs-sm); color: var(--text-2); overflow-wrap: anywhere; }
 .consult-mix-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .consult-mix-gain { font-size: var(--fs-lg); color: var(--accent); }
 .consult-mix table td .muted { display: block; }

@@ -151,6 +151,9 @@ export default function ConsultPanel({ name, defense }) {
   const cheapest = best?.stars?.reduce((a, x) => (!a || x.short < a.short ? x : a), null);
   const [mixOpen, setMixOpen] = useState(false);
   const [starsOpen, setStarsOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
+  // 할 일 순서(2026-11-26): 추천 조합을 실제로 하는 순서 — 살 템(경매장에서 찾을 것) → 강화 → 큐브. 고른 성의 '지금 그대로' 세팅에서 꺼낸다
+  const planBuild = best?.best != null ? all.find((b) => (b.potential || "same") === "same" && b.starforce === best.best) : null;
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
     if (o.cost > budget) return `${formatMeso(o.cost - budget)} 모자라요${o.missing ? `(시세를 안 넣은 템 ${o.missing}개 빼고도)` : ""}`;
@@ -243,6 +246,8 @@ export default function ConsultPanel({ name, defense }) {
                       {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
                     {mixed.picks.length > 0 && <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
                       {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button>}
+                    {planBuild && <button type="button" className="ghost small" aria-expanded={planOpen} onClick={() => setPlanOpen(!planOpen)}>
+                      {planOpen ? "할 일 접기" : "할 일 순서로 보기"}</button>}
                   </p>
                   {starsOpen && (
                     <table className="consult-options" aria-label="성별 비교">
@@ -260,6 +265,24 @@ export default function ConsultPanel({ name, defense }) {
                   )}
                   <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
                     실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이에요.{missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
+                  {planOpen && planBuild && (
+                    <ol className="consult-plan" aria-label="할 일 순서">
+                      {planBuild.buy.length > 0 && (
+                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재는 없어도 돼요(아래 큐브로 맞춰요)</span>
+                          <span className="consult-plan-items">{planBuild.buy.map((x) => `${x.slot} ${x.name}${prices[x.name] ? ` (${prices[x.name]})` : ""}`).join(" · ")}</span></li>
+                      )}
+                      {planBuild.raise.length > 0 && (
+                        <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>
+                          <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
+                      )}
+                      {mixed.picks.length > 0 && (
+                        <li><strong>큐브 {mixed.picks.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
+                          <span className="consult-plan-items">{mixed.picks.map((x) => `${x.slot} ${x.kind} ${x.label}`).join(" · ")}</span></li>
+                      )}
+                      <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
+                        <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
+                    </ol>
+                  )}
                   {mixOpen && (
                     <table className="consult-options" aria-label="추천 조합 칸별 목표">
                       <thead><tr><th>칸</th><th>목표</th><th className="num">몫 · 큐브 평균</th></tr></thead>

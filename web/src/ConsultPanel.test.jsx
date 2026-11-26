@@ -276,6 +276,14 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(screen.getByRole("button", { name: "칸별 목표 2개 보기" }));
     const picks = within(screen.getByRole("table", { name: "추천 조합 칸별 목표" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(picks).toEqual(["무기 제네시스 카르타에디 레전드리 2줄 마력 +12% · 마력 +9%+4.1%110억", "귀고리 커맨더 포스 이어링잠재 레전드리 2줄 INT +12% · INT +9%+1.1%20억"]);
+    // 할 일 순서: 살 템(경매장) → 강화 → 큐브 — 고른 성(21)의 세팅에서 꺼낸다
+    fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
+    const steps = within(screen.getByRole("list", { name: "할 일 순서" })).getAllByRole("listitem").map((li) => li.textContent);
+    expect(steps).toEqual([
+      "경매장에서 살 템 2개 — 21성 이상, 잠재는 없어도 돼요(아래 큐브로 맞춰요)귀고리 커맨더 포스 이어링 (30억) · 반지1 근원의 속삭임",
+      "강화 1개 — 평균 563억 6262만모자 18→21성",
+      "큐브 2칸 — 평균 130억, 효율 높은 칸부터무기 에디 레전드리 2줄 · 귀고리 잠재 레전드리 2줄",
+      "보스 실딜 +95.3% — 강화 342억 + 살 템 30억 + 큐브 130억 + 시세를 안 넣은 살 템 1개"]);
     fireEvent.click(screen.getByRole("button", { name: "21성 세팅 보기" }));                      // 위 탭이 그 성으로
     expect(within(screen.getByRole("tablist", { name: "목표 스타포스" })).getByRole("tab", { name: /21성/ })).toHaveAttribute("aria-selected", "true");
     // 가장 싼 성의 강화도 못 하면
