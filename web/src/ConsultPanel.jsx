@@ -198,7 +198,8 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
               <span>{formatMeso(budget)}이면 {best.best}성 추천 조합으로 보스 실딜</span>
               <strong className="consult-gain num">{pct1(mixed.delta_pct)}</strong>
               <span className="muted small">
-                비교: 위 탭의 {build.starforce}성 결론 {shown(whole, null)}{build.buy.length > 0 ? "(살 템에 지금 수준 잠재가 붙은 매물 기준)" : ""}
+                {/* 같은 성끼리 비교한다(2026-11-27 운영: 추천은 21성인데 비교가 22성 탭이라 엇갈렸다) */}
+                비교: {best.best}성 탭 결론 {pct1(mixed.with_current_delta_pct ?? whole)}(살 템에 지금 수준 잠재가 붙은 매물, 큐브 전)
               </span>
             </p>
           ) : (

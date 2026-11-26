@@ -337,6 +337,6 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });     // 접힌 채로
     await screen.findByLabelText("추천 조합");
     expect(head()).toContain("730억이면 21성 추천 조합으로 보스 실딜+95.3%");
-    expect(head()).toContain("비교: 위 탭의 22성 결론 +77.2%(살 템에 지금 수준 잠재가 붙은 매물 기준)");
+    expect(head()).toContain("비교: 21성 탭 결론 +77.2%(살 템에 지금 수준 잠재가 붙은 매물, 큐브 전)");   // 추천과 같은 성끼리
   });
 });
