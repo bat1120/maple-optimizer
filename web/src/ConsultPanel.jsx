@@ -197,8 +197,10 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
             <strong className="consult-gain num">{shown(whole, null)}</strong>
             <span className="muted small">
               {[build.armor && `방어구 ${build.armor.label} ${pct1(armorPct)}`,
-                build.accessory && `장신구 ${build.accessory.label} ${pct1(accPct)}`].filter(Boolean).join(" · ")}
+                build.accessory && `장신구 ${build.accessory.label} ${pct1(accPct)}`,
+                build.buy.length > 0 && "살 템은 지금 수준 잠재가 붙은 매물 기준"].filter(Boolean).join(" · ")}
             </span>
+            {/* 2026-11-26: 아래 추천 조합(잠재 없는 매물 기준)과 기준이 달라 숫자가 엇갈려 보였다 — 이 숫자의 기준을 적는다 */}
           </p>
           <div className="consult-stars" role="tablist" aria-label="목표 스타포스">
             {builds.map((b) => (

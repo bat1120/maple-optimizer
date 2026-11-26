@@ -180,7 +180,7 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(within(tabs).getByRole("tab", { name: /레전드리 2줄/ }));
     expect(within(screen.getByRole("tablist", { name: "목표 스타포스" })).getAllByRole("tab").map((t) => t.textContent)).toEqual(["21성 +70.8%", "22성 +87.2%"]);
     expect(screen.getByText("22성 · 에디 레전드리 2줄 세팅으로 갈아타면 보스 실딜")).toBeInTheDocument();
-    expect(document.querySelector(".consult-headline").textContent).toContain("방어구 에테르넬 7 +26.7% · 장신구 칠흑 6 · 보스 장신구 2 · 광휘 3 +55.0%");
+    expect(document.querySelector(".consult-headline").textContent).toContain("방어구 에테르넬 7 +26.7% · 장신구 칠흑 6 · 보스 장신구 2 · 광휘 3 +55.0% · 살 템은 지금 수준 잠재가 붙은 매물 기준");
     fireEvent.click(screen.getByRole("button", { name: "살 템 1개 · 강화할 템 1개 · 에디 올릴 템 2개 보기" }));
     const list = screen.getByRole("list", { name: "에디 올릴 템" });
     expect(within(list).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
