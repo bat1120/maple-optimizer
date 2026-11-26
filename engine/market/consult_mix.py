@@ -134,7 +134,7 @@ __all__ = ["best_star", "mix", "pick"]
 
 
 def best_star(snap, setting, boss, catalog, total: float, prices: float = 0.0, stars: tuple[int, ...] | None = None,
-              cooldown_main_pct: float | None = None, sf=None) -> dict:
+              cooldown_main_pct: float | None = None, sf=None, builds_for=None) -> dict:
     """가진 메소 전체(total, 강화 + 큐브)로 성까지 같이 고른다: 성마다 큐브 예산 = total − 그 성 강화 평균 − 넣은 살 템 시세(prices),
     그 예산의 추천 조합을 정확히 잰 실딜이 가장 큰 성. 강화도 못 하는 성은 short(모자란 메소)만 적는다.
     살 템 시세는 성마다 따로 받지 않는다(같은 템의 성만 다르다) — 넣은 값을 모든 성에서 똑같이 뺀다."""
@@ -142,7 +142,9 @@ def best_star(snap, setting, boss, catalog, total: float, prices: float = 0.0, s
     rows, best = [], None
     for star in stars or STARS:
         r = None
-        builds = consult(snap, setting, boss, catalog, stars=(star,), cooldown_main_pct=cooldown_main_pct, sf=sf)
+        # builds_for: 성마다 컨설팅 계산을 저장해 둔 것(서버가 넘긴다 — 가진 메소만 바꿔 다시 물을 때 다시 계산하지 않게)
+        builds = builds_for(star) if builds_for else consult(snap, setting, boss, catalog, stars=(star,),
+                                                             cooldown_main_pct=cooldown_main_pct, sf=sf)
         raise_cost = builds[0]["raise_cost"]
         left = total - raise_cost - prices
         if left >= 0:

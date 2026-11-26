@@ -28,7 +28,10 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
   const [prices, setPrices] = useState({}); // 템 이름 → 사용자가 적은 가격 글자
   // 처음엔 결론(성별 실딜)만 보이고 살 템·강화 목록은 눌러서 편다 — 바로 아래 '내 업그레이드 계획' 첫 줄이 첫 화면에서 밀려나지 않게
   const [open, setOpen] = useState(false);
-  const [have, setHave] = useState(""); // 가진 메소(글자)
+  // 가진 메소는 이 브라우저에 캐릭터별로 기억한다(다음에 와도 다시 안 쳐도 되게 — 서버로 보내지 않는다, 2026-11-27)
+  const haveKey = `consult-have:${name}`;
+  const [have, setHaveRaw] = useState(() => { try { return localStorage.getItem(haveKey) || ""; } catch { return ""; } });
+  const setHave = (v) => { setHaveRaw(v); try { if (v) localStorage.setItem(haveKey, v); else localStorage.removeItem(haveKey); } catch { /* 저장 못 해도 화면은 된다 */ } }; // 가진 메소(글자)
   const seq = useRef(0);
 
   useEffect(() => {

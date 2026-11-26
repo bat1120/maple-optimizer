@@ -741,14 +741,15 @@ def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: floa
 
 @with_basis
 def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: float = 0.0,
-                 cooldown_main_pct: float | None = None, events=None) -> dict:
+                 cooldown_main_pct: float | None = None, events=None, builds_for=None) -> dict:
     """가진 메소 전체(강화 + 큐브)로 성까지 같이 고른 추천 조합: 성마다 강화 평균과 넣은 살 템 시세를 빼고 남는 메소로 추천 조합을 잰다."""
     from engine.market.consult_mix import best_star
     b = boss(defense)
     setting = rank_settings(snap, b, CATALOG)[0][0]
     from engine.market.events import Events
     events = events or Events()
-    r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct, sf=events.starforce())
+    r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct, sf=events.starforce(),
+                  builds_for=(lambda star: builds_for(star, setting, b)) if builds_for else None)
     for x in r["stars"]:
         x["raise_cost_text"] = meso_text(x["raise_cost"]) if x["raise_cost"] else "0"
         x["cube_budget_text"] = meso_text(x["cube_budget"]) if x["cube_budget"] else "0"

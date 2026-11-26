@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import ConsultPanel from "./ConsultPanel.jsx";
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });   // 가진 메소를 브라우저에 기억하니 테스트끼리 섞이지 않게
 
 // 실제 서버 응답 모양(2026-11-26, /api/character/{name}/consult)
 const build = (starforce, delta, over = {}) => ({
@@ -338,5 +338,22 @@ describe("목표 세팅 컨설팅", () => {
     await screen.findByLabelText("추천 조합");
     expect(head()).toContain("730억이면 21성 추천 조합으로 보스 실딜+95.3%");
     expect(head()).toContain("비교: 21성 탭 결론 +77.2%(살 템에 지금 수준 잠재가 붙은 매물, 큐브 전)");   // 추천과 같은 성끼리
+  });
+
+  it("가진 메소는 이 브라우저에 캐릭터별로 기억한다", async () => {
+    localStorage.clear();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST : DATA));
+    const first = render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    first.unmount();
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    expect(screen.getByLabelText("컨설팅에 쓸 메소")).toHaveValue("730억");
+    cleanup();
+    render(<ConsultPanel name="다른캐릭터" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    expect(screen.getByLabelText("컨설팅에 쓸 메소")).toHaveValue("");
+    localStorage.clear();
   });
 });

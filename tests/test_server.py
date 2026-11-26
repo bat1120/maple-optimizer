@@ -426,3 +426,18 @@ def test_consult_raise_cost_follows_starforce_events(tmp_path, clock):
     for p, s in zip(best_plain["stars"], best_shining["stars"]):
         assert s["raise_cost"] <= p["raise_cost"] and (s["delta_pct"] or 0) >= (p["delta_pct"] or 0) - 1e-9
     assert c.get("/api/character/x/consult", params={"sf": "free"}).status_code == 400
+
+
+def test_consult_best_reuses_per_star_builds_across_budgets(tmp_path, clock, monkeypatch):
+    """가진 메소만 바꿔 다시 물으면 성마다의 컨설팅 계산은 다시 하지 않는다(2026-11-27: 첫 응답 6초, 금액을 바꿀 때마다 2.6초)."""
+    import engine.market.consult as consult_mod
+    calls = []
+    real = consult_mod.consult
+    monkeypatch.setattr(consult_mod, "consult", lambda *a, **k: calls.append(k.get("stars")) or real(*a, **k))
+    c = make(tmp_path, clock)
+    a = c.get("/api/character/x/consult/mix", params={"total": 2000e8}).json()
+    first = len(calls)
+    b = c.get("/api/character/x/consult/mix", params={"total": 3000e8}).json()
+    assert first == 4 and len(calls) == first                                          # 성 4개 — 두 번째는 다시 안 잰다
+    assert [x["raise_cost"] for x in a["stars"]] == [x["raise_cost"] for x in b["stars"]]
+    assert b["mix"]["delta_pct"] >= a["mix"]["delta_pct"]

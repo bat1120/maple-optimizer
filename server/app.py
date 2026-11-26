@@ -577,8 +577,13 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         if total is not None:
             total, prices = float(int(total // 1e8) * 1e8), float(int(prices // 1e8) * 1e8)
+            def builds_for(star, setting, b_):           # 성마다의 컨설팅 계산은 가진 메소와 상관없다 — 저장해 두고 다시 쓴다
+                from engine.market.consult import consult as consult_builds
+                return memo("consult_star", name, date, (star, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
+                            lambda: consult_builds(snap, setting, b_, service.CATALOG, stars=(star,), cooldown_main_pct=cooldown_main_pct,
+                                                   sf=events.starforce()))
             return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
-                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct, events))
+                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct, events, builds_for))
         budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
         return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
                     lambda: service.consult_mix(snap, b, star, budget, cooldown_main_pct))
