@@ -514,4 +514,17 @@ describe("screen watch new scan", () => {
                         target={{ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [] }} />);
     expect(screen.getByRole("note", { name: "찾는 조건" })).toHaveTextContent("부위반지1템근원의 속삭임스타포스21성 이상");
   });
+
+  it("읽은 매물이 찾는 템이면 성이 계획에 맞는지와 그 값이면 계획 합계가 얼마인지 카드에 적는다", () => {
+    const listing = (star, price, potentials = []) => ({ signature: `s${star}${price}`, evaluated: true, slot: "반지1", delta_pct: 3.2, per_100m: 0.01,
+      read: { name: "근원의 속삭임", starforce: star, starforce_source: "별 세기", price, potentials, total: {} } });
+    const target = { slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [], star: 21,
+                     plan: { cost: 47200000000, gain: 95.31, missing: 1 } };
+    render(<ScreenWatch name="x" defense={300} capture={null} admin={false} target={target}
+                        initialItems={[listing(22, 30000000000, ["INT +9%"]), listing(17, 5000000000)]} />);
+    const notes = screen.getAllByLabelText("찾는 템").map((n) => n.textContent);
+    expect(notes).toEqual([
+      "찾는 템이에요 · 22성 — 계획(21성 이상)에 맞아요 · 이 값이면 계획 합계 772억(시세 모르는 살 템 1개 빼고), 보스 실딜 +95.3% · 붙은 잠재는 계획에 없던 덤이에요(계획은 잠재 없는 매물 기준)",
+      "찾는 템이에요 · 17성 — 계획은 21성 이상이에요 · 이 값이면 계획 합계 522억(시세 모르는 살 템 1개 빼고), 보스 실딜 +95.3%"]);
+  });
 });

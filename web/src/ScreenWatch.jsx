@@ -114,8 +114,10 @@ function CopyScouter({ item, label = "변화량 복사" }) {
   );
 }
 
-function Row({ item, name, defense, onUpdate, onReplace }) {
+function Row({ item, name, defense, onUpdate, onReplace, target = null }) {
   const r = item.read || {};
+  // 컨설팅 '할 일'의 [찾기]로 넘어온 찾는 템과 같은 템이면: 성이 계획 이상인지, 이 값이면 계획 합계가 얼마인지(2026-11-26)
+  const wanted = target?.item && r.name === target.item ? target : null;
   const [price, setPrice] = useState("");
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -150,6 +152,14 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
             <strong className={`num${item.delta_pct < 0 ? " neg" : ""}`}>{formatPct(item.delta_pct)}</strong></span>
         )}
       </div>
+      {wanted && (
+        <p className={`watch-note small ${wanted.star && Number(r.starforce) < wanted.star ? "error" : "pos"}`} aria-label="찾는 템">
+          <strong>찾는 템이에요</strong>
+          {wanted.star ? (Number(r.starforce) >= wanted.star ? ` · ${r.starforce}성 — 계획(${wanted.star}성 이상)에 맞아요` : ` · ${r.starforce || "?"}성 — 계획은 ${wanted.star}성 이상이에요`) : ""}
+          {wanted.plan && r.price ? ` · 이 값이면 계획 합계 ${formatMeso(wanted.plan.cost + r.price)}${wanted.plan.missing ? `(시세 모르는 살 템 ${wanted.plan.missing}개 빼고)` : ""}, 보스 실딜 ${formatPct(wanted.plan.gain).replace(/(\.\d)\d+%$/, "$1%")}` : ""}
+          {r.potentials?.length ? " · 붙은 잠재는 계획에 없던 덤이에요(계획은 잠재 없는 매물 기준)" : ""}
+        </p>
+      )}
       <ul className="rank-cond" aria-label="읽은 옵션">
         <li>{formatTotals(r.total)}</li>
         {(r.potentials || []).map((t, k) => <li key={k}>{t}</li>)}
@@ -439,7 +449,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       {detailed.length > 0 && !(session && scan.analyzing > 0) && (
         <ol className="rank-cards watch-cards" aria-label="읽은 매물(억당 순)">
           {detailed.map((it) => (
-            <Row key={it.signature} item={it} name={name} defense={defense}
+            <Row key={it.signature} item={it} name={name} defense={defense} target={target}
                  onUpdate={(u) => setItems((prev) => prev.map((p) => (p.signature === u.signature ? u : p)))}
                  onReplace={(old, u) => { setItems((prev) => prev.map((p) => (p.signature === old ? u : p))); refreshStats(); }} />
           ))}

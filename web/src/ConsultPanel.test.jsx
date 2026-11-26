@@ -308,6 +308,8 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
     fireEvent.click(await screen.findByRole("button", { name: "할 일 순서로 보기" }));
     fireEvent.click(screen.getByRole("button", { name: "근원의 속삭임 경매장에서 찾기" }));
-    expect(onEvaluate).toHaveBeenCalledWith({ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [] });
+    // 계획 비용 = 강화 342억 + 큐브 130억 + 넣은 다른 살 템 시세 0 — 이 템 값을 더하면 합계가 된다
+    expect(onEvaluate).toHaveBeenCalledWith({ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [], star: 21,
+                                              plan: { cost: 47200000000, gain: 95.31, missing: 1 } });
   });
 });

@@ -282,7 +282,12 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
                           <span className="consult-plan-items">{planBuild.buy.map((x, i) => (
                             <span key={x.slot}>{i ? " · " : ""}{x.slot} {x.name}{prices[x.name] ? ` (${prices[x.name]})` : ""}
                               {onEvaluate && <button type="button" className="link-button" aria-label={`${x.name} 경매장에서 찾기`}
-                                                     onClick={() => onEvaluate({ slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [] })}>찾기</button>}
+                                                     onClick={() => onEvaluate({
+                                                       slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [], star: best.best,
+                                                       // 그 매물 값을 더하면 계획 합계가 얼마인지 화면 공유 쪽에서 바로 보여 주려고: 이 템 시세를 뺀 나머지 계획 비용
+                                                       plan: { cost: (bestRow.raise_cost || 0) + (mixed.cost || 0) + buyTotal - (parsePrice(prices[x.name] || "") || 0),
+                                                               gain: mixed.delta_pct, missing: planBuild.buy.filter((y) => y.name !== x.name && !parsePrice(prices[y.name] || "")).length },
+                                                     })}>찾기</button>}
                             </span>))}</span></li>
                       )}
                       {planBuild.raise.length > 0 && (
