@@ -8,6 +8,8 @@ import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
 // 세팅 전체의 실딜은 수십 %라 소수 한 자리면 충분하다(1억 메소당 효율은 작은 수라 formatPct 그대로)
 const pct1 = (x) => `${x >= 0 ? "+" : ""}${x.toFixed(1)}%`;
+// 할 일 목록: PC에서는 ' · '로 이은 한 문단, 휴대폰에서는 한 줄에 하나(2026-11-27 운영 휴대폰 — 큐브 18칸이 한 문단이라 읽기 어려웠다)
+const lines = (items) => items.map((t, i) => <span key={i} className="plan-item">{i ? <span className="plan-sep"> · </span> : null}{t}</span>);
 const SHORT = (s) => (s || "").replace("의 보스 세트", "").replace(" 세트", "");
 
 // onEvaluate: 할 일의 살 템 [찾기] → 화면 공유 평가 칸을 열고 '찾는 템'을 보여 준다(계획 → 경매장 검색 → 화면 공유로 매물 평가)
@@ -328,16 +330,16 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                   )}
                   {planBuild.raise.length > 0 && (
                     <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>
-                      <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
+                      <span className="consult-plan-items">{lines(planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`))}</span></li>
                   )}
                   {cubeSlots.length > 0 && (
                     <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {formatMeso(cubeCost)}, 효율 높은 칸부터</span>
                       {/* 칸별로 묶는다(2026-11-26 운영: 잠재·에디가 따로 30줄로 나와 읽기 어려웠다) */}
-                      <span className="consult-plan-items">{cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`).join(" · ")}</span></li>
+                      <span className="consult-plan-items">{lines(cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`))}</span></li>
                   )}
                   {symPicks.length > 0 && (
                     <li><strong>심볼 {symPicks.length}개</strong> <span className="muted small">— 강화 메소 {formatMeso(symCost)}, 지금 모은 심볼로 할 수 있는 만큼만</span>
-                      <span className="consult-plan-items">{symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`).join(" · ")}</span></li>
+                      <span className="consult-plan-items">{lines(symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`))}</span></li>
                   )}
                   <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
                     <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""} {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>

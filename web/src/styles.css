@@ -1097,3 +1097,7 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
 .consult-actions .consult-budget { margin: 0; flex: 0 1 auto; }
 .consult-actions .more-ranks { flex: 1 1 260px; margin-top: 0; }
+@media (max-width: 600px) {
+  .consult-plan-items .plan-item { display: block; }
+  .consult-plan-items .plan-sep { display: none; }
+}
