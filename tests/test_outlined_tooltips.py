@@ -138,7 +138,9 @@ def test_real_dark_auction_frames_are_cut_exactly():
         assert [b[2] - b[0] for b in boxes] == [TIP_W, TIP_W], p.name      # 매물·착용 템 툴팁 둘만, 너비가 같다
         assert boxes[1][3] - boxes[1][1] == 457 and stars_near(im, boxes[1]) == 5, p.name   # 착용 템 '하프 이어링' 5성
     for p in sorted(REAL.glob("f0*.jpg")):
-        assert find_outlined(Image.open(p).convert("RGB")) == [], p.name   # 툴팁 없는 화면
+        # 주의(2026-11-26): 이 화면들은 전부 검은 화면이라 '툴팁 없는 경매장 목록에서 가짜 상자가 안 잡힌다'의 증거가 못 된다.
+        # 그건 위 툴팁 화면들(경매장 창·목록·검색 조건 칸이 다 보인다)에서 상자가 둘뿐이라는 것으로만 본다
+        assert find_outlined(Image.open(p).convert("RGB")) == [], p.name
 
 
 @pytest.mark.skipif(not REAL.exists(), reason="실제 경매장 화면은 이 PC에만 있다(.data/auction_real)")
