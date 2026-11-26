@@ -651,6 +651,9 @@ def armor_sets(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float
                      "세트 구성(세트별 개수)이 같은 조합끼리는 템 자체 스탯이 가장 좋은 배치 하나만 보여 줘요. 한벌옷(앱솔·아케인 상의)은 아직 없어요.")}
 
 
+POTENTIAL_LABELS = {"same": "지금 그대로", "legend2": "레전드리 2줄", "legend3": "레전드리 3줄"}
+
+
 @with_basis
 def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None) -> dict:
     """목표 세팅 컨설팅(2026-11-26 사용자): 메소를 모아 오래 쓸 템들로 한 번에 갈아탈 때의 세팅을 통째로 계산한다.
@@ -676,6 +679,13 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
         o["match_cost"] = sum(x["match_cost"] or 0 for x in o["buy"])
         o["match_cost_text"] = meso_text(o["match_cost"]) if o["match_cost"] else None
         o["match_unknown"] = sum(1 for x in o["buy"] if x["match_cost"] is None)
+        # 잠재 목표(레전드리 2줄·3줄)를 골랐을 때: 그대로 쓰는 템의 잠재를 지금 등급에서 목표까지 올리는 큐브 평균
+        for c in o["cube"]:
+            c["cost_text"] = meso_text(c["cost"]) if c["cost"] else None
+        o["cube_cost"] = sum(c["cost"] or 0 for c in o["cube"])
+        o["cube_cost_text"] = meso_text(o["cube_cost"]) if o["cube_cost"] else None
+        o["cube_unknown"] = sum(1 for c in o["cube"] if c["cost"] is None)
+        o["potential_label"] = POTENTIAL_LABELS[o["potential"]]
         for c in o["set_change"]:
             tiers = {int(n): text for n, text in (CATALOG.tiers.get(c["set"]) or {}).items()}
             c["lost"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["after"] < n <= c["before"]]
@@ -684,6 +694,10 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             "note": ("세팅 전체를 한 번에 낀 보스 실딜이에요(지금 보스 세팅 = 0%) — 세트 효과가 같이 바뀌는 것까지 들어 있어요. "
                      "바꿀 템의 기본 옵션은 그 템을 낀 캐릭터들의 넥슨 API 실측이고, 스타포스는 고른 성(그 템 최대 성 이하), "
                      "잠재·에디·추옵·주문서는 지금 그 자리 템과 같은 수준으로 맞춘다고 봤어요. "
+                     "잠재 목표를 '레전드리 2줄·3줄'로 고르면 방어구·장신구 칸의 윗잠재를 그 등급의 흔한 좋은 줄(공식 확률표에서 2% 이상인 줄 중 "
+                     "실딜이 가장 오르는 조합)로 바꿔 세팅 전체를 다시 계산해요 — 지금 잠재가 이미 그 이상인 칸과 잠재가 없는 칸은 그대로 두고, "
+                     "모자의 쿨타임 감소 줄은 남겨요. 큐브 비용은 평균이에요(살 템은 레어에서, 그대로 쓰는 템은 지금 등급에서 시작). "
+                     "에디셔널 잠재와 추옵은 어느 목표에서나 지금 그대로예요(환생의 불꽃 가격은 넥슨이 주지 않아 비용을 낼 수 없어요). "
                      "'잠재까지 맞추면'은 살 템에 지금 수준의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 비용을 더한 값이에요 — "
                      "잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요. 추옵·주문서를 맞추는 비용은 들어 있지 않아요. "
                      "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 이벤트 없는 평균이에요(파괴 시 스페어 값 제외). "

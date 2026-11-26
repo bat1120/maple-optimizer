@@ -357,7 +357,16 @@ def test_consult_gives_whole_builds_per_star(tmp_path, clock):
     """2026-11-26 사용자: 템 세팅은 한 단계씩이 아니라 메소를 모아 한 번에 갈아타는 것 — 세팅 전체를 한 번에 잰 목표 세팅을 준다."""
     r = make(tmp_path, clock).get("/api/character/x/consult")
     assert r.status_code == 200
-    builds = r.json()["builds"]
+    every = r.json()["builds"]
+    # 2026-11-26: 성 × 잠재 목표(지금 그대로·레전드리 2줄·3줄). 아래는 '지금 그대로' 줄
+    assert [(b["starforce"], b["potential"]) for b in every] == [(s, k) for s in (17, 18, 21, 22) for k in ("same", "legend2", "legend3")]
+    assert {b["potential_label"] for b in every} == {"지금 그대로", "레전드리 2줄", "레전드리 3줄"}
+    for b in every:
+        assert b["cube_cost"] == sum(c["cost"] or 0 for c in b["cube"]) and all(c["cost_text"] for c in b["cube"] if c["cost"])
+        assert all(len(x["target"]) in (2, 3) for x in b["buy"] if x["target"]) and (b["potential"] != "same" or not b["cube"])
+    best = [b for b in every if b["potential"] == "legend3"][-1]
+    assert best["delta_pct"] > every[-3]["delta_pct"] and best["match_cost"] > every[-3]["match_cost"]
+    builds = [b for b in every if b["potential"] == "same"]
     assert [b["starforce"] for b in builds] == [17, 18, 21, 22]
     assert [b["delta_pct"] for b in builds] == sorted(b["delta_pct"] for b in builds) and builds[-1]["delta_pct"] > 0   # 성이 높을수록 높다
     top = builds[-1]

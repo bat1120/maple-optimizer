@@ -67,3 +67,48 @@ def test_match_cost_is_the_cube_cost_to_reach_current_potential_from_rare():
     fewer = match_cost(sw, slot, dataclasses.replace(it, potentials=useful[:1]))["잠재"]
     none = match_cost(sw, slot, dataclasses.replace(it, potentials=[]))["잠재"]
     assert none == 0.0 and 0 < fewer <= full
+
+
+def test_potential_goal_is_exactly_the_index_of_wearing_those_lines():
+    """잠재 목표(2026-11-26 사용자: 17·18·21·22성 템들의 잠재는 어떻게 되는가). 목표 잠재를 낀 실딜 = 그 줄을 실제로 낀 세팅의 실딜."""
+    from engine.market.consult import _goals
+    from engine.market.recommend import SWAP, _valued, line_tables
+    snap, setting, b = _setup()
+    same, two, three = consult(snap, setting, b, service.CATALOG, stars=(22,))
+    assert [o["potential"] for o in (same, two, three)] == ["same", "legend2", "legend3"]
+    assert [p["name"] for p in same["pieces"]] == [p["name"] for p in three["pieces"]]     # 템 구성은 같고 잠재만 다르다
+    assert same["cube"] == [] and all(x["target"] is None for x in same["buy"])
+    # 같은 세팅을 손으로 다시 낀다: 지금 그대로 세팅에 목표 줄을 얹은 것
+    sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
+    raws = {p["slot"]: (sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > sw.pl.raw[p["slot"]].starforce
+                        else sw.pl.raw[p["slot"]]) for p in same["pieces"]}
+    worn = dict(sw.pl.items)
+    worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raws.items()})
+    assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == same["delta_pct"]
+    targets = {x["slot"]: x["target"] for x in three["buy"] if x["target"]} | {c["slot"]: c["target"] for c in three["cube"]}
+    assert len(targets) >= 5
+    for s, lines in targets.items():
+        table = line_tables("잠재", "레전드리", s, raws[s].level)
+        assert len(lines) == 3 and all(any(t in pos for pos in table) for t in lines), (s, lines)   # 공식 확률표에 있는 줄만
+        worn[s] = _valued(SWAP["잠재"](raws[s], lines, snap.level), sw.pl.mains, sw.pl.per_sec)
+    assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == three["delta_pct"]
+    pieces = {p["slot"]: p for p in same["pieces"]}
+    assert set(_goals(sw, {**sw.pl.items, **{s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raws.items()}}, raws,
+                      list(raws), pieces, 3)) == set(targets)
+
+
+def test_higher_potential_goal_never_lowers_damage_or_cost():
+    """목표가 높을수록 실딜도 큐브 비용도 내려가지 않는다. 지금 잠재가 이미 목표 이상인 칸은 건드리지 않는다(실딜이 내려가면 안 된다)."""
+    snap, setting, b = _setup()
+    builds = consult(snap, setting, b, service.CATALOG)
+    assert [(o["starforce"], o["potential"]) for o in builds] == [(s, k) for s in (17, 18, 21, 22) for k in ("same", "legend2", "legend3")]
+    cube = lambda o: sum(x["match"]["잠재"] or 0 for x in o["buy"]) + sum(c["cost"] or 0 for c in o["cube"])  # noqa: E731
+    for i in range(0, len(builds), 3):
+        same, two, three = builds[i:i + 3]
+        assert same["delta_pct"] < two["delta_pct"] < three["delta_pct"]
+        assert cube(same) < cube(two) < cube(three)
+        assert same["raise_cost"] == two["raise_cost"] == three["raise_cost"] and same["set_change"] == three["set_change"]
+        for o in (two, three):
+            assert o["armor"]["delta_pct"] >= same["armor"]["delta_pct"] and o["accessory"]["delta_pct"] >= same["accessory"]["delta_pct"]
+            assert all(c["cost"] is None or c["cost"] > 0 for c in o["cube"])
+            assert not {c["slot"] for c in o["cube"]} & {x["slot"] for x in o["buy"]}

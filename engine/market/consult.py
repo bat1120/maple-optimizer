@@ -140,8 +140,10 @@ def accessory_builds(sw: _Swapper, catalog: SetCatalog, top: int = 5) -> list[di
 
 
 def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
-            stars: tuple[int, ...] = STARS, cooldown_main_pct: float | None = None) -> list[dict]:
-    """성(17·18·21·22)마다 목표 세팅 하나: 방어구 1위 조합 + 장신구 1위 조합을 같이 낀 세팅의 보스 실딜(지금 = 0%)."""
+            stars: tuple[int, ...] = STARS, cooldown_main_pct: float | None = None,
+            potentials: tuple[str, ...] = ("same", "legend2", "legend3")) -> list[dict]:
+    """성(17·18·21·22) × 잠재 목표(지금 그대로·레전드리 2줄·3줄)마다 목표 세팅 하나: 방어구 1위 조합 + 장신구 1위 조합을 같이 낀
+    세팅의 보스 실딜(지금 = 0%). 템 구성은 성마다 하나(잠재 목표는 그 템들에 얹는다)."""
     out = []
     for star in stars:
         sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct, star)
@@ -171,24 +173,81 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
             if p["kept"] and p["starforce"] > cur.starforce:
                 t = expected_totals(cur.level, cur.starforce, p["starforce"], StarforceConditions(), 0.0)
                 p["raise_cost"], p["raise_destroys"] = t["meso"], t["destroys"]
-        out.append({
-            "starforce": star,
-            "delta_pct": (sw.pl.ev.index(trial) / sw.pl.base - 1) * 100,
-            "armor": {"label": armor[0]["label"], "delta_pct": armor[0]["delta_pct"]} if armor else None,
-            "accessory": {"label": acc[0]["label"], "delta_pct": acc[0]["delta_pct"]} if acc else None,
-            "pieces": [{"slot": s, **pieces[s]} for s in order],
-            "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"],
-                     "match": match_cost(sw, s, raws[s]) if raws.get(s) is not None else {"잠재": None, "에디": None}}
-                    for s in order if not pieces[s]["kept"]],
-            "raise": [{"slot": s, "name": pieces[s]["name"], "from_star": pieces[s]["from_star"], "starforce": pieces[s]["starforce"],
-                       "cost": pieces[s]["raise_cost"], "destroys": pieces[s].get("raise_destroys"), "group": pieces[s]["group"]}
-                      for s in order if pieces[s]["raise_cost"] is not None],
-            "raise_cost": sum(pieces[s]["raise_cost"] or 0 for s in order),
-            "_order": order,
-            "set_change": [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
-                           for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)],
-        })
+            if p["kept"]:                                  # 잠재 목표 계산에 쓸 원본(쿨감 환산 전) 템
+                up = sw.like_current(s, cur.name) if p["starforce"] > cur.starforce and cur.name in BASES else None
+                raws[s] = up if up is not None else cur
+        match = {s: match_cost(sw, s, raws[s]) if raws.get(s) is not None else {"잠재": None, "에디": None}
+                 for s in order if not pieces[s]["kept"]}
+        set_change = [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
+                      for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)]
+        for key in potentials:
+            goal = _goals(sw, trial, raws, order, pieces, POTENTIALS[key]) if POTENTIALS[key] else {}
+            worn = dict(trial)
+            worn.update({s: g["item"] for s, g in goal.items()})
+            part = {}                                      # 방어구만·장신구만 낀 실딜(잠재 목표 포함)
+            for group in ("방어구", "장신구"):
+                only = dict(sw.pl.items)
+                only.update({s: worn[s] for s in order if pieces[s]["group"] == group})
+                part[group] = (sw.pl.ev.index(only) / sw.pl.base - 1) * 100
+            out.append({
+                "starforce": star, "potential": key,
+                "delta_pct": (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100,
+                "armor": {"label": armor[0]["label"], "delta_pct": part["방어구"] if goal else armor[0]["delta_pct"]} if armor else None,
+                "accessory": {"label": acc[0]["label"], "delta_pct": part["장신구"] if goal else acc[0]["delta_pct"]} if acc else None,
+                "pieces": [{"slot": s, **pieces[s]} for s in order],
+                # match: 살 템의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 — 잠재 목표를 고르면 잠재 쪽은 그 목표까지
+                "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"],
+                         "target": goal[s]["target"] if s in goal else None,
+                         "match": {**match[s], "잠재": goal[s]["cost"]} if s in goal else match[s]}
+                        for s in order if not pieces[s]["kept"]],
+                "raise": [{"slot": s, "name": pieces[s]["name"], "from_star": pieces[s]["from_star"], "starforce": pieces[s]["starforce"],
+                           "cost": pieces[s]["raise_cost"], "destroys": pieces[s].get("raise_destroys"), "group": pieces[s]["group"]}
+                          for s in order if pieces[s]["raise_cost"] is not None],
+                "raise_cost": sum(pieces[s]["raise_cost"] or 0 for s in order),
+                # cube: 그대로 쓰는 템의 잠재를 지금 등급에서 목표까지 큐브로 올리는 평균(None = 계산 못 함)
+                "cube": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "from_grade": raws[s].potential_grade,
+                          "target": goal[s]["target"], "cost": goal[s]["cost"]} for s in order if pieces[s]["kept"] and s in goal],
+                "_order": order,
+                "set_change": set_change,
+            })
     return out
 
 
-__all__ = ["ACCESSORY_PARTS", "ACCESSORY_SETS", "ARMOR_SLOTS", "STARS", "accessory_builds", "accessory_candidates", "consult"]
+# 잠재 목표(2026-11-26 사용자: "저 17 18 21 22성 템들은 잠재랑 추옵은 어떻게 되는거야?" — 오래 쓸 세팅인데 잠재가 지금 수준에 머물렀다).
+# None = 지금 그대로, 숫자 = 레전드리에서 맞출 좋은 줄 수
+POTENTIALS = {"same": None, "legend2": 2, "legend3": 3}
+
+
+def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict, lines: int) -> dict[str, dict]:
+    """세팅(trial)을 낀 상태에서 칸마다 잠재를 '레전드리 좋은 줄 lines개'로 바꾼 템과 그 큐브 평균 비용.
+    목표 줄은 짓지 않는다 — 그 템 레벨·부위의 공식 확률표에서 흔한(2% 이상) 줄 중 실딜이 가장 오르는 조합(_Planner.tiers).
+    지금 잠재가 이미 그 이상인 칸(바꾸면 실딜이 안 오르는 칸), 잠재가 없는 칸, 재설정이 안 되는 템은 그대로 둔다(결과에 없다).
+    비용: 살 템은 레어에서, 그대로 쓰는 템은 지금 등급에서 목표 등급까지 올리고 그 줄 수준이 나올 때까지(cube_value.expected_cost).
+    쿨감 줄(모자)은 남기고 나머지 줄을 고른다 — 그 칸은 lines가 3이어도 좋은 줄 2개까지다."""
+    import copy as _copy
+
+    from engine.enhance.fixed import fixed_reason
+    from engine.market.cube_value import expected_cost
+    from engine.market.recommend import SWAP
+    sub = _copy.copy(sw.pl)
+    sub.raw = {**sw.pl.raw, **{s: raws[s] for s in order if raws.get(s) is not None}}
+    sub.items = trial
+    sub.base = sw.pl.ev.index(trial)
+    out = {}
+    for s in order:
+        it = raws.get(s)
+        if it is None or not it.potentials or fixed_reason(it):
+            continue
+        fit = [t for t in sub.tiers(s, "잠재", grades=("레전드리",)) if t["lines_good"] <= lines]
+        if not fit:
+            continue
+        t = max(fit, key=lambda t: t["lines_good"])
+        if t["delta_pct"] <= 0:
+            continue
+        cost = expected_cost("잠재", it.level, "레어", "레전드리", t["reach_probability"]) if not pieces[s]["kept"] else t["cube_cost"]
+        new = SWAP["잠재"](it, t["target"], sw.snap.level)
+        out[s] = {"item": _valued(new, sw.pl.mains, sw.pl.per_sec), "target": t["target"], "cost": cost}
+    return out
+
+
+__all__ = ["ACCESSORY_PARTS", "ACCESSORY_SETS", "ARMOR_SLOTS", "POTENTIALS", "STARS", "accessory_builds", "accessory_candidates", "consult"]
