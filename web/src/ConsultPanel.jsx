@@ -217,7 +217,9 @@ export default function ConsultPanel({ name, defense }) {
                       <p>
                         {formatMeso(budget)}이면 목표 칸 <strong>{fit.keep.length}/{units.length}개</strong>까지(큐브 평균 {formatMeso(fit.spent) || "0"}) —
                         보스 실딜 <strong className="num">{fit.keep.length < units.length ? `약 ${pct1(fit.gain)}` : pct1(whole)}</strong>
-                        {fit.keep.length < units.length && <> <button type="button" className="ghost small" onClick={applyFit}>이대로 체크하기</button></>}
+                        {fit.keep.length < units.length && (units.every((u) => isOff(u.slot, u.kind) === !fit.keep.includes(u))
+                          ? <span className="muted small"> · 아래 체크가 이대로예요</span>
+                          : <> <button type="button" className="ghost small" onClick={applyFit}>이대로 체크하기</button></>)}
                       </p>
                       <p className="muted small">강화{buyTotal ? "와 넣은 시세" : ""}를 먼저 빼고, 남는 메소로 100억당 효율 높은 칸부터 넣었어요.
                         {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}{fit.keep.length < units.length ? " 실딜은 칸별 몫으로 계산해 '약'이에요." : ""}</p>

@@ -211,6 +211,8 @@ describe("목표 세팅 컨설팅", () => {
     expect(fit()).toContain("700억이면 목표 칸 1/3개까지(큐브 평균 23억 5826만)");
     expect(fit()).toContain("보스 실딜 약 +79.2%");                                   // 82.0 − 장갑 1.2 − 모자 1.6
     fireEvent.click(screen.getByRole("button", { name: "이대로 체크하기" }));
+    expect(screen.queryByRole("button", { name: "이대로 체크하기" })).toBeNull();          // 이미 그대로면 버튼 대신 안내
+    expect(fit()).toContain("아래 체크가 이대로예요");
     expect(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기")).not.toBeChecked();
     expect(screen.getByLabelText("에테르넬 메이지햇 잠재 목표 넣기")).not.toBeChecked();
     expect(screen.getByLabelText("커맨더 포스 이어링 잠재 목표 넣기")).toBeChecked();
