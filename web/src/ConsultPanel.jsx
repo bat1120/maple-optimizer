@@ -46,7 +46,11 @@ export default function ConsultPanel({ name, defense }) {
   const dropped = goal ? [...build.buy.filter((x) => x.goal && isOff(x.slot)).map((x) => ({ group: x.group, ...x.goal })),
                           ...cubes.filter((x) => isOff(x.slot))] : [];
   const drop = (group, key) => dropped.filter((x) => !group || x.group === group).reduce((a, x) => a + (x[key] || 0), 0);
-  const cubeAll = goal ? (build.cube_cost || 0) + (build.match_cost || 0) - drop(null, "cost") : 0;
+  // 뺀 칸의 비용은 살 템·지금 템 각각에서 뺀다(운영 화면 확인: 모자를 뺐는데 '지금 템 799억'이 그대로 적혀 있었다)
+  const keptOff = goal ? cubes.filter((x) => isOff(x.slot)).reduce((a, x) => a + (x.cost || 0), 0) : 0;
+  const keptCube = goal ? (build.cube_cost || 0) - keptOff : 0;
+  const buyCube = goal ? (build.match_cost || 0) - (drop(null, "cost") - keptOff) : 0;
+  const cubeAll = buyCube + keptCube;
   const shown = (delta, group) => (dropped.length ? `약 ${pct1(delta - drop(group, "gain_pct"))}` : pct1(delta));
   const eff = (g) => (g ? `${pct1(g.gain_pct)}${g.per_100m ? ` · 100억당 +${(g.per_100m * 100).toFixed(2)}%` : ""}` : "");
   const priced = (build?.buy || []).map((x) => parsePrice(prices[x.name] || ""));
@@ -221,7 +225,7 @@ export default function ConsultPanel({ name, defense }) {
             {goal && cubeAll > 0 && (
               <span className="consult-match-total muted small">
                 위 합계에는 잠재를 {build.potential_label}로 맞추는 큐브 평균 <strong className="num">{formatMeso(cubeAll)}</strong>이 들어 있어요
-                (살 템 {formatMeso(build.match_cost || 0) || "0"} · 지금 템 {formatMeso(build.cube_cost || 0) || "0"}) — 잠재가 붙은 매물을 사면 그보다 덜 들어요.
+                (살 템 {formatMeso(buyCube) || "0"} · 지금 템 {formatMeso(keptCube) || "0"}) — 잠재가 붙은 매물을 사면 그보다 덜 들어요.
                 에디·추옵은 지금 그대로로 봤어요.
                 {dropped.length > 0 ? ` 잠재 목표에서 뺀 칸 ${dropped.length}개는 지금 잠재 그대로예요 — 실딜은 칸별 몫을 뺀 값이라 '약'이에요.` : " 효율이 낮은 칸은 체크를 풀어 뺄 수 있어요."}
                 {build.match_unknown + (build.cube_unknown || 0) > 0 ? ` 계산하지 못한 템 ${build.match_unknown + (build.cube_unknown || 0)}개는 빠져 있어요.` : ""}

@@ -134,6 +134,7 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기"));
     expect(total()).toContain("필요한 메소 603억 6262만");                       // 719억 2262만 − 115억 6000만
     expect(total()).toContain("잠재 목표에서 뺀 칸 1개는 지금 잠재 그대로예요");
+    expect(total()).toContain("큐브 평균 40억이 들어 있어요 (살 템 40억 · 지금 템 0)");   // 뺀 칸은 안쪽 내역에서도 빠진다
     expect(document.querySelector(".consult-gain").textContent).toBe("약 +109.1%");   // 110.31 − 1.2
     const after = within(screen.getByRole("table", { name: "나눠서 한다면" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(after).toEqual(["장신구만약 +49.5%강화·큐브 40억 + 살 템 1개 시세", "방어구만약 +21.5%563억 6262만", "둘 다약 +109.1%강화·큐브 603억 6262만 + 살 템 1개 시세"]);
