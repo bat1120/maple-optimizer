@@ -1045,6 +1045,9 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 /* 목표 세팅 컨설팅 */
 .consult-stars { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-3) 0; }
 .consult-stars .pill.is-on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.consult-pick { display: flex; align-items: center; gap: var(--sp-1); cursor: pointer; }
+.consult-pick input { width: auto; flex: none; margin: 0; }
+.consult-pick .is-off { text-decoration: line-through; opacity: .6; }
 .consult-pots { align-items: center; margin-top: calc(-1 * var(--sp-1)); }
 .consult-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); margin: var(--sp-2) 0 var(--sp-3); }
 .consult-sub { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--fs-md); }

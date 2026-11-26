@@ -365,6 +365,9 @@ def test_consult_gives_whole_builds_per_star(tmp_path, clock):
         assert b["cube_cost"] == sum(c["cost"] or 0 for c in b["cube"]) and all(c["cost_text"] for c in b["cube"] if c["cost"])
         assert all(len(x["target"]) in (2, 3) for x in b["buy"] if x["target"]) and (b["potential"] != "same" or not b["cube"])
     best = [b for b in every if b["potential"] == "legend3"][-1]
+    goals = [x["goal"] for x in best["buy"] if x["target"]]
+    assert goals and all(g["gain_pct"] > 0 and g["cost_text"] and g["per_100m"] > 0 for g in goals)
+    assert all(c["gain_pct"] > 0 for c in best["cube"]) and all(x["goal"] is None for x in every[0]["buy"])
     assert best["delta_pct"] > every[-3]["delta_pct"] and best["match_cost"] > every[-3]["match_cost"]
     builds = [b for b in every if b["potential"] == "same"]
     assert [b["starforce"] for b in builds] == [17, 18, 21, 22]

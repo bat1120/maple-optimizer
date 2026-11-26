@@ -673,6 +673,8 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             x["level"] = (BASES.get(x["name"]) or {}).get("level")
             # 잠재·에디를 지금 그 자리 템 수준으로 큐브로 처음부터 맞추는 평균 비용(상한에 가깝다). None = 계산 못 함, 0 = 맞출 줄 없음
             m = x.pop("match")
+            if x.get("goal") and x["goal"]["cost"]:
+                x["goal"]["cost_text"] = meso_text(x["goal"]["cost"])
             x["match_cost"] = None if any(v is None for v in m.values()) else sum(m.values())
             x["match_parts"] = {k: (None if v is None else {"cost": v, "text": meso_text(v) if v else "0"}) for k, v in m.items()}
             x["match_text"] = meso_text(x["match_cost"]) if x["match_cost"] else ("0" if x["match_cost"] == 0 else None)
@@ -697,6 +699,8 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
                      "잠재 목표를 '레전드리 2줄·3줄'로 고르면 방어구·장신구 칸의 윗잠재를 그 등급의 흔한 좋은 줄(공식 확률표에서 2% 이상인 줄 중 "
                      "실딜이 가장 오르는 조합)로 바꿔 세팅 전체를 다시 계산해요 — 지금 잠재가 이미 그 이상인 칸과 잠재가 없는 칸은 그대로 두고, "
                      "모자의 쿨타임 감소 줄은 남겨요. 큐브 비용은 평균이에요(살 템은 레어에서, 그대로 쓰는 템은 지금 등급에서 시작). "
+                     "칸마다 적힌 '+x% · 1억당'은 그 칸의 잠재만 목표로 바꿨을 때의 몫이에요 — 체크를 풀어 그 칸을 빼면 합계는 정확히, "
+                     "실딜은 칸별 몫을 빼는 방법으로(그래서 '약') 다시 보여 줘요. "
                      "에디셔널 잠재와 추옵은 어느 목표에서나 지금 그대로예요(환생의 불꽃 가격은 넥슨이 주지 않아 비용을 낼 수 없어요). "
                      "'잠재까지 맞추면'은 살 템에 지금 수준의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 비용을 더한 값이에요 — "
                      "잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요. 추옵·주문서를 맞추는 비용은 들어 있지 않아요. "

@@ -199,6 +199,8 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                 # match: 살 템의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 — 잠재 목표를 고르면 잠재 쪽은 그 목표까지
                 "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"],
                          "target": goal[s]["target"] if s in goal else None,
+                         # goal: 이 칸 잠재 목표만의 몫(실딜 %p·큐브 평균·1억 메소당) — 효율이 나쁜 칸을 가려 볼 수 있게
+                         "goal": {k: goal[s][k] for k in ("gain_pct", "cost", "per_100m")} if s in goal else None,
                          "match": {**match[s], "잠재": goal[s]["cost"]} if s in goal else match[s]}
                         for s in order if not pieces[s]["kept"]],
                 "raise": [{"slot": s, "name": pieces[s]["name"], "from_star": pieces[s]["from_star"], "starforce": pieces[s]["starforce"],
@@ -207,7 +209,8 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                 "raise_cost": sum(pieces[s]["raise_cost"] or 0 for s in order),
                 # cube: 그대로 쓰는 템의 잠재를 지금 등급에서 목표까지 큐브로 올리는 평균(None = 계산 못 함)
                 "cube": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "from_grade": raws[s].potential_grade,
-                          "target": goal[s]["target"], "cost": goal[s]["cost"]} for s in order if pieces[s]["kept"] and s in goal],
+                          "target": goal[s]["target"], "cost": goal[s]["cost"], "gain_pct": goal[s]["gain_pct"],
+                          "per_100m": goal[s]["per_100m"]} for s in order if pieces[s]["kept"] and s in goal],
                 "_order": order,
                 "set_change": set_change,
             })
@@ -251,7 +254,10 @@ def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict
             continue
         cost = expected_cost("잠재", it.level, "레어", "레전드리", t["reach_probability"]) if not pieces[s]["kept"] else t["cube_cost"]
         new = SWAP["잠재"](it, t["target"], sw.snap.level)
-        out[s] = {"item": _valued(new, sw.pl.mains, sw.pl.per_sec), "target": t["target"], "cost": cost}
+        # gain_pct: 이 칸의 잠재만 목표로 바꿨을 때 세팅 실딜이 오르는 몫(지금 세팅 기준 %p — 다른 칸은 지금 잠재 그대로인 상태에서 잰 값)
+        gain = t["delta_pct"] * sub.base / sw.pl.base
+        out[s] = {"item": _valued(new, sw.pl.mains, sw.pl.per_sec), "target": t["target"], "cost": cost, "gain_pct": gain,
+                  "per_100m": gain / (cost / 1e8) if cost else None}
     return out
 
 

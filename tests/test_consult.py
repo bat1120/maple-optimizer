@@ -112,3 +112,8 @@ def test_higher_potential_goal_never_lowers_damage_or_cost():
             assert o["armor"]["delta_pct"] >= same["armor"]["delta_pct"] and o["accessory"]["delta_pct"] >= same["accessory"]["delta_pct"]
             assert all(c["cost"] is None or c["cost"] > 0 for c in o["cube"])
             assert not {c["slot"] for c in o["cube"]} & {x["slot"] for x in o["buy"]}
+            # 칸별 몫: 그 칸만 목표 잠재로 바꾼 실딜 차이. 다 더하면 전체 차이와 거의 같다(주스탯%는 더해지므로 — 화면이 '약'으로 쓰는 근거)
+            parts = [x["goal"] for x in o["buy"] if x["goal"]] + list(o["cube"])
+            assert all(g["gain_pct"] > 0 and (g["cost"] is None or g["per_100m"] == g["gain_pct"] / (g["cost"] / 1e8)) for g in parts)
+            whole = o["delta_pct"] - same["delta_pct"]
+            assert abs(sum(g["gain_pct"] for g in parts) - whole) < 0.05 * whole
