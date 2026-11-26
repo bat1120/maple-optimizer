@@ -156,8 +156,9 @@ export function getSwaps(name, bossDefense = 300, starforce = 18) {
 }
 
 // 목표 세팅 컨설팅(2026-11-26): 성(17·18·21·22)마다 한 번에 갈아탈 방어구·장신구 세팅
-export function getConsult(name, bossDefense = 300) {
-  return request(`${base(name)}/consult?${bq(bossDefense)}`);
+// sf: 강화 비용에 넣을 스타포스 이벤트(쉼표로 — SF_EVENTS 이름). 빈 글자면 이벤트 없음
+export function getConsult(name, bossDefense = 300, sf = "") {
+  return request(`${base(name)}/consult?${bq(bossDefense)}${sf ? `&sf=${sf}` : ""}`);
 }
 
 // 섞은 목표(2026-11-26): 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜
@@ -166,8 +167,8 @@ export function getConsultMix(name, bossDefense = 300, star = 22, budget = 0) {
 }
 
 // 성까지 같이(2026-11-26): 가진 메소 전체(total)에서 성마다 강화 평균과 넣은 살 템 시세(prices)를 빼고 추천 조합을 재서 가장 많이 오르는 성
-export function getConsultBest(name, bossDefense = 300, total = 0, prices = 0) {
-  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&total=${Math.max(0, Math.round(total))}&prices=${Math.max(0, Math.round(prices))}`);
+export function getConsultBest(name, bossDefense = 300, total = 0, prices = 0, sf = "") {
+  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&total=${Math.max(0, Math.round(total))}&prices=${Math.max(0, Math.round(prices))}${sf ? `&sf=${sf}` : ""}`);
 }
 
 // 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개

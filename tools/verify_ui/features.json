@@ -101,7 +101,7 @@
       "id": "upgrade",
       "title": "업그레이드 — 내 업그레이드 계획(무엇부터, 어디서)",
       "url": "/#/c/{character}?tab=upgrade",
-      "ready": "document.querySelectorAll('.plan-steps li.plan-row').length > 0",
+      "ready": "document.querySelectorAll('.plan-steps li.plan-row').length > 0 && !!document.querySelector('.consult-headline')",
       "settle": 3000,
       "expect": [
         {

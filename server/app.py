@@ -548,26 +548,37 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
     @app.get("/api/character/{name}/consult")
     def consult(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
-                boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
-        """목표 세팅 컨설팅: 성(17·18·21·22)마다 한 번에 갈아탈 방어구·장신구 세팅과 살 템·강화 비용."""
+                boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None, sf: str | None = None):
+        """목표 세팅 컨설팅: 성(17·18·21·22)마다 한 번에 갈아탈 방어구·장신구 세팅과 살 템·강화 비용.
+        sf: 강화 비용에 넣을 스타포스 이벤트(쉼표: shining, discount30, destroy_down30, guarantee_5_10_15, restore_discount20, protect)."""
+        events = sf_events(sf)
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
-        return memo("consult", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
-                    lambda: service.consult(snap, b, cooldown_main_pct))
+        return memo("consult", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
+                    lambda: service.consult(snap, b, cooldown_main_pct, events))
+
+    def sf_events(sf: str | None):
+        from engine.market.events import Events
+        try:
+            return Events.parse(sf)
+        except ValueError as e:
+            raise ApiError(400, "BAD_EVENTS", str(e)) from None
 
     @app.get("/api/character/{name}/consult/mix")
     def consult_mix(name: str, star: int = Query(22, ge=0, le=25), budget: float | None = Query(None, ge=0, le=1e16),
                     total: float | None = Query(None, ge=0, le=1e16), prices: float = Query(0, ge=0, le=1e16),
                     boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
-                    boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+                    boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None,
+                    sf: str | None = None):
         """섞은 목표: 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜.
         total(가진 메소 전체)을 주면 성까지 같이 고른다 — 성마다 강화 평균과 prices(넣은 살 템 시세)를 빼고 잰다."""
         if (budget is None) == (total is None):
             raise ApiError(422, "BAD_REQUEST", "budget(큐브에 쓸 메소)과 total(가진 메소 전체) 중 하나만 주세요.")
+        events = sf_events(sf)
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         if total is not None:
             total, prices = float(int(total // 1e8) * 1e8), float(int(prices // 1e8) * 1e8)
-            return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
-                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct))
+            return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
+                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct, events))
         budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
         return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
                     lambda: service.consult_mix(snap, b, star, budget, cooldown_main_pct))

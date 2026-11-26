@@ -141,7 +141,7 @@ def accessory_builds(sw: _Swapper, catalog: SetCatalog, top: int = 5) -> list[di
 
 def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalog: SetCatalog,
             stars: tuple[int, ...] = STARS, cooldown_main_pct: float | None = None,
-            potentials: tuple[str, ...] = ("same", "legend2", "legend3")) -> list[dict]:
+            potentials: tuple[str, ...] = ("same", "legend2", "legend3"), sf: StarforceConditions | None = None) -> list[dict]:
     """성(17·18·21·22) × 잠재 목표(지금 그대로·레전드리 2줄·3줄)마다 목표 세팅 하나: 방어구 1위 조합 + 장신구 1위 조합을 같이 낀
     세팅의 보스 실딜(지금 = 0%). 템 구성은 성마다 하나(잠재 목표는 그 템들에 얹는다)."""
     out = []
@@ -171,7 +171,7 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
             p["from_star"] = cur.starforce if p["kept"] else None
             p["raise_cost"] = None
             if p["kept"] and p["starforce"] > cur.starforce:
-                t = expected_totals(cur.level, cur.starforce, p["starforce"], StarforceConditions(), 0.0)
+                t = expected_totals(cur.level, cur.starforce, p["starforce"], sf or StarforceConditions(), 0.0)
                 p["raise_cost"], p["raise_destroys"] = t["meso"], t["destroys"]
             if p["kept"]:                                  # 잠재 목표 계산에 쓸 원본(쿨감 환산 전) 템
                 up = sw.like_current(s, cur.name) if p["starforce"] > cur.starforce and cur.name in BASES else None

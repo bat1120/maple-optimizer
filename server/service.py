@@ -656,14 +656,16 @@ POTENTIAL_LABELS = {"same": "지금 그대로", "legend2": "레전드리 2줄", 
 
 
 @with_basis
-def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None) -> dict:
+def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None, events=None) -> dict:
     """목표 세팅 컨설팅(2026-11-26 사용자): 메소를 모아 오래 쓸 템들로 한 번에 갈아탈 때의 세팅을 통째로 계산한다.
     성(17·18·21·22)마다 방어구·장신구 세팅 하나와, 살 템 목록·지금 템 강화 비용(평균)·세트 효과 변화를 준다. 템 시세는 없다."""
     from engine.market.consult import consult as consult_builds
     from engine.market.swaps import BASES
     b = boss(defense)
     setting = rank_settings(snap, b, CATALOG)[0][0]
-    builds = consult_builds(snap, setting, b, CATALOG, cooldown_main_pct=cooldown_main_pct)
+    from engine.market.events import Events
+    events = events or Events()
+    builds = consult_builds(snap, setting, b, CATALOG, cooldown_main_pct=cooldown_main_pct, sf=events.starforce())
     for o in builds:
         o["raise_cost_text"] = meso_text(o["raise_cost"]) if o["raise_cost"] else None
         for r in o["raise"]:
@@ -701,7 +703,7 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
             tiers = {int(n): text for n, text in (CATALOG.tiers.get(c["set"]) or {}).items()}
             c["lost"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["after"] < n <= c["before"]]
             c["gained"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["before"] < n <= c["after"]]
-    return {"evaluation_setting": asdict(setting), "boss": asdict(b), "builds": builds,
+    return {"evaluation_setting": asdict(setting), "boss": asdict(b), "builds": builds, "events_label": events.label(),
             "note": ("세팅 전체를 한 번에 낀 보스 실딜이에요(지금 보스 세팅 = 0%) — 세트 효과가 같이 바뀌는 것까지 들어 있어요. "
                      "바꿀 템의 기본 옵션은 그 템을 낀 캐릭터들의 넥슨 API 실측이고, 스타포스는 고른 성(그 템 최대 성 이하), "
                      "잠재·에디·추옵·주문서는 지금 그 자리 템과 같은 수준으로 맞춘다고 봤어요. "
@@ -715,7 +717,7 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
                      "추옵은 어느 목표에서나 지금 그대로예요(환생의 불꽃 가격은 넥슨이 주지 않아 비용을 낼 수 없어요). "
                      "'잠재까지 맞추면'은 살 템에 지금 수준의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 비용을 더한 값이에요 — "
                      "잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요. 추옵·주문서를 맞추는 비용은 들어 있지 않아요. "
-                     "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 이벤트 없는 평균이에요(파괴 시 스페어 값 제외). "
+                     "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 고른 스타포스 이벤트(없으면 이벤트 없음)의 평균이에요(파괴 시 스페어 값 제외). "
                      "살 템의 시세는 넥슨이 주지 않아서 직접 넣어야 합계가 나와요. 무기·보조무기·엠블렘·특수 반지는 바꾸지 않아요 — "
                      "다만 잠재·에디 목표를 고르면 무기·보조무기·엠블렘의 잠재·에디도 같은 방법으로 올려요('둘 다'에만 들어가요).")}
 
@@ -739,12 +741,14 @@ def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: floa
 
 @with_basis
 def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: float = 0.0,
-                 cooldown_main_pct: float | None = None) -> dict:
+                 cooldown_main_pct: float | None = None, events=None) -> dict:
     """가진 메소 전체(강화 + 큐브)로 성까지 같이 고른 추천 조합: 성마다 강화 평균과 넣은 살 템 시세를 빼고 남는 메소로 추천 조합을 잰다."""
     from engine.market.consult_mix import best_star
     b = boss(defense)
     setting = rank_settings(snap, b, CATALOG)[0][0]
-    r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct)
+    from engine.market.events import Events
+    events = events or Events()
+    r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct, sf=events.starforce())
     for x in r["stars"]:
         x["raise_cost_text"] = meso_text(x["raise_cost"]) if x["raise_cost"] else "0"
         x["cube_budget_text"] = meso_text(x["cube_budget"]) if x["cube_budget"] else "0"
@@ -754,8 +758,8 @@ def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: 
         for x in r["mix"]["picks"]:
             x["cost_text"] = meso_text(x["cost"])
         r["mix"]["cost_text"] = meso_text(r["mix"]["cost"]) if r["mix"]["cost"] else None
-    return {**r, "evaluation_setting": asdict(setting), "boss": asdict(b),
-            "note": ("가진 메소에서 성마다 강화 평균(이벤트 없음)과 넣은 살 템 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 고른 "
+    return {**r, "evaluation_setting": asdict(setting), "boss": asdict(b), "events_label": events.label(),
+            "note": ("가진 메소에서 성마다 강화 평균(고른 스타포스 이벤트 반영)과 넣은 살 템 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 고른 "
                      "추천 조합을 성마다 정확히 재서 가장 많이 오르는 성을 골랐어요. 살 템 시세는 성마다 따로 받지 않아 넣은 값을 모든 성에서 똑같이 뺐어요.")}
 
 

@@ -410,3 +410,19 @@ def test_consult_mix_picks_per_slot_goals_within_budget(tmp_path, clock):
     assert d["best"] == best["starforce"] == d["mix"]["starforce"] and d["mix"]["delta_pct"] == best["delta_pct"]
     assert all(x["raise_cost_text"] and x["cube_budget_text"] for x in d["stars"]) and all(p["cost_text"] for p in d["mix"]["picks"])
     assert c.get("/api/character/x/consult/mix", params={"total": 1e10, "budget": 1e10}).status_code == 422
+
+
+def test_consult_raise_cost_follows_starforce_events(tmp_path, clock):
+    """스타포스 이벤트(2026-11-26): 컨설팅·추천 조합의 강화 비용이 고른 이벤트를 따른다(샤이닝 = 30% 할인 + 파괴 30% 감소)."""
+    c = make(tmp_path, clock)
+    plain = c.get("/api/character/x/consult").json()
+    shining = c.get("/api/character/x/consult", params={"sf": "shining"}).json()
+    assert plain["events_label"] == "이벤트 없음" and shining["events_label"] == "스타포스 30% 할인 · 파괴 30% 감소"
+    raised = [(a["raise_cost"], b["raise_cost"]) for a, b in zip(plain["builds"], shining["builds"]) if a["raise_cost"]]
+    assert raised and all(s < p for p, s in raised)                                  # 강화가 있는 세팅은 모두 싸진다
+    assert [b["delta_pct"] for b in plain["builds"]] == [b["delta_pct"] for b in shining["builds"]]   # 실딜은 그대로
+    best_plain = c.get("/api/character/x/consult/mix", params={"total": 3000e8}).json()
+    best_shining = c.get("/api/character/x/consult/mix", params={"total": 3000e8, "sf": "shining"}).json()
+    for p, s in zip(best_plain["stars"], best_shining["stars"]):
+        assert s["raise_cost"] <= p["raise_cost"] and (s["delta_pct"] or 0) >= (p["delta_pct"] or 0) - 1e-9
+    assert c.get("/api/character/x/consult", params={"sf": "free"}).status_code == 400

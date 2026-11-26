@@ -312,4 +312,19 @@ describe("목표 세팅 컨설팅", () => {
     expect(onEvaluate).toHaveBeenCalledWith({ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [], star: 21,
                                               plan: { cost: 47200000000, gain: 95.31, missing: 1 } });
   });
+
+  it("스타포스 이벤트를 켜면 그 조건으로 컨설팅·추천 조합을 다시 부른다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST
+      : { ...DATA, events_label: String(u).includes("sf=") ? "스타포스 30% 할인 · 파괴 30% 감소" : "이벤트 없음" }));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    expect(document.querySelector(".consult-events legend").textContent).toContain("— 없음");
+    fireEvent.click(screen.getByRole("button", { name: "샤이닝 스타포스" }));
+    await screen.findByText(/— 스타포스 30% 할인 · 파괴 30% 감소/);
+    expect(String(f.mock.calls.at(-1)[0])).toContain("/consult?boss_defense=300&sf=discount30,destroy_down30");
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    await screen.findByLabelText("추천 조합");
+    expect(String(f.mock.calls.at(-1)[0])).toContain("&total=73000000000&prices=0&sf=discount30,destroy_down30");
+  });
 });

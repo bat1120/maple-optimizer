@@ -2,7 +2,7 @@
 // 서버가 성(17·18·21·22)마다 방어구·장신구 세팅을 통째로 계산해 준다(세트 효과가 같이 바뀌는 것까지). 화면은 그 결과를 그대로 보여 주고,
 // 살 템의 시세만 사용자가 넣는다(넥슨이 주지 않는다) — 넣은 만큼 합계와 1억 메소당 효율을 계산한다(합·나눗셈뿐이라 화면에서 한다).
 import { useEffect, useRef, useState } from "react";
-import { getConsult, getConsultBest } from "./api.js";
+import { getConsult, getConsultBest, SF_EVENTS, SHINING } from "./api.js";
 import { formatMeso, formatPct, parsePrice } from "./format.js";
 import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -17,6 +17,12 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
   const [star, setStar] = useState(22);
   // 잠재 목표(2026-11-26 사용자: 오래 쓸 세팅인데 잠재는 어떻게 되는가): same = 지금 그대로, legend2·legend3 = 레전드리 좋은 줄 2·3개
   const [pot, setPot] = useState("same");
+  // 스타포스 이벤트(2026-11-26): 강화 비용에만 들어간다(실딜은 그대로). 진행 중인 이벤트는 넥슨 공지에서 확인해 사용자가 켠다
+  const [ev, setEv] = useState({});
+  const [reloading, setReloading] = useState(false);
+  const lastKey = useRef("");
+  const sf = SF_EVENTS.filter((k) => ev[k]).join(",");
+  const shining = SHINING.every((k) => ev[k]);
   const [addi, setAddi] = useState("same"); // 에디 목표: same | epic2 | unique2 | legend2
   const [off, setOff] = useState({});       // 잠재 목표에서 뺀 칸: "성/목표/칸" → true
   const [prices, setPrices] = useState({}); // 템 이름 → 사용자가 적은 가격 글자
@@ -28,11 +34,16 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
   useEffect(() => {
     if (!name) return;
     const mine = ++seq.current;
-    setData(null); setError(null);
-    getConsult(name, defense)
+    // 이벤트만 바꿨으면 보던 화면을 두고 다시 계산한다(전체가 빈 칸으로 깜빡이지 않게) — 캐릭터·방어율이 바뀌면 비운다
+    if (lastKey.current !== `${name}/${defense}`) setData(null);
+    lastKey.current = `${name}/${defense}`;
+    setError(null);
+    setReloading(true);
+    getConsult(name, defense, sf)
       .then((d) => { if (mine === seq.current) setData(d); })
-      .catch((e) => { if (mine === seq.current) setError(e); });
-  }, [name, defense]);
+      .catch((e) => { if (mine === seq.current) setError(e); })
+      .finally(() => { if (mine === seq.current) setReloading(false); });
+  }, [name, defense, sf]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 휴대폰에서는 고르는 줄이 옆으로 밀리는 한 줄이다 — 고른 알약이 화면 밖에 있으면 그 줄만 옆으로 밀어 보이게 한다(페이지는 안 움직인다)
   const panel = useRef(null);
@@ -141,12 +152,12 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
     if (!build || !budget) { setBest(null); return undefined; }
     const mine = ++bestSeq.current;
     const t = setTimeout(() => {
-      getConsultBest(name, defense, budget, buyTotal)
+      getConsultBest(name, defense, budget, buyTotal, sf)
         .then((d) => { if (mine === bestSeq.current) setBest(d); })
         .catch(() => { if (mine === bestSeq.current) setBest(null); });
     }, 400);                                                   // 메소를 치는 동안 매 글자마다 부르지 않는다
     return () => clearTimeout(t);
-  }, [name, defense, !!build, budget, buyTotal]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, defense, !!build, budget, buyTotal, sf]); // eslint-disable-line react-hooks/exhaustive-deps
   const mixed = best?.mix || null;
   const bestRow = best?.stars?.find((x) => x.starforce === best.best);
   const cheapest = best?.stars?.reduce((a, x) => (!a || x.short < a.short ? x : a), null);
@@ -231,6 +242,14 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
           </button>
           {open && options.length > 0 && (
             <>
+              <fieldset className="events consult-events">
+                <legend className="muted small">강화 비용에 넣을 스타포스 이벤트 {reloading ? "— 다시 계산 중…" : data?.events_label && data.events_label !== "이벤트 없음" ? `— ${data.events_label}` : "— 없음"}</legend>
+                {[["discount30", "30% 할인"], ["destroy_down30", "21성 이하 파괴 30% 감소"], ["guarantee_5_10_15", "5·10·15성 100%"]].map(([k, label]) => (
+                  <label key={k} className="chip"><input type="checkbox" checked={!!ev[k]} onChange={() => setEv((e) => ({ ...e, [k]: !e[k] }))} /> {label}</label>
+                ))}
+                <button type="button" className="ghost small" aria-pressed={shining}
+                        onClick={() => setEv((e) => ({ ...e, ...Object.fromEntries(SHINING.map((k) => [k, !shining])) }))}>샤이닝 스타포스{shining ? " ✓" : ""}</button>
+              </fieldset>
               <div className="consult-budget">
                 <label htmlFor="consult-have">가진 메소</label>
                 <input id="consult-have" aria-label="컨설팅에 쓸 메소" inputMode="text" autoComplete="off" placeholder="예: 3000억" value={have}
