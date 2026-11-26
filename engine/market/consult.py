@@ -181,6 +181,9 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
         set_change = [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
                       for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)]
         ladder: dict = {}                                  # 칸마다 레전드리 단계는 한 번만 잰다(2줄·3줄 목표가 같이 쓴다 — 운영에서 첫 응답 5초)
+        # 에디 목표: 줄은 '지금 잠재 그대로' 세팅에서 한 번 고르고(잠재 목표마다 다시 고르면 9배 느리다 — 고르는 줄은 거의 같다),
+        # 실딜은 잠재 목표마다 그 줄을 실제로 얹어 정확히 잰다
+        addi = {k: _goals(sw, trial, raws, order, pieces, n, ladder, kind="에디", grade=g) for k, (g, n) in ADDITIONALS.items()}
         for key in potentials:
             goal = _goals(sw, trial, raws, order, pieces, POTENTIALS[key], ladder) if POTENTIALS[key] else {}
             worn = dict(trial)
@@ -211,10 +214,34 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                 "cube": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "from_grade": raws[s].potential_grade,
                           "target": goal[s]["target"], "cost": goal[s]["cost"], "gain_pct": goal[s]["gain_pct"],
                           "per_100m": goal[s]["per_100m"]} for s in order if pieces[s]["kept"] and s in goal],
+                "additional_options": [_with_additional(sw, k, a, worn, goal, raws, order, pieces) for k, a in addi.items() if a],
                 "_order": order,
                 "set_change": set_change,
             })
     return out
+
+
+# 에디 목표(2026-11-26): 등급별 좋은 줄 2개. 3줄은 두지 않는다 — 레테 실측으로 칸 하나에 평균 3,000억~1조 3,000억이라 목표가 못 된다
+ADDITIONALS = {"epic2": ("에픽", 2), "unique2": ("유니크", 2), "legend2": ("레전드리", 2)}
+
+
+def _with_additional(sw: _Swapper, key: str, addi: dict, worn: dict, goal: dict, raws: dict, order: list[str], pieces: dict) -> dict:
+    """잠재 목표까지 낀 세팅(worn)에 에디 목표 줄을 얹은 세팅의 실딜(전체·방어구만·장신구만)과 칸별 목표."""
+    from engine.market.recommend import SWAP
+    top = dict(worn)
+    for s, a in addi.items():
+        base = goal[s]["raw"] if s in goal else raws[s]
+        top[s] = _valued(SWAP["에디"](base, a["target"], sw.snap.level), sw.pl.mains, sw.pl.per_sec)
+    part = {}
+    for group in ("방어구", "장신구"):
+        only = dict(sw.pl.items)
+        only.update({s: top[s] for s in order if pieces[s]["group"] == group})
+        part[group] = (sw.pl.ev.index(only) / sw.pl.base - 1) * 100
+    return {"key": key, "delta_pct": (sw.pl.ev.index(top) / sw.pl.base - 1) * 100,
+            "armor_delta_pct": part["방어구"], "accessory_delta_pct": part["장신구"],
+            "slots": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "kept": pieces[s]["kept"],
+                       "from_grade": raws[s].additional_grade if pieces[s]["kept"] else None,
+                       **{k: addi[s][k] for k in ("target", "cost", "gain_pct", "per_100m")}} for s in order if s in addi]}
 
 
 # 잠재 목표(2026-11-26 사용자: "저 17 18 21 22성 템들은 잠재랑 추옵은 어떻게 되는거야?" — 오래 쓸 세팅인데 잠재가 지금 수준에 머물렀다).
@@ -223,7 +250,7 @@ POTENTIALS = {"same": None, "legend2": 2, "legend3": 3}
 
 
 def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict, lines: int,
-           ladder: dict | None = None) -> dict[str, dict]:
+           ladder: dict | None = None, kind: str = "잠재", grade: str = "레전드리") -> dict[str, dict]:
     """세팅(trial)을 낀 상태에서 칸마다 잠재를 '레전드리 좋은 줄 lines개'로 바꾼 템과 그 큐브 평균 비용.
     목표 줄은 짓지 않는다 — 그 템 레벨·부위의 공식 확률표에서 흔한(2% 이상) 줄 중 실딜이 가장 오르는 조합(_Planner.tiers).
     지금 잠재가 이미 그 이상인 칸(바꾸면 실딜이 안 오르는 칸), 잠재가 없는 칸, 재설정이 안 되는 템은 그대로 둔다(결과에 없다).
@@ -242,23 +269,25 @@ def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict
     out = {}
     for s in order:
         it = raws.get(s)
-        if it is None or not it.potentials or fixed_reason(it):
+        if it is None or not (it.potentials if kind == "잠재" else it.additional) or fixed_reason(it):
             continue
-        if s not in ladder:
-            ladder[s] = sub.tiers(s, "잠재", grades=("레전드리",))
-        fit = [t for t in ladder[s] if t["lines_good"] <= lines]
+        if (kind, s) not in ladder:
+            ladder[kind, s] = sub.tiers(s, kind, grades=("레전드리",) if kind == "잠재" else ("에픽", "유니크", "레전드리"))
+        fit = [t for t in ladder[kind, s] if t["grade"] == grade and t["lines_good"] <= lines]
         if not fit:
             continue
         t = max(fit, key=lambda t: t["lines_good"])
         if t["delta_pct"] <= 0:
             continue
-        cost = expected_cost("잠재", it.level, "레어", "레전드리", t["reach_probability"]) if not pieces[s]["kept"] else t["cube_cost"]
-        new = SWAP["잠재"](it, t["target"], sw.snap.level)
+        cost = expected_cost(kind, it.level, "레어", grade, t["reach_probability"]) if not pieces[s]["kept"] else t["cube_cost"]
+        if pieces[s]["kept"] and cost is None:             # 쓰던 템의 지금 등급이 목표보다 높다 — 큐브로 내려갈 수는 없다
+            continue
+        new = SWAP[kind](it, t["target"], sw.snap.level)
         # gain_pct: 이 칸의 잠재만 목표로 바꿨을 때 세팅 실딜이 오르는 몫(지금 세팅 기준 %p — 다른 칸은 지금 잠재 그대로인 상태에서 잰 값)
         gain = t["delta_pct"] * sub.base / sw.pl.base
-        out[s] = {"item": _valued(new, sw.pl.mains, sw.pl.per_sec), "target": t["target"], "cost": cost, "gain_pct": gain,
+        out[s] = {"item": _valued(new, sw.pl.mains, sw.pl.per_sec), "raw": new, "target": t["target"], "cost": cost, "gain_pct": gain,
                   "per_100m": gain / (cost / 1e8) if cost else None}
     return out
 
 
-__all__ = ["ACCESSORY_PARTS", "ACCESSORY_SETS", "ARMOR_SLOTS", "POTENTIALS", "STARS", "accessory_builds", "accessory_candidates", "consult"]
+__all__ = ["ACCESSORY_PARTS", "ACCESSORY_SETS", "ADDITIONALS", "ARMOR_SLOTS", "POTENTIALS", "STARS", "accessory_builds", "accessory_candidates", "consult"]

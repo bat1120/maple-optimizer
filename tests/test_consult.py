@@ -97,6 +97,40 @@ def test_potential_goal_is_exactly_the_index_of_wearing_those_lines():
                       list(raws), pieces, 3)) == set(targets)
 
 
+def test_additional_goal_is_exactly_the_index_of_wearing_those_lines():
+    """에디 목표(2026-11-26): 잠재 목표 위에 에디 줄까지 얹은 실딜 = 그 줄들을 실제로 낀 세팅의 실딜. 등급이 높을수록 실딜·비용이 내려가지 않는다."""
+    from engine.market.recommend import SWAP, _valued, line_tables
+    snap, setting, b = _setup()
+    same, _, three = consult(snap, setting, b, service.CATALOG, stars=(22,))
+    sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
+    raws = {p["slot"]: (sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > sw.pl.raw[p["slot"]].starforce
+                        else sw.pl.raw[p["slot"]]) for p in same["pieces"]}
+    pots = {x["slot"]: x["target"] for x in three["buy"] if x["target"]} | {c["slot"]: c["target"] for c in three["cube"]}
+    for build, pot in ((same, {}), (three, pots)):
+        opts = build["additional_options"]
+        assert [a["key"] for a in opts] == ["epic2", "unique2", "legend2"]
+        assert build["delta_pct"] < opts[0]["delta_pct"] < opts[1]["delta_pct"] < opts[2]["delta_pct"]
+        cost = [sum(x["cost"] for x in a["slots"]) for a in opts]
+        assert 0 < cost[0] < cost[1] < cost[2]
+        for a, grade in zip(opts, ("에픽", "유니크", "레전드리")):
+            worn = dict(sw.pl.items)
+            for s, it in raws.items():
+                if s in pot:
+                    it = SWAP["잠재"](it, pot[s], snap.level)
+                x = next((x for x in a["slots"] if x["slot"] == s), None)
+                if x:
+                    table = line_tables("에디", grade, s, it.level)
+                    assert len(x["target"]) == 2 and all(any(t in pos for pos in table) for t in x["target"]), (s, x["target"])
+                    assert x["gain_pct"] > 0 and x["per_100m"] == x["gain_pct"] / (x["cost"] / 1e8)
+                    it = SWAP["에디"](it, x["target"], snap.level)
+                worn[s] = _valued(it, sw.pl.mains, sw.pl.per_sec)
+            assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == a["delta_pct"]
+            assert a["armor_delta_pct"] >= build["armor"]["delta_pct"] and a["accessory_delta_pct"] >= build["accessory"]["delta_pct"]
+    # 에디 목표의 칸·줄·비용은 잠재 목표와 무관하다(줄은 '잠재 지금 그대로'에서 고른다)
+    strip = lambda a: [(x["slot"], x["target"], x["cost"]) for x in a["slots"]]  # noqa: E731
+    assert [strip(a) for a in same["additional_options"]] == [strip(a) for a in three["additional_options"]]
+
+
 def test_higher_potential_goal_never_lowers_damage_or_cost():
     """목표가 높을수록 실딜도 큐브 비용도 내려가지 않는다. 지금 잠재가 이미 목표 이상인 칸은 건드리지 않는다(실딜이 내려가면 안 된다)."""
     snap, setting, b = _setup()

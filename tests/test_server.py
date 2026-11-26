@@ -369,6 +369,12 @@ def test_consult_gives_whole_builds_per_star(tmp_path, clock):
     assert goals and all(g["gain_pct"] > 0 and g["cost_text"] and g["per_100m"] > 0 for g in goals)
     assert all(c["gain_pct"] > 0 for c in best["cube"]) and all(x["goal"] is None for x in every[0]["buy"])
     assert best["delta_pct"] > every[-3]["delta_pct"] and best["match_cost"] > every[-3]["match_cost"]
+    for b in every:                                                          # 에디 목표: 세팅마다 에픽·유니크·레전드리 2줄
+        opts = b["additional_options"]
+        assert [(a["key"], a["label"]) for a in opts] == [("epic2", "에픽 2줄"), ("unique2", "유니크 2줄"), ("legend2", "레전드리 2줄")]
+        assert b["delta_pct"] < opts[0]["delta_pct"] < opts[2]["delta_pct"]
+        assert all(a["cost"] == sum(x["cost"] or 0 for x in a["slots"]) and a["cost_text"] and a["unknown"] == 0 for a in opts)
+        assert all({"slot", "name", "group", "kept", "target", "cost", "cost_text", "gain_pct", "per_100m"} <= set(x) for a in opts for x in a["slots"])
     builds = [b for b in every if b["potential"] == "same"]
     assert [b["starforce"] for b in builds] == [17, 18, 21, 22]
     assert [b["delta_pct"] for b in builds] == sorted(b["delta_pct"] for b in builds) and builds[-1]["delta_pct"] > 0   # 성이 높을수록 높다

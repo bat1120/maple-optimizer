@@ -16,6 +16,7 @@ export default function ConsultPanel({ name, defense }) {
   const [star, setStar] = useState(22);
   // 잠재 목표(2026-11-26 사용자: 오래 쓸 세팅인데 잠재는 어떻게 되는가): same = 지금 그대로, legend2·legend3 = 레전드리 좋은 줄 2·3개
   const [pot, setPot] = useState("same");
+  const [addi, setAddi] = useState("same"); // 에디 목표: same | epic2 | unique2 | legend2
   const [off, setOff] = useState({});       // 잠재 목표에서 뺀 칸: "성/목표/칸" → true
   const [prices, setPrices] = useState({}); // 템 이름 → 사용자가 적은 가격 글자
   // 처음엔 결론(성별 실딜)만 보이고 살 템·강화 목록은 눌러서 편다 — 바로 아래 '내 업그레이드 계획' 첫 줄이 첫 화면에서 밀려나지 않게
@@ -37,22 +38,45 @@ export default function ConsultPanel({ name, defense }) {
   const mine = pots.includes(pot) ? pot : pots[0];
   const builds = all.filter((b) => (b.potential || "same") === mine);
   const build = builds.find((b) => b.starforce === star) || builds[builds.length - 1];
-  const goal = build && mine !== "same";               // 잠재 목표를 골랐다 — 실딜에 그 잠재가 들어 있으니 큐브 비용도 합계에 넣는다
-  const cubes = build?.cube || [];
-  // 잠재 목표에서 뺀 칸(체크를 푼 칸): 효율이 나쁜 칸(예: 모자 쿨감 줄을 지키며 2줄 — 800억에 1%p)을 사용자가 가려 뺀다.
+  // 에디 목표(에픽·유니크·레전드리 2줄): 서버가 세팅마다 '에디까지 얹은 실딜'과 칸별 목표를 준다(additional_options)
+  const optOf = (b) => (b?.additional_options || []).find((a) => a.key === addi) || null;
+  const opt = optOf(build);
+  const deltaOf = (b) => (optOf(b) || b).delta_pct;
+  const potGoal = !!build && mine !== "same";
+  const goal = potGoal || !!opt;                       // 목표를 골랐다 — 실딜에 그 잠재·에디가 들어 있으니 큐브 비용도 합계에 넣는다
+  const cubes = potGoal ? build.cube || [] : [];
+  const addis = opt ? opt.slots : [];
+  // 목표에서 뺀 칸(체크를 푼 칸): 효율이 나쁜 칸(예: 모자 쿨감 줄을 지키며 2줄 — 800억에 1%p)을 사용자가 가려 뺀다.
   // 합계는 그 칸의 큐브 비용을 정확히 빼고, 실딜은 서버가 준 칸별 몫을 뺀다(곱으로 겹치는 부분만큼 어긋나 '약'으로 적는다)
-  const offKey = (slot) => `${build?.starforce}/${mine}/${slot}`;
-  const isOff = (slot) => !!off[offKey(slot)];
-  const dropped = goal ? [...build.buy.filter((x) => x.goal && isOff(x.slot)).map((x) => ({ group: x.group, ...x.goal })),
-                          ...cubes.filter((x) => isOff(x.slot))] : [];
-  const drop = (group, key) => dropped.filter((x) => !group || x.group === group).reduce((a, x) => a + (x[key] || 0), 0);
-  // 뺀 칸의 비용은 살 템·지금 템 각각에서 뺀다(운영 화면 확인: 모자를 뺐는데 '지금 템 799억'이 그대로 적혀 있었다)
-  const keptOff = goal ? cubes.filter((x) => isOff(x.slot)).reduce((a, x) => a + (x.cost || 0), 0) : 0;
-  const keptCube = goal ? (build.cube_cost || 0) - keptOff : 0;
-  const buyCube = goal ? (build.match_cost || 0) - (drop(null, "cost") - keptOff) : 0;
+  const offKey = (slot, kind = "잠재") => `${build?.starforce}/${kind}/${kind === "에디" ? addi : mine}/${slot}`;
+  const isOff = (slot, kind) => !!off[offKey(slot, kind)];
+  const toggle = (slot, kind) => (e) => setOff((o) => ({ ...o, [offKey(slot, kind)]: !e.target.checked }));
+  // 살 템의 에디 목표 비용은 '지금 수준으로 맞추는 에디 비용'(match_parts.에디) 자리에 들어간다 — 더해지는 건 그 차이
+  const buyOf = Object.fromEntries((build?.buy || []).map((x) => [x.slot, x]));
+  const addiCost = (a) => (a.cost || 0) - (a.kept ? 0 : buyOf[a.slot]?.match_parts?.["에디"]?.cost || 0);
+  const dropped = !goal ? [] : [
+    ...(potGoal ? build.buy.filter((x) => x.goal && isOff(x.slot)).map((x) => ({ group: x.group, kept: false, ...x.goal })) : []),
+    ...cubes.filter((x) => isOff(x.slot)).map((x) => ({ ...x, kept: true })),
+    ...addis.filter((a) => isOff(a.slot, "에디")).map((a) => ({ group: a.group, kept: a.kept, gain_pct: a.gain_pct, cost: addiCost(a) })),
+  ];
+  const drop = (group, key, kept) => dropped.filter((x) => (!group || x.group === group) && (kept == null || x.kept === kept))
+    .reduce((a, x) => a + (x[key] || 0), 0);
+  const sum = (xs, f) => xs.reduce((a, x) => a + (f(x) || 0), 0);
+  const inGroup = (group) => (x) => !group || x.group === group;
+  // 큐브 비용: 살 템(잠재·에디) + 지금 템(잠재·에디) − 뺀 칸
+  const buyCubeOf = (group) => (goal ? sum((build.buy || []).filter(inGroup(group)), (x) => x.match_cost)
+    + sum(addis.filter((a) => !a.kept).filter(inGroup(group)), addiCost) - drop(group, "cost", false) : 0);
+  const keptCubeOf = (group) => (goal ? sum(cubes.filter(inGroup(group)), (x) => x.cost)
+    + sum(addis.filter((a) => a.kept).filter(inGroup(group)), addiCost) - drop(group, "cost", true) : 0);
+  const buyCube = buyCubeOf(null), keptCube = keptCubeOf(null);
   const cubeAll = buyCube + keptCube;
   const shown = (delta, group) => (dropped.length ? `약 ${pct1(delta - drop(group, "gain_pct"))}` : pct1(delta));
   const eff = (g) => (g ? `${pct1(g.gain_pct)}${g.per_100m ? ` · 100억당 +${(g.per_100m * 100).toFixed(2)}%` : ""}` : "");
+  const whole = build ? (opt || build).delta_pct : 0;
+  const armorPct = build?.armor ? (opt ? opt.armor_delta_pct : build.armor.delta_pct) : 0;
+  const accPct = build?.accessory ? (opt ? opt.accessory_delta_pct : build.accessory.delta_pct) : 0;
+  const goalText = [potGoal && `잠재를 ${build.potential_label}로`, opt && `에디를 ${opt.label}로`].filter(Boolean).join(" · ");
+  const unknown = build ? build.match_unknown + (potGoal ? build.cube_unknown || 0 : 0) + (opt ? opt.unknown || 0 : 0) : 0;
   const priced = (build?.buy || []).map((x) => parsePrice(prices[x.name] || ""));
   const missing = priced.filter((p) => !p).length;
   const buyTotal = priced.reduce((a, p) => a + (p || 0), 0);
@@ -63,14 +87,13 @@ export default function ConsultPanel({ name, defense }) {
     const buy = (build?.buy || []).filter((x) => !group || x.group === group);
     const known = buy.map((x) => parsePrice(prices[x.name] || ""));
     const raise = (build?.raise || []).filter((x) => !group || x.group === group).reduce((a, x) => a + x.cost, 0)
-      + (goal ? cubes.filter((x) => !group || x.group === group).reduce((a, x) => a + (x.cost || 0), 0)
-        + buy.reduce((a, x) => a + (x.match_cost || 0), 0) - drop(group, "cost") : 0);
+      + buyCubeOf(group) + keptCubeOf(group);
     return { buy: buy.length, missing: known.filter((p) => !p).length, cost: raise + known.reduce((a, p) => a + (p || 0), 0), raise };
   };
   const options = build ? [
-    build.accessory && { label: "장신구만", delta: build.accessory.delta_pct, text: shown(build.accessory.delta_pct, "장신구"), ...part("장신구") },
-    build.armor && { label: "방어구만", delta: build.armor.delta_pct, text: shown(build.armor.delta_pct, "방어구"), ...part("방어구") },
-    { label: "둘 다", delta: build.delta_pct, text: shown(build.delta_pct, null), ...part(null) },
+    build.accessory && { label: "장신구만", text: shown(accPct, "장신구"), ...part("장신구") },
+    build.armor && { label: "방어구만", text: shown(armorPct, "방어구"), ...part("방어구") },
+    { label: "둘 다", text: shown(whole, null), ...part(null) },
   ].filter((o) => o && (o.buy > 0 || o.raise > 0)) : [];
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
@@ -90,11 +113,20 @@ export default function ConsultPanel({ name, defense }) {
       )}
       {build && (
         <>
+          {/* 결론이 먼저(2026-11-26: 에디 줄이 늘어 휴대폰에서 결론이 첫 화면 밖으로 밀렸다 — 고르는 줄은 그 아래) */}
+          <p className="consult-headline">
+            <span>{build.starforce}성{potGoal ? ` · 잠재 ${build.potential_label}` : ""}{opt ? ` · 에디 ${opt.label}` : ""} 세팅으로 갈아타면 보스 실딜</span>
+            <strong className="consult-gain num">{shown(whole, null)}</strong>
+            <span className="muted small">
+              {[build.armor && `방어구 ${build.armor.label} ${pct1(armorPct)}`,
+                build.accessory && `장신구 ${build.accessory.label} ${pct1(accPct)}`].filter(Boolean).join(" · ")}
+            </span>
+          </p>
           <div className="consult-stars" role="tablist" aria-label="목표 스타포스">
             {builds.map((b) => (
               <button key={b.starforce} type="button" role="tab" aria-selected={b.starforce === build.starforce}
                       className={b.starforce === build.starforce ? "pill is-on" : "pill"} onClick={() => setStar(b.starforce)}>
-                {b.starforce}성 <strong className="num">{pct1(b.delta_pct)}</strong>
+                {b.starforce}성 <strong className="num">{pct1(deltaOf(b))}</strong>
               </button>
             ))}
           </div>
@@ -106,23 +138,29 @@ export default function ConsultPanel({ name, defense }) {
                 return (
                   <button key={k} type="button" role="tab" aria-selected={k === mine} className={k === mine ? "pill is-on" : "pill"}
                           onClick={() => setPot(k)}>
-                    {b?.potential_label || k}{b ? <> <strong className="num">{pct1(b.delta_pct)}</strong></> : null}
+                    {b?.potential_label || k}{b ? <> <strong className="num">{pct1(deltaOf(b))}</strong></> : null}
                   </button>
                 );
               })}
             </div>
           )}
-          <p className="consult-headline">
-            <span>{build.starforce}성{goal ? ` · 잠재 ${build.potential_label}` : ""} 세팅으로 갈아타면 보스 실딜</span>
-            <strong className="consult-gain num">{shown(build.delta_pct, null)}</strong>
-            <span className="muted small">
-              {[build.armor && `방어구 ${build.armor.label} ${pct1(build.armor.delta_pct)}`,
-                build.accessory && `장신구 ${build.accessory.label} ${pct1(build.accessory.delta_pct)}`].filter(Boolean).join(" · ")}
-            </span>
-          </p>
+          {(build.additional_options || []).length > 0 && (
+            <div className="consult-stars consult-pots" role="tablist" aria-label="에디 목표">
+              <span className="muted small">에디</span>
+              <button type="button" role="tab" aria-selected={!opt} className={!opt ? "pill is-on" : "pill"} onClick={() => setAddi("same")}>
+                지금 그대로 <strong className="num">{pct1(build.delta_pct)}</strong>
+              </button>
+              {build.additional_options.map((a) => (
+                <button key={a.key} type="button" role="tab" aria-selected={opt?.key === a.key} className={opt?.key === a.key ? "pill is-on" : "pill"}
+                        onClick={() => setAddi(a.key)}>
+                  {a.label} <strong className="num">{pct1(a.delta_pct)}</strong>
+                </button>
+              ))}
+            </div>
+          )}
 
           <button type="button" className="ghost more-ranks" aria-expanded={open} onClick={() => setOpen(!open)}>
-            {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개${cubes.length ? ` · 잠재 올릴 템 ${cubes.length}개` : ""} 보기`}
+            {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개${cubes.length ? ` · 잠재 올릴 템 ${cubes.length}개` : ""}${addis.length ? ` · 에디 올릴 템 ${addis.length}개` : ""} 보기`}
           </button>
           {open && options.length > 0 && (
             <>
@@ -156,14 +194,15 @@ export default function ConsultPanel({ name, defense }) {
                       <span className="consult-match muted small">
                         {x.goal ? (
                           <label className="consult-pick">
-                            <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)}
-                                   onChange={(e) => setOff((o) => ({ ...o, [offKey(x.slot)]: !e.target.checked }))} />
+                            <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)} onChange={toggle(x.slot)} />
                             <span className={isOff(x.slot) ? "is-off" : ""}>잠재를 목표로 <strong className="num">{eff(x.goal)}</strong>{x.goal.cost_text ? ` · 큐브 평균 ${x.goal.cost_text}` : ""}</span>
                           </label>
                         ) : null}
-                        {x.target ? `목표 잠재 ${x.target.join(" · ")} — ` : ""}
-                        {x.match_cost == null ? "잠재 맞추는 비용은 계산하지 못했어요" : x.match_cost === 0 ? "맞출 잠재 없음"
-                          : x.target ? `에디(지금 수준)까지 합치면 평균 ${x.match_text}` : `잠재·에디까지 맞추면 평균 +${x.match_text}`}
+                        {x.target ? `목표 잠재 ${x.target.join(" · ")}` : ""}
+                        {addis.some((a) => a.slot === x.slot && !isOff(a.slot, "에디"))
+                          ? (x.target ? "" : x.match_parts?.["잠재"]?.cost ? `잠재를 지금 수준으로 맞추면 평균 +${x.match_parts["잠재"].text}` : "")
+                          : `${x.target ? " — " : ""}${x.match_cost == null ? "잠재 맞추는 비용은 계산하지 못했어요" : x.match_cost === 0 ? "맞출 잠재 없음"
+                            : x.target ? `에디(지금 수준)까지 합치면 평균 ${x.match_text}` : `잠재·에디까지 맞추면 평균 +${x.match_text}`}`}
                       </span>
                     </span>
                     <input aria-label={`${x.name} 시세`} inputMode="text" autoComplete="off" placeholder="시세" value={prices[x.name] || ""}
@@ -199,11 +238,34 @@ export default function ConsultPanel({ name, defense }) {
                     <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">{x.from_grade === "레전드리" ? "레전드리 · 줄만 바꿈" : `${x.from_grade} → 레전드리`}</span>
                       <span className="consult-match muted small">
                         <label className="consult-pick">
-                          <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)}
-                                 onChange={(e) => setOff((o) => ({ ...o, [offKey(x.slot)]: !e.target.checked }))} />
+                          <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)} onChange={toggle(x.slot)} />
                           <span className={isOff(x.slot) ? "is-off" : ""}>보스 실딜 <strong className="num">{eff(x)}</strong></span>
                         </label>
                         목표 잠재 {x.target.join(" · ")}
+                      </span>
+                    </span>
+                    <span className="num">{x.cost_text || "계산 못 함"}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {open && addis.length > 0 && (
+            <>
+              <h4 className="consult-sub">에디 올리기 {addis.length}개 <span className="muted small">— {opt.label}, 큐브 평균 {opt.cost_text || "계산 못 함"}</span></h4>
+              <ul className="consult-list" aria-label="에디 올릴 템">
+                {addis.map((x) => (
+                  <li key={x.slot}>
+                    <span className="consult-slot muted small">{x.slot}</span>
+                    <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">
+                      {!x.kept ? "살 템 · 레어에서" : x.from_grade === opt.label.split(" ")[0] ? `${x.from_grade} · 줄만 바꿈` : `${x.from_grade} → ${opt.label.split(" ")[0]}`}</span>
+                      <span className="consult-match muted small">
+                        <label className="consult-pick">
+                          <input type="checkbox" aria-label={`${x.name} 에디 목표 넣기`} checked={!isOff(x.slot, "에디")} onChange={toggle(x.slot, "에디")} />
+                          <span className={isOff(x.slot, "에디") ? "is-off" : ""}>보스 실딜 <strong className="num">{eff(x)}</strong></span>
+                        </label>
+                        목표 에디 {x.target.join(" · ")}
                       </span>
                     </span>
                     <span className="num">{x.cost_text || "계산 못 함"}</span>
@@ -219,16 +281,16 @@ export default function ConsultPanel({ name, defense }) {
                 <span>필요한 메소</span> <strong className="num">{formatMeso(total)}</strong>
                 {missing > 0
                   ? <span className="muted small"> + 시세를 안 넣은 템 {missing}개</span>
-                  : <span className="muted small"> · 1억 메소당 <strong className="num">{formatPct((build.delta_pct - drop(null, "gain_pct")) / (total / 1e8))}</strong></span>}
+                  : <span className="muted small"> · 1억 메소당 <strong className="num">{formatPct((whole - drop(null, "gain_pct")) / (total / 1e8))}</strong></span>}
               </>
             ) : <span className="muted small">살 템의 시세를 넣으면 필요한 메소와 1억 메소당 효율을 계산해요.</span>}
             {goal && cubeAll > 0 && (
               <span className="consult-match-total muted small">
-                위 합계에는 잠재를 {build.potential_label}로 맞추는 큐브 평균 <strong className="num">{formatMeso(cubeAll)}</strong>이 들어 있어요
+                위 합계에는 {goalText} 맞추는 큐브 평균 <strong className="num">{formatMeso(cubeAll)}</strong>이 들어 있어요
                 (살 템 {formatMeso(buyCube) || "0"} · 지금 템 {formatMeso(keptCube) || "0"}) — 잠재가 붙은 매물을 사면 그보다 덜 들어요.
-                에디·추옵은 지금 그대로로 봤어요.
-                {dropped.length > 0 ? ` 잠재 목표에서 뺀 칸 ${dropped.length}개는 지금 잠재 그대로예요 — 실딜은 칸별 몫을 뺀 값이라 '약'이에요.` : " 효율이 낮은 칸은 체크를 풀어 뺄 수 있어요."}
-                {build.match_unknown + (build.cube_unknown || 0) > 0 ? ` 계산하지 못한 템 ${build.match_unknown + (build.cube_unknown || 0)}개는 빠져 있어요.` : ""}
+                {opt ? (potGoal ? "추옵은" : "잠재는 지금 수준(살 템은 큐브로 맞추는 평균 포함), 추옵은") : "에디·추옵은"} 지금 그대로로 봤어요.
+                {dropped.length > 0 ? ` ${opt ? "목표" : "잠재 목표"}에서 뺀 칸 ${dropped.length}개는 지금 ${opt ? "것" : "잠재"} 그대로예요 — 실딜은 칸별 몫을 뺀 값이라 '약'이에요.` : " 효율이 낮은 칸은 체크를 풀어 뺄 수 있어요."}
+                {unknown > 0 ? ` 계산하지 못한 템 ${unknown}개는 빠져 있어요.` : ""}
               </span>
             )}
             {!goal && build.match_cost > 0 && (

@@ -1072,3 +1072,13 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-options tr.is-ok td { color: var(--success); }
 .consult-match { display: block; }
 .consult-match-total { display: block; margin-top: var(--sp-2); }
+/* 펼침 버튼: 잠재·에디 목표를 고르면 글자가 길어진다 — 휴대폰에서 잘리지 않게 줄바꿈(2026-11-26 로컬 375px 확인) */
+.consult-panel .more-ranks { white-space: normal; height: auto; min-height: 44px; padding-block: 8px; line-height: 1.4; }
+/* '나눠서 한다면' 표: 휴대폰에서 필요한 메소 칸이 화면 밖으로 잘렸다(2026-11-26 로컬 375px 확인) — 줄바꿈 */
+.consult-options { table-layout: auto; }
+.consult-options td:last-child, .consult-options th:last-child { white-space: normal; overflow-wrap: anywhere; word-break: keep-all; }
+/* 휴대폰: 성·잠재·에디 고르는 줄은 각각 한 줄(옆으로 밀어 본다) — 세 줄이 줄바꿈되면 계획 첫 줄이 한참 밀린다 */
+@media (max-width: 600px) {
+  .consult-stars { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: var(--sp-2) 0; padding-bottom: 2px; }
+  .consult-stars .pill, .consult-stars > span { flex: none; white-space: nowrap; }
+}

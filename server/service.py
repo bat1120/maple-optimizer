@@ -651,6 +651,7 @@ def armor_sets(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float
                      "세트 구성(세트별 개수)이 같은 조합끼리는 템 자체 스탯이 가장 좋은 배치 하나만 보여 줘요. 한벌옷(앱솔·아케인 상의)은 아직 없어요.")}
 
 
+ADDITIONAL_LABELS = {"epic2": "에픽 2줄", "unique2": "유니크 2줄", "legend2": "레전드리 2줄"}
 POTENTIAL_LABELS = {"same": "지금 그대로", "legend2": "레전드리 2줄", "legend3": "레전드리 3줄"}
 
 
@@ -688,6 +689,14 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
         o["cube_cost_text"] = meso_text(o["cube_cost"]) if o["cube_cost"] else None
         o["cube_unknown"] = sum(1 for c in o["cube"] if c["cost"] is None)
         o["potential_label"] = POTENTIAL_LABELS[o["potential"]]
+        # 에디 목표(에픽·유니크·레전드리 2줄): 이 세팅에 에디 줄까지 얹은 실딜과 칸별 목표·큐브 평균
+        for a in o["additional_options"]:
+            a["label"] = ADDITIONAL_LABELS[a["key"]]
+            for x in a["slots"]:
+                x["cost_text"] = meso_text(x["cost"]) if x["cost"] else None
+            a["cost"] = sum(x["cost"] or 0 for x in a["slots"])
+            a["cost_text"] = meso_text(a["cost"]) if a["cost"] else None
+            a["unknown"] = sum(1 for x in a["slots"] if x["cost"] is None)
         for c in o["set_change"]:
             tiers = {int(n): text for n, text in (CATALOG.tiers.get(c["set"]) or {}).items()}
             c["lost"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["after"] < n <= c["before"]]
@@ -701,7 +710,9 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
                      "모자의 쿨타임 감소 줄은 남겨요. 큐브 비용은 평균이에요(살 템은 레어에서, 그대로 쓰는 템은 지금 등급에서 시작). "
                      "칸마다 적힌 '+x% · 100억당'은 그 칸의 잠재만 목표로 바꿨을 때의 몫이에요 — 체크를 풀어 그 칸을 빼면 합계는 정확히, "
                      "실딜은 칸별 몫을 빼는 방법으로(그래서 '약') 다시 보여 줘요. "
-                     "에디셔널 잠재와 추옵은 어느 목표에서나 지금 그대로예요(환생의 불꽃 가격은 넥슨이 주지 않아 비용을 낼 수 없어요). "
+                     "에디 목표(에픽·유니크·레전드리 2줄)도 같은 방법이에요 — 에디가 없는 칸과 이미 그 이상인 칸은 그대로 두고, "
+                     "3줄은 칸 하나에 평균 수천억이라 목표로 두지 않았어요. 에디 목표의 줄은 '잠재 지금 그대로' 세팅에서 골라요. "
+                     "추옵은 어느 목표에서나 지금 그대로예요(환생의 불꽃 가격은 넥슨이 주지 않아 비용을 낼 수 없어요). "
                      "'잠재까지 맞추면'은 살 템에 지금 수준의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 비용을 더한 값이에요 — "
                      "잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요. 추옵·주문서를 맞추는 비용은 들어 있지 않아요. "
                      "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 이벤트 없는 평균이에요(파괴 시 스페어 값 제외). "

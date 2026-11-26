@@ -141,4 +141,48 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기"));
     expect(document.querySelector(".consult-gain").textContent).toBe("+110.3%");
   });
+
+  it("에디 목표를 고르면 에디까지 얹은 실딜과 칸별 목표·큐브 비용을 보여 주고, 칸을 뺄 수 있다", async () => {
+    // 실제 서버 응답 모양(2026-11-26): 세팅마다 additional_options(에디까지 얹은 실딜·칸별 목표)
+    const opts = (d) => [{
+      key: "legend2", label: "레전드리 2줄", delta_pct: d + 10, armor_delta_pct: 26.67, accessory_delta_pct: 55.01, cost: 59000000000,
+      cost_text: "590억", unknown: 0,
+      slots: [{ slot: "귀고리", name: "커맨더 포스 이어링", group: "장신구", kept: false, from_grade: null, target: ["INT +8%", "INT +6%"],
+                cost: 28100000000, cost_text: "281억", gain_pct: 6, per_100m: 0.02131 },
+              { slot: "모자", name: "에테르넬 메이지햇", group: "방어구", kept: true, from_grade: "에픽", target: ["INT +9%", "INT +7%"],
+                cost: 30900000000, cost_text: "309억", gain_pct: 4, per_100m: 0.01294 }],
+    }];
+    const same = (st, d) => build(st, d, { potential: "same", potential_label: "지금 그대로", cube: [], cube_cost: 0, cube_cost_text: null, cube_unknown: 0,
+                                           match_unknown: 0, additional_options: opts(d),
+                                           buy: [{ slot: "귀고리", name: "커맨더 포스 이어링", starforce: st, group: "장신구", set: "칠흑의 보스 세트", level: 200,
+                                                   target: null, goal: null, match_cost: 2866720000, match_text: "28억 6672만",
+                                                   match_parts: { 잠재: { cost: 1224980000, text: "12억 2498만" }, 에디: { cost: 1641740000, text: "16억 4174만" } } }] });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...DATA, builds: [same(21, 60.77), same(22, 77.24)] }));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    const tabs = await screen.findByRole("tablist", { name: "에디 목표" });
+    expect(within(tabs).getAllByRole("tab").map((t) => t.textContent)).toEqual(["지금 그대로 +77.2%", "레전드리 2줄 +87.2%"]);
+    fireEvent.click(within(tabs).getByRole("tab", { name: /레전드리 2줄/ }));
+    expect(within(screen.getByRole("tablist", { name: "목표 스타포스" })).getAllByRole("tab").map((t) => t.textContent)).toEqual(["21성 +70.8%", "22성 +87.2%"]);
+    expect(screen.getByText("22성 · 에디 레전드리 2줄 세팅으로 갈아타면 보스 실딜")).toBeInTheDocument();
+    expect(document.querySelector(".consult-headline").textContent).toContain("방어구 에테르넬 7 +26.7% · 장신구 칠흑 6 · 보스 장신구 2 · 광휘 3 +55.0%");
+    fireEvent.click(screen.getByRole("button", { name: "살 템 1개 · 강화할 템 1개 · 에디 올릴 템 2개 보기" }));
+    const list = screen.getByRole("list", { name: "에디 올릴 템" });
+    expect(within(list).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "귀고리커맨더 포스 이어링 살 템 · 레어에서보스 실딜 +6.0% · 100억당 +2.13%목표 에디 INT +8% · INT +6%281억",
+      "모자에테르넬 메이지햇 에픽 → 레전드리보스 실딜 +4.0% · 100억당 +1.29%목표 에디 INT +9% · INT +7%309억"]);
+    const total = () => document.querySelector(".consult-total").textContent;
+    // 강화 563억 6262만 + 살 템(잠재 지금 수준 12억 2498만 + 에디 목표 281억) + 지금 템 에디 309억 = 1165억 8760만
+    expect(total()).toContain("필요한 메소 1165억 8760만");
+    expect(total()).toContain("에디를 레전드리 2줄로 맞추는 큐브 평균 602억 2498만이 들어 있어요 (살 템 293억 2498만 · 지금 템 309억)");
+    expect(screen.getByRole("list", { name: "살 템" })).toHaveTextContent("잠재를 지금 수준으로 맞추면 평균 +12억 2498만");
+    // 살 템의 에디 목표를 빼면: 에디는 지금 수준으로 맞추는 비용(16억 4174만)으로 돌아간다
+    fireEvent.click(screen.getByLabelText("커맨더 포스 이어링 에디 목표 넣기"));
+    expect(total()).toContain("필요한 메소 901억 2934만");
+    expect(document.querySelector(".consult-gain").textContent).toBe("약 +81.2%");
+    expect(screen.getByRole("list", { name: "살 템" })).toHaveTextContent("잠재·에디까지 맞추면 평균 +28억 6672만");
+    fireEvent.click(screen.getByLabelText("에테르넬 메이지햇 에디 목표 넣기"));
+    expect(total()).toContain("필요한 메소 592억 2934만");
+    const rows = within(screen.getByRole("table", { name: "나눠서 한다면" })).getAllByRole("row").slice(1).map((r) => r.textContent);
+    expect(rows).toEqual(["장신구만약 +49.0%강화·큐브 28억 6672만 + 살 템 1개 시세", "방어구만약 +22.7%563억 6262만", "둘 다약 +77.2%강화·큐브 592억 2934만 + 살 템 1개 시세"]);
+  });
 });
