@@ -65,9 +65,10 @@ export default function ConsultPanel({ name, defense }) {
   const buyOf = Object.fromEntries((build?.buy || []).map((x) => [x.slot, x]));
   const addiCost = (a) => (a.cost || 0) - (a.kept ? 0 : buyOf[a.slot]?.match_parts?.["에디"]?.cost || 0);
   const dropped = !goal ? [] : [
-    ...(potGoal ? build.buy.filter((x) => x.goal && isOff(x.slot)).map((x) => ({ group: x.group, kept: false, ...x.goal })) : []),
-    ...cubes.filter((x) => isOff(x.slot)).map((x) => ({ ...x, kept: true })),
-    ...addis.filter((a) => isOff(a.slot, "에디")).map((a) => ({ group: a.group, kept: a.kept, gain_pct: a.gain_pct, cost: addiCost(a) })),
+    // 실딜에서 빼는 몫은 share_pct(서버가 칸별 몫의 합을 전체 상승과 같게 나눈 값 — 무기류 줄은 곱으로 겹친다). 없으면 gain_pct
+    ...(potGoal ? build.buy.filter((x) => x.goal && isOff(x.slot)).map((x) => ({ group: x.group, kept: false, ...x.goal, gain_pct: x.goal.share_pct ?? x.goal.gain_pct })) : []),
+    ...cubes.filter((x) => isOff(x.slot)).map((x) => ({ ...x, kept: true, gain_pct: x.share_pct ?? x.gain_pct })),
+    ...addis.filter((a) => isOff(a.slot, "에디")).map((a) => ({ group: a.group, kept: a.kept, gain_pct: a.share_pct ?? a.gain_pct, cost: addiCost(a) })),
   ];
   const drop = (group, key, kept) => dropped.filter((x) => (!group || x.group === group) && (kept == null || x.kept === kept))
     .reduce((a, x) => a + (x[key] || 0), 0);
@@ -103,14 +104,15 @@ export default function ConsultPanel({ name, defense }) {
   const options = build ? [
     build.accessory && { label: "장신구만", text: shown(accPct, "장신구"), ...part("장신구") },
     build.armor && { label: "방어구만", text: shown(armorPct, "방어구"), ...part("방어구") },
-    { label: "둘 다", text: shown(whole, null), ...part(null) },
+    // 무기·보조무기·엠블렘의 잠재·에디는 방어구·장신구 어느 쪽도 아니라 '둘 다'에만 들어간다 — 그렇게 이름에 적는다
+    { label: [...cubes, ...addis].some((x) => x.group === "무기") ? "둘 다 + 무기류" : "둘 다", text: shown(whole, null), ...part(null) },
   ].filter((o) => o && (o.buy > 0 || o.raise > 0)) : [];
   // 가진 메소로 어디까지(2026-11-26): 강화·살 템(넣은 시세)은 먼저 들어가고, 남는 메소로 목표 칸(잠재·에디)을 100억당 효율 높은 순으로 채운다.
   // 쓰는 값은 서버가 준 칸별 몫·큐브 평균뿐이다(새 숫자를 만들지 않는다). 칸 체크와 같은 근사라 실딜은 '약'
   const units = !goal ? [] : [
-    ...(potGoal ? build.buy.filter((x) => x.goal).map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.goal.cost, gain: x.goal.gain_pct })) : []),
-    ...cubes.map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.cost, gain: x.gain_pct })),
-    ...addis.map((x) => ({ slot: x.slot, kind: "에디", name: x.name, cost: addiCost(x), gain: x.gain_pct })),
+    ...(potGoal ? build.buy.filter((x) => x.goal).map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.goal.cost, gain: x.goal.gain_pct, share: x.goal.share_pct ?? x.goal.gain_pct })) : []),
+    ...cubes.map((x) => ({ slot: x.slot, kind: "잠재", name: x.name, cost: x.cost, gain: x.gain_pct, share: x.share_pct ?? x.gain_pct })),
+    ...addis.map((x) => ({ slot: x.slot, kind: "에디", name: x.name, cost: addiCost(x), gain: x.gain_pct, share: x.share_pct ?? x.gain_pct })),
   ].filter((u) => u.cost > 0 && u.gain > 0);
   const fit = (() => {
     if (!budget || !units.length) return null;
@@ -122,7 +124,7 @@ export default function ConsultPanel({ name, defense }) {
     for (const u of [...units].sort((a, b) => b.gain / b.cost - a.gain / a.cost)) {
       if (u.cost <= left) { keep.push(u); left -= u.cost; }
     }
-    const gain = whole - sum(units.filter((u) => !keep.includes(u)), (u) => u.gain);
+    const gain = whole - sum(units.filter((u) => !keep.includes(u)), (u) => u.share);
     return { keep, spent: sum(keep, (u) => u.cost), gain, left };
   })();
   const applyFit = () => setOff((o) => {

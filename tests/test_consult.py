@@ -82,6 +82,7 @@ def test_potential_goal_is_exactly_the_index_of_wearing_those_lines():
     sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
     raws = {p["slot"]: (sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > sw.pl.raw[p["slot"]].starforce
                         else sw.pl.raw[p["slot"]]) for p in same["pieces"]}
+    raws |= {s: sw.pl.raw[s] for s in ("무기", "보조무기", "엠블렘") if s in sw.pl.raw}   # 무기류는 바꾸지 않고 잠재만 올린다
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raws.items()})
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == same["delta_pct"]
@@ -92,7 +93,8 @@ def test_potential_goal_is_exactly_the_index_of_wearing_those_lines():
         assert len(lines) == 3 and all(any(t in pos for pos in table) for t in lines), (s, lines)   # 공식 확률표에 있는 줄만
         worn[s] = _valued(SWAP["잠재"](raws[s], lines, snap.level), sw.pl.mains, sw.pl.per_sec)
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == three["delta_pct"]
-    pieces = {p["slot"]: p for p in same["pieces"]}
+    pieces = {p["slot"]: p for p in same["pieces"]} | {s: {"name": sw.pl.raw[s].name, "kept": True, "group": "무기"}
+                                                       for s in ("무기", "보조무기", "엠블렘") if s in sw.pl.raw}
     assert set(_goals(sw, {**sw.pl.items, **{s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raws.items()}}, raws,
                       list(raws), pieces, 3)) == set(targets)
 
@@ -105,6 +107,7 @@ def test_additional_goal_is_exactly_the_index_of_wearing_those_lines():
     sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
     raws = {p["slot"]: (sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > sw.pl.raw[p["slot"]].starforce
                         else sw.pl.raw[p["slot"]]) for p in same["pieces"]}
+    raws |= {s: sw.pl.raw[s] for s in ("무기", "보조무기", "엠블렘") if s in sw.pl.raw}
     pots = {x["slot"]: x["target"] for x in three["buy"] if x["target"]} | {c["slot"]: c["target"] for c in three["cube"]}
     for build, pot in ((same, {}), (three, pots)):
         opts = build["additional_options"]
@@ -126,6 +129,11 @@ def test_additional_goal_is_exactly_the_index_of_wearing_those_lines():
                 worn[s] = _valued(it, sw.pl.mains, sw.pl.per_sec)
             assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == a["delta_pct"]
             assert a["armor_delta_pct"] >= build["armor"]["delta_pct"] and a["accessory_delta_pct"] >= build["accessory"]["delta_pct"]
+    # 무기·보조무기·엠블렘: 템은 그대로(pieces에 없다), 목표를 고르면 잠재·에디만 쓰던 템으로 올린다
+    weapons = {"무기", "보조무기", "엠블렘"}
+    assert not weapons & {p["slot"] for p in three["pieces"]}
+    assert {c["slot"] for c in three["cube"]} & weapons and all(c["group"] == "무기" for c in three["cube"] if c["slot"] in weapons)
+    assert {x["slot"] for x in three["additional_options"][-1]["slots"]} & weapons
     # 에디 목표의 칸·줄·비용은 잠재 목표와 무관하다(줄은 '잠재 지금 그대로'에서 고른다)
     strip = lambda a: [(x["slot"], x["target"], x["cost"]) for x in a["slots"]]  # noqa: E731
     assert [strip(a) for a in same["additional_options"]] == [strip(a) for a in three["additional_options"]]
@@ -150,4 +158,10 @@ def test_higher_potential_goal_never_lowers_damage_or_cost():
             parts = [x["goal"] for x in o["buy"] if x["goal"]] + list(o["cube"])
             assert all(g["gain_pct"] > 0 and (g["cost"] is None or g["per_100m"] == g["gain_pct"] / (g["cost"] / 1e8)) for g in parts)
             whole = o["delta_pct"] - same["delta_pct"]
-            assert abs(sum(g["gain_pct"] for g in parts) - whole) < 0.05 * whole
+            # 방어구·장신구 줄(주스탯%)만이면 칸별 몫의 합이 전체와 5% 안. 무기류 줄(보공·방무)은 곱으로 겹쳐 더 벌어진다(레테 최대 12%) —
+            # 그래서 화면은 share_pct(합이 전체와 같게 나눈 몫)를 뺀다: 다 빼면 정확히 '잠재 지금 그대로'로 돌아간다
+            if not any(c["group"] == "무기" for c in o["cube"]):
+                assert abs(sum(g["gain_pct"] for g in parts) - whole) < 0.05 * whole
+            assert abs(sum(g["share_pct"] for g in parts) - whole) < 1e-9
+            for a in o["additional_options"]:
+                assert abs(sum(x["share_pct"] for x in a["slots"]) - (a["delta_pct"] - o["delta_pct"])) < 1e-9

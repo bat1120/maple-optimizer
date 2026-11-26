@@ -221,4 +221,27 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "500억" } });
     expect(fit()).toContain("강화만으로 80억 436만 모자라요");
   });
+
+  it("무기류 잠재는 '둘 다 + 무기류'에만 들어가고, 칸을 빼면 서버가 나눈 몫(share_pct)을 뺀다 — 다 빼면 '지금 그대로'와 같다", async () => {
+    const three = build(22, 100, {
+      potential: "legend3", potential_label: "레전드리 3줄", match_cost: 0, match_cost_text: null, match_unknown: 0, additional_options: [], buy: [],
+      cube: [{ slot: "보조무기", name: "녹스 마법깃펜", group: "무기", from_grade: "레전드리", target: ["몬스터 방어율 무시 +40%", "마력 +9%", "보스 몬스터 데미지 +30%"],
+               cost: 10600000000, cost_text: "106억", gain_pct: 10.7, share_pct: 9.6, per_100m: 0.1009 },
+             { slot: "장갑", name: "에테르넬 메이지글러브", group: "방어구", from_grade: "유니크", target: ["INT +10%", "INT +10%", "INT +10%"],
+               cost: 11560000000, cost_text: "115억 6000만", gain_pct: 13.4, share_pct: 13.16, per_100m: 0.1159 }],
+      cube_cost: 22160000000, cube_cost_text: "221억 6000만", cube_unknown: 0,
+    });
+    const same = build(22, 77.24, { potential: "same", potential_label: "지금 그대로", cube: [], cube_cost: 0, additional_options: [], buy: [], match_cost: 0, match_unknown: 0 });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...DATA, builds: [same, three] }));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    fireEvent.click(within(await screen.findByRole("tablist", { name: "잠재 목표" })).getByRole("tab", { name: /레전드리 3줄/ }));
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    const rows = () => within(screen.getByRole("table", { name: "나눠서 한다면" })).getAllByRole("row").slice(1).map((r) => r.cells[0].textContent);
+    expect(rows()).toEqual(["방어구만", "둘 다 + 무기류"]);                     // 이 목업엔 장신구 칸이 없다
+    expect(screen.getByRole("list", { name: "잠재 올릴 템" })).toHaveTextContent("녹스 마법깃펜 레전드리 · 줄만 바꿈보스 실딜 +10.7% · 100억당 +10.09%");
+    fireEvent.click(screen.getByLabelText("녹스 마법깃펜 잠재 목표 넣기"));
+    expect(document.querySelector(".consult-gain").textContent).toBe("약 +90.4%");       // 100 − 9.6(share), 10.7(칸만의 몫)이 아니다
+    fireEvent.click(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기"));
+    expect(document.querySelector(".consult-gain").textContent).toBe("약 +77.2%");       // 다 빼면 '지금 그대로'(77.24)와 같다
+  });
 });

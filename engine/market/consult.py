@@ -180,14 +180,24 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                  for s in order if not pieces[s]["kept"]}
         set_change = [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
                       for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)]
+        # 무기·보조무기·엠블렘(2026-11-26): 템은 바꾸지 않고, 잠재·에디 목표를 고르면 그 칸의 잠재·에디만 올린다(쓰던 템, 지금 등급에서).
+        # 레테 실측: 보조무기 잠재 레전드리 3줄 +5.3%·106억, 엠블렘 에디 레전드리 2줄 +7.4%·253억 — 방어구·장신구 칸보다 효율이 훨씬 높다
+        extra = [s for s in WEAPON_SLOTS if s in sw.pl.raw and s not in pieces]
+        wpieces = {**pieces, **{s: {"name": sw.pl.raw[s].name, "kept": True, "group": "무기"} for s in extra}}
+        for s in extra:
+            raws[s] = sw.pl.raw[s]
+        every = order + extra
         ladder: dict = {}                                  # 칸마다 레전드리 단계는 한 번만 잰다(2줄·3줄 목표가 같이 쓴다 — 운영에서 첫 응답 5초)
         # 에디 목표: 줄은 '지금 잠재 그대로' 세팅에서 한 번 고르고(잠재 목표마다 다시 고르면 9배 느리다 — 고르는 줄은 거의 같다),
         # 실딜은 잠재 목표마다 그 줄을 실제로 얹어 정확히 잰다
-        addi = {k: _goals(sw, trial, raws, order, pieces, n, ladder, kind="에디", grade=g) for k, (g, n) in ADDITIONALS.items()}
+        addi = {k: _goals(sw, trial, raws, every, wpieces, n, ladder, kind="에디", grade=g) for k, (g, n) in ADDITIONALS.items()}
         for key in potentials:
-            goal = _goals(sw, trial, raws, order, pieces, POTENTIALS[key], ladder) if POTENTIALS[key] else {}
+            goal = _goals(sw, trial, raws, every, wpieces, POTENTIALS[key], ladder) if POTENTIALS[key] else {}
             worn = dict(trial)
             worn.update({s: g["item"] for s, g in goal.items()})
+            # share_pct: 칸별 몫(gain_pct, 그 칸만 바꾼 차이)을 합이 목표 전체 상승과 같아지게 나눈 값 — 화면이 칸을 뺄 때 빼는 몫.
+            # 무기류 줄(보공·방무)은 곱으로 겹쳐 칸별 몫의 합이 전체보다 최대 12% 컸다(레테 22성 3줄: 59.9 대 53.6)
+            _share(goal, (sw.pl.ev.index(worn) - sw.pl.ev.index(trial)) / sw.pl.base * 100)
             part = {}                                      # 방어구만·장신구만 낀 실딜(잠재 목표 포함)
             for group in ("방어구", "장신구"):
                 only = dict(sw.pl.items)
@@ -203,7 +213,7 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                 "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"],
                          "target": goal[s]["target"] if s in goal else None,
                          # goal: 이 칸 잠재 목표만의 몫(실딜 %p·큐브 평균·1억 메소당) — 효율이 나쁜 칸을 가려 볼 수 있게
-                         "goal": {k: goal[s][k] for k in ("gain_pct", "cost", "per_100m")} if s in goal else None,
+                         "goal": {k: goal[s][k] for k in ("gain_pct", "share_pct", "cost", "per_100m")} if s in goal else None,
                          "match": {**match[s], "잠재": goal[s]["cost"]} if s in goal else match[s]}
                         for s in order if not pieces[s]["kept"]],
                 "raise": [{"slot": s, "name": pieces[s]["name"], "from_star": pieces[s]["from_star"], "starforce": pieces[s]["starforce"],
@@ -211,15 +221,24 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                           for s in order if pieces[s]["raise_cost"] is not None],
                 "raise_cost": sum(pieces[s]["raise_cost"] or 0 for s in order),
                 # cube: 그대로 쓰는 템의 잠재를 지금 등급에서 목표까지 큐브로 올리는 평균(None = 계산 못 함)
-                "cube": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "from_grade": raws[s].potential_grade,
-                          "target": goal[s]["target"], "cost": goal[s]["cost"], "gain_pct": goal[s]["gain_pct"],
-                          "per_100m": goal[s]["per_100m"]} for s in order if pieces[s]["kept"] and s in goal],
-                "additional_options": [_with_additional(sw, k, a, worn, goal, raws, order, pieces) for k, a in addi.items() if a],
+                "cube": [{"slot": s, "name": wpieces[s]["name"], "group": wpieces[s]["group"], "from_grade": raws[s].potential_grade,
+                          "target": goal[s]["target"], "cost": goal[s]["cost"], "gain_pct": goal[s]["gain_pct"], "share_pct": goal[s]["share_pct"],
+                          "per_100m": goal[s]["per_100m"]} for s in every if wpieces[s]["kept"] and s in goal],
+                "additional_options": [_with_additional(sw, k, a, worn, goal, raws, every, wpieces) for k, a in addi.items() if a],
                 "_order": order,
                 "set_change": set_change,
             })
     return out
 
+
+WEAPON_SLOTS = ("무기", "보조무기", "엠블렘")
+
+
+def _share(goal: dict, whole: float) -> None:
+    """칸별 몫을 합이 whole(목표 전체 상승 %p)이 되게 비례로 나눈 share_pct를 붙인다."""
+    total = sum(g["gain_pct"] for g in goal.values())
+    for g in goal.values():
+        g["share_pct"] = g["gain_pct"] * whole / total if total else 0.0
 
 # 에디 목표(2026-11-26): 등급별 좋은 줄 2개. 3줄은 두지 않는다 — 레테 실측으로 칸 하나에 평균 3,000억~1조 3,000억이라 목표가 못 된다
 ADDITIONALS = {"epic2": ("에픽", 2), "unique2": ("유니크", 2), "legend2": ("레전드리", 2)}
@@ -232,6 +251,8 @@ def _with_additional(sw: _Swapper, key: str, addi: dict, worn: dict, goal: dict,
     for s, a in addi.items():
         base = goal[s]["raw"] if s in goal else raws[s]
         top[s] = _valued(SWAP["에디"](base, a["target"], sw.snap.level), sw.pl.mains, sw.pl.per_sec)
+    addi = {s: dict(a) for s, a in addi.items()}           # 잠재 목표마다 몫이 다르다 — 복사해서 붙인다
+    _share(addi, (sw.pl.ev.index(top) - sw.pl.ev.index(worn)) / sw.pl.base * 100)
     part = {}
     for group in ("방어구", "장신구"):
         only = dict(sw.pl.items)
@@ -241,7 +262,7 @@ def _with_additional(sw: _Swapper, key: str, addi: dict, worn: dict, goal: dict,
             "armor_delta_pct": part["방어구"], "accessory_delta_pct": part["장신구"],
             "slots": [{"slot": s, "name": pieces[s]["name"], "group": pieces[s]["group"], "kept": pieces[s]["kept"],
                        "from_grade": raws[s].additional_grade if pieces[s]["kept"] else None,
-                       **{k: addi[s][k] for k in ("target", "cost", "gain_pct", "per_100m")}} for s in order if s in addi]}
+                       **{k: addi[s][k] for k in ("target", "cost", "gain_pct", "share_pct", "per_100m")}} for s in order if s in addi]}
 
 
 # 잠재 목표(2026-11-26 사용자: "저 17 18 21 22성 템들은 잠재랑 추옵은 어떻게 되는거야?" — 오래 쓸 세팅인데 잠재가 지금 수준에 머물렀다).
