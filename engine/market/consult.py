@@ -180,8 +180,9 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
                  for s in order if not pieces[s]["kept"]}
         set_change = [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
                       for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)]
+        ladder: dict = {}                                  # 칸마다 레전드리 단계는 한 번만 잰다(2줄·3줄 목표가 같이 쓴다 — 운영에서 첫 응답 5초)
         for key in potentials:
-            goal = _goals(sw, trial, raws, order, pieces, POTENTIALS[key]) if POTENTIALS[key] else {}
+            goal = _goals(sw, trial, raws, order, pieces, POTENTIALS[key], ladder) if POTENTIALS[key] else {}
             worn = dict(trial)
             worn.update({s: g["item"] for s, g in goal.items()})
             part = {}                                      # 방어구만·장신구만 낀 실딜(잠재 목표 포함)
@@ -218,7 +219,8 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
 POTENTIALS = {"same": None, "legend2": 2, "legend3": 3}
 
 
-def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict, lines: int) -> dict[str, dict]:
+def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict, lines: int,
+           ladder: dict | None = None) -> dict[str, dict]:
     """세팅(trial)을 낀 상태에서 칸마다 잠재를 '레전드리 좋은 줄 lines개'로 바꾼 템과 그 큐브 평균 비용.
     목표 줄은 짓지 않는다 — 그 템 레벨·부위의 공식 확률표에서 흔한(2% 이상) 줄 중 실딜이 가장 오르는 조합(_Planner.tiers).
     지금 잠재가 이미 그 이상인 칸(바꾸면 실딜이 안 오르는 칸), 잠재가 없는 칸, 재설정이 안 되는 템은 그대로 둔다(결과에 없다).
@@ -233,12 +235,15 @@ def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict
     sub.raw = {**sw.pl.raw, **{s: raws[s] for s in order if raws.get(s) is not None}}
     sub.items = trial
     sub.base = sw.pl.ev.index(trial)
+    ladder = {} if ladder is None else ladder
     out = {}
     for s in order:
         it = raws.get(s)
         if it is None or not it.potentials or fixed_reason(it):
             continue
-        fit = [t for t in sub.tiers(s, "잠재", grades=("레전드리",)) if t["lines_good"] <= lines]
+        if s not in ladder:
+            ladder[s] = sub.tiers(s, "잠재", grades=("레전드리",))
+        fit = [t for t in ladder[s] if t["lines_good"] <= lines]
         if not fit:
             continue
         t = max(fit, key=lambda t: t["lines_good"])
