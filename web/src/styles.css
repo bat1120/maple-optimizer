@@ -1082,6 +1082,7 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
   .consult-stars { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: var(--sp-2) 0; padding-bottom: 2px; }
   .consult-stars .pill, .consult-stars > span { flex: none; white-space: nowrap; }
 }
+.consult-mix-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .consult-mix-gain { font-size: var(--fs-lg); color: var(--accent); }
 .consult-mix table td .muted { display: block; }
 /* 휴대폰에서 '필요한 메소' 칸 줄바꿈 규칙(마지막 칸)이 여기서는 금액을 한 글자씩 세로로 쪼갰다 — 숫자 칸은 줄바꿈하지 않는다 */

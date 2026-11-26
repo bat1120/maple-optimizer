@@ -401,3 +401,12 @@ def test_consult_mix_picks_per_slot_goals_within_budget(tmp_path, clock):
     effs = [x["gain_pct"] / x["cost"] for x in d["picks"]]
     assert effs == sorted(effs, reverse=True)                                               # 효율 순
     assert c.get("/api/character/x/consult/mix", params={"star": 22}).status_code == 422      # 예산은 꼭
+    # 가진 메소 전체(total)를 주면 성까지 같이 고른다
+    r = c.get("/api/character/x/consult/mix", params={"total": 3000e8 + 7, "prices": 50e8})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["total"] == 3000e8 and d["prices"] == 50e8 and [x["starforce"] for x in d["stars"]] == [17, 18, 21, 22]
+    best = max((x for x in d["stars"] if x["delta_pct"] is not None), key=lambda x: x["delta_pct"])
+    assert d["best"] == best["starforce"] == d["mix"]["starforce"] and d["mix"]["delta_pct"] == best["delta_pct"]
+    assert all(x["raise_cost_text"] and x["cube_budget_text"] for x in d["stars"]) and all(p["cost_text"] for p in d["mix"]["picks"])
+    assert c.get("/api/character/x/consult/mix", params={"total": 1e10, "budget": 1e10}).status_code == 422

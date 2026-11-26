@@ -77,9 +77,11 @@ def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tupl
     return out
 
 
-def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None) -> dict:
+def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
+        builds: list[dict] | None = None) -> dict:
     """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜."""
-    builds = consult(snap, setting, boss, catalog, stars=(star,), cooldown_main_pct=cooldown_main_pct)
+    if builds is None:                                       # best_star는 성마다 한 번 계산한 것을 넘긴다
+        builds = consult(snap, setting, boss, catalog, stars=(star,), cooldown_main_pct=cooldown_main_pct)
     same = next(b for b in builds if b["potential"] == "same")
     options = _options(builds)
     chosen = pick(options, budget)
@@ -103,4 +105,25 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             "picks": picks, "candidates": sum(len(v) for v in options.values())}
 
 
-__all__ = ["mix", "pick"]
+__all__ = ["best_star", "mix", "pick"]
+
+
+def best_star(snap, setting, boss, catalog, total: float, prices: float = 0.0, stars: tuple[int, ...] | None = None,
+              cooldown_main_pct: float | None = None) -> dict:
+    """가진 메소 전체(total, 강화 + 큐브)로 성까지 같이 고른다: 성마다 큐브 예산 = total − 그 성 강화 평균 − 넣은 살 템 시세(prices),
+    그 예산의 추천 조합을 정확히 잰 실딜이 가장 큰 성. 강화도 못 하는 성은 short(모자란 메소)만 적는다.
+    살 템 시세는 성마다 따로 받지 않는다(같은 템의 성만 다르다) — 넣은 값을 모든 성에서 똑같이 뺀다."""
+    from engine.market.consult import STARS
+    rows, best = [], None
+    for star in stars or STARS:
+        r = None
+        builds = consult(snap, setting, boss, catalog, stars=(star,), cooldown_main_pct=cooldown_main_pct)
+        raise_cost = builds[0]["raise_cost"]
+        left = total - raise_cost - prices
+        if left >= 0:
+            r = mix(snap, setting, boss, catalog, star, float(int(left // UNIT) * UNIT), cooldown_main_pct, builds=builds)
+            if best is None or r["delta_pct"] > best["delta_pct"]:
+                best = r
+        rows.append({"starforce": star, "raise_cost": raise_cost, "cube_budget": max(0.0, left), "short": max(0.0, -left),
+                     "delta_pct": r["delta_pct"] if r else None, "cost": r["cost"] if r else None})
+    return {"total": total, "prices": prices, "best": best["starforce"] if best else None, "stars": rows, "mix": best}

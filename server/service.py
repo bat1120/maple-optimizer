@@ -737,6 +737,28 @@ def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: floa
 
 
 @with_basis
+def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: float = 0.0,
+                 cooldown_main_pct: float | None = None) -> dict:
+    """가진 메소 전체(강화 + 큐브)로 성까지 같이 고른 추천 조합: 성마다 강화 평균과 넣은 살 템 시세를 빼고 남는 메소로 추천 조합을 잰다."""
+    from engine.market.consult_mix import best_star
+    b = boss(defense)
+    setting = rank_settings(snap, b, CATALOG)[0][0]
+    r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct)
+    for x in r["stars"]:
+        x["raise_cost_text"] = meso_text(x["raise_cost"]) if x["raise_cost"] else "0"
+        x["cube_budget_text"] = meso_text(x["cube_budget"]) if x["cube_budget"] else "0"
+        x["short_text"] = meso_text(x["short"]) if x["short"] else None
+        x["cost_text"] = meso_text(x["cost"]) if x["cost"] else ("0" if x["cost"] == 0 else None)
+    if r["mix"]:
+        for x in r["mix"]["picks"]:
+            x["cost_text"] = meso_text(x["cost"])
+        r["mix"]["cost_text"] = meso_text(r["mix"]["cost"]) if r["mix"]["cost"] else None
+    return {**r, "evaluation_setting": asdict(setting), "boss": asdict(b),
+            "note": ("가진 메소에서 성마다 강화 평균(이벤트 없음)과 넣은 살 템 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 고른 "
+                     "추천 조합을 성마다 정확히 재서 가장 많이 오르는 성을 골랐어요. 살 템 시세는 성마다 따로 받지 않아 넣은 값을 모든 성에서 똑같이 뺐어요.")}
+
+
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

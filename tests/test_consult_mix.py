@@ -57,3 +57,29 @@ def test_pick_is_optimal_on_a_small_case():
     got = pick(opts, 8e8)
     assert got == {("A", "잠재"): opts[("A", "잠재")][0], ("B", "에디"): opts[("B", "에디")][0]}
     assert pick(opts, 5e8) == {("A", "잠재"): opts[("A", "잠재")][1]}
+
+
+def test_best_star_picks_the_star_with_the_highest_exact_damage_within_total():
+    """가진 메소 전체(강화 + 큐브)로 성까지 같이 고른다 — 고른 성의 결과는 그 성의 큐브 예산으로 돌린 mix와 같고,
+    가진 메소가 늘면 고른 결과의 실딜이 내려가지 않는다."""
+    from engine.market.consult_mix import UNIT, best_star
+    snap, setting, b = _setup()
+    seen = []
+    for total in (0, 1000e8, 3000e8, 6000e8, 12000e8):
+        r = best_star(snap, setting, b, service.CATALOG, total, prices=50e8)
+        assert [x["starforce"] for x in r["stars"]] == [17, 18, 21, 22]
+        for x in r["stars"]:
+            assert x["cube_budget"] == max(0.0, total - x["raise_cost"] - 50e8) and x["short"] == max(0.0, x["raise_cost"] + 50e8 - total)
+            assert (x["delta_pct"] is None) == (x["short"] > 0)
+        ok = [x for x in r["stars"] if x["delta_pct"] is not None]
+        if not ok:
+            assert r["best"] is None and r["mix"] is None
+            seen.append(None)
+            continue
+        top = max(ok, key=lambda x: x["delta_pct"])
+        assert r["best"] == top["starforce"] == r["mix"]["starforce"]
+        again = mix(snap, setting, b, service.CATALOG, top["starforce"], float(int(top["cube_budget"] // UNIT) * UNIT))
+        assert again["delta_pct"] == r["mix"]["delta_pct"] and again["picks"] == r["mix"]["picks"]
+        seen.append(r["mix"]["delta_pct"])
+    got = [v for v in seen if v is not None]
+    assert got == sorted(got) and len(got) >= 3

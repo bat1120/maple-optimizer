@@ -165,6 +165,11 @@ export function getConsultMix(name, bossDefense = 300, star = 22, budget = 0) {
   return request(`${base(name)}/consult/mix?${bq(bossDefense)}&star=${star}&budget=${Math.max(0, Math.round(budget))}`);
 }
 
+// 성까지 같이(2026-11-26): 가진 메소 전체(total)에서 성마다 강화 평균과 넣은 살 템 시세(prices)를 빼고 추천 조합을 재서 가장 많이 오르는 성
+export function getConsultBest(name, bossDefense = 300, total = 0, prices = 0) {
+  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&total=${Math.max(0, Math.round(total))}&prices=${Math.max(0, Math.round(prices))}`);
+}
+
 // 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개
 export function getBudgetRoadmap(name, bossDefense = 300, budget = null, steps = null) {
   const q = new URLSearchParams(bossQuery(bossDefense));

@@ -2,7 +2,7 @@
 // 서버가 성(17·18·21·22)마다 방어구·장신구 세팅을 통째로 계산해 준다(세트 효과가 같이 바뀌는 것까지). 화면은 그 결과를 그대로 보여 주고,
 // 살 템의 시세만 사용자가 넣는다(넥슨이 주지 않는다) — 넣은 만큼 합계와 1억 메소당 효율을 계산한다(합·나눗셈뿐이라 화면에서 한다).
 import { useEffect, useRef, useState } from "react";
-import { getConsult, getConsultMix } from "./api.js";
+import { getConsult, getConsultBest } from "./api.js";
 import { formatMeso, formatPct, parsePrice } from "./format.js";
 import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -132,21 +132,25 @@ export default function ConsultPanel({ name, defense }) {
     for (const u of units) next[offKey(u.slot, u.kind)] = !fit.keep.includes(u);
     return next;
   });
-  // 추천 조합(섞은 목표): 강화와 넣은 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 고른 조합을 서버가 정확히 잰다
-  const mixBudget = budget ? budget - (build?.raise_cost || 0) - buyTotal : 0;
-  const [mixed, setMixed] = useState(null);
-  const mixSeq = useRef(0);
+  // 추천 조합(섞은 목표 + 성까지 같이): 가진 메소 전체를 서버에 보내면, 성마다 강화 평균과 넣은 시세를 빼고 남는 메소로
+  // 칸마다 잠재·에디 목표를 따로 고른 조합을 정확히 재서 가장 많이 오르는 성을 돌려준다
+  const [best, setBest] = useState(null);
+  const bestSeq = useRef(0);
   useEffect(() => {
-    if (!build || !budget || mixBudget < 1e8) { setMixed(null); return undefined; }
-    const mine = ++mixSeq.current;
+    if (!build || !budget) { setBest(null); return undefined; }
+    const mine = ++bestSeq.current;
     const t = setTimeout(() => {
-      getConsultMix(name, defense, build.starforce, mixBudget)
-        .then((d) => { if (mine === mixSeq.current) setMixed(d); })
-        .catch(() => { if (mine === mixSeq.current) setMixed(null); });
+      getConsultBest(name, defense, budget, buyTotal)
+        .then((d) => { if (mine === bestSeq.current) setBest(d); })
+        .catch(() => { if (mine === bestSeq.current) setBest(null); });
     }, 400);                                                   // 메소를 치는 동안 매 글자마다 부르지 않는다
     return () => clearTimeout(t);
-  }, [name, defense, build?.starforce, budget, mixBudget]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, defense, !!build, budget, buyTotal]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mixed = best?.mix || null;
+  const bestRow = best?.stars?.find((x) => x.starforce === best.best);
+  const cheapest = best?.stars?.reduce((a, x) => (!a || x.short < a.short ? x : a), null);
   const [mixOpen, setMixOpen] = useState(false);
+  const [starsOpen, setStarsOpen] = useState(false);
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
     if (o.cost > budget) return `${formatMeso(o.cost - budget)} 모자라요${o.missing ? `(시세를 안 넣은 템 ${o.missing}개 빼고도)` : ""}`;
@@ -222,20 +226,39 @@ export default function ConsultPanel({ name, defense }) {
                        onChange={(e) => setHave(e.target.value)} />
                 <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
               </div>
-              {budget > 0 && mixBudget < 1e8 && (
-                <p className="consult-fit"><strong>강화{buyTotal ? "·살 템" : ""}만으로 {formatMeso(-mixBudget) || "거의 다"} 모자라요</strong>
-                  <span className="muted small"> — 큐브에 쓸 메소가 남지 않아요.</span></p>
+              {best && !mixed && cheapest && (
+                <p className="consult-fit"><strong>강화{buyTotal ? "·살 템" : ""}만으로 {cheapest.short_text} 모자라요</strong>
+                  <span className="muted small"> — 가장 싼 {cheapest.starforce}성 강화(평균 {cheapest.raise_cost_text})도 아직 어려워요.</span></p>
               )}
-              {mixed && mixBudget >= 1e8 && (
+              {mixed && bestRow && (
                 <div className="consult-fit consult-mix" aria-label="추천 조합">
                   <p>
                     <span className="muted small">추천 조합 · </span>
-                    {formatMeso(budget)}이면 강화{buyTotal ? "·살 템" : ""} {formatMeso(budget - mixBudget) || "0"} + 큐브 <strong>{mixed.cost_text || "0"}</strong> —
+                    {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — 강화 {bestRow.raise_cost_text}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
                     보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
-                    {mixed.picks.length > 0 && <> <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
-                      {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button></>}
+                    {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
                   </p>
-                  <p className="muted small">칸마다 잠재·에디 목표를 따로 골라 이 메소 안에서 가장 많이 오르는 조합이에요(위 잠재·에디 탭과 따로).
+                  <p className="consult-mix-buttons">
+                    <button type="button" className="ghost small" aria-expanded={starsOpen} onClick={() => setStarsOpen(!starsOpen)}>
+                      {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
+                    {mixed.picks.length > 0 && <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
+                      {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button>}
+                  </p>
+                  {starsOpen && (
+                    <table className="consult-options" aria-label="성별 비교">
+                      <thead><tr><th>성</th><th className="num">강화 평균 · 큐브</th><th className="num">보스 실딜</th></tr></thead>
+                      <tbody>
+                        {best.stars.map((x) => (
+                          <tr key={x.starforce} className={x.starforce === best.best ? "is-ok" : ""}>
+                            <td>{x.starforce}성</td>
+                            <td className="num">{x.raise_cost_text}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
+                            <td className="num">{x.delta_pct == null ? `${x.short_text} 모자라요` : <strong>{pct1(x.delta_pct)}</strong>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
                     실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이에요.{missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
                   {mixOpen && (
                     <table className="consult-options" aria-label="추천 조합 칸별 목표">

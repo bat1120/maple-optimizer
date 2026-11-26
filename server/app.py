@@ -555,11 +555,19 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                     lambda: service.consult(snap, b, cooldown_main_pct))
 
     @app.get("/api/character/{name}/consult/mix")
-    def consult_mix(name: str, star: int = Query(22, ge=0, le=25), budget: float = Query(..., ge=0, le=1e16),
+    def consult_mix(name: str, star: int = Query(22, ge=0, le=25), budget: float | None = Query(None, ge=0, le=1e16),
+                    total: float | None = Query(None, ge=0, le=1e16), prices: float = Query(0, ge=0, le=1e16),
                     boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
                     boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
-        """섞은 목표: 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜."""
+        """섞은 목표: 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜.
+        total(가진 메소 전체)을 주면 성까지 같이 고른다 — 성마다 강화 평균과 prices(넣은 살 템 시세)를 빼고 잰다."""
+        if (budget is None) == (total is None):
+            raise ApiError(422, "BAD_REQUEST", "budget(큐브에 쓸 메소)과 total(가진 메소 전체) 중 하나만 주세요.")
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        if total is not None:
+            total, prices = float(int(total // 1e8) * 1e8), float(int(prices // 1e8) * 1e8)
+            return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
+                        lambda: service.consult_best(snap, b, total, prices, cooldown_main_pct))
         budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
         return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
                     lambda: service.consult_mix(snap, b, star, budget, cooldown_main_pct))
