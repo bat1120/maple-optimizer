@@ -11,7 +11,6 @@
 가정(갈아타기와 같다 — 숫자 추정 금지): 바꿀 템의 기본 옵션·주문서 칸 수는 넥슨 API 실측 표(BASES), 스타포스는 고른 성(그 템 최대 성 이하),
 잠재·에디·추옵·주문서 수치는 지금 그 자리 템 것을 옮긴다고 본다. 가격은 여기서 다루지 않는다(시세는 화면으로 읽거나 사용자가 넣는다).
 """
-import collections
 
 from engine.enhance.starforce import StarforceConditions, expected_totals
 from engine.market.armor_sets import ARMOR_SLOTS, _anon, armor_combos
@@ -92,7 +91,9 @@ def accessory_builds(sw: _Swapper, catalog: SetCatalog, top: int = 5) -> list[di
         trial = dict(sw.pl.items)
         trial.update({s: c["item"] for s, c in zip(slots, combo)})
         after = count_sets(trial.values(), sw.job.branches, catalog)
-        n = collections.Counter(c["set"] for c in combo if c["set"] in ACCESSORY_SETS)
+        # 이름표는 그 세팅을 낀 뒤의 실제 세트 개수로(바꾸지 않는 자리 — 엠블렘 등 — 의 세트 템도 센다. 운영 확인: 고른 칸만 세니
+        # '칠흑 6'인데 세트 효과 변화는 '칠흑 3→7개'라 서로 달랐다)
+        n = {k: after[k] for k in ACCESSORY_SETS if after.get(k)}
         rows.append({
             "label": " · ".join(f"{_short(k)} {v}" for k, v in sorted(n.items(), key=lambda x: ACCESSORY_SETS.index(x[0]))) or "지금 그대로",
             "pieces": {s: {"name": c["name"], "set": None if c["set"] == NONE else c["set"], "starforce": c["starforce"], "kept": c["kept"]}

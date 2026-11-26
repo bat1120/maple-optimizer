@@ -23,6 +23,13 @@ def test_accessory_build_is_exactly_the_index_of_wearing_those_items():
         assert r["delta_pct"] == (sw.pl.ev.index(trial) / sw.pl.base - 1) * 100
         names = [p["name"] for p in r["pieces"].values()]
         assert len(names) == len(set(names))
+        # 이름표의 세트 개수는 그 세팅을 낀 뒤의 실제 개수와 같다
+        from engine.stats.sets import count_sets
+        after = count_sets(trial.values(), sw.job.branches, service.CATALOG)
+        for part in r["label"].split(" · "):
+            short, n = part.rsplit(" ", 1)
+            full = {"칠흑": "칠흑의 보스 세트", "여명": "여명의 보스 세트", "보스 장신구": "보스 장신구 세트", "광휘": "광휘의 보스 세트"}[short]
+            assert after[full] == int(n)
 
 
 def test_whole_build_beats_the_best_single_slot_swap():
