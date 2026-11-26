@@ -174,4 +174,20 @@ describe("PlanPanel — 계획 하나", () => {
     expect(buyable({ ...cube, route: "큐브" })).toBe(false);
     expect(buyable({ path: "추옵" })).toBe(false);
   });
+
+  it("위 컨설팅의 추천 조합과 같은 메소면 둘을 견주고, 다르면 그 메소로 계획도 볼 수 있게 한다", async () => {
+    // 실제 서버 응답에는 budget(숫자)이 있다 — 위 budgeted 목업에 더한다
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => ({ ...budgeted, budget: 5000000000 }) });
+    const { rerender } = render(<PlanPanel name="내신부레테" defense={300} compare={{ budget: 5000000000, star: 21, delta_pct: 64.0 }} />);
+    fireEvent.change(screen.getByLabelText("가진 메소"), { target: { value: "50억" } });
+    fireEvent.click(await screen.findByRole("button", { name: "계산하기" }));   // 처음 계획을 받는 동안은 '계산 중…'
+    const note = await screen.findByLabelText("컨설팅과 비교");
+    expect(note.textContent).toBe("같은 50억을 위 '목표 세팅 컨설팅'처럼 템을 갈아타는 데 쓰면 21성 추천 조합 +64.0%이에요 — 이 계획보다 더 올라요(심볼은 들어 있지 않아요).");
+    rerender(<PlanPanel name="내신부레테" defense={300} compare={{ budget: 300000000000, star: 22, delta_pct: 90 }} />);
+    expect(screen.queryByLabelText("컨설팅과 비교")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "위 컨설팅에 넣은 3000억으로 이 계획도 보기" }));
+    await act(async () => {});
+    expect(String(f.mock.calls.at(-1)[0])).toContain("budget=300000000000");
+    expect(screen.getByLabelText("가진 메소")).toHaveValue("3000억");
+  });
 });

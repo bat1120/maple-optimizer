@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getBudgetRoadmap } from "./api.js";
-import { parsePrice } from "./format.js";
+import { formatMeso, parsePrice } from "./format.js";
 import { hashFor } from "./router.js";
 import { stepName } from "./flow.js";
 import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
@@ -41,7 +41,9 @@ function CopyLink() {
 
 // onEvaluate(step): 그 줄의 조건으로 화면 공유 평가를 연다. watch: 화면 공유 칸(하나뿐인 인스턴스 — 공유 세션이 끊기지 않게
 // 다시 만들지 않고, CSS order로 고른 줄 바로 아래에 보이게만 한다). onStage(n): 지금 단계(1 추천 · 2 검색 조건 · 3 화면 공유)
-export default function PlanPanel({ name, defense, onEvaluate = null, watch = null, onStage = null }) {
+// compare: 위 '목표 세팅 컨설팅'의 추천 조합 { budget, star, delta_pct } — 같은 메소를 템 갈아타기에 쓰면 얼마인지 견준다(2026-11-27:
+// 운영 레테 3000억 — 이 계획 +41.9%, 컨설팅 21성 +64.0%로 한 화면에서 답이 엇갈렸다. 둘은 다른 질문의 답이라 무엇이 다른지 적는다)
+export default function PlanPanel({ name, defense, onEvaluate = null, watch = null, onStage = null, compare = null }) {
   const [text, setText] = useState("");
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -99,7 +101,7 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
   return (
     <section className="panel plan-panel" aria-label="내 업그레이드 계획">
       <PanelHead title="내 업그레이드 계획" icon="trend"
-                 subtitle="같은 메소로 보스 실딜이 많이 오르는 순서예요. 위에서부터 하면 돼요." />
+                 subtitle="지금 템을 그대로 두고(강화·큐브·심볼·싼 교체) 같은 메소로 보스 실딜이 많이 오르는 순서예요. 위에서부터 하면 돼요." />
       <form className="budget-form" onSubmit={submit}>
         <label className="budget-label" htmlFor="plan-budget">가진 메소를 넣으면 그 안에서 끊어 드려요</label>
         <input id="plan-budget" aria-label="가진 메소" inputMode="text" autoComplete="off" placeholder="예: 50억" value={text}
@@ -123,6 +125,20 @@ export default function PlanPanel({ name, defense, onEvaluate = null, watch = nu
           ) : (
             <p className="budget-headline"><span><strong>{data.budget_text}</strong>으로는 지금 할 수 있는 단계가 없어요.</span></p>
           ))}
+          {data.budget_text && compare && compare.budget === data.budget && (
+            <p className="muted small plan-compare" aria-label="컨설팅과 비교">
+              같은 {data.budget_text}을 위 '목표 세팅 컨설팅'처럼 템을 갈아타는 데 쓰면 {compare.star}성 추천 조합{" "}
+              <strong className="num">{pct(compare.delta_pct, 1)}</strong>
+              {Math.abs(compare.delta_pct - data.gain_pct) < 0.5 ? "이에요 — 이 계획과 비슷해요."
+                : compare.delta_pct > data.gain_pct ? "이에요 — 이 계획보다 더 올라요(심볼은 들어 있지 않아요)." : "이에요 — 이 계획이 더 올라요."}
+            </p>
+          )}
+          {compare?.budget && compare.budget !== data.budget && (
+            <p className="muted small plan-compare">
+              <button type="button" className="link-button" onClick={() => { setText(formatMeso(compare.budget)); load(compare.budget); }}>
+                위 컨설팅에 넣은 {formatMeso(compare.budget)}으로 이 계획도 보기</button>
+            </p>
+          )}
           {!data.budget_text && steps.length === 0 && (
             /* 2026-11-25: 기본 장비 몇 개만 낀 캐릭터(직업별 측정의 200레벨 부캐들)는 강화할 것이 없어 계획이 빈다 — 다음에 할 일을 알려 준다 */
             <EmptyState icon="trend" title="지금 낀 장비로는 강화해서 올릴 단계가 없어요">

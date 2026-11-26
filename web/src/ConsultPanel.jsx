@@ -11,7 +11,8 @@ const pct1 = (x) => `${x >= 0 ? "+" : ""}${x.toFixed(1)}%`;
 const SHORT = (s) => (s || "").replace("의 보스 세트", "").replace(" 세트", "");
 
 // onEvaluate: 할 일의 살 템 [찾기] → 화면 공유 평가 칸을 열고 '찾는 템'을 보여 준다(계획 → 경매장 검색 → 화면 공유로 매물 평가)
-export default function ConsultPanel({ name, defense, onEvaluate }) {
+// onBest: 추천 조합 결과(가진 메소·고른 성·보스 실딜)를 페이지에 알린다 — 아래 '내 업그레이드 계획'이 같은 메소의 다른 답과 견줄 수 있게
+export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [star, setStar] = useState(22);
@@ -162,6 +163,9 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
     return () => clearTimeout(t);
   }, [name, defense, !!build, budget, buyTotal, sf]); // eslint-disable-line react-hooks/exhaustive-deps
   const mixed = best?.mix || null;
+  useEffect(() => {
+    onBest?.(mixed && best ? { budget: best.total, star: best.best, delta_pct: mixed.delta_pct } : null);
+  }, [mixed, best]); // eslint-disable-line react-hooks/exhaustive-deps
   const bestRow = best?.stars?.find((x) => x.starforce === best.best);
   const cheapest = best?.stars?.reduce((a, x) => (!a || x.short < a.short ? x : a), null);
   const [mixOpen, setMixOpen] = useState(false);
