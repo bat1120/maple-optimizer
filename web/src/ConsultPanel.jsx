@@ -48,7 +48,7 @@ export default function ConsultPanel({ name, defense }) {
   const drop = (group, key) => dropped.filter((x) => !group || x.group === group).reduce((a, x) => a + (x[key] || 0), 0);
   const cubeAll = goal ? (build.cube_cost || 0) + (build.match_cost || 0) - drop(null, "cost") : 0;
   const shown = (delta, group) => (dropped.length ? `약 ${pct1(delta - drop(group, "gain_pct"))}` : pct1(delta));
-  const eff = (g) => (g ? `${pct1(g.gain_pct)}${g.per_100m ? ` · 1억당 ${formatPct(g.per_100m)}` : ""}` : "");
+  const eff = (g) => (g ? `${pct1(g.gain_pct)}${g.per_100m ? ` · 100억당 +${(g.per_100m * 100).toFixed(2)}%` : ""}` : "");
   const priced = (build?.buy || []).map((x) => parsePrice(prices[x.name] || ""));
   const missing = priced.filter((p) => !p).length;
   const buyTotal = priced.reduce((a, p) => a + (p || 0), 0);
@@ -154,12 +154,12 @@ export default function ConsultPanel({ name, defense }) {
                           <label className="consult-pick">
                             <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)}
                                    onChange={(e) => setOff((o) => ({ ...o, [offKey(x.slot)]: !e.target.checked }))} />
-                            <span className={isOff(x.slot) ? "is-off" : ""}>잠재 목표 <strong className="num">{eff(x.goal)}</strong>{x.goal.cost_text ? ` (큐브 평균 ${x.goal.cost_text})` : ""}</span>
+                            <span className={isOff(x.slot) ? "is-off" : ""}>잠재를 목표로 <strong className="num">{eff(x.goal)}</strong>{x.goal.cost_text ? ` · 큐브 평균 ${x.goal.cost_text}` : ""}</span>
                           </label>
                         ) : null}
                         {x.target ? `목표 잠재 ${x.target.join(" · ")} — ` : ""}
                         {x.match_cost == null ? "잠재 맞추는 비용은 계산하지 못했어요" : x.match_cost === 0 ? "맞출 잠재 없음"
-                          : x.target ? `에디는 지금 수준, 큐브 평균 ${x.match_text}` : `잠재·에디까지 맞추면 평균 +${x.match_text}`}
+                          : x.target ? `에디(지금 수준)까지 합치면 평균 ${x.match_text}` : `잠재·에디까지 맞추면 평균 +${x.match_text}`}
                       </span>
                     </span>
                     <input aria-label={`${x.name} 시세`} inputMode="text" autoComplete="off" placeholder="시세" value={prices[x.name] || ""}
@@ -192,7 +192,7 @@ export default function ConsultPanel({ name, defense }) {
                 {cubes.map((x) => (
                   <li key={x.slot}>
                     <span className="consult-slot muted small">{x.slot}</span>
-                    <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">{x.from_grade} → 레전드리</span>
+                    <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">{x.from_grade === "레전드리" ? "레전드리 · 줄만 바꿈" : `${x.from_grade} → 레전드리`}</span>
                       <span className="consult-match muted small">
                         <label className="consult-pick">
                           <input type="checkbox" aria-label={`${x.name} 잠재 목표 넣기`} checked={!isOff(x.slot)}
