@@ -56,7 +56,8 @@ describe("character page", () => {
     });
     render(<Character route={{ page: "character", name: "내신부레테", tab: "summary" }} />);
     expect(await screen.findByRole("heading", { name: "내신부레테" })).toBeInTheDocument();
-    expect(screen.getByText("계산 중…")).toBeInTheDocument();
+    expect(screen.getAllByText("계산 중…")).toHaveLength(2);                       // 큰 숫자와 세팅 칸 둘 다(사냥용 전투력도 먼저 안 보인다)
+    expect(screen.queryByText("9,876만")).toBeNull();
     expect(screen.queryByText("지금 착용 중인 세팅")).toBeNull();
     expect(screen.queryByRole("button", { name: /프리셋2/ })).toBeNull();          // 장비창(지금 착용 프리셋)도 아직 안 그린다
     expect(screen.getByText("보스 세팅의 장비 프리셋을 고르는 중이에요…")).toBeInTheDocument();
@@ -276,13 +277,12 @@ describe("character page", () => {
     expect(await screen.findByText("보스 세팅")).toBeInTheDocument();
     expect(screen.getByText("장비 1 · 하이퍼 3 · 어빌 2")).toBeInTheDocument();
     expect(screen.queryByText(/지금 착용: /)).toBeNull();
-    // 전투력은 게임에서 마지막으로 낀 세팅의 기록 — 보스 세팅과 다르면 그렇다고 알린다(2026-11-26)
-    expect(screen.getByText("게임에서 마지막으로 낀 세팅의 기록이라 보스 세팅 전투력과 달라요")).toBeInTheDocument();
-    // 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자) — 스탯 공격력은 첫 화면에 없다
-    expect(screen.getByText("전투력(인게임 기록)")).toBeInTheDocument();
-    expect(screen.getByText("9,876만")).toBeInTheDocument();
-    expect(screen.queryByText(/스탯 공격력/)).toBeNull();
-    expect(screen.queryByText("2억 2,200만")).toBeNull();
+    // 큰 숫자도 보스 세팅 기준(2026-11-26 사용자): 지금 낀 세팅이 보스 세팅과 다르면 인게임 전투력(9,876만 — 지금 낀 세팅의 기록) 대신
+    // 보스 세팅의 스탯공격력을 보여 준다. 전에는 '넥슨이 준 전투력 그대로'(2026-11-07)였다 — 같을 때는 지금도 그대로다
+    expect(screen.getByText("스탯공격력(보스 세팅)")).toBeInTheDocument();
+    expect(screen.getByText("2억 2,200만")).toBeInTheDocument();
+    expect(screen.queryByText("전투력(인게임 기록)")).toBeNull();
+    expect(screen.queryByText("9,876만")).toBeNull();
     expect(screen.getByText("333%")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "프리셋 1" })).toHaveAttribute("aria-pressed", "true");
   });

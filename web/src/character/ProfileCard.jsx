@@ -30,12 +30,15 @@ export default function ProfileCard({ name, summary, best = null, pending = fals
           {/* 기본은 보스 세팅(2026-10-17 사용자). 세팅 순위가 오기 전에는 '계산 중'(2026-11-26: 지금 착용 = 사냥용 세팅을 먼저 보여 주지 않는다).
               세팅 순위를 못 받았을 때만 지금 착용 값 */}
           {/* 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자). 세팅별 전투력은 API에 없고 계산하지 않는다 */}
-          {/* 2026-11-26: 이 숫자는 게임에서 마지막으로 낀 세팅의 기록이다 — 사냥용을 끼고 나오면 보스 세팅보다 훨씬 낮다
-              (실사용: 하루 사이 1억 9,301만 → 1억 409만). 보스 세팅과 다를 때는 그 사실을 붙여 적는다(보스 세팅 전투력은 API에 없다) */}
-          <div className="kpi kpi-primary"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}
-            {best && settingLabel(best.setting) !== settingLabel(summary.active_setting) && (
-              <span className="kpi-sub">게임에서 마지막으로 낀 세팅의 기록이라 보스 세팅 전투력과 달라요</span>
-            )}</dd></div>
+          {/* 큰 숫자도 보스 세팅 기준(2026-11-26 사용자). 인게임 전투력은 게임에서 마지막으로 낀 세팅의 기록이라, 사냥용을 끼고 나오면
+              보스 세팅보다 훨씬 낮다(실사용: 하루 사이 1억 9,301만 → 1억 409만). 보스 세팅의 전투력은 넥슨이 주지 않으므로,
+              지금 낀 세팅이 보스 세팅과 다를 때는 보스 세팅의 스탯공격력(계산값)을 보여 준다. 같을 때는 인게임 전투력 그대로(2026-11-07) */}
+          {best && best.stat_attack != null && settingLabel(best.setting) !== settingLabel(summary.active_setting) ? (
+            <div className="kpi kpi-primary"><dt>스탯공격력(보스 세팅)</dt><dd>{formatBig(best.stat_attack)}
+              <span className="kpi-sub">게임 전투력 기록은 지금 낀 세팅 기준이라 보스 세팅 값으로 보여 드려요</span></dd></div>
+          ) : (
+            <div className="kpi kpi-primary"><dt>전투력(인게임 기록)</dt><dd>{pending && !best ? "계산 중…" : formatBig(summary.combat_power_reference)}</dd></div>
+          )}
           <div className="kpi"><dt>{best || pending ? "보스 세팅" : "지금 착용 중인 세팅"}</dt>
             <dd className="kpi-text">{pending && !best ? "계산 중…" : settingLabel(best ? best.setting : summary.active_setting)}</dd></div>
         </dl>
