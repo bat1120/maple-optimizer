@@ -23,6 +23,13 @@ const build = (starforce, delta, over = {}) => ({
 const DATA = { evaluation_setting: { equipment: 2 }, boss: { defense: 300 }, note: "세팅 전체를 한 번에 낀 보스 실딜이에요.",
                builds: [build(17, 13.94, { raise: [], raise_cost: 0, raise_cost_text: null }), build(18, 20.07), build(21, 60.77), build(22, 77.24)] };
 const ok = (body) => ({ ok: true, status: 200, json: async () => body });
+// 실제 서버 응답 모양(2026-11-26, /api/character/{name}/consult/mix)
+const MIX = { starforce: 22, budget: 13600000000, base_delta_pct: 77.24, delta_pct: 95.31, approx_pct: 96.1, cost: 13000000000, cost_text: "130억",
+              candidates: 9, evaluation_setting: { equipment: 2 }, boss: { defense: 300 }, note: "칸마다…",
+              picks: [{ slot: "무기", kind: "에디", name: "제네시스 카르타", group: "무기", kept: true, label: "레전드리 2줄", target: ["마력 +12%", "마력 +9%"],
+                        cost: 11000000000, cost_text: "110억", gain_pct: 4.07 },
+                      { slot: "귀고리", kind: "잠재", name: "커맨더 포스 이어링", group: "장신구", kept: false, label: "레전드리 2줄", target: ["INT +12%", "INT +9%"],
+                        cost: 2000000000, cost_text: "20억", gain_pct: 1.1 }] };
 
 describe("목표 세팅 컨설팅", () => {
   it("성마다 세팅 전체의 실딜을 보여 주고, 기본은 22성 — 살 템·강화할 템·세트 효과 변화가 나온다", async () => {
@@ -199,12 +206,12 @@ describe("목표 세팅 컨설팅", () => {
       cube_cost: 91560000000, cube_cost_text: "915억 6000만", cube_unknown: 0,
     });
     const same = (st, d) => build(st, d, { potential: "same", potential_label: "지금 그대로", cube: [], cube_cost: 0, additional_options: [] });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok({ ...DATA, builds: [same(22, 77.24), pot(22, 82.0)] }));
+    const body = { ...DATA, builds: [same(22, 77.24), pot(22, 82.0)] };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? MIX : body));
     render(<ConsultPanel name="내신부레테" defense={300} />);
     await screen.findByRole("tablist", { name: "잠재 목표" });
     fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
     fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "700억" } });
-    expect(screen.getByText(/잠재·에디 목표를 고르면 이 메소 안에서/)).toBeInTheDocument();   // 목표를 안 골랐을 때는 안내만
     fireEvent.click(within(screen.getByRole("tablist", { name: "잠재 목표" })).getByRole("tab", { name: /레전드리 3줄/ }));
     // 강화 563억 6262만 + 살 템 에디(지금 수준) 16억 4174만 = 580억 436만이 먼저 — 남는 119억 9564만으로 귀고리(23억)·장갑(115억) 중 효율 순
     const fit = () => screen.getByLabelText("가진 메소로 고른 칸").textContent;
@@ -243,5 +250,26 @@ describe("목표 세팅 컨설팅", () => {
     expect(document.querySelector(".consult-gain").textContent).toBe("약 +90.4%");       // 100 − 9.6(share), 10.7(칸만의 몫)이 아니다
     fireEvent.click(screen.getByLabelText("에테르넬 메이지글러브 잠재 목표 넣기"));
     expect(document.querySelector(".consult-gain").textContent).toBe("약 +77.2%");       // 다 빼면 '지금 그대로'(77.24)와 같다
+  });
+
+  it("가진 메소를 넣으면 강화·넣은 시세를 뺀 메소로 서버에 '추천 조합'(칸마다 다른 목표)을 물어 정확한 실딜을 보여 준다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? MIX : DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    fireEvent.change(screen.getByLabelText("커맨더 포스 이어링 시세"), { target: { value: "30억" } });
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    const box = await screen.findByLabelText("추천 조합");
+    // 730억 − 강화 563억 6262만 − 넣은 시세 30억 = 136억 3738만을 큐브에 쓴다
+    const url = String(f.mock.calls.at(-1)[0]);
+    expect(url).toContain("/consult/mix?boss_defense=300&star=22&budget=13637380000");
+    expect(box.textContent).toContain("730억이면 강화·살 템 593억 6262만 + 큐브 130억 — 보스 실딜 +95.3%");
+    expect(box.textContent).toContain("시세를 안 넣은 살 템 1개는 계산에 없어요");
+    fireEvent.click(screen.getByRole("button", { name: "칸별 목표 2개 보기" }));
+    const rows = within(screen.getByRole("table", { name: "추천 조합 칸별 목표" })).getAllByRole("row").slice(1).map((r) => r.textContent);
+    expect(rows).toEqual(["무기 제네시스 카르타에디 레전드리 2줄 마력 +12% · 마력 +9%+4.1%110억", "귀고리 커맨더 포스 이어링잠재 레전드리 2줄 INT +12% · INT +9%+1.1%20억"]);
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "500억" } });
+    expect(screen.queryByLabelText("추천 조합")).toBeNull();
+    expect(screen.getByText(/강화·살 템만으로 93억 6262만 모자라요/)).toBeInTheDocument();
   });
 });

@@ -57,8 +57,9 @@ try {
     if (!hit) { console.error(`입력칸을 찾지 못했어요: ${label}`); code = 1; }
     await sleep(400);
   }
-  for (const label of after) {
-    const hit = await evalJs(`(() => { const want = ${JSON.stringify(label)};
+  for (const label of after) {   // 입력 뒤에 늦게 뜨는 버튼(서버 응답 뒤)일 수 있어 최대 10초 다시 찾는다
+    let hit = false;
+    for (let i = 0; i < 20 && !hit; i++, await sleep(hit ? 0 : 500)) hit = await evalJs(`(() => { const want = ${JSON.stringify(label)};
       const els = [...document.querySelectorAll("button, [role=tab], input[type=checkbox], summary")];
       const e = els.find((x) => (x.getAttribute("aria-label") || x.innerText || "").includes(want)); if (!e) return false; e.click(); return true; })()`);
     if (!hit) { console.error(`누를 곳을 찾지 못했어요: ${label}`); code = 1; }

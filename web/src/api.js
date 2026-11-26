@@ -160,6 +160,11 @@ export function getConsult(name, bossDefense = 300) {
   return request(`${base(name)}/consult?${bq(bossDefense)}`);
 }
 
+// 섞은 목표(2026-11-26): 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜
+export function getConsultMix(name, bossDefense = 300, star = 22, budget = 0) {
+  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&star=${star}&budget=${Math.max(0, Math.round(budget))}`);
+}
+
 // 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개
 export function getBudgetRoadmap(name, bossDefense = 300, budget = null, steps = null) {
   const q = new URLSearchParams(bossQuery(bossDefense));

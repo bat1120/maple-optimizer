@@ -721,6 +721,22 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
 
 
 @with_basis
+def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: float, cooldown_main_pct: float | None = None) -> dict:
+    """섞은 목표(2026-11-26): 큐브에 쓸 budget 메소 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과, 그 줄들을 실제로 낀 보스 실딜."""
+    from engine.market.consult_mix import mix
+    b = boss(defense)
+    setting = rank_settings(snap, b, CATALOG)[0][0]
+    r = mix(snap, setting, b, CATALOG, star, budget, cooldown_main_pct)
+    for x in r["picks"]:
+        x["cost_text"] = meso_text(x["cost"])
+    r["cost_text"] = meso_text(r["cost"]) if r["cost"] else None
+    return {**r, "evaluation_setting": asdict(setting), "boss": asdict(b),
+            "note": ("칸마다 잠재·에디 목표(그대로·레전드리 2줄·3줄 / 그대로·에픽·유니크·레전드리 2줄)를 따로 골라, 칸별 몫을 더한 값이 "
+                     "예산 안에서 가장 큰 조합을 골랐어요(1억 단위). 보스 실딜은 고른 줄들을 실제로 낀 세팅으로 다시 잰 값이에요. "
+                     "큐브 비용은 평균이고, 살 템은 잠재·에디 없이 산다고 봤어요(레어에서). 추옵은 지금 그대로예요.")}
+
+
+@with_basis
 def roadmap(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | None = None,
             observed: list[dict] | None = None, miracle: bool = False) -> dict:
     """전체 부위 로드맵: 부위마다 잠재·에디 등급별 단계와 각 단계의 보스 실딜 상승."""

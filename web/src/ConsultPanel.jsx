@@ -2,7 +2,7 @@
 // 서버가 성(17·18·21·22)마다 방어구·장신구 세팅을 통째로 계산해 준다(세트 효과가 같이 바뀌는 것까지). 화면은 그 결과를 그대로 보여 주고,
 // 살 템의 시세만 사용자가 넣는다(넥슨이 주지 않는다) — 넣은 만큼 합계와 1억 메소당 효율을 계산한다(합·나눗셈뿐이라 화면에서 한다).
 import { useEffect, useRef, useState } from "react";
-import { getConsult } from "./api.js";
+import { getConsult, getConsultMix } from "./api.js";
 import { formatMeso, formatPct, parsePrice } from "./format.js";
 import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 
@@ -132,6 +132,21 @@ export default function ConsultPanel({ name, defense }) {
     for (const u of units) next[offKey(u.slot, u.kind)] = !fit.keep.includes(u);
     return next;
   });
+  // 추천 조합(섞은 목표): 강화와 넣은 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 고른 조합을 서버가 정확히 잰다
+  const mixBudget = budget ? budget - (build?.raise_cost || 0) - buyTotal : 0;
+  const [mixed, setMixed] = useState(null);
+  const mixSeq = useRef(0);
+  useEffect(() => {
+    if (!build || !budget || mixBudget < 1e8) { setMixed(null); return undefined; }
+    const mine = ++mixSeq.current;
+    const t = setTimeout(() => {
+      getConsultMix(name, defense, build.starforce, mixBudget)
+        .then((d) => { if (mine === mixSeq.current) setMixed(d); })
+        .catch(() => { if (mine === mixSeq.current) setMixed(null); });
+    }, 400);                                                   // 메소를 치는 동안 매 글자마다 부르지 않는다
+    return () => clearTimeout(t);
+  }, [name, defense, build?.starforce, budget, mixBudget]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [mixOpen, setMixOpen] = useState(false);
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
     if (o.cost > budget) return `${formatMeso(o.cost - budget)} 모자라요${o.missing ? `(시세를 안 넣은 템 ${o.missing}개 빼고도)` : ""}`;
@@ -207,8 +222,36 @@ export default function ConsultPanel({ name, defense }) {
                        onChange={(e) => setHave(e.target.value)} />
                 <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
               </div>
-              {budget > 0 && !goal && (
-                <p className="consult-fit muted small">잠재·에디 목표를 고르면 이 메소 안에서 100억당 효율이 높은 칸부터 골라 드려요.</p>
+              {budget > 0 && mixBudget < 1e8 && (
+                <p className="consult-fit"><strong>강화{buyTotal ? "·살 템" : ""}만으로 {formatMeso(-mixBudget) || "거의 다"} 모자라요</strong>
+                  <span className="muted small"> — 큐브에 쓸 메소가 남지 않아요.</span></p>
+              )}
+              {mixed && mixBudget >= 1e8 && (
+                <div className="consult-fit consult-mix" aria-label="추천 조합">
+                  <p>
+                    <span className="muted small">추천 조합 · </span>
+                    {formatMeso(budget)}이면 강화{buyTotal ? "·살 템" : ""} {formatMeso(budget - mixBudget) || "0"} + 큐브 <strong>{mixed.cost_text || "0"}</strong> —
+                    보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
+                    {mixed.picks.length > 0 && <> <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
+                      {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button></>}
+                  </p>
+                  <p className="muted small">칸마다 잠재·에디 목표를 따로 골라 이 메소 안에서 가장 많이 오르는 조합이에요(위 잠재·에디 탭과 따로).
+                    실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이에요.{missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
+                  {mixOpen && (
+                    <table className="consult-options" aria-label="추천 조합 칸별 목표">
+                      <thead><tr><th>칸</th><th>목표</th><th className="num">몫 · 큐브 평균</th></tr></thead>
+                      <tbody>
+                        {mixed.picks.map((x) => (
+                          <tr key={`${x.slot}/${x.kind}`}>
+                            <td>{x.slot} <span className="muted small">{x.name}</span></td>
+                            <td>{x.kind} {x.label} <span className="muted small">{x.target.join(" · ")}</span></td>
+                            <td className="num"><strong>{pct1(x.gain_pct)}</strong><span className="muted small">{x.cost_text}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               )}
               {fit && (
                 <div className="consult-fit" aria-label="가진 메소로 고른 칸">
@@ -217,7 +260,7 @@ export default function ConsultPanel({ name, defense }) {
                   ) : (
                     <>
                       <p>
-                        {formatMeso(budget)}이면 목표 칸 <strong>{fit.keep.length}/{units.length}개</strong>까지(큐브 평균 {formatMeso(fit.spent) || "0"}) —
+                        <span className="muted small">고른 목표 안에서 · </span>{formatMeso(budget)}이면 목표 칸 <strong>{fit.keep.length}/{units.length}개</strong>까지(큐브 평균 {formatMeso(fit.spent) || "0"}) —
                         보스 실딜 <strong className="num">{fit.keep.length < units.length ? `약 ${pct1(fit.gain)}` : pct1(whole)}</strong>
                         {fit.keep.length < units.length && (units.every((u) => isOff(u.slot, u.kind) === !fit.keep.includes(u))
                           ? <span className="muted small"> · 아래 체크가 이대로예요</span>

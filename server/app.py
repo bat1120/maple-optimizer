@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 import json
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -553,6 +553,16 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
         snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
         return memo("consult", name, date, (boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
                     lambda: service.consult(snap, b, cooldown_main_pct))
+
+    @app.get("/api/character/{name}/consult/mix")
+    def consult_mix(name: str, star: int = Query(22, ge=0, le=25), budget: float = Query(..., ge=0, le=1e16),
+                    boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
+                    boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None):
+        """섞은 목표: 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜."""
+        snap, b = pick(load(name, date), boss_defense, boss, arcane_force, authentic_force)
+        budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
+        return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),
+                    lambda: service.consult_mix(snap, b, star, budget, cooldown_main_pct))
 
     @app.get("/api/character/{name}/paths")
     def upgrade_paths(name: str, boss_defense: float = 300.0, cooldown_main_pct: float | None = None,
