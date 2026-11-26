@@ -315,7 +315,7 @@ export default function Character({ route }) {
               {/* 2026-11-23 사용자: 계획 하나로 합친다 — 흐름 4단계 → 내 업그레이드 계획(추천 1 · 검색 조건 2 · 화면 공유와 결과 3·4)
                   → 다른 기준(잠재·에디만 본 순위 포함). 화면 공유 칸은 계획에서 고른 줄 바로 아래에 온다 */}
               {/* 2026-11-26 사용자: 템 세팅은 메소를 모아 한 번에 갈아타는 것 — 그 답(목표 세팅)을 맨 위에, 지금 템 강화 순서는 그 아래 */}
-              <ConsultPanel key={`consult-${calcKey}`} name={name} defense={calcDefense} />
+              <ConsultPanel key={`consult-${calcKey}`} name={name} defense={calcDefense} onEvaluate={evaluate} />
               <FlowSteps current={watchOpen ? 3 : stage} />
               <PlanPanel key={calcKey} name={name} defense={calcDefense} onEvaluate={evaluate}
                          onStage={(n) => { setStage(n); if (n < 3) setWatchOpen(false); }}

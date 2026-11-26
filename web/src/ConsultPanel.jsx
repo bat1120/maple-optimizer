@@ -10,7 +10,8 @@ import { EmptyState, PanelHead, RowsSkeleton } from "./ui/Guide.jsx";
 const pct1 = (x) => `${x >= 0 ? "+" : ""}${x.toFixed(1)}%`;
 const SHORT = (s) => (s || "").replace("의 보스 세트", "").replace(" 세트", "");
 
-export default function ConsultPanel({ name, defense }) {
+// onEvaluate: 할 일의 살 템 [찾기] → 화면 공유 평가 칸을 열고 '찾는 템'을 보여 준다(계획 → 경매장 검색 → 화면 공유로 매물 평가)
+export default function ConsultPanel({ name, defense, onEvaluate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [star, setStar] = useState(22);
@@ -278,7 +279,11 @@ export default function ConsultPanel({ name, defense }) {
                     <ol className="consult-plan" aria-label="할 일 순서">
                       {planBuild.buy.length > 0 && (
                         <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)</span>
-                          <span className="consult-plan-items">{planBuild.buy.map((x) => `${x.slot} ${x.name}${prices[x.name] ? ` (${prices[x.name]})` : ""}`).join(" · ")}</span></li>
+                          <span className="consult-plan-items">{planBuild.buy.map((x, i) => (
+                            <span key={x.slot}>{i ? " · " : ""}{x.slot} {x.name}{prices[x.name] ? ` (${prices[x.name]})` : ""}
+                              {onEvaluate && <button type="button" className="link-button" aria-label={`${x.name} 경매장에서 찾기`}
+                                                     onClick={() => onEvaluate({ slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [] })}>찾기</button>}
+                            </span>))}</span></li>
                       )}
                       {planBuild.raise.length > 0 && (
                         <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>

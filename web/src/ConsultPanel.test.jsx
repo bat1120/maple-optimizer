@@ -298,4 +298,16 @@ describe("목표 세팅 컨설팅", () => {
     expect(await screen.findByText(/강화·살 템만으로 12억 모자라요/)).toBeInTheDocument();
     expect(screen.queryByLabelText("추천 조합")).toBeNull();
   });
+
+  it("할 일의 살 템 [찾기]는 화면 공유 평가에 '찾는 템'(부위·템·성)을 넘긴다", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST : DATA));
+    const onEvaluate = vi.fn();
+    render(<ConsultPanel name="내신부레테" defense={300} onEvaluate={onEvaluate} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    fireEvent.click(await screen.findByRole("button", { name: "할 일 순서로 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "근원의 속삭임 경매장에서 찾기" }));
+    expect(onEvaluate).toHaveBeenCalledWith({ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [] });
+  });
 });

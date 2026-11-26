@@ -353,6 +353,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
           <span className="cond-head">게임 경매장 › 상세 검색에서 이 조건으로 찾으세요</span>
           <ul className="rank-cond">
             <li className="cond-slot"><span className="cond-k">부위</span>{target.slot}</li>
+            {target.item && <li><span className="cond-k">템</span>{target.item}</li>}
             <li><span className="cond-k">{target.kind}</span>{target.grade}</li>
             {target.target.map((t, k) => <li key={k}><span className="cond-k">{k + 1}줄</span>{t} 이상</li>)}
           </ul>

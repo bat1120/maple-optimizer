@@ -508,4 +508,10 @@ describe("screen watch new scan", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "경매장 화면 연결" })); });
     expect(screen.queryByText(/센 반지/)).toBeNull();
   });
+
+  it("컨설팅 '할 일'에서 넘어온 찾는 템(부위·템 이름·성)을 위에 보여 준다", () => {
+    render(<ScreenWatch name="x" defense={300} capture={null} admin={false}
+                        target={{ slot: "반지1", item: "근원의 속삭임", kind: "스타포스", grade: "21성 이상", target: [] }} />);
+    expect(screen.getByRole("note", { name: "찾는 조건" })).toHaveTextContent("부위반지1템근원의 속삭임스타포스21성 이상");
+  });
 });
