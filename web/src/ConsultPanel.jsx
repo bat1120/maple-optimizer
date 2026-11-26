@@ -316,7 +316,8 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                     <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)</span>
                       <span className="consult-plan-items">{planBuild.buy.map((x, i) => (
                         <span key={x.slot}>{i ? " · " : ""}{x.slot} {x.name}{prices[x.name] ? ` (${prices[x.name]})` : ""}
-                          {onEvaluate && <button type="button" className="link-button" aria-label={`${x.name} 경매장에서 찾기`}
+                          {/* 화면 공유 평가는 PC에서만 열린다 — 휴대폰에서는 눌러도 아무 일이 없어(2026-11-27 운영 휴대폰 확인) 버튼을 숨긴다 */}
+                              {onEvaluate && <button type="button" className="link-button pc-only-inline" aria-label={`${x.name} 경매장에서 찾기`}
                                                  onClick={() => onEvaluate({
                                                    slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [], star: best.best,
                                                    // 그 매물 값을 더하면 계획 합계가 얼마인지 화면 공유 쪽에서 바로 보여 주려고: 이 템 시세를 뺀 나머지 계획 비용
