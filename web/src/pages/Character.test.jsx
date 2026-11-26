@@ -61,9 +61,10 @@ describe("character page", () => {
     expect(screen.queryByText("지금 착용 중인 세팅")).toBeNull();
     expect(screen.queryByRole("button", { name: /프리셋2/ })).toBeNull();          // 장비창(지금 착용 프리셋)도 아직 안 그린다
     expect(screen.getByText("보스 세팅의 장비 프리셋을 고르는 중이에요…")).toBeInTheDocument();
+    await waitFor(() => expect(giveSettings).toBeTypeOf("function"));            // 전체 테스트가 몰려 느릴 때도 세팅 요청이 나간 뒤에 준다
     await act(async () => { giveSettings(); });
     await waitFor(() => expect(screen.queryByText("보스 세팅의 장비 프리셋을 고르는 중이에요…")).toBeNull());   // 보스 세팅이 오면 장비창을 그린다
-    expect(screen.queryByText("계산 중…")).toBeNull();
+    await waitFor(() => expect(screen.queryByText("계산 중…")).toBeNull());
     expect(screen.getAllByRole("button", { name: /프리셋/ }).length).toBeGreaterThan(0);
   });
 
