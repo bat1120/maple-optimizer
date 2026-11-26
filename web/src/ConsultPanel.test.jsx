@@ -327,4 +327,16 @@ describe("목표 세팅 컨설팅", () => {
     await screen.findByLabelText("추천 조합");
     expect(String(f.mock.calls.at(-1)[0])).toContain("&total=73000000000&prices=0&sf=discount30,destroy_down30");
   });
+
+  it("가진 메소 칸은 목록을 펴지 않아도 결론 바로 아래에 있고, 넣으면 결론이 추천 조합으로 바뀐다(탭 결론은 비교로)", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST : DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    const head = () => document.querySelector(".consult-headline").textContent;
+    expect(head()).toContain("22성 세팅으로 갈아타면 보스 실딜+77.2%");
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });     // 접힌 채로
+    await screen.findByLabelText("추천 조합");
+    expect(head()).toContain("730억이면 21성 추천 조합으로 보스 실딜+95.3%");
+    expect(head()).toContain("비교: 위 탭의 22성 결론 +77.2%(살 템에 지금 수준 잠재가 붙은 매물 기준)");
+  });
 });

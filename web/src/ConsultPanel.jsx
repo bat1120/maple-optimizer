@@ -192,16 +192,26 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
       {build && (
         <>
           {/* 결론이 먼저(2026-11-26: 에디 줄이 늘어 휴대폰에서 결론이 첫 화면 밖으로 밀렸다 — 고르는 줄은 그 아래) */}
-          <p className="consult-headline">
-            <span>{build.starforce}성{potGoal ? ` · 잠재 ${build.potential_label}` : ""}{opt ? ` · 에디 ${opt.label}` : ""} 세팅으로 갈아타면 보스 실딜</span>
-            <strong className="consult-gain num">{shown(whole, null)}</strong>
-            <span className="muted small">
-              {[build.armor && `방어구 ${build.armor.label} ${pct1(armorPct)}`,
-                build.accessory && `장신구 ${build.accessory.label} ${pct1(accPct)}`,
-                build.buy.length > 0 && "살 템은 지금 수준 잠재가 붙은 매물 기준"].filter(Boolean).join(" · ")}
-            </span>
-            {/* 2026-11-26: 아래 추천 조합(잠재 없는 매물 기준)과 기준이 달라 숫자가 엇갈려 보였다 — 이 숫자의 기준을 적는다 */}
-          </p>
+          {/* 가진 메소를 넣으면 결론은 추천 조합(고른 성 · 잠재 없는 매물 + 큐브 — 진짜로 할 수 있는 것)이고, 탭 결론은 비교용으로 내린다(2026-11-27) */}
+          {mixed && bestRow ? (
+            <p className="consult-headline">
+              <span>{formatMeso(budget)}이면 {best.best}성 추천 조합으로 보스 실딜</span>
+              <strong className="consult-gain num">{pct1(mixed.delta_pct)}</strong>
+              <span className="muted small">
+                비교: 위 탭의 {build.starforce}성 결론 {shown(whole, null)}{build.buy.length > 0 ? "(살 템에 지금 수준 잠재가 붙은 매물 기준)" : ""}
+              </span>
+            </p>
+          ) : (
+            <p className="consult-headline">
+              <span>{build.starforce}성{potGoal ? ` · 잠재 ${build.potential_label}` : ""}{opt ? ` · 에디 ${opt.label}` : ""} 세팅으로 갈아타면 보스 실딜</span>
+              <strong className="consult-gain num">{shown(whole, null)}</strong>
+              <span className="muted small">
+                {[build.armor && `방어구 ${build.armor.label} ${pct1(armorPct)}`,
+                  build.accessory && `장신구 ${build.accessory.label} ${pct1(accPct)}`,
+                  build.buy.length > 0 && "살 템은 지금 수준 잠재가 붙은 매물 기준"].filter(Boolean).join(" · ")}
+              </span>
+            </p>
+          )}
           <div className="consult-stars" role="tablist" aria-label="목표 스타포스">
             {builds.map((b) => (
               <button key={b.starforce} type="button" role="tab" aria-selected={b.starforce === build.starforce}
@@ -239,9 +249,100 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
             </div>
           )}
 
-          <button type="button" className="ghost more-ranks" aria-expanded={open} onClick={() => setOpen(!open)}>
-            {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개${cubes.length ? ` · 잠재 올릴 템 ${cubes.length}개` : ""}${addis.length ? ` · 에디 올릴 템 ${addis.length}개` : ""} 보기`}
-          </button>
+          {/* 가진 메소는 처음 온 사람도 보이게 펼침 버튼 옆에 늘 둔다(전에는 접힌 목록 안에 있었다 — 2026-11-27) */}
+          <div className="consult-actions">
+            <div className="consult-budget">
+              <label htmlFor="consult-have">가진 메소</label>
+              <input id="consult-have" aria-label="컨설팅에 쓸 메소" inputMode="text" autoComplete="off" placeholder="예: 3000억" value={have}
+                     onChange={(e) => setHave(e.target.value)} />
+              <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
+            </div>
+            <button type="button" className="ghost more-ranks" aria-expanded={open} onClick={() => setOpen(!open)}>
+              {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개${cubes.length ? ` · 잠재 올릴 템 ${cubes.length}개` : ""}${addis.length ? ` · 에디 올릴 템 ${addis.length}개` : ""} 보기`}
+            </button>
+          </div>
+          {best && !mixed && cheapest && (
+            <p className="consult-fit"><strong>강화{buyTotal ? "·살 템" : ""}만으로 {cheapest.short_text} 모자라요</strong>
+              <span className="muted small"> — 가장 싼 {cheapest.starforce}성 강화(평균 {cheapest.raise_cost_text})도 아직 어려워요.</span></p>
+          )}
+          {mixed && bestRow && (
+            <div className="consult-fit consult-mix" aria-label="추천 조합">
+              <p>
+                <span className="muted small">추천 조합 · </span>
+                {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
+                보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
+                {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
+              </p>
+              <p className="consult-mix-buttons">
+                <button type="button" className="ghost small" aria-expanded={starsOpen} onClick={() => setStarsOpen(!starsOpen)}>
+                  {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
+                {mixed.picks.length > 0 && <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
+                  {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button>}
+                {planBuild && <button type="button" className="ghost small" aria-expanded={planOpen} onClick={() => setPlanOpen(!planOpen)}>
+                  {planOpen ? "할 일 접기" : "할 일 순서로 보기"}</button>}
+              </p>
+              {starsOpen && (
+                <table className="consult-options" aria-label="성별 비교">
+                  <thead><tr><th>성</th><th className="num">강화 평균 · 큐브</th><th className="num">보스 실딜</th></tr></thead>
+                  <tbody>
+                    {best.stars.map((x) => (
+                      <tr key={x.starforce} className={x.starforce === best.best ? "is-ok" : ""}>
+                        <td>{x.starforce}성</td>
+                        <td className="num">{x.raise_cost ? x.raise_cost_text : "강화 없음"}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
+                        <td className="num">{x.delta_pct == null ? <span className="muted">{x.short_text} 모자라요</span> : <strong>{pct1(x.delta_pct)}</strong>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
+                실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이고, 살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요
+                {mixed.with_current_delta_pct != null ? `(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 ${pct1(mixed.with_current_delta_pct)}부터 시작해요)` : ""}.
+                {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
+              {planOpen && planBuild && (
+                <ol className="consult-plan" aria-label="할 일 순서">
+                  {planBuild.buy.length > 0 && (
+                    <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)</span>
+                      <span className="consult-plan-items">{planBuild.buy.map((x, i) => (
+                        <span key={x.slot}>{i ? " · " : ""}{x.slot} {x.name}{prices[x.name] ? ` (${prices[x.name]})` : ""}
+                          {onEvaluate && <button type="button" className="link-button" aria-label={`${x.name} 경매장에서 찾기`}
+                                                 onClick={() => onEvaluate({
+                                                   slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [], star: best.best,
+                                                   // 그 매물 값을 더하면 계획 합계가 얼마인지 화면 공유 쪽에서 바로 보여 주려고: 이 템 시세를 뺀 나머지 계획 비용
+                                                   plan: { cost: (bestRow.raise_cost || 0) + (mixed.cost || 0) + buyTotal - (parsePrice(prices[x.name] || "") || 0),
+                                                           gain: mixed.delta_pct, missing: planBuild.buy.filter((y) => y.name !== x.name && !parsePrice(prices[y.name] || "")).length },
+                                                 })}>찾기</button>}
+                        </span>))}</span></li>
+                  )}
+                  {planBuild.raise.length > 0 && (
+                    <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>
+                      <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
+                  )}
+                  {mixed.picks.length > 0 && (
+                    <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
+                      {/* 칸별로 묶는다(2026-11-26 운영: 잠재·에디가 따로 30줄로 나와 읽기 어려웠다) */}
+                      <span className="consult-plan-items">{cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`).join(" · ")}</span></li>
+                  )}
+                  <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
+                    <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
+                </ol>
+              )}
+              {mixOpen && (
+                <table className="consult-options" aria-label="추천 조합 칸별 목표">
+                  <thead><tr><th>칸</th><th>목표</th><th className="num">몫 · 큐브 평균</th></tr></thead>
+                  <tbody>
+                    {mixed.picks.map((x) => (
+                      <tr key={`${x.slot}/${x.kind}`}>
+                        <td>{x.slot} <span className="muted small">{x.name}</span></td>
+                        <td>{x.kind} {x.label} <span className="muted small">{x.target.join(" · ")}</span></td>
+                        <td className="num"><strong>{pct1(x.gain_pct)}</strong><span className="muted small">{x.cost_text}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
           {open && options.length > 0 && (
             <>
               <fieldset className="events consult-events">
@@ -252,94 +353,6 @@ export default function ConsultPanel({ name, defense, onEvaluate }) {
                 <button type="button" className="ghost small" aria-pressed={shining}
                         onClick={() => setEv((e) => ({ ...e, ...Object.fromEntries(SHINING.map((k) => [k, !shining])) }))}>샤이닝 스타포스{shining ? " ✓" : ""}</button>
               </fieldset>
-              <div className="consult-budget">
-                <label htmlFor="consult-have">가진 메소</label>
-                <input id="consult-have" aria-label="컨설팅에 쓸 메소" inputMode="text" autoComplete="off" placeholder="예: 3000억" value={have}
-                       onChange={(e) => setHave(e.target.value)} />
-                <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
-              </div>
-              {best && !mixed && cheapest && (
-                <p className="consult-fit"><strong>강화{buyTotal ? "·살 템" : ""}만으로 {cheapest.short_text} 모자라요</strong>
-                  <span className="muted small"> — 가장 싼 {cheapest.starforce}성 강화(평균 {cheapest.raise_cost_text})도 아직 어려워요.</span></p>
-              )}
-              {mixed && bestRow && (
-                <div className="consult-fit consult-mix" aria-label="추천 조합">
-                  <p>
-                    <span className="muted small">추천 조합 · </span>
-                    {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
-                    보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
-                    {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
-                  </p>
-                  <p className="consult-mix-buttons">
-                    <button type="button" className="ghost small" aria-expanded={starsOpen} onClick={() => setStarsOpen(!starsOpen)}>
-                      {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
-                    {mixed.picks.length > 0 && <button type="button" className="ghost small" aria-expanded={mixOpen} onClick={() => setMixOpen(!mixOpen)}>
-                      {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button>}
-                    {planBuild && <button type="button" className="ghost small" aria-expanded={planOpen} onClick={() => setPlanOpen(!planOpen)}>
-                      {planOpen ? "할 일 접기" : "할 일 순서로 보기"}</button>}
-                  </p>
-                  {starsOpen && (
-                    <table className="consult-options" aria-label="성별 비교">
-                      <thead><tr><th>성</th><th className="num">강화 평균 · 큐브</th><th className="num">보스 실딜</th></tr></thead>
-                      <tbody>
-                        {best.stars.map((x) => (
-                          <tr key={x.starforce} className={x.starforce === best.best ? "is-ok" : ""}>
-                            <td>{x.starforce}성</td>
-                            <td className="num">{x.raise_cost ? x.raise_cost_text : "강화 없음"}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
-                            <td className="num">{x.delta_pct == null ? <span className="muted">{x.short_text} 모자라요</span> : <strong>{pct1(x.delta_pct)}</strong>}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
-                    실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이고, 살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요
-                    {mixed.with_current_delta_pct != null ? `(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 ${pct1(mixed.with_current_delta_pct)}부터 시작해요)` : ""}.
-                    {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
-                  {planOpen && planBuild && (
-                    <ol className="consult-plan" aria-label="할 일 순서">
-                      {planBuild.buy.length > 0 && (
-                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)</span>
-                          <span className="consult-plan-items">{planBuild.buy.map((x, i) => (
-                            <span key={x.slot}>{i ? " · " : ""}{x.slot} {x.name}{prices[x.name] ? ` (${prices[x.name]})` : ""}
-                              {onEvaluate && <button type="button" className="link-button" aria-label={`${x.name} 경매장에서 찾기`}
-                                                     onClick={() => onEvaluate({
-                                                       slot: x.slot, item: x.name, kind: "스타포스", grade: `${best.best}성 이상`, target: [], star: best.best,
-                                                       // 그 매물 값을 더하면 계획 합계가 얼마인지 화면 공유 쪽에서 바로 보여 주려고: 이 템 시세를 뺀 나머지 계획 비용
-                                                       plan: { cost: (bestRow.raise_cost || 0) + (mixed.cost || 0) + buyTotal - (parsePrice(prices[x.name] || "") || 0),
-                                                               gain: mixed.delta_pct, missing: planBuild.buy.filter((y) => y.name !== x.name && !parsePrice(prices[y.name] || "")).length },
-                                                     })}>찾기</button>}
-                            </span>))}</span></li>
-                      )}
-                      {planBuild.raise.length > 0 && (
-                        <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>
-                          <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
-                      )}
-                      {mixed.picks.length > 0 && (
-                        <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
-                          {/* 칸별로 묶는다(2026-11-26 운영: 잠재·에디가 따로 30줄로 나와 읽기 어려웠다) */}
-                          <span className="consult-plan-items">{cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`).join(" · ")}</span></li>
-                      )}
-                      <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
-                        <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
-                    </ol>
-                  )}
-                  {mixOpen && (
-                    <table className="consult-options" aria-label="추천 조합 칸별 목표">
-                      <thead><tr><th>칸</th><th>목표</th><th className="num">몫 · 큐브 평균</th></tr></thead>
-                      <tbody>
-                        {mixed.picks.map((x) => (
-                          <tr key={`${x.slot}/${x.kind}`}>
-                            <td>{x.slot} <span className="muted small">{x.name}</span></td>
-                            <td>{x.kind} {x.label} <span className="muted small">{x.target.join(" · ")}</span></td>
-                            <td className="num"><strong>{pct1(x.gain_pct)}</strong><span className="muted small">{x.cost_text}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
               {fit && (
                 <div className="consult-fit" aria-label="가진 메소로 고른 칸">
                   {fit.short ? (
