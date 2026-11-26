@@ -1056,3 +1056,11 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-total { margin: var(--sp-3) 0 var(--sp-2); padding-top: var(--sp-3); border-top: 2px solid var(--line); }
 @media (max-width: 600px) { .consult-list li { grid-template-columns: 64px minmax(0, 1fr) 96px; } }
 .consult-gain { font-size: var(--fs-lg); font-weight: 800; color: var(--accent); }
+
+.consult-budget { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-3) 0 var(--sp-2); }
+.consult-budget input { width: 160px; }
+.consult-options { width: 100%; border-collapse: collapse; margin-bottom: var(--sp-2); }
+.consult-options th, .consult-options td { text-align: left; padding: var(--sp-2); border-top: 1px solid var(--line); }
+.consult-options th { font-size: var(--fs-xs); color: var(--muted); font-weight: 600; }
+.consult-options .num { text-align: right; white-space: nowrap; }
+.consult-options tr.is-ok td { color: var(--success); }

@@ -17,6 +17,7 @@ export default function ConsultPanel({ name, defense }) {
   const [prices, setPrices] = useState({}); // 템 이름 → 사용자가 적은 가격 글자
   // 처음엔 결론(성별 실딜)만 보이고 살 템·강화 목록은 눌러서 편다 — 바로 아래 '내 업그레이드 계획' 첫 줄이 첫 화면에서 밀려나지 않게
   const [open, setOpen] = useState(false);
+  const [have, setHave] = useState(""); // 가진 메소(글자)
   const seq = useRef(0);
 
   useEffect(() => {
@@ -34,6 +35,25 @@ export default function ConsultPanel({ name, defense }) {
   const missing = priced.filter((p) => !p).length;
   const buyTotal = priced.reduce((a, p) => a + (p || 0), 0);
   const total = buyTotal + (build?.raise_cost || 0);
+  // 나눠서 한다면: 장신구만 · 방어구만 · 둘 다. 강화 비용은 서버가 준 평균, 살 템은 넣은 시세만큼만 안다
+  const budget = parsePrice(have);
+  const part = (group) => {
+    const buy = (build?.buy || []).filter((x) => !group || x.group === group);
+    const known = buy.map((x) => parsePrice(prices[x.name] || ""));
+    const raise = (build?.raise || []).filter((x) => !group || x.group === group).reduce((a, x) => a + x.cost, 0);
+    return { buy: buy.length, missing: known.filter((p) => !p).length, cost: raise + known.reduce((a, p) => a + (p || 0), 0), raise };
+  };
+  const options = build ? [
+    build.accessory && { label: "장신구만", delta: build.accessory.delta_pct, ...part("장신구") },
+    build.armor && { label: "방어구만", delta: build.armor.delta_pct, ...part("방어구") },
+    { label: "둘 다", delta: build.delta_pct, ...part(null) },
+  ].filter((o) => o && (o.buy > 0 || o.raise > 0)) : [];
+  const verdict = (o) => {
+    if (!budget) return o.missing ? `강화 ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
+    if (o.cost > budget) return `${formatMeso(o.cost - budget)} 모자라요${o.missing ? `(시세를 안 넣은 템 ${o.missing}개 빼고도)` : ""}`;
+    if (o.missing) return `살 템 ${o.missing}개에 ${formatMeso(budget - o.cost)}까지 쓸 수 있어요`;
+    return `돼요 · ${formatMeso(budget - o.cost)} 남아요`;
+  };
 
   return (
     <section className="panel consult-panel" aria-label="목표 세팅 컨설팅">
@@ -66,6 +86,26 @@ export default function ConsultPanel({ name, defense }) {
           <button type="button" className="ghost more-ranks" aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개 보기`}
           </button>
+          {open && options.length > 0 && (
+            <>
+              <div className="consult-budget">
+                <label htmlFor="consult-have">가진 메소</label>
+                <input id="consult-have" aria-label="컨설팅에 쓸 메소" inputMode="text" autoComplete="off" placeholder="예: 3000억" value={have}
+                       onChange={(e) => setHave(e.target.value)} />
+                <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
+              </div>
+              <table className="consult-options" aria-label="나눠서 한다면">
+                <thead><tr><th>나눠서 한다면</th><th className="num">보스 실딜</th><th>{budget ? `${formatMeso(budget)}으로` : "필요한 메소"}</th></tr></thead>
+                <tbody>
+                  {options.map((o) => (
+                    <tr key={o.label} className={budget && o.cost <= budget && !o.missing ? "is-ok" : ""}>
+                      <td>{o.label}</td><td className="num"><strong>{pct1(o.delta)}</strong></td><td>{verdict(o)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
           {open && build.buy.length > 0 && (
             <>
               <h4 className="consult-sub">살 템 {build.buy.length}개 <span className="muted small">— 시세를 넣으면 합계가 나와요(예: 30억)</span></h4>

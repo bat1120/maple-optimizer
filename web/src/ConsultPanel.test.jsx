@@ -57,6 +57,24 @@ describe("목표 세팅 컨설팅", () => {
     expect(total()).toContain("1억 메소당 +0.077%");                             // 77.24% ÷ 1000억
   });
 
+  it("가진 메소를 넣으면 장신구만 · 방어구만 · 둘 다 중 어디까지 되는지 알려 준다", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.click(screen.getByRole("button", { name: /보기$/ }));
+    const rows = () => within(screen.getByRole("table", { name: "나눠서 한다면" })).getAllByRole("row").slice(1).map((r) => r.textContent);
+    // 메소를 안 넣었을 때: 아는 비용(강화 평균)과 시세가 필요한 템 수
+    expect(rows()).toEqual(["장신구만+49.5%강화 0 + 살 템 2개 시세", "방어구만+22.7%563억 6262만", "둘 다+77.2%강화 563억 6262만 + 살 템 2개 시세"]);
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "600억" } });
+    expect(rows()).toEqual(["장신구만+49.5%살 템 2개에 600억까지 쓸 수 있어요", "방어구만+22.7%돼요 · 36억 3738만 남아요",
+                            "둘 다+77.2%살 템 2개에 36억 3738만까지 쓸 수 있어요"]);
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "100억" } });
+    expect(rows()[1]).toBe("방어구만+22.7%463억 6262만 모자라요");
+    fireEvent.change(screen.getByLabelText("커맨더 포스 이어링 시세"), { target: { value: "30억" } });
+    fireEvent.change(screen.getByLabelText("근원의 속삭임 시세"), { target: { value: "50억" } });
+    expect(rows()[0]).toBe("장신구만+49.5%돼요 · 20억 남아요");
+  });
+
   it("성을 바꾸면 그 성의 세팅으로 바뀐다(17성은 강화할 템이 없다)", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(ok(DATA));
     render(<ConsultPanel name="내신부레테" defense={300} />);
