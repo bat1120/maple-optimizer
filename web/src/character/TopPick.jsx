@@ -21,7 +21,8 @@ export default function TopPick({ name, defense, after = false }) {
   const where = top && (top.path === "큐브" ? top.target?.join(" / ") : HOW[top.path] || top.path);
   return (
     <section className="top-pick" aria-label="업그레이드 1순위" aria-busy={top === undefined}>
-      <span className="pick-label">{after ? "다음으로 메소를 쓴다면" : "업그레이드 1순위"}</span>
+      {/* 2026-11-27: 업그레이드 탭의 맨 위 답은 '메소를 모아 갈아타기'(컨설팅)다 — 이 줄은 지금 템을 그대로 둘 때의 1순위라고 밝힌다 */}
+      <span className="pick-label">{after ? "다음으로 메소를 쓴다면" : "지금 템 그대로 1순위"}</span>
       {top === undefined ? (
         <span className="muted small">업그레이드 계획을 계산하는 중이에요…</span>
       ) : (
@@ -33,7 +34,7 @@ export default function TopPick({ name, defense, after = false }) {
             <span className="muted"> · 평균 {top.cost_text} · 실딜 {formatPct(top.delta_pct)}</span></span>
         </span>
       )}
-      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>내 업그레이드 계획 보기<Icon name="chevron" size={14} /></a>
+      <a className="top-pick-go" href={hashFor({ page: "character", name, tab: "upgrade" })}>갈아타기·업그레이드 계획 보기<Icon name="chevron" size={14} /></a>
     </section>
   );
 }

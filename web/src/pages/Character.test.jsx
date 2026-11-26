@@ -169,7 +169,7 @@ describe("character page", () => {
     const planCalls = f.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/budget-roadmap"));
     expect(planCalls.length).toBeGreaterThan(0);
     expect(planCalls.every((u) => !u.includes("steps="))).toBe(true);
-    expect(within(pick).getByRole("link", { name: /내 업그레이드 계획 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
+    expect(within(pick).getByRole("link", { name: /갈아타기·업그레이드 계획 보기/ })).toHaveAttribute("href", `#/c/${encodeURIComponent("내신부레테")}?tab=upgrade`);
   });
 
   it("세팅 순위: 1위 메달", async () => {
