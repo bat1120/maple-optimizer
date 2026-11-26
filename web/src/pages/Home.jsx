@@ -34,7 +34,8 @@ export default function Home() {
     <div className="home">
       <section className="hero" aria-labelledby="home-title">
         <h1 id="home-title">내 장비, 어디부터 바꿀까?</h1>
-        <p className="hero-sub">닉네임으로 스펙을 불러와 보스 실딜과 억당 효율로 업그레이드 순서를 알려 드려요.</p>
+        {/* 2026-11-27: 홈 설명에 '메소를 모아 한 번에 갈아타기'(목표 세팅 컨설팅)가 없었다 — 이 사이트의 맨 위 답이다 */}
+        <p className="hero-sub">닉네임으로 스펙을 불러와 보스 세팅 기준으로, 가진 메소로 어떤 템·몇 성으로 갈아탈지와 무엇부터 올릴지 알려 드려요.</p>
         <form role="search" className="hero-search" onSubmit={submit}>
           <div className="search-field">
             <Icon name="search" size={18} className="field-icon" />
