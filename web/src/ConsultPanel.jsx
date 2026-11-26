@@ -268,7 +268,7 @@ export default function ConsultPanel({ name, defense }) {
                   {planOpen && planBuild && (
                     <ol className="consult-plan" aria-label="할 일 순서">
                       {planBuild.buy.length > 0 && (
-                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재는 없어도 돼요(아래 큐브로 맞춰요)</span>
+                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상. 아래 큐브 칸에 없는 템은 잠재·에디가 지금 그 자리 템 수준인 매물로 봤어요(없는 매물이면 그만큼 덜 올라요)</span>
                           <span className="consult-plan-items">{planBuild.buy.map((x) => `${x.slot} ${x.name}${prices[x.name] ? ` (${prices[x.name]})` : ""}`).join(" · ")}</span></li>
                       )}
                       {planBuild.raise.length > 0 && (
