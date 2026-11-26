@@ -234,7 +234,7 @@ export default function ConsultPanel({ name, defense }) {
                 <div className="consult-fit consult-mix" aria-label="추천 조합">
                   <p>
                     <span className="muted small">추천 조합 · </span>
-                    {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — 강화 {bestRow.raise_cost_text}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
+                    {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
                     보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
                     {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
                   </p>
@@ -251,8 +251,8 @@ export default function ConsultPanel({ name, defense }) {
                         {best.stars.map((x) => (
                           <tr key={x.starforce} className={x.starforce === best.best ? "is-ok" : ""}>
                             <td>{x.starforce}성</td>
-                            <td className="num">{x.raise_cost_text}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
-                            <td className="num">{x.delta_pct == null ? `${x.short_text} 모자라요` : <strong>{pct1(x.delta_pct)}</strong>}</td>
+                            <td className="num">{x.raise_cost ? x.raise_cost_text : "강화 없음"}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
+                            <td className="num">{x.delta_pct == null ? <span className="muted">{x.short_text} 모자라요</span> : <strong>{pct1(x.delta_pct)}</strong>}</td>
                           </tr>
                         ))}
                       </tbody>

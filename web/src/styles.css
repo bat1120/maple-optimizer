@@ -1086,7 +1086,8 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-mix-gain { font-size: var(--fs-lg); color: var(--accent); }
 .consult-mix table td .muted { display: block; }
 /* 휴대폰에서 '필요한 메소' 칸 줄바꿈 규칙(마지막 칸)이 여기서는 금액을 한 글자씩 세로로 쪼갰다 — 숫자 칸은 줄바꿈하지 않는다 */
-.consult-mix table td.num, .consult-mix table th.num { white-space: nowrap; overflow-wrap: normal; word-break: normal; text-align: right; }
+/* 2026-11-26 운영 휴대폰: nowrap이면 성별 비교의 '모자라요'가 화면 밖으로 밀렸다 — 띄어쓰기에서만 줄바꿈(숫자를 쪼개지 않는다) */
+.consult-mix table td.num, .consult-mix table th.num { white-space: normal; overflow-wrap: normal; word-break: keep-all; text-align: right; }
 .consult-fit { margin: 0 0 var(--sp-3); padding: var(--sp-2) var(--sp-3); border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: var(--radius-sm); }
 .consult-fit p { margin: 2px 0; }
 .consult-fit button { min-height: 32px; padding: 2px 10px; margin-left: var(--sp-1); }
