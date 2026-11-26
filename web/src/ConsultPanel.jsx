@@ -153,6 +153,13 @@ export default function ConsultPanel({ name, defense }) {
   const [starsOpen, setStarsOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   // 할 일 순서(2026-11-26): 추천 조합을 실제로 하는 순서 — 살 템(경매장에서 찾을 것) → 강화 → 큐브. 고른 성의 '지금 그대로' 세팅에서 꺼낸다
+  // 큐브 칸을 칸별로 묶는다 — 칸 순서는 그 칸에서 가장 효율이 좋은 목표 순(picks가 이미 효율 순), 칸 안에서는 잠재 먼저
+  const cubeSlots = [];
+  for (const x of best?.mix?.picks || []) {
+    const row = cubeSlots.find(([s]) => s === x.slot);
+    if (row) row[1].push(x); else cubeSlots.push([x.slot, [x]]);
+  }
+  for (const [, xs] of cubeSlots) xs.sort((a, b) => (a.kind === "잠재" ? 0 : 1) - (b.kind === "잠재" ? 0 : 1));
   const planBuild = best?.best != null ? all.find((b) => (b.potential || "same") === "same" && b.starforce === best.best) : null;
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
@@ -278,8 +285,9 @@ export default function ConsultPanel({ name, defense }) {
                           <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
                       )}
                       {mixed.picks.length > 0 && (
-                        <li><strong>큐브 {mixed.picks.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
-                          <span className="consult-plan-items">{mixed.picks.map((x) => `${x.slot} ${x.kind} ${x.label}`).join(" · ")}</span></li>
+                        <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
+                          {/* 칸별로 묶는다(2026-11-26 운영: 잠재·에디가 따로 30줄로 나와 읽기 어려웠다) */}
+                          <span className="consult-plan-items">{cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`).join(" · ")}</span></li>
                       )}
                       <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
                         <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
