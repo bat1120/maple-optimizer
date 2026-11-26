@@ -1,27 +1,22 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import FreeSwitch from "./FreeSwitch.jsx";
 
-describe("먼저 무료로 띠", () => {
-  it("보스 세팅 1위가 지금 착용보다 세면 그 조합과 상승폭을 보여 준다", () => {
-    render(<FreeSwitch ranking={[{ setting: { equipment: 2, hyper: 3, ability: 2 }, relative_to_active: 2.409 }]} />);
-    const r = screen.getByRole("region", { name: "먼저 무료로" });
-    expect(r).toHaveTextContent("장비 2 · 하이퍼 3 · 어빌 2");
-    expect(r).toHaveTextContent("+140.9%");
-  });
+afterEach(cleanup);
 
-  it("어느 프리셋 때문에 오르는지 축별 상승폭을 큰 순으로 보여 준다", () => {
-    // 2026-11-16 사용자: +84.7%를 보고 장비가 빠져서인 줄 알았다 — 실제론 하이퍼·유니온 때문
+// 2026-11-26 사용자: 전부 보스 기준 — 사냥용 세팅 대비 상승폭(+140.9% 같은 큰 숫자)과 축별 상승폭은 보여 주지 않는다.
+// (전에는 '먼저 무료로' 띠가 지금 착용 대비 상승폭을 크게 보여 줬다: 2026-10-11·2026-11-16 결정을 이 결정이 대신한다)
+describe("보스 세팅 기준 띠", () => {
+  it("지금 착용이 보스 세팅과 다르면: 이 화면이 보스 세팅 기준이라는 것과 어느 프리셋이 다른지만 알린다", () => {
     const breakdown = [
       { axis: "hyper", from: 1, to: 3, relative_to_active: 1.351 },
-      { axis: "union", from: 2, to: 1, relative_to_active: 1.348 },
-      { axis: "equipment", from: 2, to: 1, relative_to_active: 1.027 },
+      { axis: "equipment", from: 1, to: 2, relative_to_active: 1.027 },
     ];
-    render(<FreeSwitch ranking={[{ setting: { equipment: 1, hyper: 3, ability: 1 }, relative_to_active: 1.847 }]}
-                       breakdown={breakdown} />);
-    const list = screen.getByRole("list", { name: "어디서 오르나" });
-    const rows = within(list).getAllByRole("listitem").map((li) => li.textContent);
-    expect(rows).toEqual(["하이퍼 1→3 +35.1%", "유니온 2→1 +34.8%", "장비 2→1 +2.7%"]);
+    render(<FreeSwitch ranking={[{ setting: { equipment: 2, hyper: 3, ability: 2 }, relative_to_active: 2.409 }]} breakdown={breakdown} />);
+    const r = screen.getByRole("region", { name: "보스 세팅 기준" });
+    expect(r).toHaveTextContent("이 화면은 보스 세팅 장비 2 · 하이퍼 3 · 어빌 2 기준이에요");
+    expect(r).toHaveTextContent("지금 게임에서는 다른 프리셋을 끼고 있어요(하이퍼 1→3 · 장비 1→2)");
+    expect(r.textContent).not.toMatch(/[+]\d|%/);            // 사냥용 세팅 대비 상승폭은 없다
   });
 
   it("지금 착용이 이미 1위면(또는 순위가 없으면) 그리지 않는다", () => {

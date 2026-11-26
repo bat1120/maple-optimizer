@@ -157,9 +157,8 @@ export default function EquipmentGrid({ presets, active, image, name, boss = nul
               <button key={k} type="button" className={k === preset ? "on" : ""} aria-pressed={k === preset}
                       onClick={() => { setPreset(k); setOpenSlot(first); }}>
                 프리셋 {k}
-                {/* 어느 프리셋이 보스 세팅·지금 착용인지(2026-10-17: 기본이 보스 세팅이 됐다) */}
+                {/* 어느 프리셋이 보스 세팅인지. '착용' 표시는 뺐다(2026-11-26 사용자: 전부 보스 기준) */}
                 {String(boss) === k && <span className="preset-tag" aria-hidden="true">보스</span>}
-                {String(worn) === k && String(boss) !== k && <span className="preset-tag worn" aria-hidden="true">착용</span>}
               </button>
             ))}
           </div>

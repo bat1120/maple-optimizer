@@ -145,8 +145,8 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
           </span>
         </span>
         {item.evaluated && (
-          <span className="rank-eff" title="지금 그 자리 템 대신 끼면 오르는 보스 실딜">
-            <span className="rank-eff-k">지금 템 대비</span>
+          <span className="rank-eff" title="보스 세팅의 그 자리 템 대신 끼면 오르는 보스 실딜">
+            <span className="rank-eff-k">보스 세팅 대비</span>
             <strong className={`num${item.delta_pct < 0 ? " neg" : ""}`}>{formatPct(item.delta_pct)}</strong></span>
         )}
       </div>
@@ -421,7 +421,7 @@ export default function ScreenWatch({ name, job, level, defense, capture, interv
       {/* 2026-11-25 실사용: 게임에서는 사냥용 귀고리를 끼고 있었고(툴팁의 전투력 증가량 +530만), 사이트는 보스 세팅 귀고리와 비교해
           -3.3%가 나왔다 — 두 숫자의 기준이 다르다는 것을 알려 준다 */}
       {detailed.length > 0 && !(session && scan.analyzing > 0) && (
-        <p className="muted small watch-basis">‘지금 템 대비’는 보스 세팅의 그 자리 템과 비교한 보스 실딜이에요. 게임 툴팁의 ‘전투력 증가량’은 지금 게임에서 끼고 있는 템 기준이라, 사냥용 템을 끼고 있으면 숫자가 다르게 보여요.</p>
+        <p className="muted small watch-basis">‘보스 세팅 대비’는 보스 세팅의 그 자리 템과 비교한 보스 실딜이에요. 게임 툴팁의 ‘전투력 증가량’은 지금 게임에서 끼고 있는 템 기준이라, 사냥용 템을 끼고 있으면 숫자가 다르게 보여요.</p>
       )}
       {detailed.length > 0 && !(session && scan.analyzing > 0) && (
         <ol className="rank-cards watch-cards" aria-label="읽은 매물(억당 순)">

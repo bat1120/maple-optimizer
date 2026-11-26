@@ -32,10 +32,7 @@ export default function ProfileCard({ name, summary, best = null, pending = fals
           {/* 큰 숫자는 넥슨이 준 전투력 그대로(2026-11-07 사용자). 세팅별 전투력은 API에 없고 계산하지 않는다 */}
           <div className="kpi kpi-primary"><dt>전투력(인게임 기록)</dt><dd>{formatBig(summary.combat_power_reference)}</dd></div>
           <div className="kpi"><dt>{best || pending ? "보스 세팅" : "지금 착용 중인 세팅"}</dt>
-            <dd className="kpi-text">{pending && !best ? "계산 중…" : settingLabel(best ? best.setting : summary.active_setting)}
-              {best && settingLabel(best.setting) !== settingLabel(summary.active_setting) && (
-                <span className="kpi-sub">지금 착용: {settingLabel(summary.active_setting)}</span>
-              )}</dd></div>
+            <dd className="kpi-text">{pending && !best ? "계산 중…" : settingLabel(best ? best.setting : summary.active_setting)}</dd></div>
         </dl>
       </div>
       <div className="profile-side">

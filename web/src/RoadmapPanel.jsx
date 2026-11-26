@@ -67,7 +67,6 @@ export default function RoadmapPanel({ name, defense, autoLoad = false, active =
           {/* 2026-10-11 심사 4회차: 기준 세팅이 접힌 회색 줄에만 있어 '내 캐릭터 기준이 맞나' 의심 → 본문 글자로 보이고, 착용과 다르면 말한다 */}
           <p className="basis-line">
             <span className="basis-k">계산 기준</span> 보스 세팅 <strong>{settingLabel(data.evaluation_setting)}</strong>
-            {active && settingLabel(active) !== settingLabel(data.evaluation_setting) && <span className="muted"> — 지금 착용과 달라요</span>}
           </p>
           {data.basis_warning && <p role="note" className="error small">{data.basis_warning}</p>}
           <details className="note basis">

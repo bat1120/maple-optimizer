@@ -330,3 +330,11 @@ def test_same_plan_request_is_computed_once(tmp_path, clock, monkeypatch):
     clock.t += 16 * 60                                              # 캐릭터 데이터를 새로 받으면 새로 계산
     c.get("/api/character/x/budget-roadmap")
     assert len(runs) == 5
+
+
+def test_settings_ranking_is_also_relative_to_the_boss_setting(tmp_path, clock):
+    """2026-11-26 사용자: 전부 보스 기준 — 지금 착용(사냥용일 수 있다)이 아니라 1위 조합과 비교한 값을 준다."""
+    rows = make(tmp_path, clock).get("/api/character/x/settings").json()["ranking"]
+    assert rows[0]["relative_to_best"] == 1 and rows[0]["main_stat_vs_best"] == 0
+    assert all(r["relative_to_best"] <= 1 and r["main_stat_vs_best"] <= 0 for r in rows)
+    assert rows[1]["relative_to_best"] == rows[1]["index"] / rows[0]["index"] and rows[-1]["main_stat_vs_best"] < 0

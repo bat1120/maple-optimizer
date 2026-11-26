@@ -156,7 +156,7 @@ def settings(snap: CharacterSnapshot, defense: float) -> dict:
     base = predict_setting(snap, snap.active_setting, CATALOG)
     job = job_profile(snap.character_class)
     # 화면 기본 = 보스 세팅(2026-10-17 사용자: 처음 들어가면 보스 최적 세팅으로). 1위 조합의 예측 최종 스탯·스공
-    top = ranked[0][0]
+    top, top_index = ranked[0]
     pred = predict_setting(snap, top, CATALOG)
     weapon = preset_items(snap, top.equipment)["무기"].part
     best = {"setting": asdict(top), "stat_attack": stat_attack_max(pred, job, weapon),
@@ -164,8 +164,11 @@ def settings(snap: CharacterSnapshot, defense: float) -> dict:
                       "fd": pred.fd, "cd": pred.cd, "ied": pred.ied}}
     return {"boss": asdict(b), "force": force_of(snap, ranked[0][0], b), "best": best,
             "free_breakdown": free_breakdown(snap, top, b),
+            # 2026-11-26 사용자: 전부 보스 세팅 기준 — 지금 착용(사냥용일 수 있다)이 아니라 1위 조합과 비교한 값을 같이 준다
             "ranking": [{"setting": asdict(s), "index": v, "relative_to_active": v / active if active > 0 else None,
-                         "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None}
+                         "main_stat_vs_active": equivalent_main_stat(base, job, v / active) if active > 0 else None,
+                         "relative_to_best": v / top_index if top_index > 0 else None,
+                         "main_stat_vs_best": equivalent_main_stat(pred, job, v / top_index) if top_index > 0 else None}
                         for s, v in ranked]}
 
 

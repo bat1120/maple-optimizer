@@ -258,7 +258,7 @@ export default function Character({ route }) {
           {tab === "summary" && (
             <div className="picks">
               <FreeSwitch ranking={settings?.ranking} breakdown={settings?.free_breakdown} />
-              <TopPick key={calcKey} name={name} defense={calcDefense} after={settings?.ranking?.[0]?.relative_to_active > 1} />
+              <TopPick key={calcKey} name={name} defense={calcDefense} />
             </div>
           )}
           {/* AI 상담은 모두에게(2026-10-17). 일반 사용자는 하루 질문 수 제한 — 남은 횟수를 보여 준다.
@@ -281,7 +281,7 @@ export default function Character({ route }) {
           {tab === "summary" && (
             <div className="summary-grid">
               <div className="stack summary-side">
-                <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} active={summary.active_setting} />
+                <SettingsRanking ranking={settings?.ranking} loading={busy && !settings} />
                 {!settings && !settingsFailed ? (
                   <section className="card" aria-busy="true"><h3 className="panel-title">주요 스탯</h3>
                     <p className="panel-sub">보스 세팅 기준으로 계산하는 중이에요…</p><RowsSkeleton rows={5} /></section>

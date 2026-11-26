@@ -37,10 +37,10 @@ describe("screen watch panel", () => {
     expect(JSON.parse(f.mock.calls[1][1].body).seen).toEqual(["sig1"]);
     const cards = () => within(screen.getByRole("list", { name: "읽은 매물(억당 순)" }));
     expect(cards().getByText(/센 반지/)).toBeInTheDocument();
-    // 카드: 이름 아래 '반지4 자리', 오른쪽 위 '지금 템 대비' 실딜(2026-10-17 순위 카드 문법)
+    // 카드: 이름 아래 '반지4 자리', 오른쪽 위 '보스 세팅 대비' 실딜(2026-11-26: 전부 보스 기준 — 전에는 '지금 템 대비')(2026-10-17 순위 카드 문법)
     const card = screen.getByRole("list", { name: "읽은 매물(억당 순)" }).firstElementChild;
     expect(card).toHaveTextContent("반지4 자리");
-    expect(card).toHaveTextContent("지금 템 대비+1.234%");
+    expect(card).toHaveTextContent("보스 세팅 대비+1.234%");
     // 2026-11-25: 게임 툴팁의 '전투력 증가량'과 기준이 다르다는 안내
     expect(screen.getByText(/게임 툴팁의 ‘전투력 증가량’은 지금 게임에서 끼고 있는 템 기준/)).toBeInTheDocument();
     expect(cards().getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시
@@ -96,7 +96,7 @@ describe("screen watch pending rows", () => {
     expect(f.mock.calls[0][0]).toBe("/api/vision/evaluate");
     expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ name: "내신부레테", boss_defense: 300, listings: [pen] });
     const card = (await screen.findByText(/보조무기 자리/)).closest("li");
-    expect(card).toHaveTextContent("지금 템 대비-2.381%");
+    expect(card).toHaveTextContent("보스 세팅 대비-2.381%");
   });
 
   it("목록에서만 본 매물(총옵션·잠재 없음)은 한 줄로 접는다", () => {
