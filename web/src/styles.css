@@ -1035,3 +1035,9 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .baseline-note { display: flex; align-items: center; gap: 6px; margin: var(--sp-3) 0 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--surface-2); color: var(--text-2); }
 .baseline-note .icon { flex: none; color: var(--accent); }
+
+/* 화면 평가 카드: 세트 효과 변화 */
+.watch-sets { list-style: none; margin: var(--sp-2) 0 0; padding: 0; }
+.watch-sets li + li { margin-top: 2px; }
+.watch-sets .neg { color: var(--error); }
+.watch-sets .pos { color: var(--success); }

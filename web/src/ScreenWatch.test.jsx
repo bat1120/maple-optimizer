@@ -25,7 +25,10 @@ describe("screen watch panel", () => {
       stop: vi.fn(),
     }) };
     const item = { signature: "sig1", evaluated: true, slot: "반지4", delta_pct: 1.234, per_100m: 0.041, main_stat_gain: 712,
-                   read: { name: "센 반지", price: 3e9, potentials: ["INT +12%"], starforce: 17 }, excluded: [] };
+                   read: { name: "센 반지", price: 3e9, potentials: ["INT +12%"], starforce: 17 }, excluded: [],
+                   // 실제 서버 응답 모양(2026-11-26): 개수가 달라지는 세트와 사라지거나 켜지는 단계의 효과
+                   set_change: [{ set: "여명의 보스 세트", before: 3, after: 2, lost: ["올스탯 +10, 최대 HP +250, 공격력 +10, 마력 +10"], gained: [] },
+                                { set: "보스 장신구 세트", before: 7, after: 8, lost: [], gained: [] }] };
     const f = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [item] }))
       .mockResolvedValueOnce(ok({ tooltip_visible: true, items: [{ ...item, evaluated: false }] }));
@@ -41,6 +44,10 @@ describe("screen watch panel", () => {
     const card = screen.getByRole("list", { name: "읽은 매물(억당 순)" }).firstElementChild;
     expect(card).toHaveTextContent("반지4 자리");
     expect(card).toHaveTextContent("보스 세팅 대비+1.234%");
+    // 2026-11-26 실사용: 옵션은 좋은데 실딜이 낮게 나오는 까닭(세트 효과가 깨짐)을 카드에 적는다. 효과가 안 바뀌는 세트는 적지 않는다
+    const setsNote = within(card).getByRole("list", { name: "세트 효과 변화" });
+    expect(setsNote).toHaveTextContent("여명의 보스 세트 3→2개 · 사라지는 효과: 올스탯 +10, 최대 HP +250, 공격력 +10, 마력 +10");
+    expect(setsNote).not.toHaveTextContent("보스 장신구 세트");
     // 2026-11-25: 게임 툴팁의 '전투력 증가량'과 기준이 다르다는 안내
     expect(screen.getByText(/게임 툴팁의 ‘전투력 증가량’은 지금 게임에서 끼고 있는 템 기준/)).toBeInTheDocument();
     expect(cards().getAllByText(/센 반지/)).toHaveLength(1);   // 같은 매물은 한 번만 표시

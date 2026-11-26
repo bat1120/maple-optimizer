@@ -338,3 +338,16 @@ def test_settings_ranking_is_also_relative_to_the_boss_setting(tmp_path, clock):
     assert rows[0]["relative_to_best"] == 1 and rows[0]["main_stat_vs_best"] == 0
     assert all(r["relative_to_best"] <= 1 and r["main_stat_vs_best"] <= 0 for r in rows)
     assert rows[1]["relative_to_best"] == rows[1]["index"] / rows[0]["index"] and rows[-1]["main_stat_vs_best"] < 0
+
+
+def test_listing_evaluation_says_which_set_effect_breaks():
+    """2026-11-26 실사용: 에스텔라 이어링(여명 세트)을 다른 귀고리로 바꾸면 여명 세트 단계가 깨져 실딜이 낮게 나오는데,
+    화면에는 숫자만 있어 계산이 맞는지 알 수 없었다. 개수가 달라지는 세트와 사라지는 효과를 같이 준다."""
+    from nexon.convert import snapshot
+    from server import service
+    read = {"name": "처음 보는 귀고리", "category": "귀고리", "part": "귀고리", "starforce": 18, "level": 130,
+            "total": {"INT": 136, "LUK": 67, "MATK": 49}, "potentials": ["INT +12%"], "price": None}
+    row = service.vision_items(snapshot(bundle("레테")), None, 300.0, [read], set())[0]
+    assert row["evaluated"] is True and row["slot"] == "귀고리"
+    assert row["set_change"] == [{"set": "여명의 보스 세트", "before": 4, "after": 3, "gained": [],
+                                  "lost": ["올스탯 +10, 최대 HP +250, 공격력 +10, 마력 +10, 방어력 +100, 몬스터 방어율 무시 +10%"]}]

@@ -284,6 +284,26 @@ def optimize(snap: CharacterSnapshot, setting: Setting | None, defense: float, b
             "actions": [{"slot": a.slot, "name": a.item.name, "cost": a.cost} for a in plan.actions]}
 
 
+def _set_change(snap: CharacterSnapshot, setting: Setting, slot: str, item) -> list[dict]:
+    """그 자리 템을 item으로 바꿀 때 개수가 달라지는 세트와, 그 때문에 사라지거나 켜지는 단계의 효과 문장."""
+    from engine.stats.residual import preset_items
+    from engine.stats.sets import count_sets
+    worn = preset_items(snap, setting.equipment)
+    branches = job_profile(snap.character_class).branches
+    before = count_sets(list(worn.values()), branches, CATALOG)
+    after = count_sets([item if s == slot else it for s, it in worn.items()] + ([] if slot in worn else [item]), branches, CATALOG)
+    out = []
+    for name in sorted(set(before) | set(after)):
+        b, a = before.get(name, 0), after.get(name, 0)
+        if a == b:
+            continue
+        tiers = {int(n): text for n, text in (CATALOG.tiers.get(name) or {}).items()}
+        out.append({"set": name, "before": b, "after": a,
+                    "lost": [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if a < n <= b],
+                    "gained": [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if b < n <= a]})
+    return out
+
+
 def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defense: float, listings: list[dict],
                  seen: set[str]) -> list[dict]:
     """비전으로 읽은 매물을 평가한다. 반지·펜던트는 슬롯 후보 중 실딜이 가장 오르는 자리를 고른다."""
@@ -385,6 +405,9 @@ def vision_items(snap: CharacterSnapshot | None, setting: Setting | None, defens
             row["scouter"] = scouter_delta(snap, chosen, slot, item)  # 사람이 읽는 변화량(변화량 복사 버튼)
         except Exception:  # noqa: BLE001 — 변화량을 못 구해도 평가는 보여 준다
             row["scouter"] = None
+        # 세트 효과 변화: 옵션만 보면 좋아 보이는 매물이 낮게 나오는 까닭(2026-11-26 실사용 — 에스텔라를 데아 시두스로 바꾸면
+        # 여명 3세트가 깨져 올스탯·마력이 빠지는데 화면에는 숫자만 있어 계산이 맞는지 알 수 없었다)
+        row["set_change"] = _set_change(snap, chosen, slot, item)
         row.update({"evaluated": True, "slot": slot, "setting": asdict(chosen), "delta_pct": delta,
                     "main_stat_gain": gain, "excluded": item.excluded,
                     "per_100m": (delta / (price / 1e8)) if (delta is not None and price) else None})

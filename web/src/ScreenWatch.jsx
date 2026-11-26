@@ -166,6 +166,18 @@ function Row({ item, name, defense, onUpdate, onReplace }) {
       ) : (
         <p className="muted small watch-note">{r.price ? `가격 ${formatMeso(r.price)} · ` : "가격 못 읽음 · "}{item.reason || "목록만 보여요 — 툴팁을 띄우면 평가해요"}</p>
       )}
+      {/* 세트 효과 변화(2026-11-26 실사용): 옵션은 좋아 보이는데 실딜이 낮게 나오는 까닭을 숫자 옆에 적는다 */}
+      {item.evaluated && item.set_change?.some((c) => c.lost.length || c.gained.length) ? (
+        <ul className="small watch-note watch-sets" aria-label="세트 효과 변화">
+          {item.set_change.filter((c) => c.lost.length || c.gained.length).map((c) => (
+            <li key={c.set}>
+              <strong>{c.set} {c.before}→{c.after}개</strong>
+              {c.lost.length ? <span className="neg"> · 사라지는 효과: {c.lost.join(" / ")}</span> : null}
+              {c.gained.length ? <span className="pos"> · 새로 켜지는 효과: {c.gained.join(" / ")}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {item.evaluated && (item.main_stat_gain != null || item.excluded?.length) ? (
         <p className="muted small watch-note">
           {item.main_stat_gain != null ? <span title={SCOUTER_DIFF_NOTE}>환산 {formatStat(item.main_stat_gain)}</span> : null}
