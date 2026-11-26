@@ -15,6 +15,9 @@ import numpy as np
 from engine.market.consult import consult
 from engine.market.recommend import SWAP, _valued
 from engine.market.swaps import _Swapper
+from engine.market.symbol_paths import extra_of
+from engine.market.symbol_paths import step as symbol_step
+from engine.stats import symbols as SYM
 
 UNIT = 1e8  # 동적 계획법의 메소 단위(1억). 비용은 올림 — 예산을 넘는 조합은 고르지 않는다
 
@@ -78,7 +81,7 @@ def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tupl
 
 
 def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
-        builds: list[dict] | None = None, sf=None) -> dict:
+        builds: list[dict] | None = None, sf=None, symbols: bool = True) -> dict:
     """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜.
 
     살 템의 기준은 '잠재·에디 없는 매물'이다(2026-11-26 — 전에는 지금 그 자리 템의 잠재·에디를 공짜로 옮겨 실딜이 부풀었다).
@@ -108,19 +111,49 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
     valued = {s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()}
     base_items = {**sw.pl.items, **valued}
     base_index = sw.pl.ev.index(base_items)
+    # 심볼(2026-11-27): 갈아타기 뒤 남는 메소로 심볼 레벨업도 같이 고른다 — 심볼마다 '지금 → n레벨'이 선택지(강화 메소 합,
+    # 실딜은 늘어난 주스탯·포스를 넣어 잰다 — engine/market/symbol_paths와 같은 방법). 심볼은 거래가 안 돼 모자란 개수·날수를 같이 준다
+    if symbols:
+        for sym in snap.symbol_items:
+            if sym["kind"] not in SYM.KINDS:
+                continue
+            for target in range(sym["level"] + 1, SYM.max_level(sym["kind"]) + 1):
+                st = symbol_step(sym, sym["level"], target, snap.character_class)
+                # 지금 모은 심볼로 할 수 있는 레벨까지만 — 더 모아야 하는 레벨(레테: 아르크스 11레벨까지 2,598개 · 약 174일)을
+                # 메소만으로 되는 것처럼 고르면 '이 메소로 +x%'가 거짓이 된다(2026-11-27 로컬 화면에서 확인)
+                if st is None or st["remaining_symbols"] > 0:
+                    break
+                if st["meso"] <= 0:
+                    continue
+                options.setdefault((sym["name"], "심볼"), []).append(
+                    {"label": f"{sym['level']}→{target}레벨", "target": [], "cost": float(st["meso"]), "gain_pct": 0.0, "name": sym["name"],
+                     "group": "심볼", "kept": True, "stat_gain": st["stat_gain"], "force_gain": st["force_gain"],
+                     "remaining_symbols": st["remaining_symbols"], "days": st["days"]})
     for (s, kind), opts in options.items():                 # 칸별 몫을 기준 세팅에서 다시 잰다
         for o in opts:
+            if kind == "심볼":
+                o["gain_pct"] = (sw.pl.ev.index(base_items, extra_of(o["stat_gain"], o["force_gain"])) - base_index) / sw.pl.base * 100
+                continue
             trial = dict(base_items)
             trial[s] = _valued(SWAP[kind](raw[s], o["target"], snap.level), sw.pl.mains, sw.pl.per_sec)
             o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
     chosen = pick(options, budget)
+    stat, force = {}, {}
     for (s, kind), o in sorted(chosen.items(), key=lambda kv: kv[0][1] != "잠재"):   # 잠재 먼저, 그 위에 에디
+        if kind == "심볼":
+            for k, v in o["stat_gain"].items():
+                stat[k] = stat.get(k, 0.0) + v
+            for k, v in o["force_gain"].items():
+                force[k] = force.get(k, 0) + v
+            continue
         raw[s] = SWAP[kind](raw[s], o["target"], snap.level)
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()})
-    delta = (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100
+    delta = (sw.pl.ev.index(worn, extra_of(stat, force) if (stat or force) else None) / sw.pl.base - 1) * 100
     base_delta = (base_index / sw.pl.base - 1) * 100
-    picks = [{"slot": s, "kind": kind, **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")}}
+    picks = [{"slot": "심볼" if kind == "심볼" else s, "kind": kind,
+              **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")},
+              **({"remaining_symbols": o["remaining_symbols"], "days": o["days"]} if kind == "심볼" else {})}
              for (s, kind), o in chosen.items()]
     picks.sort(key=lambda x: -x["gain_pct"] / x["cost"])
     return {"starforce": star, "budget": budget, "base_delta_pct": base_delta, "delta_pct": delta,

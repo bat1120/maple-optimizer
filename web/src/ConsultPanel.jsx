@@ -174,7 +174,10 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
   // 할 일 순서(2026-11-26): 추천 조합을 실제로 하는 순서 — 살 템(경매장에서 찾을 것) → 강화 → 큐브. 고른 성의 '지금 그대로' 세팅에서 꺼낸다
   // 큐브 칸을 칸별로 묶는다 — 칸 순서는 그 칸에서 가장 효율이 좋은 목표 순(picks가 이미 효율 순), 칸 안에서는 잠재 먼저
   const cubeSlots = [];
-  for (const x of best?.mix?.picks || []) {
+  const symPicks = (best?.mix?.picks || []).filter((x) => x.kind === "심볼");   // 심볼은 큐브와 따로 적는다(2026-11-27)
+  const symCost = symPicks.reduce((a, x) => a + x.cost, 0);
+  const cubeCost = (best?.mix?.cost || 0) - symCost;
+  for (const x of (best?.mix?.picks || []).filter((p) => p.kind !== "심볼")) {
     const row = cubeSlots.find(([s]) => s === x.slot);
     if (row) row[1].push(x); else cubeSlots.push([x.slot, [x]]);
   }
@@ -277,7 +280,7 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
             <div className="consult-fit consult-mix" aria-label="추천 조합">
               <p>
                 <span className="muted small">추천 조합 · </span>
-                {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 <strong>{mixed.cost_text || "0"}</strong>,
+                {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""} <strong>{mixed.cost_text || "0"}</strong>,
                 보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
                 {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
               </p>
@@ -326,13 +329,17 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                     <li><strong>강화 {planBuild.raise.length}개</strong> <span className="muted small">— 평균 {planBuild.raise_cost_text}</span>
                       <span className="consult-plan-items">{planBuild.raise.map((x) => `${x.slot} ${x.from_star}→${x.starforce}성`).join(" · ")}</span></li>
                   )}
-                  {mixed.picks.length > 0 && (
-                    <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {mixed.cost_text}, 효율 높은 칸부터</span>
+                  {cubeSlots.length > 0 && (
+                    <li><strong>큐브 {cubeSlots.length}칸</strong> <span className="muted small">— 평균 {formatMeso(cubeCost)}, 효율 높은 칸부터</span>
                       {/* 칸별로 묶는다(2026-11-26 운영: 잠재·에디가 따로 30줄로 나와 읽기 어려웠다) */}
                       <span className="consult-plan-items">{cubeSlots.map(([slot, xs]) => `${slot} ${xs.map((x) => `${x.kind} ${x.label}`).join(" + ")}`).join(" · ")}</span></li>
                   )}
+                  {symPicks.length > 0 && (
+                    <li><strong>심볼 {symPicks.length}개</strong> <span className="muted small">— 강화 메소 {formatMeso(symCost)}, 지금 모은 심볼로 할 수 있는 만큼만</span>
+                      <span className="consult-plan-items">{symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`).join(" · ")}</span></li>
+                  )}
                   <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
-                    <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브 {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
+                    <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""} {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
                 </ol>
               )}
               {mixOpen && (

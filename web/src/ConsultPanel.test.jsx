@@ -31,7 +31,9 @@ const MIX = { starforce: 22, budget: 13600000000, base_delta_pct: 40.1, with_cur
                       { slot: "귀고리", kind: "잠재", name: "커맨더 포스 이어링", group: "장신구", kept: false, label: "레전드리 2줄", target: ["INT +12%", "INT +9%"],
                         cost: 2000000000, cost_text: "20억", gain_pct: 1.1 },
                       { slot: "귀고리", kind: "에디", name: "커맨더 포스 이어링", group: "장신구", kept: false, label: "지금 템 수준", target: ["INT +4%"],
-                        cost: 500000000, cost_text: "5억", gain_pct: 0.2 }] };   // 같은 칸의 에디 — 할 일에서는 귀고리 한 칸으로 묶인다
+                        cost: 500000000, cost_text: "5억", gain_pct: 0.2 },
+                      { slot: "심볼", kind: "심볼", name: "어센틱심볼 : 아르크스", group: "심볼", kept: true, label: "7→8레벨", target: [],
+                        cost: 4400000000, cost_text: "44억", gain_pct: 2.2, remaining_symbols: 0, days: 0 }] };   // 같은 칸의 에디 — 할 일에서는 귀고리 한 칸으로 묶인다
 // 실제 서버 응답 모양(2026-11-26, /consult/mix?total=&prices= — 성까지 같이)
 const BEST = { total: 73000000000, prices: 3000000000, best: 21, evaluation_setting: { equipment: 2 }, boss: { defense: 300 }, note: "가진 메소에서…",
                stars: [{ starforce: 17, raise_cost: 0, raise_cost_text: "0", cube_budget: 0, cube_budget_text: "58억", short: 0, short_text: null, delta_pct: 60.0, cost: 500000000, cost_text: "5억" },
@@ -270,24 +272,25 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
     const box = await screen.findByLabelText("추천 조합");
     expect(String(f.mock.calls.at(-1)[0])).toContain("/consult/mix?boss_defense=300&total=73000000000&prices=3000000000");
-    expect(box.textContent).toContain("730억이면 21성이 가장 많이 올라요 — 강화 342억 + 살 템 30억 + 큐브 130억, 보스 실딜 +95.3%");
+    expect(box.textContent).toContain("730억이면 21성이 가장 많이 올라요 — 강화 342억 + 살 템 30억 + 큐브·심볼 130억, 보스 실딜 +95.3%");
     expect(box.textContent).toContain("시세를 안 넣은 살 템 1개는 계산에 없어요");
     expect(box.textContent).toContain("살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 +77.2%부터 시작해요)");
     fireEvent.click(screen.getByRole("button", { name: "성별 비교" }));
     const rows = within(screen.getByRole("table", { name: "성별 비교" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(rows).toEqual(["17성강화 없음+ 큐브 5억+60.0%", "18성42억+ 큐브 20억+70.0%", "21성342억+ 큐브 130억+95.3%", "22성606억—248억 모자라요"]);
-    fireEvent.click(screen.getByRole("button", { name: "칸별 목표 3개 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "칸별 목표 4개 보기" }));
     const picks = within(screen.getByRole("table", { name: "추천 조합 칸별 목표" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(picks).toEqual(["무기 제네시스 카르타에디 레전드리 2줄 마력 +12% · 마력 +9%+4.1%110억", "귀고리 커맨더 포스 이어링잠재 레전드리 2줄 INT +12% · INT +9%+1.1%20억",
-                           "귀고리 커맨더 포스 이어링에디 지금 템 수준 INT +4%+0.2%5억"]);
+                           "귀고리 커맨더 포스 이어링에디 지금 템 수준 INT +4%+0.2%5억", "심볼 어센틱심볼 : 아르크스심볼 7→8레벨 +2.2%44억"]);
     // 할 일 순서: 살 템(경매장) → 강화 → 큐브 — 고른 성(21)의 세팅에서 꺼낸다
     fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
     const steps = within(screen.getByRole("list", { name: "할 일 순서" })).getAllByRole("listitem").map((li) => li.textContent);
     expect(steps).toEqual([
       "경매장에서 살 템 2개 — 21성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)귀고리 커맨더 포스 이어링 (30억) · 반지1 근원의 속삭임",
       "강화 1개 — 평균 563억 6262만모자 18→21성",
-      "큐브 2칸 — 평균 130억, 효율 높은 칸부터무기 에디 레전드리 2줄 · 귀고리 잠재 레전드리 2줄 + 에디 지금 템 수준",
-      "보스 실딜 +95.3% — 강화 342억 + 살 템 30억 + 큐브 130억 + 시세를 안 넣은 살 템 1개"]);
+      "큐브 2칸 — 평균 86억, 효율 높은 칸부터무기 에디 레전드리 2줄 · 귀고리 잠재 레전드리 2줄 + 에디 지금 템 수준",
+      "심볼 1개 — 강화 메소 44억, 지금 모은 심볼로 할 수 있는 만큼만아르크스 7→8레벨",
+      "보스 실딜 +95.3% — 강화 342억 + 살 템 30억 + 큐브·심볼 130억 + 시세를 안 넣은 살 템 1개"]);
     fireEvent.click(screen.getByRole("button", { name: "21성 세팅 보기" }));                      // 위 탭이 그 성으로
     expect(within(screen.getByRole("tablist", { name: "목표 스타포스" })).getByRole("tab", { name: /21성/ })).toHaveAttribute("aria-selected", "true");
     // 가장 싼 성의 강화도 못 하면

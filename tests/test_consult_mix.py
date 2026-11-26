@@ -16,7 +16,7 @@ def _setup():
 
 def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     snap, setting, b = _setup()
-    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8)
+    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False)   # 손으로 다시 끼는 검산은 장비만(심볼은 아래 따로)
     assert r["picks"] and r["cost"] <= 3000e8 and r["delta_pct"] > r["base_delta_pct"]
     assert len({(x["slot"], x["kind"]) for x in r["picks"]}) == len(r["picks"])            # 칸·종류마다 하나
     # 손으로 다시 낀다: 지금 그대로 세팅 + 고른 줄
@@ -35,7 +35,7 @@ def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == r["delta_pct"]
     # 기준(살 템 잠재·에디 없음)은 컨설팅 '지금 그대로'(살 템에 지금 수준이 공짜로 붙음)보다 낮고, '지금 템 수준'도 선택지다
     assert r["base_delta_pct"] < r["with_current_delta_pct"] and r["bare_buys"] == len(same["buy"])
-    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
+    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8, symbols=False)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
     # 레테: 섞으면 같은 예산의 한 단계 목표보다 낫다 — 무기류 에디처럼 효율 좋은 칸이 섞인다
     assert {x["group"] for x in r["picks"]} >= {"무기"} and {x["kind"] for x in r["picks"]} == {"잠재", "에디"}
 
@@ -89,3 +89,24 @@ def test_best_star_picks_the_star_with_the_highest_exact_damage_within_total():
         seen.append(r["mix"]["delta_pct"])
     got = [v for v in seen if v is not None]
     assert got == sorted(got) and len(got) >= 3
+
+
+def test_symbols_join_the_mix_and_their_damage_is_measured_with_the_symbol_stats():
+    """심볼(2026-11-27): 갈아타기 뒤 남는 메소로 심볼 레벨업도 같이 고른다. 고른 심볼의 주스탯·포스를 넣어 잰 실딜이
+    장비만 고른 것보다 낮지 않고, 심볼 줄에는 모자란 심볼 개수·날수가 같이 온다."""
+    from engine.market.symbol_paths import extra_of
+    from engine.market.symbol_paths import step as symbol_step
+    snap, setting, b = _setup()
+    with_sym = mix(snap, setting, b, service.CATALOG, 22, 3000e8)
+    without = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False)
+    syms = [x for x in with_sym["picks"] if x["kind"] == "심볼"]
+    assert syms and all(x["group"] == "심볼" and x["remaining_symbols"] == 0 for x in syms)   # 지금 모은 심볼로 되는 레벨만
+    assert with_sym["delta_pct"] >= without["delta_pct"] and with_sym["cost"] <= 3000e8
+    # 심볼 몫은 그 심볼의 주스탯·포스만 넣어 잰 값과 같다
+    sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
+    x = syms[0]
+    sym = next(s for s in snap.symbol_items if s["name"] == x["name"])
+    to = int(x["label"].split("→")[1].replace("레벨", ""))
+    st = symbol_step(sym, sym["level"], to, snap.character_class)
+    assert st["meso"] == x["cost"] and x["gain_pct"] > 0
+    assert sw.pl.ev.index(sw.pl.items, extra_of(st["stat_gain"], st["force_gain"])) > sw.pl.base
