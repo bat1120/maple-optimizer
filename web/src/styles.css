@@ -1064,3 +1064,5 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-options th { font-size: var(--fs-xs); color: var(--muted); font-weight: 600; }
 .consult-options .num { text-align: right; white-space: nowrap; }
 .consult-options tr.is-ok td { color: var(--success); }
+.consult-match { display: block; }
+.consult-match-total { display: block; margin-top: var(--sp-2); }

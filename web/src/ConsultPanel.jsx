@@ -113,7 +113,12 @@ export default function ConsultPanel({ name, defense }) {
                 {build.buy.map((x) => (
                   <li key={x.slot}>
                     <span className="consult-slot muted small">{x.slot}</span>
-                    <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">{x.starforce}성{x.set ? ` · ${SHORT(x.set)}` : ""}</span></span>
+                    <span className="consult-name"><strong>{x.name}</strong> <span className="muted small">{x.starforce}성{x.set ? ` · ${SHORT(x.set)}` : ""}</span>
+                      {/* 잠재·에디를 지금 그 자리 템 수준으로 큐브로 처음부터 맞추는 평균(위쪽 한계) — 잠재 붙은 매물을 사면 덜 든다 */}
+                      <span className="consult-match muted small">
+                        {x.match_cost == null ? "잠재 맞추는 비용은 계산하지 못했어요" : x.match_cost === 0 ? "맞출 잠재 없음" : `잠재·에디까지 맞추면 평균 +${x.match_text}`}
+                      </span>
+                    </span>
                     <input aria-label={`${x.name} 시세`} inputMode="text" autoComplete="off" placeholder="시세" value={prices[x.name] || ""}
                            onChange={(e) => setPrices((p) => ({ ...p, [x.name]: e.target.value }))} />
                   </li>
@@ -146,6 +151,13 @@ export default function ConsultPanel({ name, defense }) {
                   : <span className="muted small"> · 1억 메소당 <strong className="num">{formatPct(build.delta_pct / (total / 1e8))}</strong></span>}
               </>
             ) : <span className="muted small">살 템의 시세를 넣으면 필요한 메소와 1억 메소당 효율을 계산해요.</span>}
+            {build.match_cost > 0 && (
+              <span className="consult-match-total muted small">
+                위는 잠재 없는 템만 살 때예요. 잠재·에디까지 지금 수준으로 큐브로 맞추면 평균 <strong className="num">{build.match_cost_text}</strong>이 더 들어요
+                (합계 {formatMeso(total + build.match_cost)}{missing > 0 ? " + 안 넣은 시세" : ""}) — 잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요.
+                {build.match_unknown > 0 ? ` 계산하지 못한 템 ${build.match_unknown}개는 빠져 있어요.` : ""}
+              </span>
+            )}
           </p>}
 
           {open && build.set_change.some((c) => c.lost.length || c.gained.length) && (

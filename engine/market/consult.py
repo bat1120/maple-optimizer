@@ -30,6 +30,37 @@ def _short(set_name: str) -> str:
     return {"칠흑의 보스 세트": "칠흑", "여명의 보스 세트": "여명", "보스 장신구 세트": "보스 장신구", "광휘의 보스 세트": "광휘"}.get(set_name, set_name)
 
 
+def match_cost(sw: _Swapper, slot: str, item) -> dict:
+    """살 템(item — 지금 그 자리 템의 잠재·에디를 옮겨 놓은 것)에 그 잠재·에디를 큐브로 처음부터 맞추는 평균 비용.
+    2026-11-26 사용자 결정(권장안): '잠재까지 지금 수준으로 맞추면 얼마'와 '잠재 없는 템만 사면 얼마'를 같이 보여 준다 —
+    잠재가 붙은 매물을 사는 경우가 많아 이 값은 상한에 가깝다.
+    방법(숫자 추정 없음): 지금 줄들 중 실딜에 쓰이는 줄의 기여 합 이상이 재설정 한 번에 나올 확률(_Planner.reach — 그 템 레벨·부위의
+    공식 확률표)로, 레어에서 지금 등급까지 올리고 그 줄 수준이 나올 때까지의 평균 메소(cube_value.expected_cost).
+    돌려주는 값: {'잠재': 메소|0|None, '에디': …} — 0 = 맞출 줄이 없다, None = 계산 못 함(확률표 없음·재설정 불가 템 등)."""
+    import copy as _copy
+
+    from engine.enhance.fixed import fixed_reason
+    from engine.market.cube_value import expected_cost
+    from engine.market.recommend import line_tables
+    sub = _copy.copy(sw.pl)
+    sub.raw = dict(sw.pl.raw)
+    sub.raw[slot] = item
+    out = {}
+    for kind, lines, grade in (("잠재", item.potentials, item.potential_grade), ("에디", item.additional, item.additional_grade)):
+        chosen = [t for t in (lines or []) if sub.is_useful(t)]
+        if not chosen or grade is None:
+            out[kind] = 0.0
+            continue
+        tables = line_tables(kind, grade, slot, item.level)
+        if not tables or fixed_reason(item):
+            out[kind] = None
+            continue
+        single = {o: sub.delta(slot, kind, [o]) for o in set(chosen)}
+        reach = sub.reach(slot, kind, tables, [], chosen, single)
+        out[kind] = expected_cost(kind, item.level, "레어", grade, reach) if reach > 0 else None
+    return out
+
+
 def accessory_slots(sw: _Swapper) -> list[str]:
     """바꿔 볼 장신구 칸: 지금 템이 있고, 특수 반지(스킬 반지)가 아닌 칸."""
     return [s for s, it in sw.pl.raw.items() if _part(s) in ACCESSORY_PARTS and not it.special_ring_level]
@@ -54,7 +85,7 @@ def accessory_candidates(sw: _Swapper, catalog: SetCatalog) -> dict[str, list[di
             if it is None:
                 continue
             cs.append({"name": name, "set": b["set"], "item": _valued(it, sw.pl.mains, sw.pl.per_sec), "starforce": it.starforce,
-                       "kept": False})
+                       "kept": False, "raw": it})
         out[slot] = cs
     return out
 
@@ -102,6 +133,7 @@ def accessory_builds(sw: _Swapper, catalog: SetCatalog, top: int = 5) -> list[di
                            for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)],
             "delta_pct": (ev.index(trial) / base - 1) * 100,
             "_items": {s: c["item"] for s, c in zip(slots, combo)},
+            "_raw": {s: c["raw"] for s, c in zip(slots, combo) if not c["kept"]},
         })
     rows.sort(key=lambda r: r["delta_pct"], reverse=True)
     return rows[:top]
@@ -116,14 +148,17 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
         acc = accessory_builds(sw, catalog, top=1)
         armor = armor_combos(snap, setting, boss, catalog, starforce=star, cooldown_main_pct=cooldown_main_pct, top=1, raise_kept=True)
         trial = dict(sw.pl.items)
-        pieces = {}
+        pieces, raws = {}, {}
         if armor:
             from engine.market.armor_sets import slot_candidates
             by = {s: {c.name: c for c in cs} for s, cs in slot_candidates(sw, raise_kept=True).items()}
             for s, p in armor[0]["pieces"].items():
                 trial[s] = by[s][p["name"]].item
                 pieces[s] = {**p, "group": "방어구"}
+                if not p["kept"]:
+                    raws[s] = sw.like_current(s, p["name"])
         if acc:
+            raws.update(acc[0]["_raw"])
             trial.update(acc[0]["_items"])
             pieces.update({s: {**p, "group": "장신구"} for s, p in acc[0]["pieces"].items()})
         before = count_sets(sw.pl.items.values(), sw.job.branches, catalog)
@@ -142,12 +177,14 @@ def consult(snap: CharacterSnapshot, setting: Setting, boss: BossProfile, catalo
             "armor": {"label": armor[0]["label"], "delta_pct": armor[0]["delta_pct"]} if armor else None,
             "accessory": {"label": acc[0]["label"], "delta_pct": acc[0]["delta_pct"]} if acc else None,
             "pieces": [{"slot": s, **pieces[s]} for s in order],
-            "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"]}
+            "buy": [{"slot": s, "name": pieces[s]["name"], "starforce": pieces[s]["starforce"], "group": pieces[s]["group"],
+                     "match": match_cost(sw, s, raws[s]) if raws.get(s) is not None else {"잠재": None, "에디": None}}
                     for s in order if not pieces[s]["kept"]],
             "raise": [{"slot": s, "name": pieces[s]["name"], "from_star": pieces[s]["from_star"], "starforce": pieces[s]["starforce"],
                        "cost": pieces[s]["raise_cost"], "destroys": pieces[s].get("raise_destroys"), "group": pieces[s]["group"]}
                       for s in order if pieces[s]["raise_cost"] is not None],
             "raise_cost": sum(pieces[s]["raise_cost"] or 0 for s in order),
+            "_order": order,
             "set_change": [{"set": k, "before": before.get(k, 0), "after": after.get(k, 0)}
                            for k in sorted(set(before) | set(after)) if before.get(k, 0) != after.get(k, 0)],
         })

@@ -9,8 +9,11 @@ const build = (starforce, delta, over = {}) => ({
   starforce, delta_pct: delta,
   armor: { label: "에테르넬 7", delta_pct: 22.67 }, accessory: { label: "칠흑 6 · 보스 장신구 2 · 광휘 3", delta_pct: 49.51 },
   pieces: [],
-  buy: [{ slot: "귀고리", name: "커맨더 포스 이어링", starforce, group: "장신구", set: "칠흑의 보스 세트", level: 200 },
-        { slot: "반지1", name: "근원의 속삭임", starforce, group: "장신구", set: "광휘의 보스 세트", level: 250 }],
+  buy: [{ slot: "귀고리", name: "커맨더 포스 이어링", starforce, group: "장신구", set: "칠흑의 보스 세트", level: 200,
+          match_cost: 2866720000, match_text: "28억 6672만", match_parts: { 잠재: { cost: 1224980000, text: "12억 2498만" }, 에디: { cost: 1641740000, text: "16억 4174만" } } },
+        { slot: "반지1", name: "근원의 속삭임", starforce, group: "장신구", set: "광휘의 보스 세트", level: 250,
+          match_cost: null, match_text: null, match_parts: { 잠재: null, 에디: { cost: 0, text: "0" } } }],
+  match_cost: 2866720000, match_cost_text: "28억 6672만", match_unknown: 1,
   raise: [{ slot: "모자", name: "에테르넬 메이지햇", from_star: 18, starforce, cost: 56362620000, cost_text: "563억 6262만", destroys: 1.2, group: "방어구" }],
   raise_cost: 56362620000, raise_cost_text: "563억 6262만",
   set_change: [{ set: "칠흑의 보스 세트", before: 0, after: 6, lost: [], gained: ["공격력 +10, 마력 +10, 보스 몬스터 데미지 +10%"] },
@@ -55,6 +58,13 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("근원의 속삭임 시세"), { target: { value: "406억 3738만" } });
     expect(total()).toContain("필요한 메소 1000억");
     expect(total()).toContain("1억 메소당 +0.077%");                             // 77.24% ÷ 1000억
+    // 2026-11-26 사용자 결정: '잠재 없는 템만'과 '잠재까지 맞추면'을 같이 보여 준다(큐브를 처음부터 돌리는 평균 = 위쪽 한계)
+    expect(total()).toContain("잠재·에디까지 지금 수준으로 큐브로 맞추면 평균 28억 6672만이 더 들어요");
+    expect(total()).toContain("합계 1028억 6672만");
+    expect(total()).toContain("계산하지 못한 템 1개는 빠져 있어요");
+    const buy = screen.getByRole("list", { name: "살 템" });
+    expect(buy).toHaveTextContent("잠재·에디까지 맞추면 평균 +28억 6672만");
+    expect(buy).toHaveTextContent("잠재 맞추는 비용은 계산하지 못했어요");
   });
 
   it("가진 메소를 넣으면 장신구만 · 방어구만 · 둘 다 중 어디까지 되는지 알려 준다", async () => {

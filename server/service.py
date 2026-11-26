@@ -664,9 +664,18 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
         o["raise_cost_text"] = meso_text(o["raise_cost"]) if o["raise_cost"] else None
         for r in o["raise"]:
             r["cost_text"] = meso_text(r["cost"])
+        o.pop("_order", None)
         for x in o["buy"]:
             x["set"] = (BASES.get(x["name"]) or {}).get("set")
             x["level"] = (BASES.get(x["name"]) or {}).get("level")
+            # 잠재·에디를 지금 그 자리 템 수준으로 큐브로 처음부터 맞추는 평균 비용(상한에 가깝다). None = 계산 못 함, 0 = 맞출 줄 없음
+            m = x.pop("match")
+            x["match_cost"] = None if any(v is None for v in m.values()) else sum(m.values())
+            x["match_parts"] = {k: (None if v is None else {"cost": v, "text": meso_text(v) if v else "0"}) for k, v in m.items()}
+            x["match_text"] = meso_text(x["match_cost"]) if x["match_cost"] else ("0" if x["match_cost"] == 0 else None)
+        o["match_cost"] = sum(x["match_cost"] or 0 for x in o["buy"])
+        o["match_cost_text"] = meso_text(o["match_cost"]) if o["match_cost"] else None
+        o["match_unknown"] = sum(1 for x in o["buy"] if x["match_cost"] is None)
         for c in o["set_change"]:
             tiers = {int(n): text for n, text in (CATALOG.tiers.get(c["set"]) or {}).items()}
             c["lost"] = [" ".join(str(tiers[n]).split()) for n in sorted(tiers) if c["after"] < n <= c["before"]]
@@ -674,7 +683,9 @@ def consult(snap: CharacterSnapshot, defense: float, cooldown_main_pct: float | 
     return {"evaluation_setting": asdict(setting), "boss": asdict(b), "builds": builds,
             "note": ("세팅 전체를 한 번에 낀 보스 실딜이에요(지금 보스 세팅 = 0%) — 세트 효과가 같이 바뀌는 것까지 들어 있어요. "
                      "바꿀 템의 기본 옵션은 그 템을 낀 캐릭터들의 넥슨 API 실측이고, 스타포스는 고른 성(그 템 최대 성 이하), "
-                     "잠재·에디·추옵·주문서는 지금 그 자리 템과 같은 수준으로 맞춘다고 봤어요 — 새 템에 그만큼 맞추는 큐브·추옵 비용은 들어 있지 않아요. "
+                     "잠재·에디·추옵·주문서는 지금 그 자리 템과 같은 수준으로 맞춘다고 봤어요. "
+                     "'잠재까지 맞추면'은 살 템에 지금 수준의 잠재·에디를 큐브로 처음부터(레어에서) 맞추는 평균 비용을 더한 값이에요 — "
+                     "잠재가 붙은 매물을 사면 그보다 덜 드니 위쪽 한계로 보세요. 추옵·주문서를 맞추는 비용은 들어 있지 않아요. "
                      "지금 템을 그대로 쓰는 자리는 고른 성까지 강화한다고 봤고, 그 비용은 이벤트 없는 평균이에요(파괴 시 스페어 값 제외). "
                      "살 템의 시세는 넥슨이 주지 않아서 직접 넣어야 합계가 나와요. 무기·보조무기·엠블렘·특수 반지는 그대로 둬요.")}
 

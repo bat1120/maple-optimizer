@@ -47,3 +47,23 @@ def test_kept_items_are_raised_to_the_target_star():
         if p["kept"] and p["raise_cost"] is not None:
             assert p["from_star"] < p["starforce"] <= 22
     assert any(p["kept"] for p in top["pieces"]) and top["buy"]
+
+
+def test_match_cost_is_the_cube_cost_to_reach_current_potential_from_rare():
+    """살 템에 지금 수준의 잠재·에디를 큐브로 처음부터 맞추는 평균 비용(2026-11-26 사용자 결정: 위쪽 한계로 같이 보여 준다).
+    맞출 줄이 없으면 0, 줄이 좋을수록(같은 등급에서 쓸모 있는 줄이 많을수록) 비싸다."""
+    import dataclasses
+
+    from engine.market.consult import match_cost
+    snap, setting, b = _setup()
+    sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
+    top = consult(snap, setting, b, service.CATALOG, stars=(22,))[0]
+    assert all(set(x["match"]) == {"잠재", "에디"} for x in top["buy"])
+    assert any((x["match"]["잠재"] or 0) > 0 for x in top["buy"])
+    slot = next(x["slot"] for x in top["buy"] if (x["match"]["잠재"] or 0) > 0)
+    it = sw.like_current(slot, next(x["name"] for x in top["buy"] if x["slot"] == slot))
+    full = match_cost(sw, slot, it)["잠재"]
+    useful = [t for t in it.potentials if sw.pl.is_useful(t)]
+    fewer = match_cost(sw, slot, dataclasses.replace(it, potentials=useful[:1]))["잠재"]
+    none = match_cost(sw, slot, dataclasses.replace(it, potentials=[]))["잠재"]
+    assert none == 0.0 and 0 < fewer <= full
