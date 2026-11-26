@@ -272,7 +272,9 @@ def _goals(sw: _Swapper, trial: dict, raws: dict, order: list[str], pieces: dict
         if it is None or not (it.potentials if kind == "잠재" else it.additional) or fixed_reason(it):
             continue
         if (kind, s) not in ladder:
-            ladder[kind, s] = sub.tiers(s, kind, grades=("레전드리",) if kind == "잠재" else ("에픽", "유니크", "레전드리"))
+            # 에디는 2줄 단계만 잰다(3줄은 목표로 두지 않는다 — 운영 첫 응답이 6초였다)
+            ladder[kind, s] = (sub.tiers(s, kind, grades=("레전드리",)) if kind == "잠재"
+                               else sub.tiers(s, kind, grades=("에픽", "유니크", "레전드리"), counts=(2,)))
         fit = [t for t in ladder[kind, s] if t["grade"] == grade and t["lines_good"] <= lines]
         if not fit:
             continue

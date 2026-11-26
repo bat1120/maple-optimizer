@@ -33,6 +33,16 @@ export default function ConsultPanel({ name, defense }) {
       .catch((e) => { if (mine === seq.current) setError(e); });
   }, [name, defense]);
 
+  // 휴대폰에서는 고르는 줄이 옆으로 밀리는 한 줄이다 — 고른 알약이 화면 밖에 있으면 그 줄만 옆으로 밀어 보이게 한다(페이지는 안 움직인다)
+  const panel = useRef(null);
+  useEffect(() => {
+    for (const row of panel.current?.querySelectorAll(".consult-stars") || []) {
+      const on = row.querySelector('[aria-selected="true"]');
+      if (on && (on.offsetLeft < row.scrollLeft || on.offsetLeft + on.offsetWidth > row.scrollLeft + row.clientWidth)) {
+        row.scrollLeft = Math.max(0, on.offsetLeft - row.offsetLeft - 40);
+      }
+    }
+  }, [data, star, pot, addi]);
   const all = data?.builds || [];
   const pots = [...new Set(all.map((b) => b.potential || "same"))];
   const mine = pots.includes(pot) ? pot : pots[0];
@@ -103,7 +113,7 @@ export default function ConsultPanel({ name, defense }) {
   };
 
   return (
-    <section className="panel consult-panel" aria-label="목표 세팅 컨설팅">
+    <section className="panel consult-panel" aria-label="목표 세팅 컨설팅" ref={panel}>
       <PanelHead title="목표 세팅 컨설팅" icon="trend"
                  subtitle="메소를 모아 한 번에 갈아탄다면 — 방어구·장신구를 통째로 바꾼 세팅의 보스 실딜이에요(세트 효과 포함)." />
       {error && <p role="alert" className="inline-error"><strong>{error.message}</strong></p>}
@@ -287,7 +297,7 @@ export default function ConsultPanel({ name, defense }) {
             {goal && cubeAll > 0 && (
               <span className="consult-match-total muted small">
                 위 합계에는 {goalText} 맞추는 큐브 평균 <strong className="num">{formatMeso(cubeAll)}</strong>이 들어 있어요
-                (살 템 {formatMeso(buyCube) || "0"} · 지금 템 {formatMeso(keptCube) || "0"}) — 잠재가 붙은 매물을 사면 그보다 덜 들어요.
+                (살 템 {formatMeso(buyCube) || "0"} · 지금 템 {formatMeso(keptCube) || "0"}) — 잠재가 붙은 매물을 사면 그보다 덜 들어요.{" "}
                 {opt ? (potGoal ? "추옵은" : "잠재는 지금 수준(살 템은 큐브로 맞추는 평균 포함), 추옵은") : "에디·추옵은"} 지금 그대로로 봤어요.
                 {dropped.length > 0 ? ` ${opt ? "목표" : "잠재 목표"}에서 뺀 칸 ${dropped.length}개는 지금 ${opt ? "것" : "잠재"} 그대로예요 — 실딜은 칸별 몫을 뺀 값이라 '약'이에요.` : " 효율이 낮은 칸은 체크를 풀어 뺄 수 있어요."}
                 {unknown > 0 ? ` 계산하지 못한 템 ${unknown}개는 빠져 있어요.` : ""}

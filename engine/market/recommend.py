@@ -223,7 +223,7 @@ class _Planner:
         parsed = parse_option(option, self.snap.level)
         return bool(parsed) and any(line.key in self.useful for line in parsed)
 
-    def tiers(self, slot: str, kind: str, grades: tuple[str, ...] = GRADES) -> list[dict]:
+    def tiers(self, slot: str, kind: str, grades: tuple[str, ...] = GRADES, counts: tuple[int, ...] = (2, 3)) -> list[dict]:
         it = self.raw[slot]
         kept = [t for t in it.potentials if _COOLDOWN.match(t.strip())] if kind == "잠재" else []
         single: dict[str, float] = {}
@@ -232,7 +232,7 @@ class _Planner:
             tables = line_tables(kind, grade, slot, it.level)
             if not tables or any(k not in tables[0] for k in kept):  # 쿨감 -2초는 레전드리 1번째 줄에만 있다
                 continue
-            for n in (2, 3):
+            for n in counts:
                 chosen, prob = [], 1.0
                 for pos in range(len(kept), min(3, len(kept) + n)):
                     cands = [o for o, p in tables[pos].items() if p >= COMMON_MIN_PROB and self.is_useful(o)
