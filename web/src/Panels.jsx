@@ -26,7 +26,7 @@ function Dist({ d, unit = "meso" }) {
 
 const CONDITIONS = [
   ["discount30", "30% 할인"],
-  ["destroy_down30", "파괴 확률 30% 감소"],
+  ["destroy_down30", "21성 이하 파괴 30% 감소"],   // 컨설팅·경로 비교와 같은 말로(2026-11-27)
   ["guarantee_5_10_15", "5·10·15성 100%"],
   ["protect", "파괴 방지(15~17성)"],
 ];
