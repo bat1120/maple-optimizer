@@ -24,7 +24,7 @@ const DATA = { evaluation_setting: { equipment: 2 }, boss: { defense: 300 }, not
                builds: [build(17, 13.94, { raise: [], raise_cost: 0, raise_cost_text: null }), build(18, 20.07), build(21, 60.77), build(22, 77.24)] };
 const ok = (body) => ({ ok: true, status: 200, json: async () => body });
 // 실제 서버 응답 모양(2026-11-26, /api/character/{name}/consult/mix)
-const MIX = { starforce: 22, budget: 13600000000, base_delta_pct: 77.24, delta_pct: 95.31, approx_pct: 96.1, cost: 13000000000, cost_text: "130억",
+const MIX = { starforce: 22, budget: 13600000000, base_delta_pct: 40.1, with_current_delta_pct: 77.24, bare_buys: 2, delta_pct: 95.31, approx_pct: 96.1, cost: 13000000000, cost_text: "130억",
               candidates: 9, evaluation_setting: { equipment: 2 }, boss: { defense: 300 }, note: "칸마다…",
               picks: [{ slot: "무기", kind: "에디", name: "제네시스 카르타", group: "무기", kept: true, label: "레전드리 2줄", target: ["마력 +12%", "마력 +9%"],
                         cost: 11000000000, cost_text: "110억", gain_pct: 4.07 },
@@ -270,6 +270,7 @@ describe("목표 세팅 컨설팅", () => {
     expect(String(f.mock.calls.at(-1)[0])).toContain("/consult/mix?boss_defense=300&total=73000000000&prices=3000000000");
     expect(box.textContent).toContain("730억이면 21성이 가장 많이 올라요 — 강화 342억 + 살 템 30억 + 큐브 130억, 보스 실딜 +95.3%");
     expect(box.textContent).toContain("시세를 안 넣은 살 템 1개는 계산에 없어요");
+    expect(box.textContent).toContain("살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 +77.2%부터 시작해요)");
     fireEvent.click(screen.getByRole("button", { name: "성별 비교" }));
     const rows = within(screen.getByRole("table", { name: "성별 비교" })).getAllByRole("row").slice(1).map((r) => r.textContent);
     expect(rows).toEqual(["17성강화 없음+ 큐브 5억+60.0%", "18성42억+ 큐브 20억+70.0%", "21성342억+ 큐브 130억+95.3%", "22성606억—248억 모자라요"]);
@@ -280,7 +281,7 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
     const steps = within(screen.getByRole("list", { name: "할 일 순서" })).getAllByRole("listitem").map((li) => li.textContent);
     expect(steps).toEqual([
-      "경매장에서 살 템 2개 — 21성 이상. 아래 큐브 칸에 없는 템은 잠재·에디가 지금 그 자리 템 수준인 매물로 봤어요(없는 매물이면 그만큼 덜 올라요)귀고리 커맨더 포스 이어링 (30억) · 반지1 근원의 속삭임",
+      "경매장에서 살 템 2개 — 21성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)귀고리 커맨더 포스 이어링 (30억) · 반지1 근원의 속삭임",
       "강화 1개 — 평균 563억 6262만모자 18→21성",
       "큐브 2칸 — 평균 130억, 효율 높은 칸부터무기 에디 레전드리 2줄 · 귀고리 잠재 레전드리 2줄",
       "보스 실딜 +95.3% — 강화 342억 + 살 템 30억 + 큐브 130억 + 시세를 안 넣은 살 템 1개"]);

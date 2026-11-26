@@ -7,7 +7,7 @@
 - 칸마다 선택지 = 컨설팅이 이미 잰 단계(잠재: 그대로·레전드리 2줄·3줄, 에디: 그대로·에픽·유니크·레전드리 2줄)의 몫·큐브 평균
 - 고르기: 칸별 몫을 더한 값이 예산 안에서 가장 큰 조합(칸마다 한 단계 — 묶음 배낭, 1억 단위 동적 계획법). 예산이 늘면 이 값은 줄지 않는다
 - 고른 조합은 그 줄들을 실제로 낀 세팅으로 다시 정확히 잰다(delta_pct). 고를 때 쓴 칸별 몫의 합은 approx_pct로 따로 준다
-비용 기준: 살 템은 잠재·에디 없이 산다고 보고(레어에서), 쓰던 템은 지금 등급에서 — 컨설팅의 '지금 그대로' 합계와 같은 기준.
+비용 기준: 살 템은 잠재·에디 없는 매물을 사서 레어부터 큐브(지금 템 수준으로 맞추는 것도 선택지), 쓰던 템은 지금 등급에서.
 """
 
 import numpy as np
@@ -79,29 +79,54 @@ def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tupl
 
 def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
         builds: list[dict] | None = None) -> dict:
-    """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜."""
+    """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜.
+
+    살 템의 기준은 '잠재·에디 없는 매물'이다(2026-11-26 — 전에는 지금 그 자리 템의 잠재·에디를 공짜로 옮겨 실딜이 부풀었다).
+    살 템마다 '지금 템 수준'(지금 그 자리 템의 잠재·에디를 레어부터 큐브로 맞추는 평균 — consult의 match)도 선택지로 넣어
+    배낭이 다른 목표와 같이 고른다. 칸별 몫은 모두 이 기준 세팅에서 그 칸만 바꿔 다시 잰다."""
     if builds is None:                                       # best_star는 성마다 한 번 계산한 것을 넘긴다
         builds = consult(snap, setting, boss, catalog, stars=(star,), cooldown_main_pct=cooldown_main_pct)
     same = next(b for b in builds if b["potential"] == "same")
     options = _options(builds)
-    chosen = pick(options, budget)
     sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct, star)
-    raw = {}                                                # '지금 그대로' 세팅을 다시 낀다(consult와 같은 방법, 쿨감 환산 전 템)
+    raw, current = {}, {}                                   # 기준 세팅(쿨감 환산 전 템), 살 템에 옮겨 놓았던 지금 수준 줄
     for p in same["pieces"]:
         cur = sw.pl.raw[p["slot"]]
-        raw[p["slot"]] = sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > cur.starforce else cur
+        it = sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > cur.starforce else cur
+        if not p["kept"]:
+            current[p["slot"]] = {"잠재": list(it.potentials), "에디": list(it.additional)}
+            it = SWAP["에디"](SWAP["잠재"](it, [], snap.level), [], snap.level)
+        raw[p["slot"]] = it
     for s, _ in options:
         raw.setdefault(s, sw.pl.raw[s])                     # 무기·보조무기·엠블렘: 템은 그대로
+    for x in same["buy"]:                                   # 살 템의 '지금 템 수준' 선택지
+        for kind in ("잠재", "에디"):
+            cost, lines = (x.get("match") or {}).get(kind), current.get(x["slot"], {}).get(kind)
+            if cost and lines:
+                options.setdefault((x["slot"], kind), []).insert(0, {"label": "지금 템 수준", "target": lines, "cost": cost, "gain_pct": 0.0,
+                                                                     "name": x["name"], "group": x["group"], "kept": False})
+    valued = {s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()}
+    base_items = {**sw.pl.items, **valued}
+    base_index = sw.pl.ev.index(base_items)
+    for (s, kind), opts in options.items():                 # 칸별 몫을 기준 세팅에서 다시 잰다
+        for o in opts:
+            trial = dict(base_items)
+            trial[s] = _valued(SWAP[kind](raw[s], o["target"], snap.level), sw.pl.mains, sw.pl.per_sec)
+            o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
+    chosen = pick(options, budget)
     for (s, kind), o in sorted(chosen.items(), key=lambda kv: kv[0][1] != "잠재"):   # 잠재 먼저, 그 위에 에디
         raw[s] = SWAP[kind](raw[s], o["target"], snap.level)
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()})
     delta = (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100
+    base_delta = (base_index / sw.pl.base - 1) * 100
     picks = [{"slot": s, "kind": kind, **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")}}
              for (s, kind), o in chosen.items()]
     picks.sort(key=lambda x: -x["gain_pct"] / x["cost"])
-    return {"starforce": star, "budget": budget, "base_delta_pct": same["delta_pct"], "delta_pct": delta,
-            "approx_pct": same["delta_pct"] + sum(x["gain_pct"] for x in picks), "cost": sum(x["cost"] for x in picks),
+    return {"starforce": star, "budget": budget, "base_delta_pct": base_delta, "delta_pct": delta,
+            # 참고: 살 템에 지금 템 수준 잠재·에디가 공짜로 붙어 있다고 본 컨설팅 '지금 그대로' 값
+            "with_current_delta_pct": same["delta_pct"], "bare_buys": len(current),
+            "approx_pct": base_delta + sum(x["gain_pct"] for x in picks), "cost": sum(x["cost"] for x in picks),
             "picks": picks, "candidates": sum(len(v) for v in options.values())}
 
 

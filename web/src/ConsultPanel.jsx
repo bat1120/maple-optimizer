@@ -264,11 +264,13 @@ export default function ConsultPanel({ name, defense }) {
                     </table>
                   )}
                   <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
-                    실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이에요.{missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
+                    실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이고, 살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요
+                    {mixed.with_current_delta_pct != null ? `(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 ${pct1(mixed.with_current_delta_pct)}부터 시작해요)` : ""}.
+                    {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}</p>
                   {planOpen && planBuild && (
                     <ol className="consult-plan" aria-label="할 일 순서">
                       {planBuild.buy.length > 0 && (
-                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상. 아래 큐브 칸에 없는 템은 잠재·에디가 지금 그 자리 템 수준인 매물로 봤어요(없는 매물이면 그만큼 덜 올라요)</span>
+                        <li><strong>경매장에서 살 템 {planBuild.buy.length}개</strong> <span className="muted small">— {best.best}성 이상, 잠재·에디 없는 매물 기준이에요(필요한 잠재·에디는 아래 큐브 칸에 들어 있어요)</span>
                           <span className="consult-plan-items">{planBuild.buy.map((x) => `${x.slot} ${x.name}${prices[x.name] ? ` (${prices[x.name]})` : ""}`).join(" · ")}</span></li>
                       )}
                       {planBuild.raise.length > 0 && (

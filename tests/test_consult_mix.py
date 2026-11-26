@@ -24,12 +24,18 @@ def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     sw = _Swapper(snap, setting, b, service.CATALOG, None, 22)
     raw = {p["slot"]: (sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > sw.pl.raw[p["slot"]].starforce
                        else sw.pl.raw[p["slot"]]) for p in same["pieces"]}
+    for p in same["pieces"]:                                # 살 템은 잠재·에디 없는 매물이 기준
+        if not p["kept"]:
+            raw[p["slot"]] = SWAP["에디"](SWAP["잠재"](raw[p["slot"]], [], snap.level), [], snap.level)
     for x in sorted(r["picks"], key=lambda x: x["kind"] != "잠재"):
         raw.setdefault(x["slot"], sw.pl.raw[x["slot"]])
         raw[x["slot"]] = SWAP[x["kind"]](raw[x["slot"]], x["target"], snap.level)
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()})
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == r["delta_pct"]
+    # 기준(살 템 잠재·에디 없음)은 컨설팅 '지금 그대로'(살 템에 지금 수준이 공짜로 붙음)보다 낮고, '지금 템 수준'도 선택지다
+    assert r["base_delta_pct"] < r["with_current_delta_pct"] and r["bare_buys"] == len(same["buy"])
+    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
     # 레테: 섞으면 같은 예산의 한 단계 목표보다 낫다 — 무기류 에디처럼 효율 좋은 칸이 섞인다
     assert {x["group"] for x in r["picks"]} >= {"무기"} and {x["kind"] for x in r["picks"]} == {"잠재", "에디"}
 
