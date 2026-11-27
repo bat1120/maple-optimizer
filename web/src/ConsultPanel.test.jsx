@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import ConsultPanel from "./ConsultPanel.jsx";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });   // 가진 메소를 브라우저에 기억하니 테스트끼리 섞이지 않게
@@ -374,5 +374,23 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.click(within(o).getByRole("button", { name: "최저가 넣기" }));
     expect(screen.getByLabelText("커맨더 포스 이어링 시세")).toHaveValue("30억");
     expect(within(screen.getByLabelText("커맨더 포스 이어링 관측 시세")).queryByRole("button")).toBeNull();   // 넣은 뒤엔 버튼이 없다
+  });
+
+  it("추천 조합에 HEXA 코어를 넣는다 — 조각 값(기본 700만)을 서버에 보내고, 바꾸면 그 값으로 다시 묻는다", async () => {
+    const withHexa = { ...BEST, hexa: "ok", mix: { ...BEST.mix, hexa_source: "직업 기준값(연무장 상위 기록 중앙값)", picks: [...BEST.mix.picks,
+      { slot: "헥사", kind: "헥사", name: "앱솔루트 레인", group: "헥사", kept: true, label: "1→2레벨", target: [], cost: 2.1e8, cost_text: "2억 1000만", gain_pct: 0.45, fragments: 30, erda: 1 }] } };
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? withHexa : DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    const box = await screen.findByLabelText("추천 조합");
+    expect(String(f.mock.calls.at(-1)[0])).toContain("&fragment_price=7000000");
+    expect(within(box).getByLabelText("메소 배분").textContent).toContain("헥사 2억");
+    fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
+    const plan = screen.getByRole("list", { name: "할 일 순서" }).textContent;
+    expect(plan).toContain("HEXA 코어 1개 — 조각 30개 × 700만 = 2억 1000만, 솔 에르다 1개도 필요해요(거래 불가)");
+    expect(plan).toContain("앱솔루트 레인 1→2레벨");
+    fireEvent.change(screen.getByLabelText("솔 에르다 조각 1개 값(만 메소)"), { target: { value: "900" } });
+    await waitFor(() => expect(String(f.mock.calls.at(-1)[0])).toContain("&fragment_price=9000000"));
   });
 });

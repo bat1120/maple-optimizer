@@ -16,7 +16,7 @@ def _setup():
 
 def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     snap, setting, b = _setup()
-    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False, flames=False)   # 손으로 다시 끼는 검산은 잠재·에디만(심볼·추옵은 아래 따로)
+    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False, flames=False, fragment_price=0)   # 손으로 다시 끼는 검산은 잠재·에디만(심볼·추옵은 아래 따로)
     assert r["picks"] and r["cost"] <= 3000e8 and r["delta_pct"] > r["base_delta_pct"]
     assert len({(x["slot"], x["kind"]) for x in r["picks"]}) == len(r["picks"])            # 칸·종류마다 하나
     # 손으로 다시 낀다: 지금 그대로 세팅 + 고른 줄
@@ -35,7 +35,7 @@ def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == r["delta_pct"]
     # 기준(살 템 잠재·에디 없음)은 컨설팅 '지금 그대로'(살 템에 지금 수준이 공짜로 붙음)보다 낮고, '지금 템 수준'도 선택지다
     assert r["base_delta_pct"] < r["with_current_delta_pct"] and r["bare_buys"] == len(same["buy"])
-    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8, symbols=False, flames=False)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
+    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8, symbols=False, flames=False, fragment_price=0)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
     # 레테: 섞으면 같은 예산의 한 단계 목표보다 낫다 — 무기류 에디처럼 효율 좋은 칸이 섞인다
     assert {x["group"] for x in r["picks"]} >= {"무기"} and {x["kind"] for x in r["picks"]} == {"잠재", "에디"}
 
@@ -126,3 +126,31 @@ def test_flame_of_bought_items_is_not_free_when_it_can_be_costed():
     assert on["flame_assumed"] > 0 and off["flame_assumed"] > on["flame_assumed"]
     zero = mix(snap, setting, b, service.CATALOG, 22, 0, symbols=False)
     assert zero["delta_pct"] == zero["base_delta_pct"] == on["base_delta_pct"]
+
+
+def test_hexa_cores_join_the_mix_with_fragment_price_and_multiply_the_gear_index():
+    """HEXA 코어(2026-11-27): 조각 값(기본 700만)으로 코어마다 다음 1레벨이 선택지에 들어간다 — 비용 = 조각 개수 × 조각 값,
+    실딜은 장비·심볼로 오른 지수에 (1 + 고른 코어 몫의 합)을 곱한 값. 조각 값이 0이면 넣지 않고, 비싸지면 더 고르지 않는다."""
+    from engine.market.consult_mix import FRAGMENT_PRICE
+    from engine.market.hexa_core_paths import core_paths, job_shares
+    snap, setting, b = _setup()
+    assert FRAGMENT_PRICE == 7e6
+    on = mix(snap, setting, b, service.CATALOG, 22, 3000e8)
+    off = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=0)
+    hexa = [x for x in on["picks"] if x["kind"] == "헥사"]
+    assert hexa and not [x for x in off["picks"] if x["kind"] == "헥사"] and off["hexa_source"] is None
+    assert on["delta_pct"] >= off["delta_pct"] and on["cost"] <= 3000e8 and on["hexa_source"]
+    shares = snap.own_shares or job_shares(snap.character_class)["shares"]
+    paths = {p["name"]: p for p in core_paths(snap, shares, 7e6, b.defense, "")}
+    for x in hexa:
+        p = paths[f"{x['name']} {x['label']}"]
+        assert x["slot"] == x["group"] == "헥사" and x["cost"] == p["fragments"] * 7e6 == x["fragments"] * 7e6 and x["erda"] == p["erda"]
+    # 넉넉하면 코어 전부를 고르고, 그 실딜은 헥사 없는 같은 조합의 지수에 (1 + 코어 몫 합)을 곱한 값이다
+    rich = mix(snap, setting, b, service.CATALOG, 22, 1e14)
+    bare = mix(snap, setting, b, service.CATALOG, 22, 1e14, fragment_price=0)
+    got = [x for x in rich["picks"] if x["kind"] == "헥사"]
+    total = sum(paths[f"{x['name']} {x['label']}"]["delta_pct"] for x in got)
+    assert len(got) == len(paths) and [x for x in rich["picks"] if x["kind"] != "헥사"] == bare["picks"]
+    assert abs((1 + rich["delta_pct"] / 100) - (1 + bare["delta_pct"] / 100) * (1 + total / 100)) < 1e-9
+    costly = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=7e8)
+    assert len([x for x in costly["picks"] if x["kind"] == "헥사"]) <= len(hexa)

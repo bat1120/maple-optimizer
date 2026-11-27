@@ -19,6 +19,7 @@ from engine.market.symbol_paths import extra_of
 from engine.market.symbol_paths import step as symbol_step
 from engine.stats import symbols as SYM
 
+FRAGMENT_PRICE = 7e6  # 솔 에르다 조각 1개 기본값(메소) — 사용자 지정 기본값(2026-11-27), 화면에서 바꾼다
 UNIT = 1e8  # 동적 계획법의 메소 단위(1억). 비용은 올림 — 예산을 넘는 조합은 고르지 않는다
 
 
@@ -104,7 +105,8 @@ def _flame_match(sw: _Swapper, catalog, slot: str, it) -> dict | None:
 
 
 def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
-        builds: list[dict] | None = None, sf=None, symbols: bool = True, flames: bool = True) -> dict:
+        builds: list[dict] | None = None, sf=None, symbols: bool = True, flames: bool = True,
+        fragment_price: float = FRAGMENT_PRICE) -> dict:
     """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜.
 
     살 템의 기준은 '잠재·에디 없는 매물'이다(2026-11-26 — 전에는 지금 그 자리 템의 잠재·에디를 공짜로 옮겨 실딜이 부풀었다).
@@ -164,8 +166,25 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
                     {"label": f"{sym['level']}→{target}레벨", "target": [], "cost": float(st["meso"]), "gain_pct": 0.0, "name": sym["name"],
                      "group": "심볼", "kept": True, "stat_gain": st["stat_gain"], "force_gain": st["force_gain"],
                      "remaining_symbols": st["remaining_symbols"], "days": st["days"]})
+    # HEXA 코어(2026-11-27): 직업별 스킬 딜 지분(내 연무장 기록, 없으면 직업 기준값)으로 코어마다 '다음 1레벨'의 실딜 — 경로 비교의
+    # HEXA 코어와 같은 계산(engine/market/hexa_core_paths). 비용 = 조각 개수 × 조각 값(fragment_price, 0이면 넣지 않는다).
+    # 넥슨 API가 다음 1레벨 효과만 줘서 코어당 1레벨까지다. 솔 에르다는 거래가 안 돼 개수만 같이 준다
+    hexa_source = None
+    if fragment_price and snap.hexa_cores:
+        from engine.market.hexa_core_paths import core_paths, job_shares
+        shares, hexa_source = (snap.own_shares, "내 연무장 기록") if snap.own_shares else (
+            (job_shares(snap.character_class) or {}).get("shares") or {}, "직업 기준값(연무장 상위 기록 중앙값)")
+        if not shares:
+            hexa_source = None
+        for p in core_paths(snap, shares, fragment_price, boss.defense, hexa_source or ""):
+            core, label = p["name"].rsplit(" ", 1)
+            options[(core, "헥사")] = [{"label": label, "target": [], "cost": float(p["cost"]), "gain_pct": 0.0, "name": core, "group": "헥사",
+                                       "kept": True, "hexa_pct": p["delta_pct"], "fragments": p["fragments"], "erda": p["erda"]}]
     for (s, kind), opts in options.items():                 # 칸별 몫을 기준 세팅에서 다시 잰다
         for o in opts:
+            if kind == "헥사":                               # 스킬 배율이라 장비와 곱해진다 — 기준 세팅의 지수에 곱한 몫
+                o["gain_pct"] = o["hexa_pct"] * base_index / sw.pl.base
+                continue
             if kind == "심볼":
                 o["gain_pct"] = (sw.pl.ev.index(base_items, extra_of(o["stat_gain"], o["force_gain"])) - base_index) / sw.pl.base * 100
                 continue
@@ -174,12 +193,15 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             trial[s] = _valued(new, sw.pl.mains, sw.pl.per_sec)
             o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
     chosen = pick(options, budget)
-    stat, force = {}, {}
+    stat, force, hexa = {}, {}, 0.0
     for (s, kind) in chosen:                                # 추옵을 맞추는 살 템은 그 템에서 시작한다(그 위에 잠재·에디)
         if kind == "추옵":
             raw[s] = flamed[s]
     for (s, kind), o in sorted(chosen.items(), key=lambda kv: kv[0][1] != "잠재"):   # 잠재 먼저, 그 위에 에디
         if kind == "추옵":
+            continue
+        if kind == "헥사":
+            hexa += o["hexa_pct"]
             continue
         if kind == "심볼":
             for k, v in o["stat_gain"].items():
@@ -190,18 +212,21 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
         raw[s] = SWAP[kind](raw[s], o["target"], snap.level)
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()})
-    delta = (sw.pl.ev.index(worn, extra_of(stat, force) if (stat or force) else None) / sw.pl.base - 1) * 100
+    # 코어마다 올리는 스킬이 달라 코어끼리는 더하고(지분 × 배율 증가), 장비·심볼로 오른 지수에는 곱한다
+    delta = (sw.pl.ev.index(worn, extra_of(stat, force) if (stat or force) else None) / sw.pl.base * (1 + hexa / 100) - 1) * 100
     base_delta = (base_index / sw.pl.base - 1) * 100
-    picks = [{"slot": "심볼" if kind == "심볼" else s, "kind": kind,
+    picks = [{"slot": "심볼" if kind == "심볼" else "헥사" if kind == "헥사" else s, "kind": kind,
               **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")},
               **({"remaining_symbols": o["remaining_symbols"], "days": o["days"]} if kind == "심볼" else {}),
-              **({"tries": o["tries"]} if kind == "추옵" else {})}
+              **({"tries": o["tries"]} if kind == "추옵" else {}),
+              **({"fragments": o["fragments"], "erda": o["erda"]} if kind == "헥사" else {})}
              for (s, kind), o in chosen.items()]
     picks.sort(key=lambda x: -x["gain_pct"] / x["cost"])
     return {"starforce": star, "budget": budget, "base_delta_pct": base_delta, "delta_pct": delta,
             # 참고: 살 템에 지금 템 수준 잠재·에디가 공짜로 붙어 있다고 본 컨설팅 '지금 그대로' 값
             "with_current_delta_pct": same["delta_pct"], "bare_buys": len(current), "flame_assumed": assumed,
             "approx_pct": base_delta + sum(x["gain_pct"] for x in picks), "cost": sum(x["cost"] for x in picks),
+            "fragment_price": fragment_price, "hexa_source": hexa_source,
             "picks": picks, "candidates": sum(len(v) for v in options.values())}
 
 
@@ -209,7 +234,7 @@ __all__ = ["best_star", "mix", "pick"]
 
 
 def best_star(snap, setting, boss, catalog, total: float, prices: float = 0.0, stars: tuple[int, ...] | None = None,
-              cooldown_main_pct: float | None = None, sf=None, builds_for=None) -> dict:
+              cooldown_main_pct: float | None = None, sf=None, builds_for=None, fragment_price: float = FRAGMENT_PRICE) -> dict:
     """가진 메소 전체(total, 강화 + 큐브)로 성까지 같이 고른다: 성마다 큐브 예산 = total − 그 성 강화 평균 − 넣은 살 템 시세(prices),
     그 예산의 추천 조합을 정확히 잰 실딜이 가장 큰 성. 강화도 못 하는 성은 short(모자란 메소)만 적는다.
     살 템 시세는 성마다 따로 받지 않는다(같은 템의 성만 다르다) — 넣은 값을 모든 성에서 똑같이 뺀다."""
@@ -223,7 +248,7 @@ def best_star(snap, setting, boss, catalog, total: float, prices: float = 0.0, s
         raise_cost = builds[0]["raise_cost"]
         left = total - raise_cost - prices
         if left >= 0:
-            r = mix(snap, setting, boss, catalog, star, float(int(left // UNIT) * UNIT), cooldown_main_pct, builds=builds)
+            r = mix(snap, setting, boss, catalog, star, float(int(left // UNIT) * UNIT), cooldown_main_pct, builds=builds, fragment_price=fragment_price)
             if best is None or r["delta_pct"] > best["delta_pct"]:
                 best = r
         rows.append({"starforce": star, "raise_cost": raise_cost, "cube_budget": max(0.0, left), "short": max(0.0, -left),

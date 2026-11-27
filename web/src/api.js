@@ -167,8 +167,10 @@ export function getConsultMix(name, bossDefense = 300, star = 22, budget = 0) {
 }
 
 // 성까지 같이(2026-11-26): 가진 메소 전체(total)에서 성마다 강화 평균과 넣은 살 템 시세(prices)를 빼고 추천 조합을 재서 가장 많이 오르는 성
-export function getConsultBest(name, bossDefense = 300, total = 0, prices = 0, sf = "") {
-  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&total=${Math.max(0, Math.round(total))}&prices=${Math.max(0, Math.round(prices))}${sf ? `&sf=${sf}` : ""}`);
+// fragmentMan(2026-11-27): 솔 에르다 조각 1개 값(만 메소, 기본 700) — HEXA 코어 다음 1레벨을 같이 고른다. 0이면 헥사 제외
+export function getConsultBest(name, bossDefense = 300, total = 0, prices = 0, sf = "", fragmentMan = 700) {
+  const frag = Math.max(0, Math.round((Number(fragmentMan) || 0) * 1e4));
+  return request(`${base(name)}/consult/mix?${bq(bossDefense)}&total=${Math.max(0, Math.round(total))}&prices=${Math.max(0, Math.round(prices))}${sf ? `&sf=${sf}` : ""}&fragment_price=${frag}`);
 }
 
 // 업그레이드 계획(2026-11-23): budget(메소 정수)이 있으면 그 안에서, 없으면 효율 순서 앞의 steps개

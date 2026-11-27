@@ -32,6 +32,10 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
   // 처음엔 결론(성별 실딜)만 보이고 살 템·강화 목록은 눌러서 편다 — 바로 아래 '내 업그레이드 계획' 첫 줄이 첫 화면에서 밀려나지 않게
   const [open, setOpen] = useState(false);
   // 가진 메소는 이 브라우저에 캐릭터별로 기억한다(다음에 와도 다시 안 쳐도 되게 — 서버로 보내지 않는다, 2026-11-27)
+  // 솔 에르다 조각 1개 값(만 메소, 기본 700 — 2026-11-27). 캐릭터와 상관없는 시세라 한 번 넣으면 기억한다. 0이면 헥사를 넣지 않는다
+  const [frag, setFragRaw] = useState(() => { try { return localStorage.getItem("consult-fragment") ?? "700"; } catch { return "700"; } });
+  const setFrag = (v) => { setFragRaw(v); try { localStorage.setItem("consult-fragment", v); } catch { /* 저장 못 해도 화면은 된다 */ } };
+  const fragMan = Number.isFinite(Number(frag)) && Number(frag) >= 0 ? Number(frag) : 700;
   const haveKey = `consult-have:${name}`;
   const [have, setHaveRaw] = useState(() => { try { return localStorage.getItem(haveKey) || ""; } catch { return ""; } });
   const setHave = (v) => { setHaveRaw(v); try { if (v) localStorage.setItem(haveKey, v); else localStorage.removeItem(haveKey); } catch { /* 저장 못 해도 화면은 된다 */ } }; // 가진 메소(글자)
@@ -158,12 +162,12 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
     if (!build || !budget) { setBest(null); return undefined; }
     const mine = ++bestSeq.current;
     const t = setTimeout(() => {
-      getConsultBest(name, defense, budget, buyTotal, sf)
+      getConsultBest(name, defense, budget, buyTotal, sf, fragMan)
         .then((d) => { if (mine === bestSeq.current) setBest(d); })
         .catch(() => { if (mine === bestSeq.current) setBest(null); });
     }, 400);                                                   // 메소를 치는 동안 매 글자마다 부르지 않는다
     return () => clearTimeout(t);
-  }, [name, defense, !!build, budget, buyTotal, sf]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, defense, !!build, budget, buyTotal, sf, fragMan]); // eslint-disable-line react-hooks/exhaustive-deps
   const mixed = best?.mix || null;
   useEffect(() => {
     onBest?.(mixed && best ? { budget: best.total, star: best.best, delta_pct: mixed.delta_pct } : null);
@@ -178,8 +182,10 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
   const cubeSlots = [];
   const symPicks = (best?.mix?.picks || []).filter((x) => x.kind === "심볼");   // 심볼은 큐브와 따로 적는다(2026-11-27)
   const symCost = symPicks.reduce((a, x) => a + x.cost, 0);
-  const cubeCost = (best?.mix?.cost || 0) - symCost;
-  for (const x of (best?.mix?.picks || []).filter((p) => p.kind !== "심볼")) {
+  const hexPicks = (best?.mix?.picks || []).filter((x) => x.kind === "헥사");  // HEXA 코어도 따로(2026-11-27)
+  const hexCost = hexPicks.reduce((a, x) => a + x.cost, 0);
+  const cubeCost = (best?.mix?.cost || 0) - symCost - hexCost;
+  for (const x of (best?.mix?.picks || []).filter((p) => p.kind !== "심볼" && p.kind !== "헥사")) {
     const row = cubeSlots.find(([s]) => s === x.slot);
     if (row) row[1].push(x); else cubeSlots.push([x.slot, [x]]);
   }
@@ -190,6 +196,7 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
     { key: "buy", label: "살 템", cost: buyTotal },
     { key: "cube", label: (mixed.picks || []).some((x) => x.kind === "추옵") ? "큐브·추옵" : "큐브", cost: cubeCost },
     { key: "symbol", label: "심볼", cost: symCost },
+    { key: "hexa", label: "헥사", cost: hexCost },
     { key: "left", label: "남는 메소", cost: Math.max(0, budget - (bestRow.raise_cost || 0) - buyTotal - (mixed.cost || 0)) },
   ].filter((x) => x.cost >= 1e8) : [];
   const planBuild = best?.best != null ? all.find((b) => (b.potential || "same") === "same" && b.starforce === best.best) : null;
@@ -290,7 +297,7 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
             <div className="consult-fit consult-mix" aria-label="추천 조합">
               <p>
                 <span className="muted small">추천 조합 · </span>
-                {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""} <strong>{mixed.cost_text || "0"}</strong>,
+                {formatMeso(budget)}이면 <strong>{best.best}성</strong>이 가장 많이 올라요 — {bestRow.raise_cost ? `강화 ${bestRow.raise_cost_text}` : "강화 없이"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""}{hexCost ? "·헥사" : ""} <strong>{mixed.cost_text || "0"}</strong>,
                 보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
                 {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
               </p>
@@ -313,7 +320,16 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                   {mixOpen ? "접기" : `칸별 목표 ${mixed.picks.length}개 보기`}</button>}
                 {planBuild && <button type="button" className="ghost small" aria-expanded={planOpen} onClick={() => setPlanOpen(!planOpen)}>
                   {planOpen ? "할 일 접기" : "할 일 순서로 보기"}</button>}
+                <label className="consult-frag muted small">솔 에르다 조각 1개
+                  <input aria-label="솔 에르다 조각 1개 값(만 메소)" inputMode="numeric" autoComplete="off" value={frag}
+                         onChange={(e) => setFrag(e.target.value.replace(/[^0-9.]/g, ""))} />만 메소
+                </label>
               </p>
+              {best.hexa && best.hexa !== "ok" && (
+                <p className="muted small">{best.hexa === "off" ? "조각 값이 0이라 HEXA 코어는 넣지 않았어요."
+                  : best.hexa === "no_cores" ? "HEXA 코어 정보가 없어 헥사는 넣지 않았어요."
+                    : "이 직업은 스킬 딜 지분 자료가 아직 없어 HEXA 코어를 넣지 못했어요(연무장 기록이 있는 캐릭터는 그 기록으로 계산해요)."}</p>
+              )}
               {starsOpen && (
                 <table className="consult-options" aria-label="성별 비교">
                   <thead><tr><th>성</th><th className="num">강화 평균 · 큐브</th><th className="num">보스 실딜</th></tr></thead>
@@ -365,8 +381,12 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                     <li><strong>심볼 {symPicks.length}개</strong> <span className="muted small">— 강화 메소 {formatMeso(symCost)}, 지금 모은 심볼로 할 수 있는 만큼만</span>
                       <span className="consult-plan-items">{lines(symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`))}</span></li>
                   )}
+                  {hexPicks.length > 0 && (
+                    <li><strong>HEXA 코어 {hexPicks.length}개</strong> <span className="muted small">— 조각 {hexPicks.reduce((a, x) => a + x.fragments, 0).toLocaleString()}개 × {fragMan.toLocaleString()}만 = {formatMeso(hexCost)}, 솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0)}개도 필요해요(거래 불가). 코어마다 다음 1레벨만 · {mixed.hexa_source}</span>
+                      <span className="consult-plan-items">{lines(hexPicks.map((x) => `${x.name} ${x.label}`))}</span></li>
+                  )}
                   <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
-                    <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""} {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
+                    <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""}{hexCost ? "·헥사" : ""} {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
                 </ol>
               )}
               {mixOpen && (

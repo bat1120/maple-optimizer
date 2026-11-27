@@ -568,9 +568,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
                     total: float | None = Query(None, ge=0, le=1e16), prices: float = Query(0, ge=0, le=1e16),
                     boss_defense: float = 300.0, cooldown_main_pct: float | None = None, date: str | None = None,
                     boss: str | None = None, arcane_force: int | None = None, authentic_force: int | None = None,
-                    sf: str | None = None):
+                    sf: str | None = None, fragment_price: float = Query(7e6, ge=0, le=1e10)):
         """섞은 목표: 큐브에 쓸 메소(budget) 안에서 칸마다 잠재·에디 목표를 따로 고른 조합과 그 정확한 보스 실딜.
-        total(가진 메소 전체)을 주면 성까지 같이 고른다 — 성마다 강화 평균과 prices(넣은 살 템 시세)를 빼고 잰다."""
+        total(가진 메소 전체)을 주면 성까지 같이 고른다 — 성마다 강화 평균과 prices(넣은 살 템 시세)를 빼고 잰다.
+        fragment_price: 솔 에르다 조각 1개 값(메소, 기본 700만 — total일 때 HEXA 코어 다음 1레벨을 같이 고른다. 0이면 넣지 않는다)."""
         if (budget is None) == (total is None):
             raise ApiError(422, "BAD_REQUEST", "budget(큐브에 쓸 메소)과 total(가진 메소 전체) 중 하나만 주세요.")
         events = sf_events(sf)
@@ -594,9 +595,10 @@ def create_app(fetcher: Callable[[str, dt.date | None], dict], db_path: str, *, 
 
             def best():
                 t0 = time.perf_counter()
-                r = service.consult_best(snap, b, total, prices, cooldown_main_pct, events, builds_for)
+                r = service.consult_best(snap, b, total, prices, cooldown_main_pct, events, builds_for, fragment_price)
                 return {**r, "timing": {**spent, "total_ms": (time.perf_counter() - t0) * 1000}}
-            return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events),
+            return memo("consult_best", name, date, (total, prices, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct, events,
+                                                      fragment_price),
                         best)
         budget = float(int(budget // 1e8) * 1e8)              # 1억 단위(같은 계산을 다시 쓰게)
         return memo("consult_mix", name, date, (star, budget, boss_defense, boss, arcane_force, authentic_force, cooldown_main_pct),

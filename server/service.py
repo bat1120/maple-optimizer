@@ -746,7 +746,7 @@ def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: floa
     from engine.market.consult_mix import mix
     b = boss(defense)
     setting = rank_settings(snap, b, CATALOG)[0][0]
-    r = mix(snap, setting, b, CATALOG, star, budget, cooldown_main_pct)
+    r = mix(snap, setting, b, CATALOG, star, budget, cooldown_main_pct, fragment_price=0.0)
     for x in r["picks"]:
         x["cost_text"] = meso_text(x["cost"])
     r["cost_text"] = meso_text(r["cost"]) if r["cost"] else None
@@ -761,7 +761,7 @@ def consult_mix(snap: CharacterSnapshot, defense: float, star: int, budget: floa
 
 @with_basis
 def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: float = 0.0,
-                 cooldown_main_pct: float | None = None, events=None, builds_for=None) -> dict:
+                 cooldown_main_pct: float | None = None, events=None, builds_for=None, fragment_price: float = 7e6) -> dict:
     """가진 메소 전체(강화 + 큐브)로 성까지 같이 고른 추천 조합: 성마다 강화 평균과 넣은 살 템 시세를 빼고 남는 메소로 추천 조합을 잰다."""
     from engine.market.consult_mix import best_star
     b = boss(defense)
@@ -769,7 +769,7 @@ def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: 
     from engine.market.events import Events
     events = events or Events()
     r = best_star(snap, setting, b, CATALOG, total, prices, cooldown_main_pct=cooldown_main_pct, sf=events.starforce(),
-                  builds_for=(lambda star: builds_for(star, setting, b)) if builds_for else None)
+                  builds_for=(lambda star: builds_for(star, setting, b)) if builds_for else None, fragment_price=fragment_price)
     for x in r["stars"]:
         x["raise_cost_text"] = meso_text(x["raise_cost"]) if x["raise_cost"] else "0"
         x["cube_budget_text"] = meso_text(x["cube_budget"]) if x["cube_budget"] else "0"
@@ -779,9 +779,15 @@ def consult_best(snap: CharacterSnapshot, defense: float, total: float, prices: 
         for x in r["mix"]["picks"]:
             x["cost_text"] = meso_text(x["cost"])
         r["mix"]["cost_text"] = meso_text(r["mix"]["cost"]) if r["mix"]["cost"] else None
+    from engine.market.hexa_core_paths import job_shares
+    hexa = ("off" if not fragment_price else "no_cores" if not snap.hexa_cores else
+            "no_shares" if not snap.own_shares and not (job_shares(snap.character_class) or {}).get("shares") else "ok")
     return {**r, "evaluation_setting": asdict(setting), "boss": asdict(b), "events_label": events.label(),
+            "fragment_price": fragment_price, "hexa": hexa,
             "note": ("가진 메소에서 성마다 강화 평균(고른 스타포스 이벤트 반영)과 넣은 살 템 시세를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 고른 "
-                     "추천 조합을 성마다 정확히 재서 가장 많이 오르는 성을 골랐어요. 살 템 시세는 성마다 따로 받지 않아 넣은 값을 모든 성에서 똑같이 뺐어요.")}
+                     "추천 조합을 성마다 정확히 재서 가장 많이 오르는 성을 골랐어요. 살 템 시세는 성마다 따로 받지 않아 넣은 값을 모든 성에서 똑같이 뺐어요. "
+                     "HEXA 코어는 코어마다 다음 1레벨만 넣었어요(넥슨 API가 다음 레벨 효과만 줘요) — 스킬 딜 지분(내 연무장 기록, 없으면 직업 기준값) × "
+                     "스킬 배율 증가, 비용은 조각 개수 × 넣은 조각 값이에요. 솔 에르다는 거래가 안 돼 개수만 적어요.")}
 
 
 @with_basis
