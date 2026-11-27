@@ -132,7 +132,7 @@ def test_hexa_cores_join_the_mix_with_fragment_price_and_multiply_the_gear_index
     """HEXA 코어(2026-11-27): 조각 값(기본 700만)으로 코어마다 다음 1레벨이 선택지에 들어간다 — 비용 = 조각 개수 × 조각 값,
     실딜은 장비·심볼로 오른 지수에 (1 + 고른 코어 몫의 합)을 곱한 값. 조각 값이 0이면 넣지 않고, 비싸지면 더 고르지 않는다."""
     from engine.market.consult_mix import FRAGMENT_PRICE
-    from engine.market.hexa_core_paths import core_paths, job_shares
+    from engine.market.hexa_core_paths import core_paths, job_shares, shares_at
     snap, setting, b = _setup()
     assert FRAGMENT_PRICE == 7e6
     on = mix(snap, setting, b, service.CATALOG, 22, 3000e8, hexa_stat=False)
@@ -140,17 +140,23 @@ def test_hexa_cores_join_the_mix_with_fragment_price_and_multiply_the_gear_index
     hexa = [x for x in on["picks"] if x["kind"] == "헥사"]
     assert hexa and not [x for x in off["picks"] if x["kind"] == "헥사"] and off["hexa_source"] is None
     assert on["delta_pct"] >= off["delta_pct"] and on["cost"] <= 3000e8 and on["hexa_source"]
-    shares = snap.own_shares or job_shares(snap.character_class)["shares"]
-    paths = {p["name"]: p for p in core_paths(snap, shares, 7e6, b.defense, "")}
+    # 코어마다 30레벨까지가 선택지다(직업 기준값 지분은 내 코어 레벨에 맞춘 것)
+    shares = snap.own_shares or shares_at(snap, job_shares(snap.character_class)["shares"], b.defense)
+    paths = {p["name"]: p for p in core_paths(snap, shares, 7e6, b.defense, "", all_levels=True)}
+    by_core = {}
+    for name, p in paths.items():
+        by_core.setdefault(name.rsplit(" ", 1)[0], []).append(p["delta_pct"])
+    assert len({x["name"] for x in hexa}) == len(hexa)                                 # 코어마다 한 목표
     for x in hexa:
         p = paths[f"{x['name']} {x['label']}"]
         assert x["slot"] == x["group"] == "헥사" and x["cost"] == p["fragments"] * 7e6 == x["fragments"] * 7e6 and x["erda"] == p["erda"]
-    # 넉넉하면 코어 전부를 고르고, 그 실딜은 헥사 없는 같은 조합의 지수에 (1 + 코어 몫 합)을 곱한 값이다
+    # 넉넉하면 코어 전부를 몫이 가장 큰 레벨까지 고르고, 그 실딜은 헥사 없는 같은 조합의 지수에 (1 + 코어 몫 합)을 곱한 값이다
     rich = mix(snap, setting, b, service.CATALOG, 22, 1e14, hexa_stat=False)
     bare = mix(snap, setting, b, service.CATALOG, 22, 1e14, fragment_price=0)
     got = [x for x in rich["picks"] if x["kind"] == "헥사"]
     total = sum(paths[f"{x['name']} {x['label']}"]["delta_pct"] for x in got)
-    assert len(got) == len(paths) and [x for x in rich["picks"] if x["kind"] != "헥사"] == bare["picks"]
+    assert len(got) == len(by_core) and [x for x in rich["picks"] if x["kind"] != "헥사"] == bare["picks"]
+    assert all(paths[f"{x['name']} {x['label']}"]["delta_pct"] == max(by_core[x["name"]]) for x in got)
     assert abs((1 + rich["delta_pct"] / 100) - (1 + bare["delta_pct"] / 100) * (1 + total / 100)) < 1e-9
     costly = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=7e8, hexa_stat=False)
     assert len([x for x in costly["picks"] if x["kind"] == "헥사"]) <= len(hexa)

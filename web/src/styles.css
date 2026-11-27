@@ -1108,6 +1108,7 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-spend .seg-buy { background: var(--accent); }
 .consult-spend .seg-cube { background: var(--grade-epic); }
 .consult-spend .seg-symbol { background: var(--grade-rare); }
+.consult-erda-note { margin: 6px 0 0; color: var(--text-2); }
 .consult-have-bad { color: var(--error); }
 .consult-spend .seg-hexa { background: var(--grade-legendary); }
 .consult-mix-buttons { align-items: center; }

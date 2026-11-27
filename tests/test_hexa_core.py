@@ -124,3 +124,46 @@ def test_enhance_core_category_line_raises_every_matching_skill():
     assert p["delta_pct"] == pytest.approx(7.0 * (117 / 116 - 1))
     assert {s["skill"] for s in p["skills"]} == {"오버로드 : 템플러 온슬로트", "인보크/오버로드 : 아즈라스"}
     assert p["fragments"] == COST["강화"][5][1]
+
+
+def test_levels_up_to_30_follow_the_enhance_table_and_a_constant_step_matching_the_wiki_master_values():
+    """2026-11-27: 추천 조합이 30레벨까지 보려면 레벨별 값이 있어야 한다. 강화 코어는 레벨표(나무위키 HEXA 매트릭스 각주:
+    1~9레벨 11~19%, 10~19레벨 25~34%, 20~29레벨 40~49%, 30레벨 60%), 그 밖은 API의 지금·다음 레벨 값으로 잰 일정한 증가량 —
+    이렇게 이은 30레벨 값이 나무위키 레테(메이플스토리)/스킬의 마스터 값(2026-11-27 열람)과 같아야 한다."""
+    import re
+
+    from engine.market.hexa_core_paths import ENHANCE_FD, at_level
+    assert [ENHANCE_FD[i] for i in (1, 9, 10, 19, 20, 29, 30)] == [11, 19, 25, 34, 40, 49, 60]
+    snap = snapshot(bundle("레테"))
+    wiki30 = {"임프린트 VI": ["350", "237"], "이딕트 : 펠 스톰 VI": ["715"], "인보크 : 바르가르 VI": ["346"], "이딕트 : 램페이지 VI": ["833"],
+              "인보크 : 템플러 VI": ["175"], "이딕트 : 템플러 아츠 VI": ["838"], "팩트 매니페스트": ["221"], "오버로드 : 이터널 게이즈": ["907", "951"]}
+    for name, want in wiki30.items():
+        sk = snap.hexa_skills[name]
+        assert re.findall(r"(\d+(?:\.\d+)?)%의 데미지", at_level(sk["effect"], sk["next"], sk["level"], 30)) == want, name
+    sk = snap.hexa_skills["오버로드 : 템플러 온슬로트 강화"]                       # 강화 코어: 1레벨 11% → 30레벨 60%
+    assert at_level(sk["effect"], sk["next"], 1, 30, enhance=True) == "오버로드 : 템플러 온슬로트의 최종 데미지 60% 증가"
+    assert at_level(sk["effect"], sk["next"], 1, 10, enhance=True) == "오버로드 : 템플러 온슬로트의 최종 데미지 25% 증가"
+    assert at_level(sk["effect"], sk["next"], 1, 2, enhance=True) == sk["next"]
+
+
+def test_all_levels_paths_sum_the_costs_and_job_shares_are_scaled_to_my_core_levels():
+    from engine.market.hexa_core_paths import shares_at
+    snap = snapshot(bundle("레테"))
+    ref = job_shares("레테")["shares"]
+    one = {p["name"]: p for p in core_paths(snap, ref, 7_000_000, 300.0, "x")}
+    every = {p["name"]: p for p in core_paths(snap, ref, 7_000_000, 300.0, "x", all_levels=True)}
+    assert all(every[n] == p for n, p in one.items())                          # 다음 1레벨은 전과 같은 값
+    core = next(c for c in snap.hexa_cores if c["name"] == "앱솔루트 레인")
+    p = every["앱솔루트 레인 1→30레벨"]
+    rows = COST["스킬"][core["level"]:30]
+    assert p["fragments"] == sum(f for _, f in rows) and p["erda"] == sum(e for e, _ in rows) and p["cost"] == p["fragments"] * 7_000_000
+    gains = [every[f"앱솔루트 레인 1→{t}레벨"]["delta_pct"] for t in range(2, 31)]
+    assert all(a < b for a, b in zip(gains, gains[1:]))                         # 레벨이 높을수록 크다
+    # 랭커(30레벨로 본다) 지분을 내 레벨로: 1레벨인 어센트 스킬의 지분은 줄고, 합은 그대로 100을 넘지 않는다
+    mine = shares_at(snap, ref, 300.0)
+    assert mine["앱솔루트 레인"] < ref["앱솔루트 레인"] and mine["오버로드 : 이터널 게이즈"] < ref["오버로드 : 이터널 게이즈"]
+    assert set(mine) == set(ref) and sum(mine.values()) <= max(100.0, sum(ref.values())) + 1e-9
+    maxed = snapshot(bundle("레테"))
+    for c in maxed.hexa_cores:
+        c["level"] = 30
+    assert shares_at(maxed, ref, 300.0) == pytest.approx(ref)                  # 코어가 전부 30레벨이면 그대로

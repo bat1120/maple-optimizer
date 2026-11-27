@@ -52,14 +52,11 @@ def _options(builds: list[dict]) -> dict[tuple[str, str], list[dict]]:
     return out
 
 
-def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tuple[str, str], dict]:
-    """칸마다 한 단계(또는 그대로)를 골라 몫의 합이 가장 큰 조합 — 비용 합 ≤ budget. 묶음 배낭(1억 단위 올림)."""
-    cap = int(budget // UNIT)
-    if cap <= 0 or not options:
-        return {}
+def _table(options: dict, cap: int):
+    """묶음 배낭 표: best[b] = 1억 단위 예산 b 안에서 몫 합의 최댓값, choice = 단계마다 예산별로 고른 선택지 번호(-1 = 그대로)."""
     keys = list(options)
     best = np.zeros(cap + 1)
-    choice = []                                             # 단계마다 예산별로 고른 선택지 번호(-1 = 그대로)
+    choice = []
     for k in keys:
         nxt, pick_ = best.copy(), np.full(cap + 1, -1, dtype=np.int16)
         for i, o in enumerate(options[k]):
@@ -72,13 +69,42 @@ def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tupl
             nxt[better], pick_[better] = cand[better], i
         best = nxt
         choice.append(pick_)
-    out, b = {}, cap
+    return best, keys, choice
+
+
+def _trace(options: dict, keys: list, choice: list, b: int) -> dict:
+    out = {}
     for k, pick_ in zip(reversed(keys), reversed(choice)):    # 거꾸로 따라가며 고른 것을 꺼낸다
         i = int(pick_[b])
         if i >= 0:
             out[k] = options[k][i]
             b -= int(np.ceil(options[k][i]["cost"] / UNIT))
     return out
+
+
+def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tuple[str, str], dict]:
+    """칸마다 한 단계(또는 그대로)를 골라 몫의 합이 가장 큰 조합 — 비용 합 ≤ budget. 묶음 배낭(1억 단위 올림)."""
+    cap = int(budget // UNIT)
+    if cap <= 0 or not options:
+        return {}
+    best, keys, choice = _table(options, cap)
+    return _trace(options, keys, choice, cap)
+
+
+def pick_with_hexa(options: dict, budget: float, base_ratio: float) -> dict:
+    """HEXA 코어는 스킬 배율이라 장비로 오른 값에 곱해진다 — 몫을 그냥 더해 고르면 둘이 같이 클 때(코어를 여러 레벨 올릴 때) 곱해지는 몫을
+    놓친다(2026-11-27: 예산이 늘었는데 실딜이 줄었다). 장비 쪽과 헥사 쪽 배낭을 따로 풀고, 예산을 둘로 나누는 모든 경우에서
+    (기준 세팅 비율 + 장비 몫) × (1 + 헥사 몫)이 가장 큰 나눔을 고른다. base_ratio: 기준 세팅 지수 ÷ 지금 지수."""
+    cap = int(budget // UNIT)
+    hexa = {k: v for k, v in options.items() if k[1] == "헥사"}
+    if cap <= 0 or not hexa:
+        return pick(options, budget)
+    gear = {k: v for k, v in options.items() if k[1] != "헥사"}
+    g, gk, gc = _table(gear, cap)
+    h, hk, hc = _table(hexa, cap)                             # 헥사 몫은 gain_pct = hexa_pct × base_ratio로 들어 있다
+    score = (base_ratio * 100 + g) * (100 + h[::-1] / base_ratio)
+    b = int(np.argmax(score))
+    return {**_trace(gear, gk, gc, b), **_trace(hexa, hk, hc, cap - b)}
 
 
 def _flame_match(sw: _Swapper, catalog, slot: str, it) -> dict | None:
@@ -166,20 +192,25 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
                     {"label": f"{sym['level']}→{target}레벨", "target": [], "cost": float(st["meso"]), "gain_pct": 0.0, "name": sym["name"],
                      "group": "심볼", "kept": True, "stat_gain": st["stat_gain"], "force_gain": st["force_gain"],
                      "remaining_symbols": st["remaining_symbols"], "days": st["days"]})
-    # HEXA 코어(2026-11-27): 직업별 스킬 딜 지분(내 연무장 기록, 없으면 직업 기준값)으로 코어마다 '다음 1레벨'의 실딜 — 경로 비교의
-    # HEXA 코어와 같은 계산(engine/market/hexa_core_paths). 비용 = 조각 개수 × 조각 값(fragment_price, 0이면 넣지 않는다).
-    # 넥슨 API가 다음 1레벨 효과만 줘서 코어당 1레벨까지다. 솔 에르다는 거래가 안 돼 개수만 같이 준다
+    # HEXA 코어(2026-11-27): 직업별 스킬 딜 지분(내 연무장 기록, 없으면 직업 기준값)으로 코어마다 '지금 → n레벨'(30레벨까지)이 선택지 —
+    # 경로 비교의 HEXA 코어와 같은 계산(engine/market/hexa_core_paths). 비용 = 그 사이 레벨의 조각 합 × 조각 값(fragment_price, 0이면 넣지 않는다).
+    # 레벨별 값: 강화 코어는 레벨표, 그 밖은 넥슨 API의 지금·다음 레벨 값으로 잰 일정한 증가량(나무위키의 스킬 공식과 같다).
+    # 직업 기준값은 상위 랭커 기록이라 그대로 쓰면 내 낮은 코어의 지분이 부풀어, 랭커 코어를 30레벨로 보고 내 레벨에 맞춘다(shares_at).
+    # 솔 에르다는 거래가 안 돼 개수만 같이 준다
     hexa_source = None
     if fragment_price and snap.hexa_cores:
-        from engine.market.hexa_core_paths import core_paths, job_shares
-        shares, hexa_source = (snap.own_shares, "내 연무장 기록") if snap.own_shares else (
-            (job_shares(snap.character_class) or {}).get("shares") or {}, "직업 기준값(연무장 상위 기록 중앙값)")
-        if not shares:
-            hexa_source = None
-        for p in core_paths(snap, shares, fragment_price, boss.defense, hexa_source or ""):
+        from engine.market.hexa_core_paths import core_paths, job_shares, shares_at
+        if snap.own_shares:
+            shares, hexa_source = snap.own_shares, "내 연무장 기록"
+        else:
+            shares = (job_shares(snap.character_class) or {}).get("shares") or {}
+            hexa_source = "직업 기준값(연무장 상위 기록 중앙값, 랭커 코어를 30레벨로 보고 내 레벨에 맞춤)" if shares else None
+            shares = shares_at(snap, shares, boss.defense) if shares else shares
+        for p in core_paths(snap, shares, fragment_price, boss.defense, hexa_source or "", all_levels=True):
             core, label = p["name"].rsplit(" ", 1)
-            options[(core, "헥사")] = [{"label": label, "target": [], "cost": float(p["cost"]), "gain_pct": 0.0, "name": core, "group": "헥사",
-                                       "kept": True, "hexa_pct": p["delta_pct"], "fragments": p["fragments"], "erda": p["erda"]}]
+            options.setdefault((core, "헥사"), []).append(
+                {"label": label, "target": [], "cost": float(p["cost"]), "gain_pct": 0.0, "name": core, "group": "헥사",
+                 "kept": True, "hexa_pct": p["delta_pct"], "fragments": p["fragments"], "erda": p["erda"]})
     # HEXA 스탯(2026-11-27): 코어마다 '강화 계속'·'초기화 → 메인 L레벨 이상' 중 하나 — 경로 비교의 HEXA 스탯과 같은 선택지·비용
     # (engine/market/hexa_paths: 조각 기대값 × 조각 값 + 초기화 메소). 확률이라 비용·실딜 모두 평균이다
     if fragment_price and hexa_stat and snap.hexa_stat:
@@ -204,7 +235,7 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             new = flamed[s] if kind == "추옵" else SWAP[kind](raw[s], o["target"], snap.level)
             trial[s] = _valued(new, sw.pl.mains, sw.pl.per_sec)
             o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
-    chosen = pick(options, budget)
+    chosen = pick_with_hexa(options, budget, base_index / sw.pl.base)
     stat, force, hexa, hexa_stats = {}, {}, 0.0, []
     for (s, kind) in chosen:                                # 추옵을 맞추는 살 템은 그 템에서 시작한다(그 위에 잠재·에디)
         if kind == "추옵":

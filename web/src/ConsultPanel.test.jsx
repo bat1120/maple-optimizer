@@ -386,9 +386,10 @@ describe("목표 세팅 컨설팅", () => {
     const box = await screen.findByLabelText("추천 조합");
     expect(String(f.mock.calls.at(-1)[0])).toContain("&fragment_price=7000000");
     expect(within(box).getByLabelText("메소 배분").textContent).toContain("헥사 2억");
+    expect(box.textContent).toContain("이 값은 솔 에르다 1개가 있을 때예요");
     fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
     const plan = screen.getByRole("list", { name: "할 일 순서" }).textContent;
-    expect(plan).toContain("HEXA 코어 1개 — 조각 30개 × 700만 = 2억 1000만, 솔 에르다 1개도 필요해요(거래 불가)");
+    expect(plan).toContain("HEXA 코어 1개 — 조각 30개 × 700만 = 2억 1000만, 솔 에르다 1개도 필요해요(거래 불가 — 모자라면 그만큼 못 올려요)");
     expect(plan).toContain("앱솔루트 레인 1→2레벨");
     fireEvent.change(screen.getByLabelText("솔 에르다 조각 1개 값(만 메소)"), { target: { value: "900" } });
     await waitFor(() => expect(String(f.mock.calls.at(-1)[0])).toContain("&fragment_price=9000000"));

@@ -12,14 +12,18 @@
   · X가 'Y 스킬'이면 이름 앞부분(' : ' 앞, '/'로 나눈 것)에 Y가 든 스킬 전부(체인 커맨드 강화의 '오버로드 스킬' — 6차 오버로드 포함 여부 미확인)
   · X가 지분 목록에 없으면 그 코어 스킬의 공격으로 본다(레테 '맹약 완성'은 체인 커맨드의 공격 — 나무위키 레테(메이플스토리)/스킬)
   · 최종 데미지가 아닌 줄(예: '맹약 실체화 중 데미지 증가량')은 버프 유지율을 몰라 계산하지 않고 unvalued로 남긴다
-- API는 다음 1레벨 효과만 주므로 경로도 '다음 1레벨' 단위(헥사 코어 순서 도구와 같은 방식)
+- API는 다음 1레벨 효과만 주므로 경로 비교는 '다음 1레벨' 단위(헥사 코어 순서 도구와 같은 방식)
+- (2026-11-27) 추천 조합은 30레벨까지 본다(all_levels): at_level이 레벨별 효과 문장을 만든다 — 강화 코어는 레벨표,
+  그 밖은 레벨당 일정한 증가량. 직업 기준값 지분은 shares_at으로 내 코어 레벨에 맞춘다
 """
 import json
 import pathlib
 import re
 
 _DATA = pathlib.Path(__file__).resolve().parents[1] / "data"
-COST = json.loads((_DATA / "hexa_core_cost.json").read_text(encoding="utf-8"))["costs"]
+_COST_FILE = json.loads((_DATA / "hexa_core_cost.json").read_text(encoding="utf-8"))
+COST = _COST_FILE["costs"]
+ENHANCE_FD = _COST_FILE["enhance_final_damage"]  # 강화 코어 레벨 → 최종 데미지 %(나무위키 HEXA 매트릭스)
 _SHARE = _DATA / "skill_share.json"
 _PCT = re.compile(r"(\d+(?:\.\d+)?)%")
 _PCT_DMG = re.compile(r"(\d+(?:\.\d+)?)%(?!\s*확률)")
@@ -131,8 +135,81 @@ def bonus_factor(description: str | None, target: int, final, boss_defense: floa
     return f
 
 
-def core_paths(snap, shares: dict, fragment_price: float, boss_defense: float, source: str) -> list[dict]:
-    """shares: 스킬 이름 → 딜 지분(%). snap.hexa_skills: 6차 스킬 이름 → {level, effect, next, description}."""
+def at_level(effect: str | None, nxt: str | None, lv: int, target: int, enhance: bool = False) -> str | None:
+    """지금(lv)·다음(lv+1) 레벨 효과 문장으로 target 레벨의 효과 문장을 만든다(2026-11-27) — 바뀌는 % 숫자마다:
+    · 강화 코어의 최종 데미지(지금·다음 값이 레벨표와 같을 때): 레벨표(engine/data/hexa_core_cost.json enhance_final_damage)
+    · 그 밖: 레벨당 증가량이 일정(나무위키 HEXA 매트릭스 '스킬 퍼뎀이 선형적으로 상승', 직업 스킬 문서의 (A + 스킬 레벨×B)% 공식).
+      레테 6차 스킬 9개에서 이렇게 이은 30레벨 값이 나무위키 마스터 값과 같다(tests/test_hexa_core.py)
+    문장 구조가 다르면 None."""
+    if not effect or not nxt:
+        return None
+    if target == lv + 1:
+        return nxt
+    a, b = _PCT.findall(effect), _PCT.findall(nxt)
+    if len(a) != len(b):
+        return None
+    vals = []
+    for x, y in zip(map(float, a), map(float, b)):
+        if x == y:
+            v = y
+        elif enhance and lv + 1 < len(ENHANCE_FD) and x == ENHANCE_FD[lv] and y == ENHANCE_FD[lv + 1]:
+            v = float(ENHANCE_FD[target])
+        else:
+            v = x + (target - lv) * (y - x)
+        vals.append(v)
+    it = iter(vals)
+    return _PCT.sub(lambda m: f"{round(next(it), 4):g}%", nxt)
+
+
+def _ratios(core: dict, skills: dict, shares: dict, lv: int, target: int, final, boss_defense: float) -> tuple[dict, list]:
+    """코어를 lv → target으로 올릴 때 지분 스킬 → 배율, 계산 못 한 줄."""
+    enhance = core["type"] == "강화 코어"
+    names = list(core["skills"])
+    if core["type"] == "공용 코어":  # 솔 헤카테 : 스틱스처럼 딸린 스킬도 같이 오른다
+        names += [n for n in skills if n.startswith(core["name"] + " :") and n not in names]
+    ratios, unvalued = {}, []  # 지분 스킬 → 배율(한 코어가 여러 스킬을 올리면 각각 더한다)
+    for n in names:
+        sk = skills.get(n) or {}
+        bonus = 1.0
+        for k in range(lv + 1, target + 1):
+            bonus *= bonus_factor(sk.get("description"), k, final, boss_defense, sk.get("effect"))
+        nxt = at_level(sk.get("effect"), sk.get("next"), lv, target, enhance)
+        if enhance:
+            base = n[:-3] if n.endswith(" 강화") else n
+            t = enhance_targets(sk.get("effect"), nxt, base, shares)
+            if t is None:
+                continue
+            unvalued += t[1]
+            for k, r in t[0].items():
+                ratios[k] = ratios.get(k, 1.0) * r * bonus
+            continue
+        r = ratio(sk.get("effect"), nxt)
+        if r is not None:
+            ratios[n] = ratios.get(n, 1.0) * r * bonus
+    return ratios, unvalued
+
+
+def shares_at(snap, shares: dict, boss_defense: float, ref_level: int = 30) -> dict:
+    """직업 기준값(상위 랭커의 연무장 지분)을 이 캐릭터의 코어 레벨에 맞춘다(2026-11-27).
+    랭커 기록의 코어 레벨은 저장돼 있지 않아 전부 ref_level(30, 최대)로 본다 — 내 코어가 낮은 스킬의 지분을 가장 많이 낮춰 잡는 쪽이다.
+    스킬 k의 지분 × (내 레벨 배율 ÷ ref 레벨 배율)을 구하고 합이 전과 같은 비율이 되게 다시 나눈다."""
+    f = {}
+    for core in snap.hexa_cores:
+        lv = core["level"]
+        if lv >= ref_level:
+            continue
+        for k, r in _ratios(core, snap.hexa_skills, shares, lv, ref_level, snap.final, boss_defense)[0].items():
+            if r > 0:
+                f[k] = f.get(k, 1.0) / r
+    rest = max(0.0, 100.0 - sum(shares.values()))            # 지분 목록에 없는 딜(그대로)
+    total = sum(v * f.get(k, 1.0) for k, v in shares.items()) + rest
+    whole = sum(shares.values()) + rest                      # 중앙값이라 합이 100을 조금 넘기도 한다 — 그 합을 그대로 둔다
+    return {k: v * f.get(k, 1.0) / total * whole for k, v in shares.items()} if total > 0 else dict(shares)
+
+
+def core_paths(snap, shares: dict, fragment_price: float, boss_defense: float, source: str, all_levels: bool = False) -> list[dict]:
+    """shares: 스킬 이름 → 딜 지분(%). snap.hexa_skills: 6차 스킬 이름 → {level, effect, next, description}.
+    all_levels: 코어마다 다음 1레벨만이 아니라 30레벨까지 목표 레벨마다 하나씩(비용은 그 사이 레벨의 합)."""
     skills = snap.hexa_skills
     if not fragment_price or not snap.hexa_cores or not shares or not skills:
         return []
@@ -141,38 +218,21 @@ def core_paths(snap, shares: dict, fragment_price: float, boss_defense: float, s
         col, lv = cost_column(core), core["level"]
         if col is None or lv >= 30:
             continue
-        erda, frag = COST[col][lv]
-        target = lv + 1
-        enhance = core["type"] == "강화 코어"
-        names = list(core["skills"])
-        if core["type"] == "공용 코어":  # 솔 헤카테 : 스틱스처럼 딸린 스킬도 같이 오른다
-            names += [n for n in skills if n.startswith(core["name"] + " :") and n not in names]
-        ratios, unvalued = {}, []  # 지분 스킬 → 배율(한 코어가 여러 스킬을 올리면 각각 더한다)
-        for n in names:
-            sk = skills.get(n) or {}
-            bonus = bonus_factor(sk.get("description"), target, snap.final, boss_defense, sk.get("effect"))
-            if enhance:
-                base = n[:-3] if n.endswith(" 강화") else n
-                t = enhance_targets(sk.get("effect"), sk.get("next"), base, shares)
-                if t is None:
-                    continue
-                unvalued += t[1]
-                for k, r in t[0].items():
-                    ratios[k] = ratios.get(k, 1.0) * r * bonus
+        erda = frag = 0
+        for target in range(lv + 1, 31 if all_levels else lv + 2):
+            e, fr = COST[col][target - 1]
+            erda, frag = erda + e, frag + fr
+            ratios, unvalued = _ratios(core, skills, shares, lv, target, snap.final, boss_defense)
+            gain, parts = 0.0, []
+            for k, r in ratios.items():
+                share = shares.get(k, 0.0)
+                if share:
+                    gain += share * (r - 1)
+                    parts.append({"skill": k, "share": share, "ratio": round(r, 5)})
+            if gain <= 0 or not frag:
                 continue
-            r = ratio(sk.get("effect"), sk.get("next"))
-            if r is not None:
-                ratios[n] = ratios.get(n, 1.0) * r * bonus
-        gain, parts = 0.0, []
-        for k, r in ratios.items():
-            share = shares.get(k, 0.0)
-            if share:
-                gain += share * (r - 1)
-                parts.append({"skill": k, "share": share, "ratio": round(r, 5)})
-        if gain <= 0 or not frag:
-            continue
-        cost = frag * fragment_price
-        out.append({"slot": "HEXA 코어", "path": "HEXA 코어", "name": f"{core['name']} {lv}→{target}레벨",
-                    "cost": cost, "delta_pct": gain, "per_100m": gain / (cost / 1e8), "fragments": frag, "erda": erda,
-                    "share_source": source, "skills": parts, "unvalued": unvalued, "set_change": []})
+            cost = frag * fragment_price
+            out.append({"slot": "HEXA 코어", "path": "HEXA 코어", "name": f"{core['name']} {lv}→{target}레벨",
+                        "cost": cost, "delta_pct": gain, "per_100m": gain / (cost / 1e8), "fragments": frag, "erda": erda,
+                        "share_source": source, "skills": parts, "unvalued": unvalued, "set_change": []})
     return out

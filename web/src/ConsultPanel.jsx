@@ -319,6 +319,10 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                   </ul>
                 </div>
               )}
+              {/* 솔 에르다는 메소로 못 산다 — 결과 숫자가 그 개수를 전제로 한다는 것을 숫자 가까이에 적는다(2026-11-27: 코어를 여러 레벨 올리면 수백 개) */}
+              {hexPicks.length > 0 && (
+                <p className="small consult-erda-note">이 값은 <strong>솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0).toLocaleString()}개</strong>가 있을 때예요. 솔 에르다는 메소로 살 수 없어서, 모자라면 HEXA 코어는 그만큼 덜 올라요.</p>
+              )}
               <p className="consult-mix-buttons">
                 <button type="button" className="ghost small" aria-expanded={starsOpen} onClick={() => setStarsOpen(!starsOpen)}>
                   {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
@@ -388,7 +392,7 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                       <span className="consult-plan-items">{lines(symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`))}</span></li>
                   )}
                   {hexPicks.length > 0 && (
-                    <li><strong>HEXA 코어 {hexPicks.length}개</strong> <span className="muted small">— 조각 {hexPicks.reduce((a, x) => a + x.fragments, 0).toLocaleString()}개 × {fragMan.toLocaleString()}만 = {formatMeso(hexCoreCost)}, 솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0)}개도 필요해요(거래 불가). 코어마다 다음 1레벨만 · {mixed.hexa_source}</span>
+                    <li><strong>HEXA 코어 {hexPicks.length}개</strong> <span className="muted small">— 조각 {hexPicks.reduce((a, x) => a + x.fragments, 0).toLocaleString()}개 × {fragMan.toLocaleString()}만 = {formatMeso(hexCoreCost)}, 솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0)}개도 필요해요(거래 불가 — 모자라면 그만큼 못 올려요) · {mixed.hexa_source}</span>
                       <span className="consult-plan-items">{lines(hexPicks.map((x) => `${x.name} ${x.label}`))}</span></li>
                   )}
                   {statPicks.length > 0 && (
