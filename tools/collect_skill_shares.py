@@ -23,8 +23,20 @@ from nexon.client import NexonClient, NexonError, RateLimited, load_api_key  # n
 OUT = ROOT / "engine" / "data" / "skill_share.json"
 
 
+# 랭킹 API의 class 값은 '직업군-전직'인데 시그너스·레지스탕스·데몬은 직업군 이름이 전사·마법사가 아니다.
+# 2026-11-27 수집에서 소울마스터·미하일·플레임위자드·블래스터·데몬슬레이어·데몬어벤져가 '없음'이라 후보로 넣었다 —
+# 아래 이름은 넥슨 문서로 확인하지 못한 후보다(틀리면 다음 후보로 넘어가고, 호출 1번이 더 든다)
+_RANK_GROUPS = {"기사단": "소울마스터 미하일 플레임위자드 윈드브레이커 나이트워커 스트라이커",
+                "레지스탕스": "블래스터 배틀메이지 와일드헌터 메카닉", "데몬": "데몬슬레이어 데몬어벤져"}
+
+
+def rank_classes(job: str) -> list[str]:
+    extra = [f"{g}-{job}" for g, names in _RANK_GROUPS.items() if job in names.split()]
+    return extra + [f"{b}-{job}" for b in _BRANCHES.get(job, ())] + [f"{job}-{job}", f"{job}-전체 전직"]
+
+
 def _rank(c: NexonClient, job: str, day: str) -> list[dict]:
-    for cls in [f"{b}-{job}" for b in _BRANCHES.get(job, ())] + [f"{job}-{job}", f"{job}-전체 전직"]:
+    for cls in rank_classes(job):
         try:
             rows = (c._request("ranking/overall", {"date": day, "class": cls}) or {}).get("ranking") or []
         except RateLimited:
@@ -39,7 +51,10 @@ def _rank(c: NexonClient, job: str, day: str) -> list[dict]:
 
 def collect(c: NexonClient, job: str, top: int, day: str) -> dict | None:
     samples = []
-    for row in _rank(c, job, day)[: top * 8]:  # 연무장 기록이 있는 캐릭터가 드물다(2026-10-07 레테 상위 24명 중 1명)
+    rows = _rank(c, job, day)
+    if not rows:
+        print(f"  {job}: 랭킹에서 이 직업을 찾지 못했어요(class 이름 후보 {rank_classes(job)})")
+    for row in rows[: top * 8]:  # 연무장 기록이 있는 캐릭터가 드물다(2026-10-07 레테 상위 24명 중 1명)
         if len(samples) >= top:
             break
         try:

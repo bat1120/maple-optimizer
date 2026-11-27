@@ -20,7 +20,8 @@ export default function App() {
         {route.page === "admin" && <Admin />}
       </main>
       <footer className="footer muted small">
-        <p>데이터: 넥슨 Open API(약 15분 지연) · 이 사이트는 넥슨과 관계없는 개인 프로젝트예요</p>
+        {/* 넥슨 Open API 이용 조건의 출처 표기 문구(2026-11-27) */}
+        <p>Data based on NEXON Open API · 약 15분 지연 · 이 사이트는 넥슨과 관계없는 개인 프로젝트예요</p>
         <p>최근 검색·테마 설정은 이 브라우저에만 저장돼요</p>
       </footer>
     </>

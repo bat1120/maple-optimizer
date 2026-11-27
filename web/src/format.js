@@ -27,9 +27,10 @@ export function parsePrice(text) {
   const t = String(text ?? "").replace(/[,\s]/g, "");
   if (!t) return null;
   if (/^\d+$/.test(t)) return Number(t);
-  const m = t.match(/^(?:(\d+(?:\.\d+)?)억)?(?:(\d+)만)?$/);
-  if (!m || (!m[1] && !m[2])) return null;
-  return Math.round(Number(m[1] ?? 0) * 100_000_000 + Number(m[2] ?? 0) * 10_000);
+  // '조'도 읽는다(2026-11-27: 가진 메소에 "1조 2000억"을 넣으면 아무 말 없이 계산이 안 됐다)
+  const m = t.match(/^(?:(\d+(?:\.\d+)?)조)?(?:(\d+(?:\.\d+)?)억)?(?:(\d+)만)?$/);
+  if (!m || (!m[1] && !m[2] && !m[3])) return null;
+  return Math.round(Number(m[1] ?? 0) * 1_000_000_000_000 + Number(m[2] ?? 0) * 100_000_000 + Number(m[3] ?? 0) * 10_000);
 }
 
 export function formatPct(x) {

@@ -393,4 +393,17 @@ describe("목표 세팅 컨설팅", () => {
     fireEvent.change(screen.getByLabelText("솔 에르다 조각 1개 값(만 메소)"), { target: { value: "900" } });
     await waitFor(() => expect(String(f.mock.calls.at(-1)[0])).toContain("&fragment_price=9000000"));
   });
+
+  it("가진 메소를 읽지 못하면 그렇다고 알려 준다 — 조 단위는 읽는다", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? BEST : DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    const input = screen.getByLabelText("컨설팅에 쓸 메소");
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.change(input, { target: { value: "3000억원" } });
+    expect(screen.getByRole("alert").textContent).toContain("읽지 못했어요");
+    fireEvent.change(input, { target: { value: "1조 2000억" } });
+    expect(screen.queryByRole("alert")).toBeNull();
+    await waitFor(() => expect(String(f.mock.calls.at(-1)[0])).toContain("total=1200000000000"));
+  });
 });

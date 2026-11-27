@@ -283,7 +283,10 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
               <label htmlFor="consult-have">가진 메소</label>
               <input id="consult-have" aria-label="컨설팅에 쓸 메소" inputMode="text" autoComplete="off" placeholder="예: 3000억" value={have}
                      onChange={(e) => setHave(e.target.value)} />
-              <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>
+              {/* 읽지 못한 값은 그렇다고 말한다(2026-11-27: "3000억원"처럼 넣으면 아무 반응이 없었다) */}
+              {have.trim() && !budget
+                ? <span className="small consult-have-bad" role="alert">읽지 못했어요 — "3000억", "1조 2000억", "450억 5000만"처럼 적어 주세요</span>
+                : <span className="muted small">넣으면 어디까지 되는지 알려 드려요</span>}
             </div>
             <button type="button" className="ghost more-ranks" aria-expanded={open} onClick={() => setOpen(!open)}>
               {open ? "접기" : `살 템 ${build.buy.length}개 · 강화할 템 ${build.raise.length}개${cubes.length ? ` · 잠재 올릴 템 ${cubes.length}개` : ""}${addis.length ? ` · 에디 올릴 템 ${addis.length}개` : ""} 보기`}

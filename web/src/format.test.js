@@ -13,6 +13,8 @@ describe("parsePrice", () => {
   it("억·만 표기를 메소로", () => {
     expect(parsePrice("45억 3000만")).toBe(4_530_000_000);
     expect(parsePrice("4.5억")).toBe(450_000_000);
+    expect(parsePrice("1조 2000억")).toBe(1_200_000_000_000);
+    expect(parsePrice("1.5조")).toBe(1_500_000_000_000);
   });
   it("숫자만 쓰면 메소", () => {
     expect(parsePrice("1,000,000")).toBe(1_000_000);
