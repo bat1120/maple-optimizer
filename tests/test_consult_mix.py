@@ -16,7 +16,7 @@ def _setup():
 
 def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     snap, setting, b = _setup()
-    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False)   # 손으로 다시 끼는 검산은 장비만(심볼은 아래 따로)
+    r = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False, flames=False)   # 손으로 다시 끼는 검산은 잠재·에디만(심볼·추옵은 아래 따로)
     assert r["picks"] and r["cost"] <= 3000e8 and r["delta_pct"] > r["base_delta_pct"]
     assert len({(x["slot"], x["kind"]) for x in r["picks"]}) == len(r["picks"])            # 칸·종류마다 하나
     # 손으로 다시 낀다: 지금 그대로 세팅 + 고른 줄
@@ -35,7 +35,7 @@ def test_mixed_pick_is_exactly_the_index_of_wearing_those_lines():
     assert (sw.pl.ev.index(worn) / sw.pl.base - 1) * 100 == r["delta_pct"]
     # 기준(살 템 잠재·에디 없음)은 컨설팅 '지금 그대로'(살 템에 지금 수준이 공짜로 붙음)보다 낮고, '지금 템 수준'도 선택지다
     assert r["base_delta_pct"] < r["with_current_delta_pct"] and r["bare_buys"] == len(same["buy"])
-    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8, symbols=False)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
+    assert any(x["label"] == "지금 템 수준" and x["target"] for x in mix(snap, setting, b, service.CATALOG, 22, 1500e8, symbols=False, flames=False)["picks"])   # 싼 칸은 지금 수준으로 맞추는 게 효율이 좋다
     # 레테: 섞으면 같은 예산의 한 단계 목표보다 낫다 — 무기류 에디처럼 효율 좋은 칸이 섞인다
     assert {x["group"] for x in r["picks"]} >= {"무기"} and {x["kind"] for x in r["picks"]} == {"잠재", "에디"}
 
@@ -110,3 +110,19 @@ def test_symbols_join_the_mix_and_their_damage_is_measured_with_the_symbol_stats
     st = symbol_step(sym, sym["level"], to, snap.character_class)
     assert st["meso"] == x["cost"] and x["gain_pct"] > 0
     assert sw.pl.ev.index(sw.pl.items, extra_of(st["stat_gain"], st["force_gain"])) > sw.pl.base
+
+
+def test_flame_of_bought_items_is_not_free_when_it_can_be_costed():
+    """추옵(2026-11-27): 살 템에 지금 템의 추옵을 공짜로 옮기지 않는다 — 보스 장비로 확인되는 살 템은 기준이 '추옵 없음'이고,
+    '지금 템 수준'으로 맞추기(메소 재설정 300만 ÷ 그 수준 이상이 나올 확률)가 선택지다. 못 재는 살 템은 flame_assumed로 센다."""
+    from engine.enhance import flame
+    snap, setting, b = _setup()
+    on = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False)
+    off = mix(snap, setting, b, service.CATALOG, 22, 3000e8, symbols=False, flames=False)
+    picks = [x for x in on["picks"] if x["kind"] == "추옵"]
+    assert picks and all(x["label"] == "지금 템 수준" and not x["kept"] and x["tries"] >= 1 for x in picks)
+    assert all(abs(x["cost"] - flame.MESO_RESET_COST * x["tries"]) < 1e-6 and x["gain_pct"] > 0 for x in picks)
+    assert on["base_delta_pct"] < off["base_delta_pct"]                  # 기준에서 공짜 추옵이 빠졌다
+    assert on["flame_assumed"] > 0 and off["flame_assumed"] > on["flame_assumed"]
+    zero = mix(snap, setting, b, service.CATALOG, 22, 0, symbols=False)
+    assert zero["delta_pct"] == zero["base_delta_pct"] == on["base_delta_pct"]

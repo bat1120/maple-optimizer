@@ -80,8 +80,31 @@ def pick(options: dict[tuple[str, str], list[dict]], budget: float) -> dict[tupl
     return out
 
 
+def _flame_match(sw: _Swapper, catalog, slot: str, it) -> dict | None:
+    """살 템(it — 지금 그 자리 템의 추옵을 옮겨 놓은 것)의 추옵을 메소 재설정으로 그 수준 이상 맞추는 평균 비용.
+    경로 비교의 추옵 경로와 같은 방법(engine/market/paths._flame_paths): 점수 = 추옵 줄이 주는 실딜(키마다 기울기를 잰 선형 근사),
+    확률 = 한 번 재설정에 그 점수 이상이 나올 확률(공식 확률표), 비용 = 3,000,000 메소 ÷ 확률. 잴 수 없으면 None."""
+    from engine.enhance import flame
+    from engine.market.paths import _flame_weights
+    from engine.market.recommend import _part
+    if not it.level or flame.no_flame_part(_part(slot)) or not flame.is_boss_item(it.name, it.part, catalog):
+        return None
+    weapon = _part(slot) == "무기"
+    w = _flame_weights(sw.px, slot, it, weapon)
+    current = sum(w.get(k, 0.0) * v for k, v in it.add_option.items())
+    if current <= 0:
+        return None
+    dist = flame.score_distribution(flame.MESO_RESET, weapon, it.level, True,
+                                    lambda o: {st: sum(w.get(k, 0.0) * v for k, v in flame.line_value(o, st, it.level, weapon, it.base_attack).items())
+                                               for st in range(3, 8)})
+    prob = flame.target_stats(dist, current)["probability"]
+    if prob <= 0:
+        return None
+    return {"cost": flame.MESO_RESET_COST / prob, "tries": 1 / prob}
+
+
 def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
-        builds: list[dict] | None = None, sf=None, symbols: bool = True) -> dict:
+        builds: list[dict] | None = None, sf=None, symbols: bool = True, flames: bool = True) -> dict:
     """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜.
 
     살 템의 기준은 '잠재·에디 없는 매물'이다(2026-11-26 — 전에는 지금 그 자리 템의 잠재·에디를 공짜로 옮겨 실딜이 부풀었다).
@@ -93,12 +116,24 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
     options = _options(builds)
     sw = _Swapper(snap, setting, boss, catalog, cooldown_main_pct, star)
     raw, current = {}, {}                                   # 기준 세팅(쿨감 환산 전 템), 살 템에 옮겨 놓았던 지금 수준 줄
+    flamed, assumed = {}, 0                                 # 추옵을 지금 수준으로 맞춘 살 템(잠재·에디 없음), 추옵을 못 재 그대로 둔 살 템 수
     for p in same["pieces"]:
         cur = sw.pl.raw[p["slot"]]
         it = sw.like_current(p["slot"], p["name"]) if not p["kept"] or p["starforce"] > cur.starforce else cur
         if not p["kept"]:
             current[p["slot"]] = {"잠재": list(it.potentials), "에디": list(it.additional)}
             it = SWAP["에디"](SWAP["잠재"](it, [], snap.level), [], snap.level)
+            # 추옵(2026-11-27): 살 템에 지금 템의 추옵을 공짜로 옮기던 것도 같은 문제다 — 보스 장비로 확인되는 템이고 메소 재설정
+            # (공식 1회 300만 메소)으로 지금 수준 이상이 나올 확률을 잴 수 있으면, 기준은 '추옵 없음'으로 두고 맞추기를 선택지로 넣는다.
+            # 잴 수 없는 템(보스 장비로 확인 안 됨)은 전처럼 지금 수준이 붙어 있다고 본다(flame_assumed로 센다)
+            fl = _flame_match(sw, catalog, p["slot"], it) if it.add_option and flames else None
+            if fl:
+                flamed[p["slot"]] = it
+                it = SWAP["에디"](SWAP["잠재"](sw.like_current(p["slot"], p["name"], add={}), [], snap.level), [], snap.level)
+                options[(p["slot"], "추옵")] = [{"label": "지금 템 수준", "target": [], "cost": fl["cost"], "gain_pct": 0.0, "name": p["name"],
+                                              "group": p["group"], "kept": False, "tries": fl["tries"]}]
+            elif it.add_option:
+                assumed += 1
         raw[p["slot"]] = it
     for s, _ in options:
         raw.setdefault(s, sw.pl.raw[s])                     # 무기·보조무기·엠블렘: 템은 그대로
@@ -135,11 +170,17 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
                 o["gain_pct"] = (sw.pl.ev.index(base_items, extra_of(o["stat_gain"], o["force_gain"])) - base_index) / sw.pl.base * 100
                 continue
             trial = dict(base_items)
-            trial[s] = _valued(SWAP[kind](raw[s], o["target"], snap.level), sw.pl.mains, sw.pl.per_sec)
+            new = flamed[s] if kind == "추옵" else SWAP[kind](raw[s], o["target"], snap.level)
+            trial[s] = _valued(new, sw.pl.mains, sw.pl.per_sec)
             o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
     chosen = pick(options, budget)
     stat, force = {}, {}
+    for (s, kind) in chosen:                                # 추옵을 맞추는 살 템은 그 템에서 시작한다(그 위에 잠재·에디)
+        if kind == "추옵":
+            raw[s] = flamed[s]
     for (s, kind), o in sorted(chosen.items(), key=lambda kv: kv[0][1] != "잠재"):   # 잠재 먼저, 그 위에 에디
+        if kind == "추옵":
+            continue
         if kind == "심볼":
             for k, v in o["stat_gain"].items():
                 stat[k] = stat.get(k, 0.0) + v
@@ -153,12 +194,13 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
     base_delta = (base_index / sw.pl.base - 1) * 100
     picks = [{"slot": "심볼" if kind == "심볼" else s, "kind": kind,
               **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")},
-              **({"remaining_symbols": o["remaining_symbols"], "days": o["days"]} if kind == "심볼" else {})}
+              **({"remaining_symbols": o["remaining_symbols"], "days": o["days"]} if kind == "심볼" else {}),
+              **({"tries": o["tries"]} if kind == "추옵" else {})}
              for (s, kind), o in chosen.items()]
     picks.sort(key=lambda x: -x["gain_pct"] / x["cost"])
     return {"starforce": star, "budget": budget, "base_delta_pct": base_delta, "delta_pct": delta,
             # 참고: 살 템에 지금 템 수준 잠재·에디가 공짜로 붙어 있다고 본 컨설팅 '지금 그대로' 값
-            "with_current_delta_pct": same["delta_pct"], "bare_buys": len(current),
+            "with_current_delta_pct": same["delta_pct"], "bare_buys": len(current), "flame_assumed": assumed,
             "approx_pct": base_delta + sum(x["gain_pct"] for x in picks), "cost": sum(x["cost"] for x in picks),
             "picks": picks, "candidates": sum(len(v) for v in options.values())}
 

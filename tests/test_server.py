@@ -397,7 +397,7 @@ def test_consult_mix_picks_per_slot_goals_within_budget(tmp_path, clock):
     assert d["budget"] == 1500e8 and d["cost"] <= d["budget"] and d["cost_text"]           # 1억 단위로 내린다
     assert d["delta_pct"] > d["base_delta_pct"] and d["picks"] and d["evaluation_setting"] and d["note"]
     assert all({"slot", "kind", "name", "group", "kept", "label", "target", "cost", "cost_text", "gain_pct"} <= set(x) for x in d["picks"])
-    assert {x["kind"] for x in d["picks"]} <= {"잠재", "에디", "심볼"} and d["cost"] == sum(x["cost"] for x in d["picks"])   # 2026-11-27 심볼도
+    assert {x["kind"] for x in d["picks"]} <= {"잠재", "에디", "심볼", "추옵"} and d["cost"] == sum(x["cost"] for x in d["picks"])   # 2026-11-27 심볼도
     effs = [x["gain_pct"] / x["cost"] for x in d["picks"]]
     assert effs == sorted(effs, reverse=True)                                               # 효율 순
     assert c.get("/api/character/x/consult/mix", params={"star": 22}).status_code == 422      # 예산은 꼭
