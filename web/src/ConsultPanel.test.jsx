@@ -406,4 +406,19 @@ describe("목표 세팅 컨설팅", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     await waitFor(() => expect(String(f.mock.calls.at(-1)[0])).toContain("total=1200000000000"));
   });
+
+  it("HEXA 스탯 코어는 헥사 비용에 같이 넣고, 할 일에는 평균값이라고 따로 적는다", async () => {
+    const withStat = { ...BEST, hexa: "ok", mix: { ...BEST.mix, picks: [...BEST.mix.picks,
+      { slot: "헥사", kind: "헥사스탯", name: "HEXA 스탯", group: "헥사", kept: true, label: "코어 II 메인 크리티컬 데미지 초기화 → 5레벨 이상", target: [], cost: 3.1e8, cost_text: "3억 1000만", gain_pct: 0.3, fragments: 30.4, reset_meso: 1e8 }] } };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => ok(String(u).includes("/consult/mix") ? withStat : DATA));
+    render(<ConsultPanel name="내신부레테" defense={300} />);
+    await screen.findByRole("tablist", { name: "목표 스타포스" });
+    fireEvent.change(screen.getByLabelText("컨설팅에 쓸 메소"), { target: { value: "730억" } });
+    const box = await screen.findByLabelText("추천 조합");
+    expect(within(box).getByLabelText("메소 배분").textContent).toContain("헥사 3억");
+    fireEvent.click(screen.getByRole("button", { name: "할 일 순서로 보기" }));
+    const plan = screen.getByRole("list", { name: "할 일 순서" }).textContent;
+    expect(plan).toContain("HEXA 스탯 1개 — 조각 평균 30개 × 700만 + 초기화 메소 = 3억 1000만. 확률이라 조각 개수와 실딜 모두 평균이에요");
+    expect(plan).toContain("코어 II 메인 크리티컬 데미지 초기화 → 5레벨 이상");
+  });
 });

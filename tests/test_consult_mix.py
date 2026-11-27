@@ -135,7 +135,7 @@ def test_hexa_cores_join_the_mix_with_fragment_price_and_multiply_the_gear_index
     from engine.market.hexa_core_paths import core_paths, job_shares
     snap, setting, b = _setup()
     assert FRAGMENT_PRICE == 7e6
-    on = mix(snap, setting, b, service.CATALOG, 22, 3000e8)
+    on = mix(snap, setting, b, service.CATALOG, 22, 3000e8, hexa_stat=False)
     off = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=0)
     hexa = [x for x in on["picks"] if x["kind"] == "헥사"]
     assert hexa and not [x for x in off["picks"] if x["kind"] == "헥사"] and off["hexa_source"] is None
@@ -146,11 +146,37 @@ def test_hexa_cores_join_the_mix_with_fragment_price_and_multiply_the_gear_index
         p = paths[f"{x['name']} {x['label']}"]
         assert x["slot"] == x["group"] == "헥사" and x["cost"] == p["fragments"] * 7e6 == x["fragments"] * 7e6 and x["erda"] == p["erda"]
     # 넉넉하면 코어 전부를 고르고, 그 실딜은 헥사 없는 같은 조합의 지수에 (1 + 코어 몫 합)을 곱한 값이다
-    rich = mix(snap, setting, b, service.CATALOG, 22, 1e14)
+    rich = mix(snap, setting, b, service.CATALOG, 22, 1e14, hexa_stat=False)
     bare = mix(snap, setting, b, service.CATALOG, 22, 1e14, fragment_price=0)
     got = [x for x in rich["picks"] if x["kind"] == "헥사"]
     total = sum(paths[f"{x['name']} {x['label']}"]["delta_pct"] for x in got)
     assert len(got) == len(paths) and [x for x in rich["picks"] if x["kind"] != "헥사"] == bare["picks"]
     assert abs((1 + rich["delta_pct"] / 100) - (1 + bare["delta_pct"] / 100) * (1 + total / 100)) < 1e-9
-    costly = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=7e8)
+    costly = mix(snap, setting, b, service.CATALOG, 22, 3000e8, fragment_price=7e8, hexa_stat=False)
     assert len([x for x in costly["picks"] if x["kind"] == "헥사"]) <= len(hexa)
+
+
+def test_hexa_stat_cores_join_the_mix_one_option_per_core_measured_on_the_chosen_build():
+    """HEXA 스탯(2026-11-27): 코어마다 선택지 하나까지 — 비용 = 조각 평균 × 조각 값 + 초기화 메소(경로 비교와 같은 값),
+    실딜은 고른 조합(템·심볼) 위에서 코어마다 다시 잰 평균 비율을 곱한 값. 조각 값이 0이면 넣지 않는다."""
+    from engine.market.hexa_paths import stat_options
+    snap, setting, b = _setup()
+    opts = {o["name"]: o for o in stat_options(snap, 7e6)}
+    assert opts
+    rich = mix(snap, setting, b, service.CATALOG, 22, 1e14)
+    bare = mix(snap, setting, b, service.CATALOG, 22, 1e14, hexa_stat=False)
+    got = [x for x in rich["picks"] if x["kind"] == "헥사스탯"]
+    assert got and not [x for x in bare["picks"] if x["kind"] == "헥사스탯"]
+    assert not [x for x in mix(snap, setting, b, service.CATALOG, 22, 1e14, fragment_price=0)["picks"] if x["kind"] == "헥사스탯"]
+    assert [x for x in rich["picks"] if x["kind"] != "헥사스탯"] == bare["picks"]     # 나머지 선택은 그대로
+    cores = [opts[x["label"]]["core"] for x in got]
+    assert len(cores) == len(set(cores))                                               # 코어마다 하나
+    for x in got:
+        o = opts[x["label"]]
+        assert x["slot"] == x["group"] == "헥사" and x["name"] == "HEXA 스탯"
+        assert x["cost"] == o["cost"] == o["fragments"] * 7e6 + o["reset_meso"] and x["fragments"] == o["fragments"]
+    ratio = (1 + rich["delta_pct"] / 100) / (1 + bare["delta_pct"] / 100)
+    assert ratio > 1
+    assert all(x['gain_pct'] > 0 for x in got)
+    tight = mix(snap, setting, b, service.CATALOG, 22, 300e8)
+    assert tight['cost'] <= 300e8 and len([x for x in tight['picks'] if x['kind'] == '헥사스탯']) <= len(got)

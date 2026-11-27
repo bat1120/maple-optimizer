@@ -53,43 +53,60 @@ def _spread(subs: tuple, rest: float, cap: float = 10) -> tuple:
     return tuple(out)
 
 
-def hexa_stat_paths(pl, fragment_price: float, sunday: bool = False) -> list[dict]:
-    if not fragment_price or not pl.snap.hexa_stat:
+def stat_options(snap, fragment_price: float, sunday: bool = False) -> list[dict]:
+    """코어마다 고를 수 있는 선택지 — '강화 계속'(20등급 미만)과 '초기화 → 메인 L레벨 이상'. 실딜은 재지 않고
+    outcomes [(확률, 지금 대비 스탯 변화 extra)]만 준다 — 어떤 세팅에서 잴지는 부르는 쪽이 정한다(경로 비교: 지금 템, 추천 조합: 갈아탄 뒤)."""
+    if not fragment_price or not snap.hexa_stat:
         return []
-    job = job_profile(pl.snap.character_class)
+    job = job_profile(snap.character_class)
     out = []
-    for core in pl.snap.hexa_stat:
+    for core in snap.hexa_stat:
         cur = _block(core["lines"], job)
         if cur["unknown"]:
             continue
         main_now = next(lv for _, lv, m in core["lines"] if m)
         main_name = next(n for n, _, m in core["lines"] if m)
 
-        def gain(main_level, subs):
-            new = _block(_lines(core, main_level, subs), job)  # noqa: B023
-            return (pl.ev.index(pl.items, H.delta(new, cur)) / pl.base - 1) * 100  # noqa: B023
+        def extra(main_level, subs, core=core, cur=cur):
+            return H.delta(_block(_lines(core, main_level, subs), job), cur)
 
         label = f"코어 {'I' * core['core']} 메인 {main_name.replace(' 증가', '')}"
-        if core["grade"] < H.MAX_G:  # 강화 계속: 최종 메인 레벨 분포의 평균 실딜
+        if core["grade"] < H.MAX_G:  # 강화 계속: 최종 메인 레벨 분포
             dist, frag = H.main_distribution(core["grade"], main_now, sunday)
             subs_now = [lv for _, lv, m in core["lines"] if not m]
-            d = 0.0
-            for m, q in dist.items():
-                rest = (H.MAX_G - core["grade"]) - (m - main_now)
-                d += q * gain(m, _spread(tuple(subs_now), rest))
-            cost = frag * fragment_price
-            if d > 0 and cost > 0:
-                out.append({"slot": "HEXA 스탯", "path": "HEXA 스탯", "name": f"{label} 강화 계속 {core['grade']}→20등급",
-                            "cost": cost, "delta_pct": d, "per_100m": d / (cost / 1e8), "fragments": frag,
-                            "core": core["core"], "set_change": []})
+            outcomes = [(q, extra(m, _spread(tuple(subs_now), (H.MAX_G - core["grade"]) - (m - main_now)))) for m, q in dist.items()]
+            out.append({"core": core["core"], "name": f"{label} 강화 계속 {core['grade']}→20등급", "cost": frag * fragment_price,
+                        "fragments": frag, "reset_meso": 0.0, "outcomes": outcomes})
         reset_meso = RESET_MESO[str(core["core"])]
         for target in range(main_now + 1, H.MAX_L + 1):
             r = H.reach_cost(target, reset_meso / fragment_price, sunday)
             sub = (H.MAX_G - target) / 2
-            d = gain(target, (sub, sub))
-            cost = (r["fragments"] * fragment_price) + reset_meso  # 지금 상태에서 첫 초기화 1회 포함
-            if d > 0:
-                out.append({"slot": "HEXA 스탯", "path": "HEXA 스탯", "name": f"{label} 초기화 → {target}레벨 이상",
-                            "cost": cost, "delta_pct": d, "per_100m": d / (cost / 1e8), "fragments": r["fragments"],
-                            "core": core["core"], "target_level": target, "set_change": []})
+            out.append({"core": core["core"], "name": f"{label} 초기화 → {target}레벨 이상", "target_level": target,
+                        "cost": (r["fragments"] * fragment_price) + reset_meso,  # 지금 상태에서 첫 초기화 1회 포함
+                        "fragments": r["fragments"], "reset_meso": reset_meso, "outcomes": [(1.0, extra(target, (sub, sub)))]})
+    return out
+
+
+def expected_index(ev, items, outcomes, extra: dict | None = None) -> float:
+    """선택지 하나를 한 세팅(items, 이미 들어간 장비 밖 변화 extra)에서 잰 보스 지수의 평균."""
+    from engine.stats.model import StatBlock
+    total = 0.0
+    for q, e in outcomes:
+        merged = dict(extra or {})
+        merged["pct"] = merged.get("pct", StatBlock()) + e["pct"]
+        merged["nopct"] = merged.get("nopct", StatBlock()) + e["nopct"]
+        total += q * ev.index(items, merged)
+    return total
+
+
+def hexa_stat_paths(pl, fragment_price: float, sunday: bool = False) -> list[dict]:
+    out = []
+    for o in stat_options(pl.snap, fragment_price, sunday):
+        d = 0.0
+        for q, e in o["outcomes"]:
+            d += q * (pl.ev.index(pl.items, e) / pl.base - 1) * 100
+        if d > 0 and o["cost"] > 0:
+            out.append({"slot": "HEXA 스탯", "path": "HEXA 스탯", "name": o["name"], "cost": o["cost"], "delta_pct": d,
+                        "per_100m": d / (o["cost"] / 1e8), "fragments": o["fragments"], "core": o["core"],
+                        **({"target_level": o["target_level"]} if "target_level" in o else {}), "set_change": []})
     return out

@@ -106,7 +106,7 @@ def _flame_match(sw: _Swapper, catalog, slot: str, it) -> dict | None:
 
 def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pct: float | None = None,
         builds: list[dict] | None = None, sf=None, symbols: bool = True, flames: bool = True,
-        fragment_price: float = FRAGMENT_PRICE) -> dict:
+        fragment_price: float = FRAGMENT_PRICE, hexa_stat: bool = True) -> dict:
     """star성 세팅에서 큐브에 budget 메소를 쓸 때 칸마다 고른 잠재·에디 목표와, 그 조합을 실제로 낀 보스 실딜.
 
     살 템의 기준은 '잠재·에디 없는 매물'이다(2026-11-26 — 전에는 지금 그 자리 템의 잠재·에디를 공짜로 옮겨 실딜이 부풀었다).
@@ -180,8 +180,20 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             core, label = p["name"].rsplit(" ", 1)
             options[(core, "헥사")] = [{"label": label, "target": [], "cost": float(p["cost"]), "gain_pct": 0.0, "name": core, "group": "헥사",
                                        "kept": True, "hexa_pct": p["delta_pct"], "fragments": p["fragments"], "erda": p["erda"]}]
+    # HEXA 스탯(2026-11-27): 코어마다 '강화 계속'·'초기화 → 메인 L레벨 이상' 중 하나 — 경로 비교의 HEXA 스탯과 같은 선택지·비용
+    # (engine/market/hexa_paths: 조각 기대값 × 조각 값 + 초기화 메소). 확률이라 비용·실딜 모두 평균이다
+    if fragment_price and hexa_stat and snap.hexa_stat:
+        from engine.market.hexa_paths import stat_options
+        for so in stat_options(snap, fragment_price):
+            options.setdefault((f"HEXA 스탯 코어 {so['core']}", "헥사스탯"), []).append(
+                {"label": so["name"], "target": [], "cost": float(so["cost"]), "gain_pct": 0.0, "name": "HEXA 스탯", "group": "헥사", "kept": True,
+                 "outcomes": so["outcomes"], "fragments": so["fragments"], "reset_meso": so["reset_meso"]})
     for (s, kind), opts in options.items():                 # 칸별 몫을 기준 세팅에서 다시 잰다
         for o in opts:
+            if kind == "헥사스탯":
+                from engine.market.hexa_paths import expected_index
+                o["gain_pct"] = (expected_index(sw.pl.ev, base_items, o["outcomes"]) - base_index) / sw.pl.base * 100
+                continue
             if kind == "헥사":                               # 스킬 배율이라 장비와 곱해진다 — 기준 세팅의 지수에 곱한 몫
                 o["gain_pct"] = o["hexa_pct"] * base_index / sw.pl.base
                 continue
@@ -193,7 +205,7 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             trial[s] = _valued(new, sw.pl.mains, sw.pl.per_sec)
             o["gain_pct"] = (sw.pl.ev.index(trial) - base_index) / sw.pl.base * 100
     chosen = pick(options, budget)
-    stat, force, hexa = {}, {}, 0.0
+    stat, force, hexa, hexa_stats = {}, {}, 0.0, []
     for (s, kind) in chosen:                                # 추옵을 맞추는 살 템은 그 템에서 시작한다(그 위에 잠재·에디)
         if kind == "추옵":
             raw[s] = flamed[s]
@@ -202,6 +214,9 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
             continue
         if kind == "헥사":
             hexa += o["hexa_pct"]
+            continue
+        if kind == "헥사스탯":
+            hexa_stats.append(o)
             continue
         if kind == "심볼":
             for k, v in o["stat_gain"].items():
@@ -213,13 +228,22 @@ def mix(snap, setting, boss, catalog, star: int, budget: float, cooldown_main_pc
     worn = dict(sw.pl.items)
     worn.update({s: _valued(it, sw.pl.mains, sw.pl.per_sec) for s, it in raw.items()})
     # 코어마다 올리는 스킬이 달라 코어끼리는 더하고(지분 × 배율 증가), 장비·심볼로 오른 지수에는 곱한다
-    delta = (sw.pl.ev.index(worn, extra_of(stat, force) if (stat or force) else None) / sw.pl.base * (1 + hexa / 100) - 1) * 100
+    # HEXA 스탯은 고른 조합(템 + 심볼) 위에서 코어마다 다시 잰 평균 비율을 곱한다 — 코어끼리 겹치는 몫만 근사다
+    sym_extra = extra_of(stat, force) if (stat or force) else None
+    worn_index = sw.pl.ev.index(worn, sym_extra)
+    stat_mult = 1.0
+    if hexa_stats:
+        from engine.market.hexa_paths import expected_index
+        for o in hexa_stats:
+            stat_mult *= expected_index(sw.pl.ev, worn, o["outcomes"], sym_extra) / worn_index
+    delta = (worn_index / sw.pl.base * stat_mult * (1 + hexa / 100) - 1) * 100
     base_delta = (base_index / sw.pl.base - 1) * 100
-    picks = [{"slot": "심볼" if kind == "심볼" else "헥사" if kind == "헥사" else s, "kind": kind,
+    picks = [{"slot": "심볼" if kind == "심볼" else "헥사" if kind in ("헥사", "헥사스탯") else s, "kind": kind,
               **{k: o[k] for k in ("name", "group", "kept", "label", "target", "cost", "gain_pct")},
               **({"remaining_symbols": o["remaining_symbols"], "days": o["days"]} if kind == "심볼" else {}),
               **({"tries": o["tries"]} if kind == "추옵" else {}),
-              **({"fragments": o["fragments"], "erda": o["erda"]} if kind == "헥사" else {})}
+              **({"fragments": o["fragments"], "erda": o["erda"]} if kind == "헥사" else {}),
+              **({"fragments": o["fragments"], "reset_meso": o["reset_meso"]} if kind == "헥사스탯" else {})}
              for (s, kind), o in chosen.items()]
     picks.sort(key=lambda x: -x["gain_pct"] / x["cost"])
     return {"starforce": star, "budget": budget, "base_delta_pct": base_delta, "delta_pct": delta,

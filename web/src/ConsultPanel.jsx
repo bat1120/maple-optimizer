@@ -183,9 +183,12 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
   const symPicks = (best?.mix?.picks || []).filter((x) => x.kind === "심볼");   // 심볼은 큐브와 따로 적는다(2026-11-27)
   const symCost = symPicks.reduce((a, x) => a + x.cost, 0);
   const hexPicks = (best?.mix?.picks || []).filter((x) => x.kind === "헥사");  // HEXA 코어도 따로(2026-11-27)
-  const hexCost = hexPicks.reduce((a, x) => a + x.cost, 0);
+  const hexCoreCost = hexPicks.reduce((a, x) => a + x.cost, 0);
+  const statPicks = (best?.mix?.picks || []).filter((x) => x.kind === "헥사스탯");  // HEXA 스탯 코어(확률이라 평균값)
+  const hexStatCost = statPicks.reduce((a, x) => a + x.cost, 0);
+  const hexCost = hexCoreCost + hexStatCost;
   const cubeCost = (best?.mix?.cost || 0) - symCost - hexCost;
-  for (const x of (best?.mix?.picks || []).filter((p) => p.kind !== "심볼" && p.kind !== "헥사")) {
+  for (const x of (best?.mix?.picks || []).filter((p) => p.kind !== "심볼" && p.kind !== "헥사" && p.kind !== "헥사스탯")) {
     const row = cubeSlots.find(([s]) => s === x.slot);
     if (row) row[1].push(x); else cubeSlots.push([x.slot, [x]]);
   }
@@ -385,8 +388,12 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                       <span className="consult-plan-items">{lines(symPicks.map((x) => `${x.name.replace(/^.*?: /, "")} ${x.label}${x.remaining_symbols ? ` (심볼 ${x.remaining_symbols}개 더${x.days ? `, 약 ${x.days}일` : ""})` : ""}`))}</span></li>
                   )}
                   {hexPicks.length > 0 && (
-                    <li><strong>HEXA 코어 {hexPicks.length}개</strong> <span className="muted small">— 조각 {hexPicks.reduce((a, x) => a + x.fragments, 0).toLocaleString()}개 × {fragMan.toLocaleString()}만 = {formatMeso(hexCost)}, 솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0)}개도 필요해요(거래 불가). 코어마다 다음 1레벨만 · {mixed.hexa_source}</span>
+                    <li><strong>HEXA 코어 {hexPicks.length}개</strong> <span className="muted small">— 조각 {hexPicks.reduce((a, x) => a + x.fragments, 0).toLocaleString()}개 × {fragMan.toLocaleString()}만 = {formatMeso(hexCoreCost)}, 솔 에르다 {hexPicks.reduce((a, x) => a + x.erda, 0)}개도 필요해요(거래 불가). 코어마다 다음 1레벨만 · {mixed.hexa_source}</span>
                       <span className="consult-plan-items">{lines(hexPicks.map((x) => `${x.name} ${x.label}`))}</span></li>
+                  )}
+                  {statPicks.length > 0 && (
+                    <li><strong>HEXA 스탯 {statPicks.length}개</strong> <span className="muted small">— 조각 평균 {Math.round(statPicks.reduce((a, x) => a + x.fragments, 0)).toLocaleString()}개 × {fragMan.toLocaleString()}만{statPicks.some((x) => x.reset_meso) ? " + 초기화 메소" : ""} = {formatMeso(hexStatCost)}. 확률이라 조각 개수와 실딜 모두 평균이에요</span>
+                      <span className="consult-plan-items">{lines(statPicks.map((x) => x.label))}</span></li>
                   )}
                   <li><strong>보스 실딜 {pct1(mixed.delta_pct)}</strong>
                     <span className="muted small"> — 강화 {bestRow.raise_cost ? bestRow.raise_cost_text : "없음"}{buyTotal ? ` + 살 템 ${formatMeso(buyTotal)}` : ""} + 큐브{symCost ? "·심볼" : ""}{hexCost ? "·헥사" : ""} {mixed.cost_text || "0"}{missing > 0 ? ` + 시세를 안 넣은 살 템 ${missing}개` : ""}</span></li>
