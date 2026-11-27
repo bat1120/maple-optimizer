@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine.stats.jobs import _BRANCHES  # noqa: E402
-from nexon.client import NexonClient, NexonError, load_api_key  # noqa: E402
+from nexon.client import NexonClient, NexonError, RateLimited, load_api_key  # noqa: E402
 
 OUT = ROOT / "engine" / "data" / "skill_share.json"
 
@@ -27,6 +27,8 @@ def _rank(c: NexonClient, job: str, day: str) -> list[dict]:
     for cls in [f"{b}-{job}" for b in _BRANCHES.get(job, ())] + [f"{job}-{job}", f"{job}-전체 전직"]:
         try:
             rows = (c._request("ranking/overall", {"date": day, "class": cls}) or {}).get("ranking") or []
+        except RateLimited:
+            raise                                       # 호출 한도는 '기록 없음'이 아니다 — 바로 멈춘다(2026-11-27: 삼키고 끝까지 불렀다)
         except NexonError:
             continue
         mine = [r for r in rows if job in (r.get("class_name"), r.get("sub_class_name"))]
@@ -43,6 +45,8 @@ def collect(c: NexonClient, job: str, top: int, day: str) -> dict | None:
         try:
             ocid = c.get_ocid(row["character_name"])
             reps = (c._request("battle-practice/replay-id", {"ocid": ocid}) or {}).get("replay_list") or []
+        except RateLimited:
+            raise
         except NexonError:
             continue  # 연무장 기록이 없는 캐릭터
         if not reps:
@@ -82,7 +86,11 @@ def main() -> None:
         "_source": "넥슨 Open API 연무장(battle-practice/result skill_statistic.damage_percent), 직업 랭킹 상위 캐릭터 최신 기록의 스킬별 중앙값",
         "_note": "연무장: 방어율 380% 허수아비·고정 버프. 캐릭터 이름은 저장하지 않는다", "jobs": {}}
     for job in a.jobs:
-        r = collect(c, job, a.top, day)
+        try:
+            r = collect(c, job, a.top, day)
+        except RateLimited:
+            print(f"{job}: 넥슨 API 호출 한도에 걸려 여기서 멈춰요(운영과 같은 키) — 이 직업부터 다음에 다시")
+            break
         print(job, "없음" if r is None else f"{r['samples']}명, 스킬 {len(r['shares'])}개")
         if r and not merge_job(data, job, r):
             print(f"  {job}: 기존 {data['jobs'][job]['samples']}명보다 적어 유지")
