@@ -184,6 +184,14 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
     if (row) row[1].push(x); else cubeSlots.push([x.slot, [x]]);
   }
   for (const [, xs] of cubeSlots) xs.sort((a, b) => (a.kind === "잠재" ? 0 : 1) - (b.kind === "잠재" ? 0 : 1));
+  // 메소 배분 막대(2026-11-27 디자인): 가진 메소가 강화·살 템·큐브·심볼에 얼마씩 가는지, 남는 메소까지 한눈에
+  const spend = mixed && bestRow ? [
+    { key: "raise", label: "강화", cost: bestRow.raise_cost || 0 },
+    { key: "buy", label: "살 템", cost: buyTotal },
+    { key: "cube", label: (mixed.picks || []).some((x) => x.kind === "추옵") ? "큐브·추옵" : "큐브", cost: cubeCost },
+    { key: "symbol", label: "심볼", cost: symCost },
+    { key: "left", label: "남는 메소", cost: Math.max(0, budget - (bestRow.raise_cost || 0) - buyTotal - (mixed.cost || 0)) },
+  ].filter((x) => x.cost >= 1e8) : [];
   const planBuild = best?.best != null ? all.find((b) => (b.potential || "same") === "same" && b.starforce === best.best) : null;
   const verdict = (o) => {
     if (!budget) return o.missing ? `${goal ? "강화·큐브" : "강화"} ${formatMeso(o.raise) || "0"} + 살 템 ${o.missing}개 시세` : formatMeso(o.cost);
@@ -286,6 +294,18 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                 보스 실딜 <strong className="num consult-mix-gain">{pct1(mixed.delta_pct)}</strong>
                 {best.best !== build.starforce && <> <button type="button" className="ghost small" onClick={() => setStar(best.best)}>{best.best}성 세팅 보기</button></>}
               </p>
+              {spend.length > 0 && (
+                <div className="consult-spend" aria-label="메소 배분">
+                  <div className="consult-spend-bar" aria-hidden="true">
+                    {spend.map((x) => <span key={x.key} className={`seg seg-${x.key}`} style={{ flexGrow: x.cost }} />)}
+                  </div>
+                  <ul className="consult-spend-legend">
+                    {spend.map((x) => (
+                      <li key={x.key}><span className={`dot seg-${x.key}`} aria-hidden="true" />{x.label} <strong className="num">{formatMeso(Math.round(x.cost / 1e8) * 1e8)}</strong></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <p className="consult-mix-buttons">
                 <button type="button" className="ghost small" aria-expanded={starsOpen} onClick={() => setStarsOpen(!starsOpen)}>
                   {starsOpen ? "성별 비교 접기" : "성별 비교"}</button>
@@ -302,17 +322,20 @@ export default function ConsultPanel({ name, defense, onEvaluate, onBest }) {
                       <tr key={x.starforce} className={x.starforce === best.best ? "is-ok" : ""}>
                         <td>{x.starforce}성</td>
                         <td className="num">{x.raise_cost ? x.raise_cost_text : "강화 없음"}<span className="muted small">{x.delta_pct == null ? "—" : `+ 큐브 ${x.cost_text}`}</span></td>
-                        <td className="num">{x.delta_pct == null ? <span className="muted">{x.short_text} 모자라요</span> : <strong>{pct1(x.delta_pct)}</strong>}</td>
+                        <td className="num">{x.delta_pct == null ? <span className="muted">{x.short_text} 모자라요</span> : (
+                          <span className="consult-starbar"><span className="track" aria-hidden="true"><span className="fill" style={{ width: `${Math.max(2, Math.min(100, (x.delta_pct / (mixed.delta_pct || 1)) * 100))}%` }} /></span><strong>{pct1(x.delta_pct)}</strong></span>)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
+              <details className="consult-how"><summary className="muted small">어떻게 계산했나요</summary>
               <p className="muted small">성마다 강화 평균{buyTotal ? "과 넣은 시세(성마다 같게)" : ""}를 먼저 빼고, 남는 메소로 칸마다 잠재·에디 목표를 따로 골라 가장 많이 오르는 조합이에요(위 탭과 따로).
                 실딜은 고른 줄을 실제로 낀 세팅으로 잰 값이고, 살 템은 잠재·에디 없는 매물을 사서 큐브로 맞춘다고 봤어요
                 {mixed.with_current_delta_pct != null ? `(지금 템 수준 잠재가 이미 붙은 매물을 사면 큐브 전에 ${pct1(mixed.with_current_delta_pct)}부터 시작해요)` : ""}.
                 {missing > 0 ? ` 시세를 안 넣은 살 템 ${missing}개는 계산에 없어요.` : ""}
                 {mixed.flame_assumed != null ? ` 살 템의 추옵도 메소 재설정으로 지금 템 수준을 맞추는 비용을 넣었어요${mixed.flame_assumed > 0 ? ` — 다만 ${mixed.flame_assumed}개는 비용을 잴 수 없어 지금 템 수준이 붙어 있다고 봤어요` : ""}.` : ""}</p>
+              </details>
               {planOpen && planBuild && (
                 <ol className="consult-plan" aria-label="할 일 순서">
                   {planBuild.buy.length > 0 && (

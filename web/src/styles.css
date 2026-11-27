@@ -1097,6 +1097,29 @@ details.agent-fold .agent-head h3 { position: absolute; width: 1px; height: 1px;
 .consult-fit { margin: 0 0 var(--sp-3); padding: var(--sp-2) var(--sp-3); border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: var(--radius-sm); }
 .consult-fit p { margin: 2px 0; }
 .consult-fit button { min-height: 32px; padding: 2px 10px; margin-left: var(--sp-1); }
+/* 메소 배분 막대·성별 막대(2026-11-27): 글로만 적던 것을 길이로 — Raidbots Top Gear처럼 1위 대비로 견준다 */
+.consult-spend { margin: var(--sp-2) 0 var(--sp-3); }
+.consult-spend-bar { display: flex; gap: 2px; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
+.consult-spend-bar .seg { flex: 0 0 0; min-width: 3px; }
+.consult-spend-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin: var(--sp-2) 0 0; padding: 0; font-size: var(--fs-sm); color: var(--text-2); }
+.consult-spend-legend li { display: flex; align-items: center; gap: 6px; }
+.consult-spend .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.consult-spend .seg-raise { background: var(--star-ink); }
+.consult-spend .seg-buy { background: var(--accent); }
+.consult-spend .seg-cube { background: var(--grade-epic); }
+.consult-spend .seg-symbol { background: var(--grade-rare); }
+.consult-spend .seg-left { background: var(--line-strong); }
+.consult-starbar { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+.consult-starbar .track { flex: 1 1 80px; max-width: 220px; height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.consult-starbar .fill { display: block; height: 100%; border-radius: 4px; background: var(--muted); }
+.consult-options tr.is-ok .consult-starbar .fill { background: var(--success); }
+@media (max-width: 600px) {
+  .consult-spend-legend { display: grid; grid-template-columns: 1fr 1fr; }
+  .consult-starbar { flex-direction: column-reverse; align-items: flex-end; gap: 4px; }
+  .consult-starbar .track { flex: none; width: 96px; }
+}
+.consult-how summary { cursor: pointer; min-height: 28px; }
+.consult-how p { margin-top: var(--sp-1); }
 .consult-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
 .consult-actions .consult-budget { margin: 0; flex: 0 1 auto; }
 .consult-actions .more-ranks { flex: 1 1 260px; margin-top: 0; }
